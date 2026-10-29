@@ -36,6 +36,8 @@ code ───┤ scan ──┘                (AUT skills)   (TestGen)        
 
 The important idea: **the DSM connects the two halves**. It knows which screens exist (from the crawl) and which code files belong to which screen (from the scan). That lets QAMaster tag each test case with the files it covers (`path:src/checkout/**`), so when those files change, the gate knows which tests to run.
 
+**Try it:** open [learning/v1-plugin-setup.html](learning/v1-plugin-setup.html), the v1 plugin setup. It shows every stage of the loop, and which parts swap (requirements source, test case store, test framework and runner, crawler). Pick Jira or Cypress to see the setting it needs and when it ships.
+
 ### The design in five rules
 
 1. **One CLI, `qam`, is the only door** (Q3). Claude Code commands, hooks, CI and terminals all call it. It answers with an exit code: `0` pass, `1` fail, `2` blocked, `3` awaiting approval. *Why:* one tested path; CI and the IDE can never disagree.
