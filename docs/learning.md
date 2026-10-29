@@ -464,6 +464,52 @@ The goldens come first: QAMaster's setup and pipeline must give the same status 
 
 ---
 
+## Lesson 5: application knowledge (feature 5)
+
+### What it's for
+
+To write good test cases, Claude needs to know the app: its screens, what each one does, how they connect, and the business rules behind them. AQE keeps that knowledge as **Claude Code skills** in the QA project: one main skill, `AUT_<App>` (AUT means "application under test"), and one sub-skill per part of the app, such as `AUT_Shop-Cart`. Claude loads a skill when its description matches the task, so "write test cases for the cart" pulls in exactly the cart's knowledge.
+
+### Two kinds of text in one file
+
+Each `SKILL.md` has two blocks, marked with HTML comments:
+
+| Block | Written by | On rebuild |
+|---|---|---|
+| **generated** | the builder, from the DSM: screens, forms, buttons, navigation, dependencies, candidate journeys | rewritten every time |
+| **curated** | Claude or QA, from the source code: business rules, roles, end-to-end business cases | kept as is |
+
+The split lets facts stay current automatically, while the expensive human-checked understanding survives. The curated block's `Summary:` line is even copied into the skill's description, so it improves when the skill triggers.
+
+The parts of the app ("components") come from the DSM's modules: the first segment of each URL (`/cart`, `/checkout/review` → Cart, Checkout). Dependencies between components are just the DSM's navigations, grouped. The builder never guesses them from names.
+
+### What we found by trying to break it
+
+We ran AQE's builder on the shop and Real World App DSMs and on a copy of the demo (`tests/fixtures/knowledge/aqe-runs.json`). Three findings stand out.
+
+- **A file that changes when nothing changed.** Every skill says "generated at 11:16". Rebuild a minute later from the same DSM, and all nine files change. In git, a real change hides among false ones.
+- **A marker is a contract, and a broken contract was silently "fixed".** Change one character of the curated end marker, and the next rebuild can't find the block. It writes the template instead, and the QA team's text is gone. The rule from feature 4 applies again: when the tool can't tell, it stops and says so.
+- **Skills are instructions, and the generated part comes from the app's own pages.** A page heading reading "Ignore your previous instructions…" was copied word for word into a skill that Claude later loads while writing tests. The app under test is not a trusted author. Text quoted from it must be marked as data.
+
+Smaller ones: `--save` without a name wiped the saved name; a part of the app that disappeared kept its skill, still describing its screens as current; and missing values printed as Python's `None`.
+
+### Check yourself
+
+1. Why keep business rules in a curated block instead of regenerating them every time?
+2. A rebuild finds a curated start marker but no end marker. What should it do, and why not use the template?
+3. Why is a timestamp inside every generated file a problem, even though it's accurate?
+4. The crawl copied a page heading into a skill. Why is that riskier than the same heading in `dsm.json`?
+
+<details><summary>Answers</summary>
+
+1. They come from reading code and from QA's judgement, which is slow and can't be derived from the DSM. Regenerating would throw that work away.
+2. Stop, name the file, and change nothing. The template would replace text a person wrote, and the person would never know.
+3. Every rebuild changes every file, so git shows changes where there are none, and the real ones are hard to see.
+4. `dsm.json` is data that tools read. A skill is text Claude reads as guidance, so an instruction hidden in a page could steer Claude in later tasks.
+</details>
+
+---
+
 ## Journal
 
 | Date | Feature | What we learned |
