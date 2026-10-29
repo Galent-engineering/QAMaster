@@ -245,6 +245,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - The push gate reaches every tool and terminal through the git pre-push hook in v1.1.
 - **Why:** Autonomous-QE's reach, kept. CheckMaster was Claude Code only.
 - **Gave up:** enforcement in other tools until the git hook lands.
+- **Amended 2026-10-29:** export and `qam mcp-serve` move to v2. v1 is an MVP for Claude Code; Autonomous-QE's extras, MCP included, come after it ([porting-step3.md](porting-step3.md#roadmap-what-comes-after-the-v1-mvp)). The decision itself stands for v2.
 
 **Q19. Feedback proposes; it never generates on its own** (2026-10-28, accepted 2026-10-28, New)
 - **Decision:**

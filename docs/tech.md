@@ -171,7 +171,7 @@ AQE's 13 stages, plus **Review** and **Publish** as their own stages, and a firs
 |---|---|---|---|
 | 1 | Setup | `qam setup` | Config written, packages and Chromium installed, launcher written |
 | 2 | Test case store | `qam doctor` | ADO reachable, plan found or created on request |
-| 3 | Context sources (optional) | `mcp-config-agent` | `.mcp.json` verified with a scoped sample read |
+| 3 | Context sources (v2; skipped in v1) | `mcp-config-agent` | `.mcp.json` verified with a scoped sample read |
 | 4 | DSM | `qam dsm run` | `dsm/dsm.json` built from crawl + repo scan |
 | 5 | Application knowledge | `AUT-Skill-Builder` skill | `AUT_<App>` and module sub-skills newer than the DSM |
 | 6 | Requirements | `qam requirements fetch --sprint …` | Saved under `requirements/<scope>/` (now fetched by the CLI, Q5) |
@@ -306,7 +306,7 @@ All hooks use only the standard library and stay quiet when they allow (Q14).
 |---|---|---|---|
 | 1 | New repo with the Q2 layout, `CLAUDE.md`, dev tooling, empty CLI with exit codes | CM | S |
 | 2 | Models, `BlockedError`, config loader, adapter interfaces, fakes | CM | S |
-| 3 | Move AQE engine modules into `src/` behind adapters, adding tests as each moves | AQE | L |
+| 3 | Move AQE engine modules into `src/` behind adapters, one feature at a time ([porting-step3.md](porting-step3.md)) | AQE | L |
 | 4 | Port the ADO adapter to TypeScript, with fixtures from CM's tests | CM | M |
 | 5 | Port selection, approve, run, verdict | CM | M |
 | 6 | playwright-bdd runner; copy the pytest shim | New + CM | M |

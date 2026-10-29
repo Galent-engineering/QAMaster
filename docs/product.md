@@ -38,13 +38,28 @@ QAMaster builds a team's test cases and automation from the application and its 
 - The CheckMaster gate: plan, approve, run, verdict, push hook. Runners: playwright-bdd and pytest.
 - Feedback: coverage gaps, stale cases, BROKEN links, defect drafts.
 - Six HTML reports.
-- Export to other AI tools and the MCP server, carried over from Autonomous-QE.
+- Built from the better of Autonomous-QE 0.1.5 and 0.2.0, module by module ([porting-step3.md](porting-step3.md)).
 
 ### v1.1
 - git pre-push hook (`qam install-hooks`), so pushes from any terminal are gated.
 - GitHub and Azure Pipelines PR checks, with one plan comment per PR and approval by comment.
 - In CI, run the QA project branch named like the app branch, else `main` (Q22).
 - Publishing gate results back to ADO as a Test Run.
+
+### v2 (Autonomous-QE extras, decided 2026-10-29)
+- Context sources: MCP config for Jira, Confluence, GitLab, Figma and Visio (`mcp-config-agent`, pipeline stage 3).
+- Export to other AI tools, and the QAMaster MCP server.
+- Import existing test cases (Excel, HP ALM, Azure Test Plans), gap analysis, TestGen revision mode, and the Test Coverage report.
+- Locators from the crawl, for apps without front-end source.
+- API discovery and API test data.
+
+### v3
+- Existing automation frameworks: detect, analyse, and generate into them.
+- Impact and traceability matrices.
+- Root cause evidence from commits and logs.
+- Value metrics: tokens, time and effort saved.
+- Encrypted secrets vault and security scan.
+- Visio MCP server.
 
 ### Later
 - More test case stores (Q23): first a project spreadsheet (`testcases.xlsx` / `.csv`) for teams with no tracker, then Jira through Xray or Zephyr.

@@ -49,6 +49,7 @@ The full diagrams (components, the loop, where things run, gate and publish sequ
 | [docs/product.md](docs/product.md) | Problem, users, scope (v1, v1.1, later, not doing), success criteria |
 | [docs/design.md](docs/design.md) | Commands, CLI, the publish preview, the plan, verdict rules, configuration |
 | [docs/data-handling.md](docs/data-handling.md) | What goes to Claude and when, what never does, the `QAMASTER_AI=off` switch. Written for customers, security reviewers and Galent legal |
+| [docs/porting-step3.md](docs/porting-step3.md) | Step 3 of the port: Autonomous-QE features one at a time (learn, build, test, move) |
 
 ## Key decisions (all accepted 2026-10-28)
 
