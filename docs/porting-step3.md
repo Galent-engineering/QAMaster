@@ -71,7 +71,7 @@ Not in step 3:
 |---|---|---|---|---|---|---|
 | 1 | DSM build and render | ✓ 2026-10-29 | ✓ | ✓ 5 golden fixtures | ✓ | ✓ |
 | 2 | Repo scan | ✓ 2026-10-29 | ✓ | ✓ 2 golden fixtures, fixes 1–5 | ✓ | ✓ fixes 1–4 |
-| 3 | UI crawl and DSM refresh | ✓ 2026-10-29 | ✓ | ✓ real crawl of app.mjs: 0 writes | skills to move | |
+| 3 | UI crawl and DSM refresh | ✓ 2026-10-29 | ✓ | ✓ real crawl of app.mjs: 0 writes | ✓ skill, agent, `/qamaster:dsm` | ✓ build |
 | 4 | Setup and pipeline | | | | | |
 | 5 | Application knowledge | | | | | |
 | — | Step 4: ADO adapter | | | | | |
@@ -399,7 +399,22 @@ The CLI dispatcher is now async.
 - **The session is saved by default:** plain JSON, owner-only, git-ignored, with `login.save_session: false` to turn it off (Q16 amendment). There's no vault.
 - **The crawler returns the model** and writes no file except the session. The refresh writes `ui-model.json`.
 
-**Still to do in Move:** the `Design-Structure-Matrix` skill, `ui-dsm-agent` and the `generate-dsm` command, rewritten for `qam`, Q16 and these commands.
+**Moved (2026-10-29):**
+- `plugin/skills/Design-Structure-Matrix/SKILL.md` is short, with the matrix, flags, files and settings in `references/dsm.md`;
+- `plugin/agents/ui-dsm-agent.md`;
+- `plugin/commands/dsm.md`: AQE's `generate-dsm` is now `/qamaster:dsm`, the name tech.md gives the plugin's DSM command.
+
+All three are rewritten:
+- for `qam dsm run`, `refresh`, `changes` and `impact`;
+- for Q16: the sign-in options are a browser window, a terminal or `.env.dsm`, with no vault;
+- for Q26: the URL and repository come from `qam setup`, never chosen by Claude;
+- with the crawl's safety and prompt-injection rules.
+
+AQE's `full`, `login`, `code-only`, `open`, `setup` and `forget-login` subcommands are covered by `run`, `--login-mode manual`, `--no-crawl`, showing the page, `qam setup`, and deleting `dsm/.auth/`.
+
+Checks:
+- `claude plugin validate ./plugin` passes. The advice it gives is about a missing icon and licence file, which matter only for the plugin directory.
+- Under `claude --plugin-dir ./plugin`, the prompt "a map of every screen in our web app and which screens my last code change affects" picks `qamaster:Design-Structure-Matrix`.
 
 
 ## Roadmap: what comes after the v1 MVP
