@@ -1,0 +1,113 @@
+{
+  "project": "<project>",
+  "app": "CheckMasterShop",
+  "complete": false,
+  "next": "store",
+  "stages": [
+    {
+      "stage": "setup",
+      "title": "Setup",
+      "status": "done",
+      "evidence": "project link, config and Playwright present",
+      "how": "Run qam setup (safe to re-run: it installs only what is missing)."
+    },
+    {
+      "stage": "store",
+      "title": "Test case store",
+      "status": "pending",
+      "evidence": "not checked yet",
+      "how": "Set QAMASTER_ADO_ORG and QAMASTER_ADO_PROJECT in the app repo .env (token: QAMASTER_ADO_TOKEN or az login), then run qam doctor."
+    },
+    {
+      "stage": "context",
+      "title": "Context sources (v2)",
+      "status": "skipped",
+      "evidence": "v2: skipped in v1",
+      "how": "Nothing to do in v1."
+    },
+    {
+      "stage": "dsm",
+      "title": "Design Structure Matrix",
+      "status": "done",
+      "evidence": "1 screens, 0 relations (built 2026-10-29T04:47:50+00:00)",
+      "how": "Run qam dsm refresh."
+    },
+    {
+      "stage": "knowledge",
+      "title": "Application knowledge",
+      "status": "done",
+      "evidence": "AUT_CheckMasterShop, current with the DSM",
+      "how": "Use the AUT-Skill-Builder skill to build or refresh the application knowledge skills."
+    },
+    {
+      "stage": "requirements",
+      "title": "Requirements",
+      "status": "done",
+      "evidence": "1 scope(s) saved",
+      "how": "Ask the user which sprint or dates, then run qam requirements fetch --sprint <name> (or --current-sprint, or --from/--to). Without requirements: qam pipeline mark requirements skipped --note \"…\"."
+    },
+    {
+      "stage": "test-cases",
+      "title": "Test cases",
+      "status": "done",
+      "evidence": "1 validated run(s), latest 20261029-1030-Home",
+      "how": "Ask the user which module to cover, then follow the TestGen skill; the run must pass qam testgen validate."
+    },
+    {
+      "stage": "review",
+      "title": "Review",
+      "status": "pending",
+      "evidence": "no run reviewed yet",
+      "how": "Show the person the test cases; only after their yes, run qam review <run>."
+    },
+    {
+      "stage": "publish",
+      "title": "Publish",
+      "status": "pending",
+      "evidence": "nothing published yet",
+      "how": "Run qam publish <run> to preview, and qam publish <run> --apply after the person agrees."
+    },
+    {
+      "stage": "app-folder",
+      "title": "Automation folder",
+      "status": "pending",
+      "evidence": "CheckMasterShop/ not created",
+      "how": "Run qam app create --app CheckMasterShop --web-url <URL>."
+    },
+    {
+      "stage": "locators",
+      "title": "UI locators",
+      "status": "pending",
+      "evidence": "no locator files yet",
+      "how": "Use the UI-Locator-Sync skill."
+    },
+    {
+      "stage": "scripts",
+      "title": "Scripts",
+      "status": "pending",
+      "evidence": "0 feature file(s), 0 traced to test cases",
+      "how": "Ask the user for the go-ahead, then automate the reviewed test cases with the AutomationCode skill."
+    },
+    {
+      "stage": "script-gate",
+      "title": "Script gate",
+      "status": "pending",
+      "evidence": "not run yet",
+      "how": "Run qam check-scripts and fix every finding."
+    },
+    {
+      "stage": "first-gate",
+      "title": "First gate run",
+      "status": "pending",
+      "evidence": "no verdict yet",
+      "how": "Run qam check --all."
+    },
+    {
+      "stage": "reports",
+      "title": "Reports",
+      "status": "pending",
+      "evidence": "no test summary report yet",
+      "how": "Run qam report all."
+    }
+  ]
+}

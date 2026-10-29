@@ -1,0 +1,80 @@
+{
+  "status": "ready",
+  "steps": [
+    {
+      "step": "Node.js",
+      "status": "ok",
+      "detail": "<version>"
+    },
+    {
+      "step": "npm",
+      "status": "ok",
+      "detail": "<version>"
+    },
+    {
+      "step": "git",
+      "status": "ok",
+      "detail": "<version>"
+    },
+    {
+      "step": "Project link",
+      "status": "updated",
+      "detail": ".autonomous-qe/plugin.json and .autonomous-qe/bin/aqe.mjs"
+    },
+    {
+      "step": "config/.env.dsm.example",
+      "status": "created",
+      "detail": "from the plugin template (application not pre-set)"
+    },
+    {
+      "step": "config/.env.mcp.example",
+      "status": "created",
+      "detail": "from the plugin template (application not pre-set)"
+    },
+    {
+      "step": "config/aut-skills.json",
+      "status": "created",
+      "detail": "from the plugin template (application not pre-set)"
+    },
+    {
+      "step": "config/dsm-config.json",
+      "status": "created",
+      "detail": "from the plugin template (application not pre-set)"
+    },
+    {
+      "step": "config/mcp-project-requirements.json",
+      "status": "created",
+      "detail": "from the plugin template (application not pre-set)"
+    },
+    {
+      "step": "config/testgen.json",
+      "status": "created",
+      "detail": "from the plugin template (application not pre-set)"
+    },
+    {
+      "step": "config/ui-dsm-routine.md",
+      "status": "created",
+      "detail": "from the plugin template (application not pre-set)"
+    },
+    {
+      "step": "config/value.json",
+      "status": "created",
+      "detail": "from the plugin template (application not pre-set)"
+    },
+    {
+      "step": ".gitignore",
+      "status": "created",
+      "detail": "node_modules/, .env.dsm, .env.mcp, dsm/.lock, dsm/.auth/, dsm/hook.log, .testgen/, .e2e-scriptgen/, .autonomous-qe/plugin.json, reports/output/, .env, .autonomous-qe/secrets.vault, .autonomous-qe/*.tmp, .autonomous-qe/runs/, .mcp.json.bak"
+    },
+    {
+      "step": "package.json",
+      "status": "created",
+      "detail": "package.json with npm workspaces, Playwright and security overrides"
+    },
+    {
+      "step": "npm install",
+      "status": "skipped",
+      "detail": "run `aqe setup` without --no-install"
+    }
+  ]
+}

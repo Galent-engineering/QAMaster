@@ -1,0 +1,129 @@
+{
+  "project": "<project>",
+  "inputs": {},
+  "application": "CheckMasterShop",
+  "folder": null,
+  "complete": false,
+  "next": "test-case-report",
+  "stages": [
+    {
+      "stage": "setup",
+      "title": "Project setup",
+      "status": "done",
+      "evidence": "configuration, project link and Playwright present",
+      "how": "Run `aqe setup` (installs npm packages and Chromium; safe to re-run)."
+    },
+    {
+      "stage": "mcp",
+      "title": "Data sources (MCP)",
+      "status": "skipped",
+      "evidence": "no data source enabled in config/mcp-project-requirements.json (optional)",
+      "how": "Optional. If the user wants requirements or designs (Jira, Confluence, Azure DevOps, GitLab, Figma, Visio): edit config/mcp-project-requirements.json with them, then use the Agent tool with subagent_type \"autonomous-qe:mcp-config-agent\". Otherwise mark it skipped: `aqe pipeline mark mcp skipped --note \"no data sources\"`."
+    },
+    {
+      "stage": "test-import",
+      "title": "Existing test cases (imported)",
+      "status": "skipped",
+      "evidence": "no existing test cases given (optional)",
+      "how": "Optional. If the team has existing test cases (Excel, CSV, HP ALM folder, Azure Test Plans), import them: `aqe testcases import --file|--alm|--azure ...`. Otherwise `aqe pipeline mark test-import skipped --note \"no existing test cases\"`."
+    },
+    {
+      "stage": "dsm",
+      "title": "Design Structure Matrix",
+      "status": "done",
+      "evidence": "1 screens, 0 relations (built 2026-10-29T04:47:50+00:00)",
+      "how": "Use the Skill tool with skill \"autonomous-qe:generate-dsm\" and args \"run --save\". If the application needs a login, the user enters it in the terminal or in .env.dsm (never in chat)."
+    },
+    {
+      "stage": "aut-skills",
+      "title": "Application knowledge skills",
+      "status": "done",
+      "evidence": "AUT_CheckMasterShop with 2 skills, current with the DSM",
+      "how": "Use the Skill tool with skill \"autonomous-qe:AUT-Skill-Builder\" and args \"refresh\"."
+    },
+    {
+      "stage": "requirements",
+      "title": "Requirements for the sprint or period",
+      "status": "done",
+      "evidence": "checkmaster-shop: 3 item(s), manual",
+      "how": "Ask the user which requirements to use: the sprint name, the current sprint, or a start and end date, the source (Jira or Azure Boards) and optionally the module. Run `aqe requirements plan --source <jira|azure_devops> --scope \"<name>\" (--sprint \"<name>\" | --current-sprint | --from YYYY-MM-DD --to YYYY-MM-DD) [--project KEY] [--module NAME]`, run the printed JQL / WIQL with the requirement MCP server (read-only; set it up with the autonomous-qe:mcp-config-agent agent first), normalise every item and `aqe requirements save --scope \"<name>\" --file <fetched.json>`. Without a requirement source: `aqe pipeline mark requirements skipped --note \"no Jira or Azure Boards\"` (test cases then come from the AUT skills and code only)."
+    },
+    {
+      "stage": "api",
+      "title": "API model and API test data",
+      "status": "skipped",
+      "evidence": "no API model yet (optional: aqe api discover)",
+      "how": "Run `aqe api discover` (OpenAPI files and URLs, the API calls the UI made during the crawl, route definitions in the code). API test cases (skill autonomous-qe:API-TestGen) cite api:<METHOD> <path>; after the automation folder exists, `aqe api testdata` writes valid, boundary and invalid data per environment to test-data/api/. Without an API: `aqe pipeline mark api skipped --note \"no API\"`."
+    },
+    {
+      "stage": "test-analysis",
+      "title": "Coverage and gap analysis of existing test cases",
+      "status": "skipped",
+      "evidence": "no imported test cases (optional)",
+      "how": "Run `aqe testcases analyse --suite <suite>` after the DSM, the AUT skills and the requirements are in place (re-run it whenever they change), read the analysis and share the high-priority gaps with the user (skill autonomous-qe:TestCaseAnalysis)."
+    },
+    {
+      "stage": "test-cases",
+      "title": "Manual test cases (reviewed)",
+      "status": "done",
+      "evidence": "1 reviewed run(s); latest testgen/output/20261029-1030-Home",
+      "how": "Ask the user for the module or sub-module to cover (offer the list: AUT components from `aqe testgen context` and their AUT_CheckMasterShop-<Component> sub-skills); never assume the scope. Then follow the autonomous-qe:TestGen skill for that scope (manual test design with the Domain_Test_Design_Skill domain, application-type and test-type sub-skills; requirements from `aqe requirements manifest --scope <name>` when they were fetched). Every case carries the Manual Test Case Report fields (severity, sub_module, one-word feature, channel, coverage, test_data). The run must pass `aqe testgen validate`."
+    },
+    {
+      "stage": "test-case-report",
+      "title": "Manual Test Case Report with DSM",
+      "status": "pending",
+      "evidence": "no Manual Test Case Report yet",
+      "how": "Run `aqe report manual` (Design Structure Matrix Report and Manual Test Case Report with requirements traceability, from the latest reviewed run, plus the Test Coverage and Gap Analysis Report when test cases were imported) and share them with the user for review before automation."
+    },
+    {
+      "stage": "codebase",
+      "title": "Existing automation framework",
+      "status": "skipped",
+      "evidence": "no existing automation framework registered (optional: the plugin template will be used)",
+      "how": "If the project already has an automation framework, use the Skill tool with skill \"autonomous-qe:CodebaseOperations\": `aqe codebase detect`, `aqe codebase analyse`, read the CodebaseOperations-{Name} project skill and the code, then (when several qualify, after asking the user) `aqe codebase use --framework <folder>`. Without one: `aqe pipeline mark codebase skipped --note \"no existing framework\"`."
+    },
+    {
+      "stage": "app-folder",
+      "title": "Application automation folder",
+      "status": "pending",
+      "evidence": "CheckMasterShop/ not created",
+      "how": "Run `aqe app create --app CheckMasterShop --web-url http://127.0.0.1:8765/ --install`."
+    },
+    {
+      "stage": "locators",
+      "title": "UI locators (page-wise)",
+      "status": "pending",
+      "evidence": "needs the application folder",
+      "how": "Use the Skill tool with skill \"autonomous-qe:UI-Locator-Sync\": add the AUT context's locator_rules (`aqe aut-context`) to <Name>/locators.config.json, then `cd <Name> && npm run locators:sync -- --repo <repository> --ui-root <front-end folder> --save` (ask the user for the front-end folder if the repository does not make it obvious)."
+    },
+    {
+      "stage": "scripts",
+      "title": "BDD features and automation scripts",
+      "status": "pending",
+      "evidence": "needs the application folder",
+      "how": "Generate the scripts for every applicable channel (web, api) from the reviewed test cases: a prompt such as \"automate the reviewed test cases for <module>\" starts the E2E-Script-Gen pipeline (AutomationCode and E2EAutomation skills, page objects, page steps, features)."
+    },
+    {
+      "stage": "gate",
+      "title": "Script quality gate",
+      "status": "pending",
+      "evidence": "needs the application folder",
+      "how": "Run `aqe check-scripts --framework <Name>` and fix every finding; then `aqe pipeline mark gate done`."
+    },
+    {
+      "stage": "execution",
+      "title": "Test execution",
+      "status": "pending",
+      "evidence": "needs the application folder",
+      "how": "Run the suites for the channels in scope, for example `cd <Name> && npx playwright test --project=chromium --project=api` (native Android/iOS only with Appium and a device). Report the real results; failed tests become defect drafts for the Defect Report."
+    },
+    {
+      "stage": "reports",
+      "title": "Reports",
+      "status": "pending",
+      "evidence": "no Test Summary Report yet",
+      "how": "Run `aqe report all` (builds every report the project has data for, then the Test Summary Report) and share the output folder."
+    }
+  ]
+}

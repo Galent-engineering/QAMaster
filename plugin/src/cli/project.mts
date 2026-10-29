@@ -109,12 +109,17 @@ export function setup(cfg: Config, argv: string[], json: boolean): number {
     browsers: browsers as SetupOptions['browsers'],
   };
   const steps = setupProject(dir, opts);
+  // a config that isn't valid JSON blocks setup before anything writes to it
+  const broken = steps.some((s) => s.status === 'failed');
   const notes: string[] = [];
   const warnings: string[] = [];
   const dsmFile = path.join(dir, 'config', 'dsm-config.json');
   const qamFile = path.join(dir, 'config', 'qamaster.json');
 
-  if (v.app || v.url) {
+  if (broken) {
+    if (v.app || v.url || v.source || v.entry)
+      steps.push({ step: 'app and sources', status: 'skipped', detail: 'fix the failed steps first' });
+  } else if (v.app || v.url) {
     if (opts.check) steps.push({ step: 'app', status: 'skipped', detail: '--check changes nothing' });
     else {
       const q = readJson(qamFile);
@@ -128,13 +133,13 @@ export function setup(cfg: Config, argv: string[], json: boolean): number {
       });
     }
   }
-  if (v.url && !opts.check) {
+  if (!broken && v.url && !opts.check) {
     const d = readJson(dsmFile);
     d.application = { ...((d.application as object) ?? {}), base_url: v.url };
     writeJson(dsmFile, d);
     steps.push({ step: 'app URL', status: 'updated', detail: `application.base_url ${v.url}` });
   }
-  if (v.source) {
+  if (!broken && v.source) {
     if (opts.check && isGitUrl(v.source) && v['clone-to']) {
       steps.push({ step: 'code source', status: 'skipped', detail: `--check doesn't clone ${v.source}` });
     } else {
@@ -159,7 +164,7 @@ export function setup(cfg: Config, argv: string[], json: boolean): number {
     }
   }
   let entries: ReturnType<typeof add> | null = null;
-  if (v.entry && !opts.check)
+  if (!broken && v.entry && !opts.check)
     entries = add(
       ctx(cfg),
       v.entry
@@ -170,7 +175,9 @@ export function setup(cfg: Config, argv: string[], json: boolean): number {
 
   const failed = steps.some((s) => s.status === 'failed');
   const missing = steps.some((s) => s.status === 'missing');
-  const result = failed ? 'blocked' : opts.check && missing ? 'incomplete' : 'ready';
+  // ready only when Playwright is really there: --no-install leaves it out (AQE said ready)
+  const skipped = steps.some((s) => s.step === 'npm install' && s.status === 'skipped');
+  const result = failed ? 'blocked' : missing || skipped ? 'incomplete' : 'ready';
   if (json) console.log(JSON.stringify({ result, project: dir, steps, notes, warnings, entries }));
   else {
     printSteps(`QAMaster setup: ${result}\nProject: ${dir}\n`, steps);
@@ -276,7 +283,10 @@ export function doctor(cfg: Config, _argv: string[], json: boolean): number {
   const ok = checks.every((c) => c.ok);
   fs.mkdirSync(path.join(dir, QAMASTER_DIR), { recursive: true });
   const record = path.join(dir, QAMASTER_DIR, 'doctor.json');
-  const prev = fs.existsSync(record) ? JSON.parse(fs.readFileSync(record, 'utf8')) : {};
+  let prev = {}; // doctor's own record: one that can't be read is rewritten
+  try {
+    prev = JSON.parse(fs.readFileSync(record, 'utf8'));
+  } catch {}
   writeJson(record, { ...prev, at: new Date().toISOString(), ok, checks });
   if (json) console.log(JSON.stringify({ result: ok ? 'pass' : 'blocked', checks }));
   else {

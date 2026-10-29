@@ -39,7 +39,7 @@ function readProjectConfig(qaProject: string | null): ProjectConfig {
   try {
     data = JSON.parse(fs.readFileSync(file, 'utf8'));
   } catch (e) {
-    throw new BlockedError(`${file} isn't valid JSON (${(e as Error).message}). Fix it, or run qam setup.`);
+    throw new BlockedError(`${file} isn't valid JSON (${(e as Error).message}). Fix it, then run the command again.`);
   }
   return asProjectConfig(data, file);
 }
