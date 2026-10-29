@@ -493,6 +493,15 @@ We ran AQE's builder on the shop and Real World App DSMs and on a copy of the de
 
 Smaller ones: `--save` without a name wiped the saved name; a part of the app that disappeared kept its skill, still describing its screens as current; and missing values printed as Python's `None`.
 
+One more turned up while building, by comparing AQE's own outputs: from the second build on, the template's placeholder ("_(one sentence: …)_") was copied into every skill's description. The description is what Claude reads to pick a skill, so every unfinished skill advertised a placeholder.
+
+### How we built it
+
+- **Golden first, literally.** The first commit is a plain port that writes AQE's files byte for byte. Only then did the fixes go in, each with a test that fails on that plain port.
+- **AQE's output stays next to ours** (`aqe/` and `expected/`). One test undoes the listed differences and checks that everything else still matches AQE word for word. A difference nobody wrote down fails the test.
+- **The builder is a pure function:** the DSM and the existing skill texts go in, the files to write come out. The command writes only files whose text changed, so a rebuild with nothing new changes nothing in git.
+- **Never repair someone's text by guessing.** A damaged curated block stops the build and names the file. A part of the app that's gone is marked retired, with its notes kept, and deleting it is the person's call.
+
 ### Check yourself
 
 1. Why keep business rules in a curated block instead of regenerating them every time?

@@ -22,6 +22,11 @@
       "detail": ".qamaster/plugin.json and .qamaster/bin/qam (terminals and CI: .qamaster/bin/qam help)"
     },
     {
+      "step": "config/aut-skills.json",
+      "status": "created",
+      "detail": "from the template; the app is never pre-set"
+    },
+    {
       "step": "config/dsm-config.json",
       "status": "created",
       "detail": "from the template; the app is never pre-set"

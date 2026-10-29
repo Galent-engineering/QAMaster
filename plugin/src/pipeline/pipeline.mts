@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolveRef } from '../adapters/git.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
+import { pascal } from '../knowledge/build.mts';
 import { BlockedError } from '../shared/errors.mts';
 import { isGitUrl } from './sources.mts';
 
@@ -149,16 +150,18 @@ export const STAGES: Stage[] = [
     title: 'Application knowledge',
     detect: (c) => {
       if (!c.app) return { done: false, detail: 'no app name (config/qamaster.json app.name)' };
-      // written by the AUT-Skill-Builder (feature 5)
+      // written by qam aut-skills (feature 5), under the same skill name: "CheckMaster Shop" -> AUT_CheckMasterShop
+      const skills = readJson<{ skills_dir?: string }>(path.join(c.project, 'config', 'aut-skills.json'))?.skills_dir;
+      const app = pascal(c.app);
       const build = readJson<{ dsm_generated_at?: string }>(
-        path.join(c.project, '.claude', 'skills', `AUT_${c.app}`, '.aut-build.json'),
+        path.join(c.project, skills ?? '.claude/skills', `AUT_${app}`, '.aut-build.json'),
       );
-      if (!build) return { done: false, detail: `AUT_${c.app} skills not built` };
+      if (!build) return { done: false, detail: `AUT_${app} skills not built` };
       if (c.dsm && build.dsm_generated_at !== c.dsm.generated_at)
-        return { done: true, stale: true, detail: `AUT_${c.app} built from an older DSM` };
-      return { done: true, detail: `AUT_${c.app}, current with the DSM` };
+        return { done: true, stale: true, detail: `AUT_${app} built from an older DSM` };
+      return { done: true, detail: `AUT_${app}, current with the DSM` };
     },
-    how: () => 'Use the AUT-Skill-Builder skill to build or refresh the application knowledge skills.',
+    how: () => 'Use the AUT-Skill-Builder skill (qam aut-skills) to build or refresh the application knowledge skills.',
   },
   {
     id: 'requirements',

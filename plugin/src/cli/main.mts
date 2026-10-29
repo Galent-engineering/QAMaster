@@ -12,6 +12,7 @@ import path from 'node:path';
 import { loadConfig } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import { dsm } from './dsm.mts';
+import { autSkills } from './knowledge.mts';
 import { doctor, integrations, pipeline, setup } from './project.mts';
 
 export const PASS = 0;
@@ -28,6 +29,7 @@ export const COMMANDS: Record<string, string> = {
   doctor: 'Check settings, credentials, the test plan and the runner',
   integrations: 'Where QAMaster is plugged in: list [--all] | add <entry…> | remove <id> | verify',
   dsm: 'Design Structure Matrix: run | refresh | changes | impact <files…> | scan | build | render',
+  'aut-skills': 'Application knowledge skills (AUT_<App>) from the DSM; --check says whether they are current',
   requirements: 'Fetch requirements: --sprint NAME | --current-sprint | --from D --to D',
   testgen: 'Test generation: context | validate <run> | render <run>',
   review: 'Record the review of a run (only after the person says yes)',
@@ -51,6 +53,7 @@ type Options = { json: boolean; repo: string };
 /** The built commands. Each gets the global options and its own arguments, and returns the exit code. */
 const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promise<number>> = {
   dsm: (opts, args) => dsm(loadConfig(opts.repo), args, opts.json),
+  'aut-skills': (opts, args) => autSkills(loadConfig(opts.repo), args, opts.json),
   setup: (opts, args) => setup(loadConfig(opts.repo), args, opts.json),
   pipeline: (opts, args) => pipeline(loadConfig(opts.repo), args, opts.json),
   doctor: (opts, args) => doctor(loadConfig(opts.repo), args, opts.json),

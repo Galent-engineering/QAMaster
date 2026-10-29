@@ -1,5 +1,5 @@
 {
-  "_comment": "AQE build_aut_skills problems, reproduced by aqe-repro.mjs on scratch folders (2026-10-29), inputs tests/fixtures/dsm/shop/dsm.expected.json and a copy of autonomousQeDemo. AQE 0.1.5 and 0.2.0 gave the same results. The expected/ folders here were built by AQE 0.2.0 from tests/fixtures/dsm/shop and rwa (app names Shop and RealWorldApp, skills_dir skills).",
+  "_comment": "AQE build_aut_skills problems, reproduced by aqe-repro.mjs on scratch folders (2026-10-29), inputs tests/fixtures/dsm/shop/dsm.expected.json and a copy of autonomousQeDemo. AQE 0.1.5 and 0.2.0 gave the same results. The aqe/ folders here were built by AQE 0.2.0 from tests/fixtures/dsm/shop and rwa (app names Shop and RealWorldApp, skills_dir skills); expected/ is QAMaster's output.",
   "runs": [
     {
       "id": "demo",
@@ -70,6 +70,12 @@
       "id": "skill-names",
       "problem": "none: suspected that AUT_Shop-Cart breaks Claude Code skill naming; claude plugin validate accepts it with no warning",
       "command": "claude plugin validate on a temp plugin holding skills/AUT_Shop-Cart"
+    },
+    {
+      "id": "placeholder-in-description",
+      "problem": "from the second build on, a curated block that is still the template has its placeholder Summary line copied into the skill description, which is what Claude uses to pick skills",
+      "command": "AQE output in curated/aqe (built over curated/input): AUT_Shop-Admin",
+      "description": "description: \"Shop application, Admin component (AUT sub-skill of AUT_Shop). _(one sentence: what this module lets which users do; it is also used in this skill's descrip…"
     }
   ]
 }

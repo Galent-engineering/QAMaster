@@ -1,0 +1,9 @@
+{
+  "_comment": "Application knowledge skills (qam aut-skills, skill AUT-Skill-Builder). The app name is config/qamaster.json app.name.",
+  "skills_dir": ".claude/skills",
+  "_component_names_comment": "Optional: DSM module (first URL segment) -> component name used in AUT_<App>-<Component>. Unlisted modules are PascalCased.",
+  "component_names": {},
+  "exclude_modules": [],
+  "max_journeys": 12,
+  "max_journey_steps": 8
+}
