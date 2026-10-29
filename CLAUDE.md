@@ -25,7 +25,7 @@ plugin/
   commands/ skills/ agents/ hooks/ runners/ framework/ templates/ reports/
 .claude-plugin/          # marketplace.json (source "./plugin")
 package.json             # dev only: typescript, @biomejs/biome, @types/node
-tests/                   # node:test; fakes.mts has a fake for every adapter
+tests/                   # node:test; fakes.mts has a fake for every adapter, contracts.mts a suite per store interface
 scripts/                 # dev tooling: seed ADO, live connection check
 ```
 

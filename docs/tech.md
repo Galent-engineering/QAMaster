@@ -10,7 +10,7 @@ Picked from the better option in each project. **AQE** = Autonomous-QE 0.1.5, **
 |---|---|---|---|---|
 | Engine language | TypeScript, run directly with Node 24 type stripping, no build step | AQE | CM's Python 3.12 + uv | Q1 |
 | Runtime dependencies | None. Node standard library only (`node:fs`, `node:child_process`, `fetch`) | AQE | CM's pydantic, httpx | Q1 |
-| Validation of data files | Hand-written type guards in `shared/schema.ts`, one per model | AQE | CM's pydantic | Q1 |
+| Validation of data files | Hand-written type guards in `shared/schema.mts`, one per model | AQE | CM's pydantic | Q1 |
 | Dev tooling | `tsc --noEmit` (strict), `node:test`, Biome for lint and format | CM's discipline, Node tools | CM's pyright, pytest, ruff | Q21 |
 | Repo layout | `plugin/` ships; root holds marketplace, dev project, tests, docs | CM | AQE's single tree | Q2 |
 | Entry point | `qam` CLI, `--json`, exit codes 0/1/2/3 | CM contract + AQE command set | — | Q3 |
@@ -49,7 +49,7 @@ plugin/                          # everything an install copies
   reports/templates/             # report HTML, CSS, JS
 .claude-plugin/marketplace.json  # source "./plugin"
 package.json                     # dev only: typescript, @biomejs/biome, @types/node
-tests/                           # node:test; fakes.ts has a fake for every adapter
+tests/                           # node:test; fakes.mts has a fake for every adapter
   fixtures/ado/                  # recorded ADO responses
 scripts/                         # dev tooling: seed ADO from sheets, live connection check
 docs/
@@ -58,7 +58,7 @@ CLAUDE.md
 
 The CLI wrapper is `plugin/bin/qam` (`exec node "$(dirname "$0")/../src/cli/main.mts" "$@"`) plus `qam.cmd`. Commands and hooks call `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`, because hosted plugins may not put executables on the PATH (as in AQE). `qam setup` writes a project launcher, `.qamaster/bin/qam.mjs`, for terminals and CI.
 
-## Models (`src/shared/models.ts`)
+## Models (`src/shared/models.mts`)
 
 Neutral models shared by build and gate. Stores, requirement sources and runners map their own ideas onto these.
 
@@ -105,7 +105,7 @@ type Verdict = { result: 'pass'|'fail'|'blocked'; head: string; testsHead?: stri
 
 Errors a user can fix throw `BlockedError` with a message that says what to do next. The CLI turns it into exit code 2. This rule comes from CM.
 
-## Adapters (`src/adapters/base.ts`)
+## Adapters (`src/adapters/base.mts`)
 
 ```ts
 interface TestCaseStore {                        // QAMASTER_STORE; v1: ado (Q23)
@@ -146,7 +146,7 @@ interface Crawler {
 }
 ```
 
-`src/adapters/registry.ts` maps names to factories:
+`src/adapters/registry.mts` maps names to factories:
 - `STORES = { ado }`. Planned after v1: `file` (`testcases.xlsx` / `.csv` in ADO's import layout), then `xray` or `zephyr` (Q23)
 - `REQUIREMENTS = { ado }`
 - `RUNNERS = { 'playwright-bdd', pytest }`
@@ -230,18 +230,18 @@ feedback  gaps + BROKEN + stale cases → .qamaster/feedback/<sha>.json, defect 
 
 ### Runners
 
-**playwright-bdd** (`adapters/runner-bdd.ts`):
+**playwright-bdd** (`adapters/runner-bdd.mts`):
 - `collected()` runs `npx bddgen` then `npx playwright test --list --reporter=json` in the test root, and reads each test's tags.
 - `run()` passes `--grep "@TC-A|@TC-B"` for the approved IDs, `--output` set to the attempt's evidence folder, and turns on `screenshot: only-on-failure`, `video: retain-on-failure` and `trace: retain-on-failure` where the project left them off.
 - It reads results from the JSON reporter.
 - A case passes only if every scenario linked to it passed, in every Playwright project selected for its channel.
 
-**pytest** (`adapters/runner-pytest.ts` + `runners/pytest/qamaster_pytest.py`), CheckMaster's runner unchanged in behavior:
+**pytest** (`adapters/runner-pytest.mts` + `runners/pytest/qamaster_pytest.py`), CheckMaster's runner unchanged in behavior:
 - `uv run pytest` if the test root has `uv.lock`, else `python -m pytest`, with `-p qamaster_pytest` and the plugin's folder on `PYTHONPATH`.
 - Options: `--qamaster-list`, `--qamaster-select`, `--qamaster-report`, `--qamaster-evidence`.
 - Parametrized variants count. Exit codes other than 0, 1 and 5 become `BlockedError`.
 
-## Azure DevOps (`adapters/ado.ts`)
+## Azure DevOps (`adapters/ado.mts`)
 
 Auth: `QAMASTER_ADO_TOKEN` as Basic auth if set, else a Bearer token from `az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798`. API version 7.1. A 401, or ADO's 203 sign-in page, becomes a `BlockedError`.
 

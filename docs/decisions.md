@@ -68,7 +68,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - The engine talks to the outside only through five interfaces: `TestCaseStore`, `RequirementSource` (Q23), `Runner`, `RepoReader`, `Crawler`.
   - A repo picks implementations with `QAMASTER_STORE` (default `ado`), `QAMASTER_REQUIREMENTS` (default `ado`) and `QAMASTER_RUNNER` (default `playwright-bdd`).
   - Each provider reads only its own `QAMASTER_<NAME>_*` settings.
-  - `tests/fakes.ts` has a fake for every interface.
+  - `tests/fakes.mts` has a fake for every interface.
 - **Why:**
   - Jira, Cypress or a CI trigger can be added without touching the pipeline.
   - Autonomous-QE had no seams, which is one reason it had no unit tests.
