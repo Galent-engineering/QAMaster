@@ -9,7 +9,9 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { loadConfig } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
+import { dsm } from './dsm.mts';
 
 export const PASS = 0;
 export const FAIL = 1;
@@ -18,12 +20,12 @@ export const AWAITING = 3;
 
 const PLUGIN_ROOT = path.resolve(import.meta.dirname, '../..');
 
-/** command -> one-line description. None is built yet; each one blocks until its porting step lands. */
+/** command -> one-line description. Commands not in HANDLERS block until their porting step lands. */
 export const COMMANDS: Record<string, string> = {
   setup: 'Config, packages, browsers, launcher. Safe to re-run',
   pipeline: 'Onboarding pipeline: start | status | next | mark',
   doctor: 'Check settings, credentials, the test plan and the runner',
-  dsm: 'Design Structure Matrix: run | refresh | changes | impact <files…>',
+  dsm: 'Design Structure Matrix: build | render | run | refresh | changes | impact <files…>',
   requirements: 'Fetch requirements: --sprint NAME | --current-sprint | --from D --to D',
   testgen: 'Test generation: context | validate <run> | render <run>',
   review: 'Record the review of a run (only after the person says yes)',
@@ -43,6 +45,11 @@ export const COMMANDS: Record<string, string> = {
 };
 
 type Options = { json: boolean; repo: string };
+
+/** The built commands. Each gets the global options and its own arguments, and returns the exit code. */
+const HANDLERS: Record<string, (opts: Options, args: string[]) => number> = {
+  dsm: (opts, args) => dsm(loadConfig(opts.repo), args, opts.json),
+};
 
 export function pluginVersion(): string {
   try {
@@ -81,7 +88,7 @@ function parseGlobals(argv: string[]): [Options, string | undefined, string[]] {
   return [opts, argv[i], argv.slice(i + 1)];
 }
 
-function dispatch(opts: Options, command: string | undefined): number {
+function dispatch(opts: Options, command: string | undefined, args: string[]): number {
   if (!command || command === 'help' || command === '--help' || command === '-h') {
     if (opts.json) console.log(JSON.stringify({ version: pluginVersion(), commands: COMMANDS }, null, 2));
     else process.stdout.write(help());
@@ -91,6 +98,7 @@ function dispatch(opts: Options, command: string | undefined): number {
     console.log(opts.json ? JSON.stringify({ version: pluginVersion() }) : `qam ${pluginVersion()}`);
     return PASS;
   }
+  if (Object.hasOwn(HANDLERS, command)) return HANDLERS[command](opts, args);
   if (command in COMMANDS) throw new BlockedError(`qam ${command} isn't built yet.`);
   throw new BlockedError(`Unknown command "${command}". Run qam help for the list.`);
 }
@@ -98,9 +106,9 @@ function dispatch(opts: Options, command: string | undefined): number {
 export function main(argv: string[]): number {
   let opts: Options = { json: argv.includes('--json'), repo: '.' };
   try {
-    const [parsed, command] = parseGlobals(argv);
+    const [parsed, command, args] = parseGlobals(argv);
     opts = parsed;
-    return dispatch(opts, command);
+    return dispatch(opts, command, args);
   } catch (e) {
     if (!(e instanceof BlockedError)) throw e;
     if (opts.json) console.log(JSON.stringify({ result: 'blocked', reasons: [e.message] }));

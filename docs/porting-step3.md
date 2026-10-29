@@ -69,7 +69,7 @@ Not in step 3:
 
 | # | Feature | Learn | Build | Test | Move | Commit |
 |---|---|---|---|---|---|---|
-| 1 | DSM build and render | | | | | |
+| 1 | DSM build and render | ✓ 2026-10-29 | ✓ | ✓ 5 golden fixtures | ✓ | ✓ |
 | 2 | Repo scan | | | | | |
 | 3 | UI crawl and DSM refresh | | | | | |
 | 4 | Setup and pipeline | | | | | |
@@ -128,6 +128,18 @@ The concepts behind each feature are explained for people in [learning.md](learn
 - **Feature 3, crawl coverage:** the crawler never reached `/transaction/:id`, and lost the session on two screens.
 
 **Left out (not MVP):** nothing. Feature 1 is all MVP.
+
+**Built (2026-10-29):** `plugin/src/dsm/build.mts`, `render.mts`, `template.html` (AQE's, unchanged), `plugin/src/cli/dsm.mts`; crawl and scan types in `shared/models.mts`. `qam dsm build` and `qam dsm render` read `config/dsm-config.json` in the QA project (or `--config`) and write to its `output_dir`.
+
+**Tested:** `tests/dsm.test.mts`. The build gives AQE's `dsm.json` as parsed data on all five fixtures (demo, Real World App, shop, shop truncated, shop diffed against an earlier crawl), and render gives AQE's page around the same data. On a copy of autonomousQeDemo, `qam dsm build` matches AQE's own `dsm.json` apart from the time, the diff and `change` (AQE's refresh fills `change`; that is feature 3).
+
+**Intended differences from AQE:**
+- No `pyport`. Python's rules are written natively where they change the result: `compare`/`sortBy` (element-by-element tuples), `round4` (ties to even) and `||` for Python's `or` on strings. Strings sort by UTF-16 unit, not code point; they differ only for characters above U+FFFF against U+E000–U+FFFF.
+- `dsm.json` is written by `JSON.stringify` with indent 1: non-ASCII text as UTF-8 rather than `\uXXXX`, and `0` rather than `0.0`. The parsed data is the same.
+- Render escapes every `<` in the data as `\u003c`, not only `</`, so no screen text can open or close a script tag.
+- `qam dsm build` blocks when there is neither a crawl nor a scan; AQE built an empty matrix.
+- An element-level redirect edge uses the screen part of `from`; AQE raised a KeyError if `from` held an element key.
+- `build` takes `now`, so tests pin the clock instead of ignoring `generated_at`.
 
 ## Roadmap: what comes after the v1 MVP
 

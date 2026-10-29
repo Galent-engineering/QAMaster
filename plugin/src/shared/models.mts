@@ -199,7 +199,8 @@ export type Requirement = {
   updated?: string;
 };
 
-// Crawl (from Autonomous-QE). Pages and edges keep the crawler's own shape until step 3 ports it.
+// Crawl and code scan (from Autonomous-QE), in the shape the DSM build reads. Field names stay snake_case: they are
+// the JSON files in the QA project's dsm/ folder.
 
 export type CrawlOptions = {
   baseUrl: string;
@@ -210,14 +211,84 @@ export type CrawlOptions = {
   seeds?: string[];
 };
 
+/** A link, button, tab or menu item the crawler saw. `key` is "<route>::<kind>:<name>". */
+export type UiElement = {
+  key: string;
+  kind: string;
+  text?: string | null;
+  href?: string | null;
+  selector?: string | null;
+  visible?: boolean | null;
+  target?: string | null;
+};
+
+export type UiField = {
+  key: string;
+  label?: string | null;
+  name?: string | null;
+  id?: string | null;
+  type?: string | null;
+  required?: boolean | null;
+};
+
+export type UiForm = {
+  key: string;
+  id?: string | null;
+  name?: string | null;
+  method?: string | null;
+  target?: string | null; // the route it submits to
+  fields?: UiField[];
+  submits?: unknown[];
+};
+
+export type UiPage = {
+  route: string;
+  url: string;
+  title?: string | null;
+  status?: number | null;
+  error?: string | null;
+  depth?: number | null;
+  discovered_by?: string | null;
+  redirect_to?: string | null;
+  headings?: string[];
+  tables?: unknown[];
+  elements?: UiElement[];
+  forms?: UiForm[];
+  dialogs?: { key: string; title?: string | null }[];
+  [key: string]: unknown;
+};
+
+/** `type` is link, form, click, popup, redirect or opens. `via` is the element's key. */
+export type UiEdge = {
+  from: string;
+  to: string;
+  type: string;
+  label?: string | null;
+  via?: string | null;
+  element_level?: boolean;
+  [key: string]: unknown;
+};
+
 export type UiModel = {
   generated_at: string;
   base_url: string;
   mode: 'full' | 'incremental';
   truncated: boolean;
-  pages: { route: string; url: string; [key: string]: unknown }[];
-  edges: { from: string; to: string; [key: string]: unknown }[];
+  pending_routes?: string[];
+  pages: UiPage[];
+  edges: UiEdge[];
   api_calls: { method: string; path: string; [key: string]: unknown }[];
+  [key: string]: unknown;
+};
+
+/** The repo scan's output (code-model.json). Files are keyed "<repo>:<path>"; `owners` are the routes they serve. */
+export type CodeModel = {
+  generated_at?: string;
+  repos?: { name: string; [key: string]: unknown }[];
+  routes?: { route: string; repo: string; file: string; line: number; [key: string]: unknown }[];
+  files?: Record<string, { owners?: string[]; elements?: Record<string, unknown>; [key: string]: unknown }>;
+  // `from` is a route, or "(shared)" for layout code used on every screen.
+  edges?: { from: string; to: string; kind: string; repo: string; file: string; line: number; confidence?: string }[];
   [key: string]: unknown;
 };
 

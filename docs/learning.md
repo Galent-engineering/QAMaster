@@ -181,6 +181,21 @@ The result: **marks above the diagonal are forward navigation; marks below it ar
 
 Both were found only because we ran AQE on a realistic app before porting. That's the point of the Learn phase.
 
+### How we built it in QAMaster
+
+- **One pure function.** `build(ui, code, config, { previous, change, now })` in `plugin/src/dsm/build.mts` reads nothing and writes nothing. The command (`plugin/src/cli/dsm.mts`) does the file work: it finds `config/dsm-config.json`, reads the crawl, the scan and the last `dsm.json`, and writes the new one. Pure functions are what make golden tests easy: same input, same output.
+- **The clock is a parameter.** `generated_at` is the only thing that changes between two runs, so `now` is passed in. The tests give it AQE's time and then compare the whole file.
+- **No Python layer.** AQE carried a 600-line `pyport` so its output matched the old Python byte for byte. We kept only the three rules that change the result: how tuples sort, how `round` breaks ties, and Python's `or`. Everything else is plain TypeScript.
+- **Blocked, not crashed.** A missing settings file or an empty `dsm/` folder gives exit 2 and the next step to take ("Run qam dsm run first"), as the CLI contract says.
+- **A small safety upgrade.** The page embeds screen text from the app. Render writes every `<` as `\u003c`, so a page title like `</script>` can't break the DSM page.
+
+Try it on the fixture:
+
+```bash
+plugin/bin/qam --repo <copy of a QA project> dsm build
+plugin/bin/qam --repo <copy of a QA project> dsm render
+```
+
 ### Check yourself
 
 1. In a DSM, what does a mark in row `/cart`, column `/checkout` mean? What would a mark *below* the diagonal in the partitioned order suggest?
@@ -188,6 +203,7 @@ Both were found only because we ran AQE on a realistic app before porting. That'
 3. `/signup` is `code-only` in the Real World App's DSM. Is that a bug in the app? Why did it happen?
 4. If no file is linked to any screen, what breaks later in the loop?
 5. Why are golden tests the right tool for porting code that has no tests?
+6. Why does `build` take `now` as a parameter instead of reading the clock?
 
 <details><summary>Answers</summary>
 
@@ -196,6 +212,7 @@ Both were found only because we ran AQE on a realistic app before porting. That'
 3. No. The crawler signed in first, so it never saw the sign-up and sign-in pages. It's a gap in the crawl, not in the app.
 4. `path:` tags can't be derived, so the gate can't map a code change to test cases, and the plan's coverage gaps (DSM impact) are empty.
 5. The old code's output on a real input is the only reference we have. If the new code gives the same output, the port didn't change behaviour; if it differs, we look at why and write it down.
+6. So the function stays pure: the tests can pin the time and compare AQE's whole file, instead of deleting the field before comparing.
 </details>
 
 ---
@@ -206,3 +223,4 @@ Both were found only because we ran AQE on a realistic app before porting. That'
 |---|---|---|
 | 2026-10-29 | Setup | QAMaster's repo, CLI with exit codes, models, config, adapters and fakes (steps 1–2) |
 | 2026-10-29 | 1 DSM build | The build is identical in AQE 0.1.5 and 0.2.0. A real app exposes scan gaps (Q8) and a crawl safety bug (Q15) |
+| 2026-10-29 | 1 DSM build (built) | Ported as one pure function with the clock passed in; it matches AQE on all five fixtures without the Python layer |
