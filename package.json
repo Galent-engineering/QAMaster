@@ -1,0 +1,21 @@
+{
+  "name": "qemaster-dev",
+  "private": true,
+  "type": "module",
+  "description": "Development only. The plugin in plugin/ runs directly with Node 24 type stripping and has no runtime dependencies.",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test \"tests/**/*.test.mts\"",
+    "typecheck": "tsc -p tsconfig.json",
+    "lint": "biome check .",
+    "format": "biome format --write .",
+    "check": "npm run typecheck && npm run lint && npm test"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2"
+  }
+}
