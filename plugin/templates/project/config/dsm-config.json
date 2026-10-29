@@ -1,0 +1,108 @@
+{
+  "_comment": "Design Structure Matrix settings. The application URL and repositories are set by qam setup --url / --source (never pre-set). Sign-in details never go here: use the terminal prompt or the git-ignored .env.dsm.",
+  "project": "",
+  "output_dir": "dsm",
+  "repositories": [],
+  "application": {
+    "base_url": "",
+    "start_paths": ["/"],
+    "allowed_hosts": [],
+    "secrets_file": ".env.dsm",
+    "login": {
+      "_comment": "mode: auto = sign in on a detected sign-in page (DSM_APP_USERNAME / DSM_APP_PASSWORD from the environment or .env.dsm, else asked in a terminal); manual = sign in yourself in a visible browser; none = no sign-in. save_session keeps the session in dsm/.auth/state.json (owner-only, git-ignored); set it to false to sign in every time.",
+      "mode": "auto",
+      "url": "",
+      "username_selector": "",
+      "password_selector": "",
+      "submit_selector": "",
+      "username_env": "DSM_APP_USERNAME",
+      "password_env": "DSM_APP_PASSWORD",
+      "post_login_wait_ms": 3000,
+      "manual_timeout_s": 300,
+      "save_session": true
+    },
+    "max_pages": 300,
+    "max_depth": 8,
+    "page_timeout_ms": 30000,
+    "settle_ms": 1200,
+    "headless": true,
+    "ignore_https_errors": false,
+    "hash_routing": "auto",
+    "route_normalization": [
+      {
+        "pattern": "/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?=/|$)",
+        "replace": "/:id"
+      },
+      {
+        "pattern": "/\\d+(?=/|$)",
+        "replace": "/:id"
+      }
+    ],
+    "keep_query_params": [],
+    "exclude_url_patterns": [
+      "logout",
+      "signout",
+      "sign-out",
+      "logoff",
+      "delete",
+      "remove",
+      "\\.(pdf|xlsx?|docx?|zip|csv)(\\?|$)"
+    ],
+    "safety": {
+      "_comment": "After sign-in every write request to any host is blocked, so the crawl cannot change data. Add read-only POST endpoints (such as a search API) to allow_mutating_patterns only if a page needs them to render.",
+      "block_mutating_requests": true,
+      "allow_mutating_patterns": [],
+      "dismiss_dialogs": true
+    },
+    "explore_clicks": {
+      "enabled": true,
+      "max_per_page": 40,
+      "selectors": [
+        "nav a:not([href])",
+        "[role=menuitem]",
+        "[role=tab]",
+        "[routerlink]",
+        "[ng-click]",
+        "button:not([type=submit])",
+        "[role=button]",
+        "a[href='#']",
+        "a[href^='javascript']"
+      ],
+      "deny_text_patterns": [
+        "delete",
+        "remove",
+        "logout",
+        "log out",
+        "sign out",
+        "submit",
+        "save",
+        "approve",
+        "reject",
+        "send",
+        "pay",
+        "lock",
+        "run",
+        "process",
+        "import",
+        "upload",
+        "publish",
+        "release",
+        "terminate",
+        "deactivate",
+        "reset",
+        "clear all",
+        "confirm"
+      ]
+    }
+  },
+  "matrix": {
+    "default_level": "page",
+    "module_depth": 1,
+    "max_element_nodes": 4000
+  },
+  "change_detection": {
+    "recrawl": "impacted",
+    "full_recrawl_every_runs": 10,
+    "keep_history": 30
+  }
+}

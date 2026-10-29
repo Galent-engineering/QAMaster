@@ -42,8 +42,10 @@ Skills trigger on plain words: "write test cases for checkout", "which tests cov
 ## CLI
 
 ```bash
-qam setup [--check] [--browsers chromium|all|none]
-qam pipeline start|status|next|mark ...
+qam setup [--check] [--no-install] [--browsers chromium|all|none] [--app NAME] [--url URL]
+          [--source FOLDER|GIT-URL [--branch B] [--clone-to DIR | --use-clone DIR]] [--entry claude-code,…]
+qam integrations list [--all] | add <entry…> | remove <id> | verify
+qam pipeline start|status|next|mark|reset ...
 qam doctor                                    # settings, credentials, plan, runner
 qam dsm run|refresh|changes|impact <files…>
 qam requirements fetch --sprint NAME | --current-sprint | --from D --to D

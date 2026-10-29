@@ -12,6 +12,7 @@ import path from 'node:path';
 import { loadConfig } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import { dsm } from './dsm.mts';
+import { doctor, integrations, pipeline, setup } from './project.mts';
 
 export const PASS = 0;
 export const FAIL = 1;
@@ -22,9 +23,10 @@ const PLUGIN_ROOT = path.resolve(import.meta.dirname, '../..');
 
 /** command -> one-line description. Commands not in HANDLERS block until their porting step lands. */
 export const COMMANDS: Record<string, string> = {
-  setup: 'Config, packages, browsers, launcher. Safe to re-run',
+  setup: 'Config, app URL and code sources, packages, browsers, launcher, entry points. Safe to re-run',
   pipeline: 'Onboarding pipeline: start | status | next | mark',
   doctor: 'Check settings, credentials, the test plan and the runner',
+  integrations: 'Where QAMaster is plugged in: list [--all] | add <entry…> | remove <id> | verify',
   dsm: 'Design Structure Matrix: run | refresh | changes | impact <files…> | scan | build | render',
   requirements: 'Fetch requirements: --sprint NAME | --current-sprint | --from D --to D',
   testgen: 'Test generation: context | validate <run> | render <run>',
@@ -49,6 +51,10 @@ type Options = { json: boolean; repo: string };
 /** The built commands. Each gets the global options and its own arguments, and returns the exit code. */
 const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promise<number>> = {
   dsm: (opts, args) => dsm(loadConfig(opts.repo), args, opts.json),
+  setup: (opts, args) => setup(loadConfig(opts.repo), args, opts.json),
+  pipeline: (opts, args) => pipeline(loadConfig(opts.repo), args, opts.json),
+  doctor: (opts, args) => doctor(loadConfig(opts.repo), args, opts.json),
+  integrations: (opts, args) => integrations(loadConfig(opts.repo), args, opts.json),
 };
 
 export function pluginVersion(): string {

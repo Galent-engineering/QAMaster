@@ -391,6 +391,57 @@ Step 2 is also what the gate needs: **impact analysis**, "this change touches th
 
 ---
 
+## Lesson 4: setup and the onboarding pipeline (feature 4)
+
+### Setup: safe to run twice
+
+`qam setup` prepares a QA project. Its main property is that it's **safe to re-run**: it only adds what's missing, and never overwrites a config file someone edited. `qam setup --check` changes nothing; it only reports what's missing (exit 2, blocked).
+
+It does six things:
+
+| Step | Why |
+|---|---|
+| Prerequisites: Node 24+, npm, git | QAMaster runs TypeScript directly on Node 24; git reads the code |
+| The project link `.qamaster/` with a launcher `bin/qam` | The plugin's folder changes on every update. Terminals and CI call the launcher, which finds the current plugin |
+| Config templates | A team starts from working settings; later features add their own templates |
+| `.gitignore` | Secrets (`.env*`), the saved session (`dsm/.auth/`), locks and caches never reach git |
+| Playwright, installed in the QA project | The crawl needs a browser; the plugin itself has no dependencies |
+| Deny rules for Claude | Claude can't read `.env*` or the saved session, even if asked (Q16) |
+
+Setup also takes the app's URL and where its code lives (Q26). Code can be a local folder or a git URL to clone, and setup checks git, the branch and access **before** anything depends on them.
+
+### The pipeline: evidence, not checkboxes
+
+Onboarding an app has 15 stages: setup, the test case store, DSM, knowledge, requirements, test cases, review, publish, automation, gate, reports. A naive tracker stores "stage 4: done". AQE's better idea, which we keep: **each stage looks at the project to decide whether it's done.** `dsm/dsm.json` exists, so the DSM stage is done. It's older than the last commit, so it's *stale*.
+
+Why that matters:
+- **Interrupted work resumes correctly.** Nothing claims to be done that isn't.
+- **Stale work shows up by itself.** Test cases older than the DSM are flagged.
+- **Marks are only for what can't be seen:** "skipped, no API", "failed, see note", "in progress".
+
+`qam pipeline next` prints the first stage that isn't done, with the exact command to run. This is what the onboarding command (step 9) walks through.
+
+### Integrations: knowing where QAMaster is installed
+
+Every place QAMaster plugs into is recorded with an ID (Q27). In v1 that's just Claude Code; git hooks, PR checks and AI assistants follow. The record means an upgrade can update each one, an uninstall can remove exactly what was added, and `qam doctor` can check each one still works.
+
+### Check yourself
+
+1. Why must setup never overwrite an existing config file?
+2. A stage's evidence file exists but is older than the DSM. What should the pipeline say, and why not "done"?
+3. Why does setup check the git branch and access up front, instead of letting the scan fail later?
+4. What breaks if a terminal or CI calls the plugin's folder directly instead of the launcher?
+
+<details><summary>Answers</summary>
+
+1. People edit config files: URLs, safety lists, owners. Overwriting them silently loses decisions. "Only add what's missing" makes setup safe to re-run any time.
+2. "Stale": the work exists but was built from older inputs, so it may be wrong. "Done" would hide that.
+3. Feature 2 found a scan that silently read 0 files. Checking up front turns a confusing empty DSM later into a clear message now.
+4. The plugin folder changes on every update, so the stored path breaks. The launcher reads the current folder from `.qamaster/plugin.json`.
+</details>
+
+---
+
 ## Journal
 
 | Date | Feature | What we learned |
@@ -403,3 +454,4 @@ Step 2 is also what the gate needs: **impact analysis**, "this change touches th
 | 2026-10-29 | 2 Repo scan (fix 5) | Ownership by imports, not folders. Removing a wrong guess exposed a hidden gap (component names), so check what a fallback was covering before removing it |
 | 2026-10-29 | 3 Crawl and refresh | A safety net must fail closed and be restored in `finally`. Three stacked guard bugs, each reproduced on a hand-made app that counts writes |
 | 2026-10-29 | 3 Crawl and refresh (built) | Safety decisions as pure functions, a guard set by phase and restored in `finally`, and a real crawl test that proves zero writes, checked to fail when the guard is off |
+| 2026-10-29 | 4 Setup and pipeline | Setup only adds what's missing; pipeline stages decide "done" from evidence in the project, so they resume and show staleness |

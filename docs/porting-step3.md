@@ -72,7 +72,7 @@ Not in step 3:
 | 1 | DSM build and render | ✓ 2026-10-29 | ✓ | ✓ 5 golden fixtures | ✓ | ✓ |
 | 2 | Repo scan | ✓ 2026-10-29 | ✓ | ✓ 2 golden fixtures, fixes 1–5 | ✓ | ✓ fixes 1–4 |
 | 3 | UI crawl and DSM refresh | ✓ 2026-10-29 | ✓ | ✓ real crawl of app.mjs: 0 writes | ✓ skill, agent, `/qamaster:dsm` | ✓ build |
-| 4 | Setup and pipeline | | | | | |
+| 4 | Setup and pipeline | ✓ 2026-10-29 | ✓ | ✓ 9 tests, real setup on a demo copy | ✓ no skills (onboard and status are step 9) | ✓ `feature/4_setup-and-pipeline` |
 | 5 | Application knowledge | | | | | |
 | — | Step 4: ADO adapter | | | | | |
 | 6 | Requirements | | | | | |
@@ -416,6 +416,94 @@ Checks:
 - `claude plugin validate ./plugin` passes. The advice it gives is about a missing icon and licence file, which matter only for the plugin directory.
 - Under `claude --plugin-dir ./plugin`, the prompt "a map of every screen in our web app and which screens my last code change affects" picks `qamaster:Design-Structure-Matrix`.
 
+
+### 4. Setup and pipeline (Learn done 2026-10-29)
+
+**Versions:**
+- **`shared/project` is the same in both.**
+- **`setup` in 0.2.0 adds** security overrides (DOMPurify for Allure) and more `.gitignore` lines, including the vault, which Q16 drops.
+- **`pipeline` in 0.2.0 grows from 13 to 17 stages:** test import, API model, test analysis and existing framework. All four are v2 or v3 (Roadmap).
+- **Choice:** 0.2.0's structure, cut to QAMaster's 15 v1 stages (tech.md, "Onboarding pipeline"). Overrides come with feature 8, where Allure arrives.
+
+**What it does:**
+- **`aqe setup`.** It's safe to re-run: it only adds what's missing, and `--check` changes nothing. It does six things:
+  1. checks the prerequisites (Node 24+, npm, git);
+  2. writes a project link: `.autonomous-qe/plugin.json` points at the current plugin folder, and a launcher (`bin/aqe.mjs`, plus `aqe` and `aqe.cmd` shims) runs the CLI from terminals and CI after plugin updates;
+  3. copies config templates, never overwriting;
+  4. adds `.gitignore` lines;
+  5. merges `package.json`: npm workspaces for app folders, plus Playwright;
+  6. runs `npm install` and installs browsers.
+- **`aqe pipeline`** tracks each stage. Each stage has a `detect` that reads **evidence** in the project (files, freshness, review results) and a `how` that says exactly what to run next. Marks recorded in `state.json` add only what can't be detected (skipped, failed with a note, in progress). So the pipeline resumes correctly after an interruption and never claims undone work.
+  - `start` records the inputs (URL, repository, app name, channels), never credentials.
+  - `status` lists every stage; `next` gives the first stage not done.
+
+**Problems found:**
+1. **`setup --check` exits 1** ("fail") when something is missing. In QAMaster that's blocked (2).
+2. **Setup asks for nothing about the app.** The URL and repository are asked later by the DSM skill. Q26 moves them into setup, with validation.
+3. **The pipeline imports the refresh code** to show "repository changed", and swallows every error. QAMaster calls `changesSince` directly.
+4. **Its `start --repo` writes MCP config** (`repoSource`). Context sources are v2.
+5. **Stage evidence is scattered.** `test-cases` checks `review.json`, `gate` reads a recorded mark plus file times, and `execution` reads `results.json`. Each later feature owns its evidence; the pipeline just asks.
+
+**Port plan.** You asked me to continue through all the features, so the choices below are mine (marked ★) and wait for your review:
+- **`qam setup`** in `src/cli/setup.mts`, with the steps in `src/pipeline/setup.mts`:
+  - the prerequisites, including the git version (Q26);
+  - the project link `.qamaster/` with `plugin.json`, `bin/qam.mjs`, and `qam` / `qam.cmd` shims;
+  - config templates from `plugin/templates/project/config/`. Later features add their templates there and setup picks them up;
+  - `.gitignore`, and `package.json` with an exact Playwright version;
+  - `npm install` and browsers (`--browsers chromium|all|none`, `--no-install`);
+  - the Q16 deny rules in `.claude/settings.json`: Claude may not read `.env*` or `dsm/.auth/`;
+  - `--check` exits 2 when anything is missing.
+- **Q26: where the code comes from.**
+  - ★ `--url <app URL>` sets `application.base_url`.
+  - ★ `--source <folder|git URL>` adds a repository; `--branch`, `--name` go with it. A URL needs ★ `--clone-to <folder>` or ★ `--use-clone <folder>`. There's no default, because the person always chooses.
+  - Validation: git version, reachable (`git ls-remote`), branch exists, not shallow, and uncommitted changes warned. A clone's `origin` must match the URL.
+- **Q27 and Q29: integrations.**
+  - ★ `qam integrations list|add|remove|verify`, each kind an adapter.
+  - v1 has one kind, `claude-hooks`: it creates the app repo's `.qamaster/`, which turns on the push gate for that repo (Q14).
+  - Records go in `.qamaster/integrations.json` and `~/.qamaster/installs.json`.
+  - ★ `qam setup --entry claude-code,vscode,…` is the checklist. Entry points not available yet are listed as coming, not installed.
+- **`qam pipeline start|status|next|mark|reset`** for the 15 v1 stages. Each stage's evidence comes from the feature that owns it, and stages whose features aren't built yet read the files those features will write.
+- **`qam doctor`** (settings part): the config, each repository (Q26), each integration (Q27), and Playwright. The ADO part comes with step 4.
+
+**Left out (v2/v3):** test import, API model, test analysis, existing frameworks, the MCP config stage, `repoSource`, and the vault lines in `.gitignore`.
+
+**Built (2026-10-29), on branch `feature/4_setup-and-pipeline`:**
+
+| File | What it holds |
+|---|---|
+| `src/pipeline/setup.mts` | Setup's steps: prerequisites, project link and launcher, config templates, `.gitignore`, `package.json` with Playwright 1.64.1, Q16 deny rules, install |
+| `src/pipeline/sources.mts` | Q26: a local folder or a git URL (https, ssh, `git@`, `file://`), git 2.20+, `ls-remote` with the person's own credentials (`GIT_TERMINAL_PROMPT=0`), branch, not shallow, uncommitted warning, existing clone's `origin` |
+| `src/integrations/integrations.mts` | Q27/Q29: the `Integration` interface, the `claude-hooks` kind, the entry-point checklist, `.qamaster/integrations.json` and `~/.qamaster/installs.json` (`QAMASTER_HOME` overrides the folder) |
+| `src/pipeline/pipeline.mts` | The 15 stages, each with its evidence file named in the code |
+| `src/cli/project.mts` | `qam setup`, `qam pipeline`, `qam doctor`, `qam integrations` |
+| `plugin/templates/project/config/` | `qamaster.json`, and `dsm-config.json` from AQE's template without the vault |
+
+**Tested:**
+- `tests/project.test.mts` (9 tests):
+  - setup on an empty folder, run twice: nothing changes the second time, and an edited config is kept;
+  - `--check` blocks while Playwright is missing;
+  - the launcher runs from a terminal;
+  - URL and local git source, then `qam dsm scan` scans it;
+  - every source check blocks with its fix;
+  - a `file://` URL is cloned into the chosen folder, refused into a non-empty one, and matched as an existing clone; a shallow clone is refused;
+  - the entry-point checklist installs `claude-hooks` and lists VS Code (v1.1) and Copilot (v2) as coming, with list, verify and remove;
+  - pipeline evidence, `next`, marks, inputs and reset;
+  - `doctor`.
+- By hand: `qam setup` on a copy of autonomousQeDemo, with app, URL, source and entry points, then `qam pipeline next`.
+
+**Intended differences from AQE:**
+- `--check` exits 2, not 1.
+- Setup takes the app, URL and code sources (Q26) and the entry points (Q29).
+- Setup writes the Q16 deny rules.
+- Workspaces and security overrides come with feature 8.
+- The pipeline has the 15 v1 stages, not 17, and never writes MCP config.
+
+**Choices I made under your go-ahead (★), for review:**
+- the flag names `--url`, `--source`, `--clone-to`, `--use-clone`, `--entry`;
+- the command `qam integrations list|add|remove|verify`;
+- git 2.20 as the minimum;
+- `file://` accepted as a git URL;
+- removing `claude-hooks` deletes only its record, since `.qamaster/` also holds plans and verdicts. The hooks will check the record (step 9).
 
 ## Roadmap: what comes after the v1 MVP
 
