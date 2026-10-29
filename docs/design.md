@@ -1,6 +1,6 @@
-# QeMaster: Design
+# QAMaster: Design
 
-> Status: draft v0.1 (2026-10-28). How QeMaster looks and behaves for each user. For the why, see [product.md](product.md). For how it's built, see [tech.md](tech.md).
+> Status: draft v0.1 (2026-10-28). How QAMaster looks and behaves for each user. For the why, see [product.md](product.md). For how it's built, see [tech.md](tech.md).
 
 ## Principles
 
@@ -18,7 +18,7 @@
 | **Run** | One TestGen output for a module: draft test cases plus their validation and review |
 | **Draft case** | A generated test case, local ID `TC-LOGIN-001`, not yet in the tracker |
 | **Test case** | A case in ADO Test Plans, shown as `TC5101` |
-| **Ledger** | The record of which draft became which test case, with the tags QeMaster owns |
+| **Ledger** | The record of which draft became which test case, with the tags QAMaster owns |
 | **Change** | The diff being checked: `merge-base..HEAD` |
 | **Plan** | The proposed test cases for a change, each with reasons, plus what won't run and the coverage gaps |
 | **Gap** | A screen the change touched that no selected test case covers |
@@ -28,39 +28,39 @@
 
 | Command | Does | Writes |
 |---|---|---|
-| `/qemaster:onboard <url> <repo> [name] [--channels …]` | Runs the build stages in order and resumes after interruptions. Asks for anything missing, never for secrets | QA project |
-| `/qemaster:status` | Every stage with its evidence, and the next step | Nothing |
-| `/qemaster:setup` | Config, packages, browsers, launcher. Safe to re-run | QA project |
-| `/qemaster:dsm [run\|refresh\|changes\|…]` | Build or refresh the DSM and show what changed | `dsm/` |
-| `/qemaster:publish [run]` | Dry run of what goes to ADO, then waits for a yes, then applies | ADO, ledger |
-| `/qemaster:plan [base]` | Shows the plan for the current change, with Claude's group picks. Runs nothing | `.qemaster/plans/` |
-| `/qemaster:check [base]` | Plan, then waits for approval, then runs and reports the verdict | `.qemaster/` |
-| `/qemaster:report` | Builds every report there is data for | `reports/output/` |
+| `/qamaster:onboard <url> <repo> [name] [--channels …]` | Runs the build stages in order and resumes after interruptions. Asks for anything missing, never for secrets | QA project |
+| `/qamaster:status` | Every stage with its evidence, and the next step | Nothing |
+| `/qamaster:setup` | Config, packages, browsers, launcher. Safe to re-run | QA project |
+| `/qamaster:dsm [run\|refresh\|changes\|…]` | Build or refresh the DSM and show what changed | `dsm/` |
+| `/qamaster:publish [run]` | Dry run of what goes to ADO, then waits for a yes, then applies | ADO, ledger |
+| `/qamaster:plan [base]` | Shows the plan for the current change, with Claude's group picks. Runs nothing | `.qamaster/plans/` |
+| `/qamaster:check [base]` | Plan, then waits for approval, then runs and reports the verdict | `.qamaster/` |
+| `/qamaster:report` | Builds every report there is data for | `reports/output/` |
 
 Skills trigger on plain words: "write test cases for checkout", "which tests cover this change", "show test case 26", "retire TC34", "why did my push get blocked".
 
 ## CLI
 
 ```bash
-qem setup [--check] [--browsers chromium|all|none]
-qem pipeline start|status|next|mark ...
-qem doctor                                    # settings, credentials, plan, runner
-qem dsm run|refresh|changes|impact <files…>
-qem requirements fetch --sprint NAME | --current-sprint | --from D --to D
-qem testgen context|validate|render <run>
-qem review <run>                              # records gate 1 with the ADO account + git email; commands call it only after the person's yes
-qem publish <run> [--apply] [--retire]
-qem app create --app NAME --web-url URL [--api-url URL]
-qem check-scripts
-qem plan    [--base REF] [--tag GROUP[=WHY]]
-qem approve <plan-id> [--add TC…|GROUP] [--remove TC…|GROUP] [--by NAME]
-qem run     <plan-id>
-qem check   [--base REF] [--tag …] [--yes] [--all]
-qem feedback [<sha>]
-qem report all|manual|<type>
-qem req|tc list|show|create|update|retire ... [--apply]
-qem export --target kiro|codex|antigravity|cursor|gemini|copilot|agent-plugin|all
-qem mcp-serve [--project DIR]
+qam setup [--check] [--browsers chromium|all|none]
+qam pipeline start|status|next|mark ...
+qam doctor                                    # settings, credentials, plan, runner
+qam dsm run|refresh|changes|impact <files…>
+qam requirements fetch --sprint NAME | --current-sprint | --from D --to D
+qam testgen context|validate|render <run>
+qam review <run>                              # records gate 1 with the ADO account + git email; commands call it only after the person's yes
+qam publish <run> [--apply] [--retire]
+qam app create --app NAME --web-url URL [--api-url URL]
+qam check-scripts
+qam plan    [--base REF] [--tag GROUP[=WHY]]
+qam approve <plan-id> [--add TC…|GROUP] [--remove TC…|GROUP] [--by NAME]
+qam run     <plan-id>
+qam check   [--base REF] [--tag …] [--yes] [--all]
+qam feedback [<sha>]
+qam report all|manual|<type>
+qam req|tc list|show|create|update|retire ... [--apply]
+qam export --target kiro|codex|antigravity|cursor|gemini|copilot|agent-plugin|all
+qam mcp-serve [--project DIR]
 ```
 
 Global flags are `--repo <path>` and `--json`. Exit codes: `0` pass, `1` fail, `2` blocked, `3` awaiting approval. Without a TTY or `--yes`, `check` stops after the plan with exit code 3.
@@ -68,9 +68,9 @@ Global flags are `--repo <path>` and `--json`. Exit codes: `0` pass, `1` fail, `
 ## The publish preview
 
 ```
-QeMaster publish 20261028-1410-checkout → ADO plan "Shop Web" (dry run)
+QAMaster publish 20261028-1410-checkout → ADO plan "Shop Web" (dry run)
 Reviewed by j.doe (ADO) · j.doe@example.com (git) on 2026-10-28 14:22
-Warning: Checkout's owner is A. Rao (config/qemaster.json). Publishing anyway is allowed.
+Warning: Checkout's owner is A. Rao (config/qamaster.json). Publishing anyway is allowed.
 
 Create (3)
   TC-CHECKOUT-014  Apply a valid coupon at checkout        suite Checkout · tags checkout, checkout-coupon, path:src/coupon/**
@@ -98,7 +98,7 @@ Reply yes to apply, untick smoke suggestions you don't want, or name the cases t
 Based on CheckMaster's layout, with one new section, **Coverage gaps**.
 
 ```
-QeMaster plan 3f2a91c0 for feature/coupon-codes vs main (3 files changed)
+QAMaster plan 3f2a91c0 for feature/coupon-codes vs main (3 files changed)
 
 Selected (5 of 212 test cases)
   [x] TC4410  Checkout completes with card payment      covers src/checkout/**
@@ -124,7 +124,7 @@ Layout rules:
 - Groups Claude picked start checked, with a one-line reason tied to the diff.
 - Manual and BROKEN cases are never dropped silently. BROKEN fails the check.
 - Gaps don't change the verdict. They're shown so the person can start a design run.
-- With `QEMASTER_AI=off`, the plan has no Claude-picked groups, and its header line ends with "Group picking off for this repo".
+- With `QAMASTER_AI=off`, the plan has no Claude-picked groups, and its header line ends with "Group picking off for this repo".
 
 ## Verdict rules
 
@@ -136,7 +136,7 @@ Layout rules:
 | A selected case is BROKEN | `fail` |
 | No test case matched the change | `pass`, with a coverage-gap warning |
 | Missing settings, credentials, ADO unreachable, no plan | `blocked` |
-| The QA project (`QEMASTER_TEST_ROOT`) has uncommitted changes | `blocked` |
+| The QA project (`QAMASTER_TEST_ROOT`) has uncommitted changes | `blocked` |
 | HEAD or the QA project's commit moved since approval | plan void; approve again |
 | Plan not approved | pending, never green |
 
@@ -147,17 +147,17 @@ A test that fails and then passes on retry is **flaky**. It's listed but doesn't
 **App repo** `.env` (git-ignored). This is all a developer sets:
 
 ```bash
-QEMASTER_ADO_ORG=galent
-QEMASTER_ADO_PROJECT=Shop
-# QEMASTER_ADO_PLAN=Shop Web            # only if no plan is named like the repo folder
-# QEMASTER_TEST_ROOT=../shop-qa/Shop    # only if the tests live in a QA project
-# QEMASTER_RUNNER=pytest                # default playwright-bdd
-# QEMASTER_STORE=ado                    # the only test case store in v1 (Q23)
-# QEMASTER_AI=off                       # turn off every AI step for this repo (Q24, data-handling.md)
-# QEMASTER_ADO_TOKEN=…                  # or use az login
+QAMASTER_ADO_ORG=galent
+QAMASTER_ADO_PROJECT=Shop
+# QAMASTER_ADO_PLAN=Shop Web            # only if no plan is named like the repo folder
+# QAMASTER_TEST_ROOT=../shop-qa/Shop    # only if the tests live in a QA project
+# QAMASTER_RUNNER=pytest                # default playwright-bdd
+# QAMASTER_STORE=ado                    # the only test case store in v1 (Q23)
+# QAMASTER_AI=off                       # turn off every AI step for this repo (Q24, data-handling.md)
+# QAMASTER_ADO_TOKEN=…                  # or use az login
 ```
 
-**QA project** `config/qemaster.json`:
+**QA project** `config/qamaster.json`:
 
 ```json
 {
@@ -175,6 +175,6 @@ The DSM, TestGen and MCP config files keep Autonomous-QE's formats.
 
 ## Messages
 
-- Say what happened, why, and what to do next, in one or two lines. Example: "Couldn't reach Azure DevOps (401). Check that QEMASTER_ADO_TOKEN has Work Items and Test Management (Read), or run `az login`. Then run `qem doctor`."
+- Say what happened, why, and what to do next, in one or two lines. Example: "Couldn't reach Azure DevOps (401). Check that QAMASTER_ADO_TOKEN has Work Items and Test Management (Read), or run `az login`. Then run `qam doctor`."
 - Use IDs people can click: `TC5101` links to ADO, a gap's screen links to its DSM cell.
 - No emoji in CLI output. Reports and PR comments use ✅ ❌ ⚠️ for results only.

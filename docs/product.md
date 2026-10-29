@@ -1,10 +1,10 @@
-# QeMaster: Product
+# QAMaster: Product
 
 > Status: draft v0.1 (2026-10-28). Decisions are in [decisions.md](decisions.md); open questions are at the end of that file.
 
 ## One line
 
-QeMaster builds a team's test cases and automation from the application and its code, puts them in Azure DevOps Test Plans, and then checks every code change against them before it's pushed.
+QAMaster builds a team's test cases and automation from the application and its code, puts them in Azure DevOps Test Plans, and then checks every code change against them before it's pushed.
 
 ## Problem
 
@@ -24,15 +24,15 @@ QeMaster builds a team's test cases and automation from the application and its 
 
 ## Core loop
 
-1. **Build:** from the app URL and its read-only repo, QeMaster maps every screen, learns the app's flows, reads the sprint's requirements and writes test cases. Every step cites evidence. A person reviews them.
-2. **Publish:** the reviewed cases go into the Azure DevOps test plan. Selection tags and automation links are filled in from what QeMaster already knows.
-3. **Gate:** on every push, QeMaster reads the diff and picks the test cases it touches. A person approves the pick, the tests run, and the push goes through only on a pass.
+1. **Build:** from the app URL and its read-only repo, QAMaster maps every screen, learns the app's flows, reads the sprint's requirements and writes test cases. Every step cites evidence. A person reviews them.
+2. **Publish:** the reviewed cases go into the Azure DevOps test plan. Selection tags and automation links are filled in from what QAMaster already knows.
+3. **Gate:** on every push, QAMaster reads the diff and picks the test cases it touches. A person approves the pick, the tests run, and the push goes through only on a pass.
 4. **Feedback:** results feed the reports and defect drafts. Screens a change touched with no tests become a proposed test design run.
 
 ## Scope
 
 ### v1
-- One Claude Code plugin, `qemaster`, and the `qem` CLI behind it.
+- One Claude Code plugin, `qamaster`, and the `qam` CLI behind it.
 - Build stages from Autonomous-QE: DSM, AUT skills, requirements, TestGen with tolerance 0, playwright-bdd scripts for Web, Mobile Web, API, Android and iOS, the script gate.
 - Publish to Azure DevOps Test Plans, with derived tags and automation links.
 - The CheckMaster gate: plan, approve, run, verdict, push hook. Runners: playwright-bdd and pytest.
@@ -41,7 +41,7 @@ QeMaster builds a team's test cases and automation from the application and its 
 - Export to other AI tools and the MCP server, carried over from Autonomous-QE.
 
 ### v1.1
-- git pre-push hook (`qem install-hooks`), so pushes from any terminal are gated.
+- git pre-push hook (`qam install-hooks`), so pushes from any terminal are gated.
 - GitHub and Azure Pipelines PR checks, with one plan comment per PR and approval by comment.
 - In CI, run the QA project branch named like the app branch, else `main` (Q22).
 - Publishing gate results back to ADO as a Test Run.
@@ -75,4 +75,4 @@ QeMaster builds a team's test cases and automation from the application and its 
 - Secrets come only from environment variables, git-ignored `.env` files or `az login`. They never appear in chat, plugin files or reports.
 - The application repo is only read.
 - Tracker writes happen only on `publish --apply` or a confirmed `work-items` change.
-- Code, diffs and requirements reach Claude only inside the user's own Claude Code session. The CLI, hooks and CI make no AI calls. `QEMASTER_AI=off` turns every AI step off for a repo (Q24). [data-handling.md](data-handling.md) has the details.
+- Code, diffs and requirements reach Claude only inside the user's own Claude Code session. The CLI, hooks and CI make no AI calls. `QAMASTER_AI=off` turns every AI step off for a repo (Q24). [data-handling.md](data-handling.md) has the details.

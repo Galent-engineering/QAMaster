@@ -1,5 +1,5 @@
 {
-  "name": "qemaster-dev",
+  "name": "qamaster-dev",
   "private": true,
   "type": "module",
   "description": "Development only. The plugin in plugin/ runs directly with Node 24 type stripping and has no runtime dependencies.",

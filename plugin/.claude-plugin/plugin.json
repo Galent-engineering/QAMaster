@@ -1,5 +1,5 @@
 {
-  "name": "qemaster",
+  "name": "qamaster",
   "version": "0.1.0",
   "description": "Build test cases and automation from the application and its code, publish them to Azure DevOps Test Plans, and check every code change against them before it's pushed.",
   "author": {

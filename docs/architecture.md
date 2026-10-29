@@ -1,29 +1,29 @@
-# QeMaster: Architecture
+# QAMaster: Architecture
 
 > Status: draft v0.1 (2026-10-28). For what and why, see [product.md](product.md). For behavior, see [design.md](design.md). For the stack and internals, see [tech.md](tech.md). Settled choices are in [decisions.md](decisions.md) as Q1, Q2, ...
 
-QeMaster joins two existing Galent plugins into one loop:
+QAMaster joins two existing Galent plugins into one loop:
 
 - **Autonomous-QE** (TypeScript) builds test assets from an application URL and its repository: the Design Structure Matrix (DSM), application knowledge, requirements, test cases validated against evidence, Playwright BDD scripts and reports.
 - **CheckMaster** (Python) gates each code change: it picks test cases from Azure DevOps Test Plans by tag, a person approves the pick, it runs the tests and records a verdict that blocks `git push`.
 
-Neither does the other's job. Autonomous-QE's test cases never reach Azure DevOps, so nothing runs them against later changes. CheckMaster needs test cases that are already in Azure DevOps, with hand-set tags and automation links. QeMaster adds the bridge between them, **publish**, and closes the loop with **feedback**.
+Neither does the other's job. Autonomous-QE's test cases never reach Azure DevOps, so nothing runs them against later changes. CheckMaster needs test cases that are already in Azure DevOps, with hand-set tags and automation links. QAMaster adds the bridge between them, **publish**, and closes the loop with **feedback**.
 
 ## 1. Full architecture
 
 ```mermaid
 flowchart TB
     %% ---------- Surfaces ----------
-    subgraph SURF["Surfaces (thin: they call the qem CLI and show its output)"]
+    subgraph SURF["Surfaces (thin: they call the qam CLI and show its output)"]
         direction LR
         CC["Claude Code plugin<br/>commands · skills · agents · hooks"]
-        OT["Other AI tools<br/>Kiro · Codex · Cursor · Gemini · Copilot<br/>(qem export + MCP server)"]
-        CI["CI · v1.1<br/>GitHub Actions · Azure Pipelines<br/>(qem --json)"]
-        GH["git pre-push hook · v1.1<br/>(qem install-hooks)"]
+        OT["Other AI tools<br/>Kiro · Codex · Cursor · Gemini · Copilot<br/>(qam export + MCP server)"]
+        CI["CI · v1.1<br/>GitHub Actions · Azure Pipelines<br/>(qam --json)"]
+        GH["git pre-push hook · v1.1<br/>(qam install-hooks)"]
     end
 
-    CLI["qem CLI · the only entry point<br/>--json output · exit codes 0 pass · 1 fail · 2 blocked · 3 awaiting approval"]
-    MCPS["qem mcp-serve<br/>stdio MCP server: tools, skills, prompts"]
+    CLI["qam CLI · the only entry point<br/>--json output · exit codes 0 pass · 1 fail · 2 blocked · 3 awaiting approval"]
+    MCPS["qam mcp-serve<br/>stdio MCP server: tools, skills, prompts"]
 
     CC --> CLI
     OT --> MCPS --> CLI
@@ -78,7 +78,7 @@ flowchart TB
     CLI --> REP
 
     %% ---------- Adapters ----------
-    subgraph ADP["Adapters · interfaces picked by name (QEMASTER_STORE, QEMASTER_REQUIREMENTS, QEMASTER_RUNNER), fakes in tests"]
+    subgraph ADP["Adapters · interfaces picked by name (QAMASTER_STORE, QAMASTER_REQUIREMENTS, QAMASTER_RUNNER), fakes in tests"]
         direction LR
         TRK["TestCaseStore<br/>ado Test Plans · v1<br/>xlsx/csv file · Xray/Zephyr · later"]
         RQS["RequirementSource<br/>ado Boards · v1"]
@@ -120,7 +120,7 @@ flowchart TB
         S1["dsm/<br/>dsm.json · index.html · CHANGES.md"]
         S2["testgen/output/&lt;run&gt;/<br/>manifest · testcases · review"]
         S3["&lt;App&gt;/<br/>features · steps · pages · locators"]
-        S4[".qemaster/<br/>pipeline · ledger · plans · verdicts · evidence"]
+        S4[".qamaster/<br/>pipeline · ledger · plans · verdicts · evidence"]
         S5["reports/<br/>data · output"]
     end
 
@@ -129,9 +129,9 @@ flowchart TB
 
 How to read it:
 
-- **Everything goes through `qem`.** Commands, hooks, the MCP server and CI call the same CLI. The CLI is the only path into the engine, so Claude Code, CI and a terminal can't disagree about a verdict (Q3).
+- **Everything goes through `qam`.** Commands, hooks, the MCP server and CI call the same CLI. The CLI is the only path into the engine, so Claude Code, CI and a terminal can't disagree about a verdict (Q3).
 - **Two lineages, one engine.** The top half of the engine is Autonomous-QE's pipeline, the bottom half is CheckMaster's gate. Both were rewritten into one TypeScript engine with shared models (Q1).
-- **Publish is the bridge.** It turns a validated test run into Azure DevOps test cases that the gate can select. The tags and automation links come from facts QeMaster already has, so nobody types them by hand (Q8, Q9).
+- **Publish is the bridge.** It turns a validated test run into Azure DevOps test cases that the gate can select. The tags and automation links come from facts QAMaster already has, so nobody types them by hand (Q8, Q9).
 - **Every external system sits behind an adapter.** The engine never calls Azure DevOps, git, a browser or a test runner directly (Q4).
 - **The person decides at three gates:** test case review before publishing, the go-ahead before automating, and plan approval before each run (Q12).
 
@@ -148,26 +148,26 @@ flowchart LR
 
 | Step | Runs | Trigger | Output |
 |---|---|---|---|
-| 1 Build | Once per application, then module by module | `/qemaster:onboard` | `dsm/`, `.claude/skills/AUT_<App>*`, `testgen/output/`, `<App>/` |
-| 2 Publish | After each reviewed test run | `/qemaster:publish` | Test cases in the ADO plan, `.qemaster/ledger.json` |
-| 3 Gate | Every push (v1), every PR (v1.1) | `/qemaster:check`, push hook | `.qemaster/plans/`, `.qemaster/verdicts/<sha>.json`, evidence |
+| 1 Build | Once per application, then module by module | `/qamaster:onboard` | `dsm/`, `.claude/skills/AUT_<App>*`, `testgen/output/`, `<App>/` |
+| 2 Publish | After each reviewed test run | `/qamaster:publish` | Test cases in the ADO plan, `.qamaster/ledger.json` |
+| 3 Gate | Every push (v1), every PR (v1.1) | `/qamaster:check`, push hook | `.qamaster/plans/`, `.qamaster/verdicts/<sha>.json`, evidence |
 | 4 Feedback | After each verdict and each DSM refresh | Automatic, proposals only | Reports, defect drafts, gap list |
 
 ## 3. Where things run
 
-QeMaster deals with three folders. The gate runs where the code is pushed; the build runs in the QA project.
+QAMaster deals with three folders. The gate runs where the code is pushed; the build runs in the QA project.
 
 ```mermaid
 flowchart LR
     subgraph DEV["App repository (developers push here)"]
-        D1[".env<br/>QEMASTER_ADO_ORG · _PROJECT<br/>QEMASTER_TEST_ROOT (optional)"]
-        D2[".qemaster/<br/>plans · verdicts · evidence"]
+        D1[".env<br/>QAMASTER_ADO_ORG · _PROJECT<br/>QAMASTER_TEST_ROOT (optional)"]
+        D2[".qamaster/<br/>plans · verdicts · evidence"]
         D3["tests/ (pytest, optional)"]
     end
-    subgraph QA["QA project (QeMaster builds here)"]
+    subgraph QA["QA project (QAMaster builds here)"]
         Q1["config/ · dsm/ · testgen/"]
         Q2["&lt;App&gt;/ playwright-bdd suite"]
-        Q3["reports/ · .qemaster/ledger.json"]
+        Q3["reports/ · .qamaster/ledger.json"]
     end
     subgraph PLG["Plugin install (read-only, replaced on update)"]
         P1["skills · commands · agents · hooks"]
@@ -176,13 +176,13 @@ flowchart LR
     end
 
     QA -->|"reads only, never commits"| DEV
-    DEV -->|"QEMASTER_TEST_ROOT points at"| Q2
+    DEV -->|"QAMASTER_TEST_ROOT points at"| Q2
     PLG --> QA
     PLG --> DEV
 ```
 
-- **Tests live in the app repo** (CheckMaster's setup): leave `QEMASTER_TEST_ROOT` unset. The runner runs from the repo root.
-- **Tests live in the QA project** (Autonomous-QE's setup): set `QEMASTER_TEST_ROOT` to the `<App>/` folder. The gate reads the diff from the app repo and runs the suite from there (Q22).
+- **Tests live in the app repo** (CheckMaster's setup): leave `QAMASTER_TEST_ROOT` unset. The runner runs from the repo root.
+- **Tests live in the QA project** (Autonomous-QE's setup): set `QAMASTER_TEST_ROOT` to the `<App>/` folder. The gate reads the diff from the app repo and runs the suite from there (Q22).
 
 ## 4. The gate, step by step
 
@@ -191,31 +191,31 @@ sequenceDiagram
     autonumber
     actor Dev as Developer
     participant CC as Claude Code
-    participant Q as qem CLI
+    participant Q as qam CLI
     participant G as git (app repo)
     participant T as TestCaseStore (ADO)
     participant D as DSM
     participant R as Runner
 
-    Dev->>CC: /qemaster:check
-    CC->>Q: qem plan --base main --json
+    Dev->>CC: /qamaster:check
+    CC->>Q: qam plan --base main --json
     Q->>G: diff merge-base..HEAD
     Q->>T: test cases in plan (tags, automation link)
     Q->>D: screens impacted by changed files
     Q->>R: collected test IDs
     Q-->>CC: plan: path, smoke, groups, not run, gaps
     CC->>CC: read diff, pick groups with a reason
-    CC->>Q: qem plan --tag coupon="coupon rules changed"
+    CC->>Q: qam plan --tag coupon="coupon rules changed"
     CC-->>Dev: show the plan and end the turn
     Dev->>CC: approve (or add / remove)
-    CC->>Q: qem approve PLAN_ID --by NAME
+    CC->>Q: qam approve PLAN_ID --by NAME
     Q->>G: HEAD still equals planned sha?
-    CC->>Q: qem run PLAN_ID
+    CC->>Q: qam run PLAN_ID
     Q->>R: run selection, retry failures once
     R-->>Q: results + evidence
     Q-->>CC: verdict pass / fail / blocked
     Dev->>CC: git push
-    CC->>Q: PreToolUse hook reads .qemaster/verdicts/HEAD
+    CC->>Q: PreToolUse hook reads .qamaster/verdicts/HEAD
     Q-->>CC: allow (pass) or block (exit 2, with reason)
 ```
 
@@ -226,12 +226,12 @@ sequenceDiagram
     autonumber
     actor QA as QA engineer
     participant CC as Claude Code
-    participant Q as qem CLI
+    participant Q as qam CLI
     participant L as ledger.json
     participant T as TestCaseStore (ADO)
 
-    QA->>CC: /qemaster:publish RUN
-    CC->>Q: qem publish RUN --json (dry run)
+    QA->>CC: /qamaster:publish RUN
+    CC->>Q: qam publish RUN --json (dry run)
     Q->>Q: refuse unless validator passed and run was reviewed
     Q->>L: which local IDs already have an ADO ID?
     Q->>Q: derive tags: path from DSM files, group from module, smoke from P1
@@ -239,7 +239,7 @@ sequenceDiagram
     Q-->>CC: create 12 · update 3 · unchanged 40 · retire 0
     CC-->>QA: show the change list and end the turn
     QA->>CC: yes
-    CC->>Q: qem publish RUN --apply
+    CC->>Q: qam publish RUN --apply
     Q->>T: create or update work items, add to suite
     Q->>L: record local ID ↔ ADO ID, owned tags, content hash
     Q-->>CC: done, with links to each test case
@@ -268,7 +268,7 @@ Outside `src/`:
 
 | Path | Role |
 |---|---|
-| `plugin/runners/pytest/qemaster_pytest.py` | pytest plugin loaded with `-p` into the user's test environment. Standard library and pytest only. A port of CheckMaster's `pytest_plugin.py` |
+| `plugin/runners/pytest/qamaster_pytest.py` | pytest plugin loaded with `-p` into the user's test environment. Standard library and pytest only. A port of CheckMaster's `pytest_plugin.py` |
 | `plugin/hooks/` | Hook scripts: session context, push gate, test case review gate, script gate |
 | `plugin/framework/` | The playwright-bdd template for new `<App>/` folders |
 | `plugin/skills/`, `commands/`, `agents/` | Claude Code front ends, including about 45 domain, app-type and test-type design skills |

@@ -1,4 +1,4 @@
-# QeMaster: Decisions
+# QAMaster: Decisions
 
 One entry per decision that would be expensive to reverse. To change a decision, add a new entry that supersedes it. Don't edit the old one.
 
@@ -15,9 +15,9 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 
 ## Platform
 
-**Q1. One plugin with one TypeScript engine** (2026-10-28, accepted 2026-10-28, AQE; reverses CM-D8 for QeMaster)
+**Q1. One plugin with one TypeScript engine** (2026-10-28, accepted 2026-10-28, AQE; reverses CM-D8 for QAMaster)
 - **Decision:**
-  - QeMaster is one Claude Code plugin with one engine in TypeScript.
+  - QAMaster is one Claude Code plugin with one engine in TypeScript.
   - It runs directly on Node 24 with type stripping: no build step and no runtime dependencies.
   - CheckMaster's Python engine (selection, verdict, the ADO adapter, about 1,900 lines) is ported to TypeScript.
   - Its pytest plugin stays Python (Q9, Q20).
@@ -30,7 +30,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - CheckMaster's pydantic models, which become TypeScript types plus hand-written validation.
 - **Alternatives considered** (reviewed and A reconfirmed on 2026-10-28):
 
-  | | A. One TypeScript engine (chosen) | B. One Python engine | C. Two engines, thin QeMaster layer | D. Engines behind MCP servers |
+  | | A. One TypeScript engine (chosen) | B. One Python engine | C. Two engines, thin QAMaster layer | D. Engines behind MCP servers |
   |---|---|---|---|---|
   | Work to build | Medium: about 1,830 lines + 1,264 test lines from CheckMaster | Very large: about 9,500 lines from Autonomous-QE, and the generated framework changes | Small: publish command + playwright-bdd runner in CheckMaster | Medium: a CheckMaster MCP server, wiring |
   | Time to a working loop | Weeks | Months | Days to a week | About a week |
@@ -51,9 +51,9 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Why:** an install copies only the source folder. Users don't get tests, seed scripts or dev dependencies. Autonomous-QE shipped its whole tree.
 - **Gave up:** `--plugin-dir .` from the root. It's `--plugin-dir ./plugin`.
 
-**Q3. One CLI, `qem`, that every surface calls** (2026-10-28, accepted 2026-10-28, CM-D3 + CM-D17 + AQE)
+**Q3. One CLI, `qam`, that every surface calls** (2026-10-28, accepted 2026-10-28, CM-D3 + CM-D17 + AQE)
 - **Decision:**
-  - Commands, hooks, the MCP server, CI and terminals all call `qem`.
+  - Commands, hooks, the MCP server, CI and terminals all call `qam`.
   - It prints readable text by default and JSON with `--json`.
   - Exit codes: `0` pass, `1` fail, `2` blocked (settings, credentials, network), `3` awaiting approval.
   - Front ends contain no logic.
@@ -66,8 +66,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 **Q4. Every external system is an adapter picked by name, with a fake for tests** (2026-10-28, accepted 2026-10-28, CM-D17)
 - **Decision:**
   - The engine talks to the outside only through five interfaces: `TestCaseStore`, `RequirementSource` (Q23), `Runner`, `RepoReader`, `Crawler`.
-  - A repo picks implementations with `QEMASTER_STORE` (default `ado`), `QEMASTER_REQUIREMENTS` (default `ado`) and `QEMASTER_RUNNER` (default `playwright-bdd`).
-  - Each provider reads only its own `QEMASTER_<NAME>_*` settings.
+  - A repo picks implementations with `QAMASTER_STORE` (default `ado`), `QAMASTER_REQUIREMENTS` (default `ado`) and `QAMASTER_RUNNER` (default `playwright-bdd`).
+  - Each provider reads only its own `QAMASTER_<NAME>_*` settings.
   - `tests/fakes.ts` has a fake for every interface.
 - **Why:**
   - Jira, Cypress or a CI trigger can be added without touching the pipeline.
@@ -93,8 +93,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - Generated test cases in `testgen/output/` are **drafts**.
   - After publishing, the ADO test case is the master copy: title, steps, tags, *Automated Test Name*, suite membership. The gate reads only ADO.
   - More generally, the master copy is whatever the configured `TestCaseStore` holds. In v1 that's always ADO Test Plans (Q23).
-  - The test plan is the one named like the app repo folder (ignoring case, spaces and punctuation), else `QEMASTER_ADO_PLAN`.
-  - The app repo holds no QeMaster IDs or config, apart from a git-ignored `.env`.
+  - The test plan is the one named like the app repo folder (ignoring case, spaces and punctuation), else `QAMASTER_ADO_PLAN`.
+  - The app repo holds no QAMaster IDs or config, apart from a git-ignored `.env`.
 - **Why:**
   - One place for QA to maintain test cases. They already work in Test Plans.
   - It's what CheckMaster's gate needs, and Autonomous-QE's local files had no path into it.
@@ -104,8 +104,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 
 **Q7. Publishing is a dry run until `--apply`, idempotent, and never deletes** (2026-10-28, accepted 2026-10-28, New + CM-D17)
 - **Decision:**
-  - `qem publish <run>` prints what it would create, update, leave alone or retire. It writes only with `--apply`, after the person's yes in chat.
-  - `.qemaster/ledger.json` in the QA project maps each local ID (`TC-LOGIN-001`) to its ADO ID, with a content hash and the tags QeMaster owns. Re-publishing the same run changes nothing.
+  - `qam publish <run>` prints what it would create, update, leave alone or retire. It writes only with `--apply`, after the person's yes in chat.
+  - `.qamaster/ledger.json` in the QA project maps each local ID (`TC-LOGIN-001`) to its ADO ID, with a content hash and the tags QAMaster owns. Re-publishing the same run changes nothing.
   - A test case that is no longer generated is **retired** (State Closed, removed from every suite), never deleted, because ADO can't restore a test case deleted through its API.
   - Publishing refuses a run that hasn't passed the validator and the review gate (Q10, Q12).
 - **Why:**
@@ -114,15 +114,15 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Gave up:** speed. Each publish is a two-step conversation.
 
 **Q8. Selection tags are derived from facts, not typed** (2026-10-28, accepted 2026-10-28, New)
-- **Decision:** when publishing, QeMaster sets three kinds of tags on each test case:
+- **Decision:** when publishing, QAMaster sets three kinds of tags on each test case:
   - `path:<glob>`: one per source file or folder behind the screens the case visits. They come from the DSM's evidence (`repo:file:line`) and are collapsed to the nearest folder with a configurable depth.
   - **Group**: the case's module and sub-module (e.g. `checkout`, `checkout-coupon`).
   - `smoke`: **suggested, not set** (settled 2026-10-28, open question 3).
-    - Publish suggests it for P1 cases of category Positive or E2E, capped by `config/qemaster.json → smoke.max` (default 20).
+    - Publish suggests it for P1 cases of category Positive or E2E, capped by `config/qamaster.json → smoke.max` (default 20).
     - The suggestions appear in the publish preview, where QA confirms them or unticks any. Only confirmed ones are written.
     - A smoke tag QA removed, in the preview or later in ADO, is recorded in the ledger and never suggested again for that case.
   
-  QeMaster only adds or removes the tags listed as its own in the ledger. Tags people add in ADO are never touched.
+  QAMaster only adds or removes the tags listed as its own in the ledger. Tags people add in ADO are never touched.
 - **Why:**
   - Hand-tagging was CheckMaster's biggest setup cost, and its success target (90% recall at 30% of the suite or less) depends on good `path:` tags.
   - The DSM already links screens to source files, so the facts exist.
@@ -147,7 +147,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 **Q10. Test design has hallucination tolerance 0** (2026-10-28, accepted 2026-10-28, AQE)
 - **Decision:**
   - Every screen, element, step and rule in a test case cites evidence: the DSM, the AUT skills, code it read, a fetched requirement, or a domain skill section.
-  - `qem testgen validate` must report 0 findings and 0 coverage gaps before a run can be rendered, reviewed or published.
+  - `qam testgen validate` must report 0 findings and 0 coverage gaps before a run can be rendered, reviewed or published.
   - A gap that truly can't be tested goes in `coverage_exclusions` with a reason a person can check.
 - **Why:** test cases go into the tracker the team trusts (Q6). An invented step there costs more than in a local draft.
 - **Gave up:**
@@ -158,7 +158,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Decision:** the gate's plan has four sources of reasons, in this order:
   1. `path:` matches: changed files against the case's globs.
   2. `smoke`: always in.
-  3. Groups Claude picks from the diff, one-line reason each. They start checked, and the person approves. Skipped when `QEMASTER_AI=off` (Q24).
+  3. Groups Claude picks from the diff, one-line reason each. They start checked, and the person approves. Skipped when `QAMASTER_AI=off` (Q24).
   4. **DSM impact**: screens whose source files changed. Impacted screens with no selected case are listed as **Coverage gaps**. They never add tests silently.
   
   Run from the CLI alone (CI, the hook), the plan uses only 1, 2 and 4, so it's predictable.
@@ -171,8 +171,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Decision:**
   1. **Review** test cases before publishing. Enforced by the Stop hook and by `publish` refusing unreviewed runs.
      - **Who** (settled 2026-10-28, open question 6): in v1, any QA engineer can approve.
-     - QeMaster records a checked identity, never a typed name: the ADO account running the publish (PAT owner or `az login` user) plus `git config user.email`. It goes on the run, in the ledger, and in each test case's ADO history.
-     - If `config/qemaster.json → owners` names an owner for a module, the publish preview **warns** when someone else approves. It doesn't block.
+     - QAMaster records a checked identity, never a typed name: the ADO account running the publish (PAT owner or `az login` user) plus `git config user.email`. It goes on the run, in the ledger, and in each test case's ADO history.
+     - If `config/qamaster.json → owners` names an owner for a module, the publish preview **warns** when someone else approves. It doesn't block.
      - Two reviewers and an owner-only rule were rejected as too slow for v1. Turning the owner warning into a block later needs no redesign.
   2. **Go-ahead** before generating automation for a module.
   3. **Plan approval** before each gate run. Bound to the HEAD sha, and to the QA project's commit when tests live there (Q22), so a new commit in either voids it. In CI, only users with write access can approve.
@@ -194,7 +194,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   | Not approved yet | pending, never green |
 
   - Only failures are retried, once. Failed then passed is **flaky**: listed, but it doesn't fail the verdict.
-  - Evidence (screenshot, video, trace) is kept per attempt in `.qemaster/evidence/<sha>/attempt-<n>/`. Settings the project already passes to Playwright are kept.
+  - Evidence (screenshot, video, trace) is kept per attempt in `.qamaster/evidence/<sha>/attempt-<n>/`. Settings the project already passes to Playwright are kept.
 - **Why:** these rules are tested, and they never go green when a test didn't run.
 - **Gave up:** nothing new.
 
@@ -203,12 +203,12 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 **Q14. Hooks are fast and quiet; slow checks run on request** (2026-10-28, accepted 2026-10-28, CM plugin rules; narrows AQE)
 - **Decision:**
   - `SessionStart` prints context and stale-stage warnings.
-  - `PreToolUse` on Bash blocks `git push` without a passing verdict for HEAD. It only applies to repos with a `.qemaster/` folder.
+  - `PreToolUse` on Bash blocks `git push` without a passing verdict for HEAD. It only applies to repos with a `.qamaster/` folder.
   - The `Stop` gates check only fast facts: is there an unreviewed run, does the last script gate result match the current files. Each has a timeout of 15 seconds or less.
   - The full script quality gate and test runs happen in explicit steps.
   - Hooks exit 0 to allow and 2 to block, with the reason on stderr.
 - **Why:** Autonomous-QE's Stop hooks could run for up to seven minutes at the end of every turn, and its PostToolUse hooks ran on every Bash call. That slows every session, even ones unrelated to QA.
-- **Gave up:** an automatic full gate after every edit. A turn can end with scripts that haven't been re-checked. `/qemaster:status` and the push gate catch that.
+- **Gave up:** an automatic full gate after every edit. A turn can end with scripts that haven't been re-checked. `/qamaster:status` and the push gate catch that.
 
 **Q15. Read-only toward repos and trackers, except where a decision says otherwise** (2026-10-28, accepted 2026-10-28, AQE + CM)
 - **Decision:**
@@ -221,11 +221,11 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 
 **Q16. Secrets never appear in chat or plugin files** (2026-10-28, accepted 2026-10-28, AQE + CM-D11)
 - **Decision:**
-  - ADO auth uses `QEMASTER_ADO_TOKEN` (a PAT) if set, else a token from `az login`.
+  - ADO auth uses `QAMASTER_ADO_TOKEN` (a PAT) if set, else a token from `az login`.
   - Application logins for the crawl are typed in the terminal prompt, or kept in git-ignored `.env.dsm`.
   - Context-source tokens go in `.env.mcp`.
-  - Nothing is logged, saved in `.qemaster/` or put in a report.
-  - `qem setup` adds deny rules for `.env*` files to the project's `.claude/settings.json`, so Claude can't read secret files even when asked ([data-handling.md](data-handling.md)).
+  - Nothing is logged, saved in `.qamaster/` or put in a report.
+  - `qam setup` adds deny rules for `.env*` files to the project's `.claude/settings.json`, so Claude can't read secret files even when asked ([data-handling.md](data-handling.md)).
 - **Why:** both projects agreed.
 - **Gave up:** nothing.
 
@@ -240,7 +240,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 
 **Q18. Other AI tools get skills, instructions and the MCP server, not hooks** (2026-10-28, accepted 2026-10-28, AQE)
 - **Decision:**
-  - `qem export --target kiro|codex|antigravity|cursor|gemini|copilot|agent-plugin` writes skills and instructions, and registers `qem mcp-serve`.
+  - `qam export --target kiro|codex|antigravity|cursor|gemini|copilot|agent-plugin` writes skills and instructions, and registers `qam mcp-serve`.
   - Hooks aren't ported. The instructions tell those agents to run the validators.
   - The push gate reaches every tool and terminal through the git pre-push hook in v1.1.
 - **Why:** Autonomous-QE's reach, kept. CheckMaster was Claude Code only.
@@ -282,8 +282,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 
 **Q22. The gate runs in the app repo; the tests can live elsewhere** (2026-10-28, accepted 2026-10-28, New)
 - **Decision:**
-  - The gate always reads the diff from the repo being pushed and keeps its plans and verdicts in that repo's `.qemaster/`.
-  - The runner runs from `QEMASTER_TEST_ROOT` if set: an absolute path, or relative to the repo, usually the QA project's `<App>/` folder. Otherwise it runs from the repo root.
+  - The gate always reads the diff from the repo being pushed and keeps its plans and verdicts in that repo's `.qamaster/`.
+  - The runner runs from `QAMASTER_TEST_ROOT` if set: an absolute path, or relative to the repo, usually the QA project's `<App>/` folder. Otherwise it runs from the repo root.
   - **Which version of the QA project runs** (settled 2026-10-28, open question 4):
     - **v1:** whatever is checked out, with two rules:
       1. Uncommitted changes in the QA project block the plan and the run.
@@ -301,14 +301,14 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 
 **Q24. AI use is on by default, with one switch that turns it all off** (2026-10-28, accepted 2026-10-28, New; resolves open question 5, amends Q11)
 - **Decision:**
-  - QeMaster's AI steps are on unless a repo sets `QEMASTER_AI=off`. The AI steps are:
+  - QAMaster's AI steps are on unless a repo sets `QAMASTER_AI=off`. The AI steps are:
     - Claude picking groups from the diff;
     - Claude reading code and requirements for application knowledge, test design and locator sync;
     - Claude triaging failures.
-  - The setting is read from the app repo's `.env` and from the QA project's `config/qemaster.json`. If either says off, it's off.
+  - The setting is read from the app repo's `.env` and from the QA project's `config/qamaster.json`. If either says off, it's off.
   - **When it's off:**
     - Plans use only `path:`, `smoke` and DSM impact, and say "Group picking off for this repo".
-    - The context commands that feed code to Claude (`qem testgen context`, `qem aut-context`, the locator-sync context) refuse with a message naming the setting. So do the skills that use them.
+    - The context commands that feed code to Claude (`qam testgen context`, `qam aut-context`, the locator-sync context) refuse with a message naming the setting. So do the skills that use them.
     - What doesn't need AI keeps working: the DSM crawl and scan, publishing an already-reviewed run, the gate's run and verdict, and reports.
   - [data-handling.md](data-handling.md) lists exactly what goes to Claude, when, and what never does.
 - **Why:**
@@ -316,8 +316,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - Customers who forbid AI on their code need one clear switch that covers every step, not just group picking. Otherwise they'd discover during test design that their code went to Claude.
   - Galent's contractual position isn't known yet. The switch lets v1 ship either way.
 - **Gave up:**
-  - With the switch off, QeMaster can't design tests or build application knowledge for that repo. Only the deterministic parts are left.
-  - The switch governs QeMaster's own steps. It can't stop a person from asking Claude to read files in the same session. Teams that must keep code out of Claude entirely should run `qem` from a terminal, not from Claude Code.
+  - With the switch off, QAMaster can't design tests or build application knowledge for that repo. Only the deterministic parts are left.
+  - The switch governs QAMaster's own steps. It can't stop a person from asking Claude to read files in the same session. Teams that must keep code out of Claude entirely should run `qam` from a terminal, not from Claude Code.
   - A team that forbids AI has to remember to set it.
 
 **Q23. The test case store is a replaceable adapter; v1 ships ADO Test Plans only** (2026-10-28, accepted 2026-10-28, New; resolves open question 2, amends Q4 and Q6)
@@ -325,7 +325,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - The old `Tracker` interface splits in two:
     - **`TestCaseStore`**: list, create, update and retire test cases, read their tags and automation links, manage suites.
     - **`RequirementSource`**: requirements for a sprint or a date range.
-  - Each is picked by name: `QEMASTER_STORE` and `QEMASTER_REQUIREMENTS`.
+  - Each is picked by name: `QAMASTER_STORE` and `QAMASTER_REQUIREMENTS`.
   - **v1:** `ado` for both. When ADO isn't configured, the gate and publish stop with `BlockedError`, naming the `.env` lines to add.
   - **After v1, in this order:**
     1. **`file`**: a spreadsheet in the project (`testcases.xlsx` or `testcases.csv`), used when no tracker is configured.
@@ -344,7 +344,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 
 ## Open questions
 
-1. ~~**Accept Q1?**~~ **Resolved 2026-10-28:** accepted. QeMaster has a single TypeScript engine, and CheckMaster's Python engine is ported. The two-engine option was rejected.
+1. ~~**Accept Q1?**~~ **Resolved 2026-10-28:** accepted. QAMaster has a single TypeScript engine, and CheckMaster's Python engine is ported. The two-engine option was rejected.
 2. ~~**Jira test cases:** Xray, Zephyr Scale, or not supported?~~ **Resolved 2026-10-28** by Q23: the test case store is a replaceable adapter, and v1 uses ADO Test Plans only. Which Jira add-on comes first is decided when a customer needs it.
 3. ~~**Smoke rule:** is "P1 and Positive or E2E, at most 20" right, or does QA pick smoke by hand?~~ **Resolved 2026-10-28:** the rule only suggests smoke. QA confirms each suggestion in the publish preview, and a removed smoke tag is never re-added (Q8). Rejected: the rule with no review, hand-picking only, and one smoke case per DSM journey.
 4. ~~**QA project versioning:** when tests live in a QA project, should the gate require it to be at a tagged or pinned commit?~~ **Resolved 2026-10-28** (Q22):
@@ -352,7 +352,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
    - v1.1 uses the QA branch matching the app branch, else `main`.
    - Pinned commits and tagged releases were rejected.
 5. ~~**Data policy:** is sending the diff to Claude for group picking allowed for every customer?~~ **Resolved 2026-10-28** by Q24:
-   - AI steps are on by default, and `QEMASTER_AI=off` turns all of them off.
+   - AI steps are on by default, and `QAMASTER_AI=off` turns all of them off.
    - Data flows are documented in [data-handling.md](data-handling.md).
    - Still for Galent legal: whether customer contracts allow AI on code. The design works either way.
 6. ~~**Who reviews in gate 1:** any QA engineer, or a named owner per module?~~ **Resolved 2026-10-28** (Q12):

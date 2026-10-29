@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 /**
- * qem: the QeMaster command line. Commands, hooks, the MCP server, CI and terminals all call it (Q3).
+ * qam: the QAMaster command line. Commands, hooks, the MCP server, CI and terminals all call it (Q3).
  *
- *     qem [--repo PATH] [--json] <command> [args...]        qem help        qem version
+ *     qam [--repo PATH] [--json] <command> [args...]        qam help        qam version
  *
  * Exit codes: 0 pass, 1 fail, 2 blocked (settings, credentials, network, usage), 3 awaiting approval.
  * Run it as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`: hosted plugins may not put plugin/bin on the PATH.
@@ -39,7 +39,7 @@ export const COMMANDS: Record<string, string> = {
   req: 'Requirements in the tracker: list | show | create | update | retire',
   tc: 'Test cases in the tracker: list | show | create | update | retire',
   export: 'Export skills and commands to other AI tools',
-  'mcp-serve': 'QeMaster MCP server (stdio) for other AI tools',
+  'mcp-serve': 'QAMaster MCP server (stdio) for other AI tools',
 };
 
 type Options = { json: boolean; repo: string };
@@ -55,7 +55,7 @@ export function pluginVersion(): string {
 function help(): string {
   const w = Math.max(...Object.keys(COMMANDS).map((c) => c.length));
   return (
-    `qem ${pluginVersion()}: QeMaster command line\n\nusage: qem [--repo PATH] [--json] <command> [args...]\n\n` +
+    `qam ${pluginVersion()}: QAMaster command line\n\nusage: qam [--repo PATH] [--json] <command> [args...]\n\n` +
     Object.entries(COMMANDS)
       .map(([c, d]) => `  ${c.padEnd(w)}  ${d}`)
       .join('\n') +
@@ -73,7 +73,7 @@ function parseGlobals(argv: string[]): [Options, string | undefined, string[]] {
     if (a === '--json') opts.json = true;
     else if (a === '--repo') {
       const value = argv[++i];
-      if (!value) throw new BlockedError('--repo needs a path: qem --repo <path> <command>');
+      if (!value) throw new BlockedError('--repo needs a path: qam --repo <path> <command>');
       opts.repo = value;
     } else if (a.startsWith('--repo=')) opts.repo = a.slice('--repo='.length);
     else break;
@@ -88,11 +88,11 @@ function dispatch(opts: Options, command: string | undefined): number {
     return command ? PASS : BLOCKED;
   }
   if (command === 'version' || command === '--version') {
-    console.log(opts.json ? JSON.stringify({ version: pluginVersion() }) : `qem ${pluginVersion()}`);
+    console.log(opts.json ? JSON.stringify({ version: pluginVersion() }) : `qam ${pluginVersion()}`);
     return PASS;
   }
-  if (command in COMMANDS) throw new BlockedError(`qem ${command} isn't built yet.`);
-  throw new BlockedError(`Unknown command "${command}". Run qem help for the list.`);
+  if (command in COMMANDS) throw new BlockedError(`qam ${command} isn't built yet.`);
+  throw new BlockedError(`Unknown command "${command}". Run qam help for the list.`);
 }
 
 export function main(argv: string[]): number {

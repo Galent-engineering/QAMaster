@@ -1,6 +1,6 @@
-# QeMaster Plugin
+# QAMaster Plugin
 
-QeMaster builds a team's test cases and automation from the application and its code (from Autonomous-QE), publishes them to Azure DevOps Test Plans, and checks every code change against them before it's pushed (from CheckMaster).
+QAMaster builds a team's test cases and automation from the application and its code (from Autonomous-QE), publishes them to Azure DevOps Test Plans, and checks every code change against them before it's pushed (from CheckMaster).
 
 Read before working on a feature:
 - [docs/product.md](docs/product.md): problem, users, scope, success criteria
@@ -8,7 +8,7 @@ Read before working on a feature:
 - [docs/tech.md](docs/tech.md): stack, layout, models, adapters, pipeline, ADO API, hooks, testing, **porting plan**
 - [docs/architecture.md](docs/architecture.md): diagrams and the module map
 - [docs/decisions.md](docs/decisions.md): settled decisions. Don't reverse one silently; propose a new entry.
-- [docs/data-handling.md](docs/data-handling.md): what goes to Claude, and `QEMASTER_AI=off`
+- [docs/data-handling.md](docs/data-handling.md): what goes to Claude, and `QAMASTER_AI=off`
 
 Sources being ported, next to this repo: `../CheckMasterPlugin` (Python; port its tests before its code), `../autonomous-qe-0.2.0` (TypeScript, `tools/`), demos in `../CheckMasterDemo` and `../autonomousQeDemo`.
 
@@ -17,9 +17,9 @@ Layout (Q2). `plugin/` is everything an install copies. The repo root is the mar
 ```
 plugin/
   .claude-plugin/plugin.json
-  bin/qem, qem.cmd       # wrappers: node ../src/cli/main.mts
+  bin/qam, qam.cmd       # wrappers: node ../src/cli/main.mts
   src/                   # the engine and CLI (TypeScript, run directly by Node 24, no build)
-    cli/main.mts         # qem: global flags, dispatch, exit codes
+    cli/main.mts         # qam: global flags, dispatch, exit codes
     shared/              # models, errors, schema guards
     adapters/            # TestCaseStore, RequirementSource, Runner, RepoReader, Crawler behind interfaces in base.mts
   commands/ skills/ agents/ hooks/ runners/ framework/ templates/ reports/
@@ -29,7 +29,7 @@ tests/                   # node:test; fakes.mts has a fake for every adapter
 scripts/                 # dev tooling: seed ADO, live connection check
 ```
 
-Front ends stay thin: commands, hooks and the MCP server call the `qem` CLI and show its output. Logic lives in `plugin/src/`. Every external system goes behind an adapter interface, and tests use fakes.
+Front ends stay thin: commands, hooks and the MCP server call the `qam` CLI and show its output. Logic lives in `plugin/src/`. Every external system goes behind an adapter interface, and tests use fakes.
 
 **Tradeoff:** these rules favor care over speed. For trivial tasks, use judgment.
 
@@ -93,7 +93,7 @@ For multi-step work, state a short plan first:
 - **Validate data files with hand-written type guards** in `shared/schema.mts`, one per model. No zod or similar.
 - **Errors the user can fix throw `BlockedError`** (`shared/errors.mts`) with a message that says what to do next. The CLI turns it into exit code 2.
 - **Exit codes are a contract:** `0` pass, `1` fail, `2` blocked, `3` awaiting approval. `--json` prints JSON on stdout.
-- **Hooks and `runners/pytest/qemaster_pytest.py` are standard library only** (plus pytest for the shim). Hooks run on every matching tool call; the shim runs inside the user's test environment.
+- **Hooks and `runners/pytest/qamaster_pytest.py` are standard library only** (plus pytest for the shim). Hooks run on every matching tool call; the shim runs inside the user's test environment.
 - **Python only for the pytest shim**, managed with uv as in CheckMaster. Never pip.
 
 ## Claude Code plugin rules
@@ -101,10 +101,10 @@ For multi-step work, state a short plan first:
 - **Descriptions are the trigger.** Claude picks a skill from its `description` alone. Write it in the third person with the phrases a user would type.
 - **Progressive disclosure.** Keep `SKILL.md` short. Put long reference material in `references/` next to it.
 - **Portable paths.** Use `${CLAUDE_PLUGIN_ROOT}` in commands, hooks and `.mcp.json`, never an absolute or cwd-relative path. Call the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`: hosted plugins may not put `bin/` on the PATH.
-- **Hooks are fast and quiet.** Exit 0 to allow. Exit 2 to block, with the reason on stderr. Repos QeMaster has never planned in (no `.qemaster/`) are never blocked (Q14).
+- **Hooks are fast and quiet.** Exit 0 to allow. Exit 2 to block, with the reason on stderr. Repos QAMaster has never planned in (no `.qamaster/`) are never blocked (Q14).
 - **Approval is the user's.** Commands never review a run, approve a plan or apply a publish without the user's explicit reply.
 - **Least privilege.** Give commands only the `allowed-tools` they need.
-- **No secrets in the plugin.** Read them from the environment (`QEMASTER_ADO_TOKEN`) or `az login`.
+- **No secrets in the plugin.** Read them from the environment (`QAMASTER_ADO_TOKEN`) or `az login`.
 - **Bump `version`** in `plugin/.claude-plugin/plugin.json` on every release.
 
 ---
@@ -132,13 +132,13 @@ Match the check to the scope of the change. Don't run every check as a ritual.
 - Don't re-run a check whose inputs haven't changed since it last passed.
 - Engine change → targeted `node:test` with fakes, then typecheck and lint.
 - Plugin change → `claude plugin validate .`, then run the changed command or hook once under `--plugin-dir`. For a skill, check that a realistic prompt triggers it.
-- ADO adapter change → recorded-response tests in `tests/fixtures/ado/`, then one live `qem doctor` if credentials are available.
+- ADO adapter change → recorded-response tests in `tests/fixtures/ado/`, then one live `qam doctor` if credentials are available.
 
 Report exactly what you ran and what you couldn't. Never call something verified that you didn't run.
 
 ## Boundaries
 
-- Don't edit `node_modules/`, `package-lock.json` by hand, or `.qemaster/`.
+- Don't edit `node_modules/`, `package-lock.json` by hand, or `.qamaster/`.
 - Don't publish, push, or tag unless asked.
 - Don't create or change Azure DevOps resources unless asked, and say exactly what will change first.
 - Don't change `../CheckMasterPlugin` or `../autonomous-qe-0.2.0`; they are sources to port from.
