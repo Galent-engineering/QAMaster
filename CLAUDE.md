@@ -122,7 +122,7 @@ npm run typecheck
 npm run lint                             # npm run format to fix formatting
 
 node plugin/src/cli/main.mts help        # the CLI
-plugin/bin/qam --repo <qa-project> dsm scan    # then dsm build, dsm render
+plugin/bin/qam --repo <qa-project> dsm run     # scan, crawl, build, render; dsm refresh | changes | impact <files…>
 claude plugin validate .                 # check manifests, commands, skills, hooks
 claude --plugin-dir ./plugin             # run Claude Code with the plugin, no install
 ```

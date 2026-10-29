@@ -71,7 +71,7 @@ Not in step 3:
 |---|---|---|---|---|---|---|
 | 1 | DSM build and render | ✓ 2026-10-29 | ✓ | ✓ 5 golden fixtures | ✓ | ✓ |
 | 2 | Repo scan | ✓ 2026-10-29 | ✓ | ✓ 2 golden fixtures, fixes 1–5 | ✓ | ✓ fixes 1–4 |
-| 3 | UI crawl and DSM refresh | ✓ 2026-10-29 | | | | |
+| 3 | UI crawl and DSM refresh | ✓ 2026-10-29 | ✓ | ✓ real crawl of app.mjs: 0 writes | skills to move | |
 | 4 | Setup and pipeline | | | | | |
 | 5 | Application knowledge | | | | | |
 | — | Step 4: ADO adapter | | | | | |
@@ -345,6 +345,62 @@ Most of this disappears in a native port: the patterns can be written once as Ja
 - the `dsm-gen` hook (SessionStart and after git pulls) belongs to step 9 with the other hooks.
 
 **Left out (not MVP):** the encrypted vault and session sealing (Q16), and the scheduled "UI DSM refresh" routine. The DSM from test cases (`testcases dsm`) is v2, with test-case import.
+
+**Built (2026-10-29):**
+
+| File | What it holds |
+|---|---|
+| `plugin/src/dsm/crawl-rules.mts` | The pure decisions: routes, which URLs to open, the write guard, sign-in detection, incremental merge |
+| `plugin/src/adapters/crawler-playwright.mts` | The `Crawler`. Playwright is loaded from the QA project; the in-page code is plain JavaScript strings |
+| `plugin/src/dsm/update.mts` | Change detection, `impact`, the crawl decision, `CHANGES.md`, history, state and the lock |
+| `adapters/git.mts` | Gains `changesSince` |
+| `qam dsm run` | Full rebuild now; asks for sign-in details only in a terminal |
+| `qam dsm refresh` | Only on new commits; never asks |
+| `qam dsm changes` | New commits per repository, without building |
+| `qam dsm impact <files…>` | The screens those files touch, and shared files |
+
+The CLI dispatcher is now async.
+
+**Tested:**
+- `tests/crawl.test.mts` (8 tests):
+  - each fix as a pure rule;
+  - a real Chromium crawl of `app.mjs`: the API receives **no writes**, the Dismiss PATCH to the API's port is blocked, `/settings` is crawled without being taken for a sign-in page, and the session is saved owner-only, then reused;
+  - `save_session: false` writes nothing;
+  - a sign-in page with no credentials and no terminal is blocked, naming the three ways to sign in.
+
+  With the guard switched off, the same crawl lets `PATCH /notifications/1` through, so the test would catch a regression.
+- `tests/update.test.mts` (6 tests), on a git copy of the polyglot fixture with the fake crawler:
+  - a full run;
+  - a refresh with no new commits, which changes nothing;
+  - a commit to `Settings.jsx`, which re-crawls only `/settings` and merges it;
+  - a commit to a shared header, which re-crawls fully and lists the file;
+  - history and state;
+  - a code-only run without a URL, and the lock;
+  - a sign-in failure, which keeps the previous DSM;
+  - `qam dsm impact` and `qam dsm changes`.
+- By hand: `qam dsm run` against `app.mjs`, with the sign-in from environment variables, built the whole DSM folder with 0 writes.
+
+**Intended differences from AQE:**
+- **Fix 1:** a page is a sign-in page only with a password field. A username-only or code-only form counts only on the known sign-in route, or before that is known, on a route named like one.
+- **Fix 2:** the guard is never switched off. Signing in again allows writes only from the sign-in page, and the phase is reset in `finally`.
+- **Fix 3:** after sign-in, the guard blocks writes to every host, not only `allowed_hosts`.
+- **Safe defaults:** the deny list, click selectors and excluded URLs fall back to AQE's template values when a config leaves them out.
+- **No URL or repository prompts:** `qam setup` writes them (Q26). Only the sign-in details are asked, in a terminal, and only by `run`.
+- **Commands:**
+  - `run` is a full rebuild;
+  - `refresh` is AQE's `run --no-input`;
+  - `changes` is AQE's `check`;
+  - `impact` is new;
+  - `status` moves to `/qamaster:status` (step 9).
+- **Blocked, not exit 3 or 4:** sign-in problems and a missing setup exit 2, with the next step.
+- **`impact` reports shared files** and non-UI files instead of dropping them, and `CHANGES.md` lists shared files (learning 5).
+- **Paths are relative to the app's folder:** changed files come from `git diff --relative`, and `qam dsm impact` maps paths given from the app repo into each configured folder (learning 6).
+- **History file names are unique** even within one second.
+- **The session is saved by default:** plain JSON, owner-only, git-ignored, with `login.save_session: false` to turn it off (Q16 amendment). There's no vault.
+- **The crawler returns the model** and writes no file except the session. The refresh writes `ui-model.json`.
+
+**Still to do in Move:** the `Design-Structure-Matrix` skill, `ui-dsm-agent` and the `generate-dsm` command, rewritten for `qam`, Q16 and these commands.
+
 
 ## Roadmap: what comes after the v1 MVP
 

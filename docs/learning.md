@@ -365,6 +365,13 @@ Re-crawling a whole app after every commit is slow. The refresh does the least w
 
 Step 2 is also what the gate needs: **impact analysis**, "this change touches these screens". One gap matters there. When a changed file is shared (no owners), the refresh does re-crawl everything, but its report doesn't mention the file. For the gate, "this file may affect every screen" is important information, so QAMaster's `impact()` will return shared files next to the screens.
 
+### How we built it
+
+- **Decisions apart from the browser.** `dsm/crawl-rules.mts` holds every safety decision as a small function: `blocks()` for the guard, `isSignInPage()` for detection, and `Routes` for which URLs to open. Each fix has a test that needs no browser. The Playwright adapter only drives Chromium and asks these functions.
+- **The guard decides by phase:** `signing-in` (before the crawl), `crawling`, or `re-signing-in`. A phase can't be "left off" by an error, because the code that sets it back sits in `finally`. While signing in again, only the sign-in page itself may write.
+- **One test that matters most.** The crawl test runs a real Chromium against `app.mjs` and then asks the app for its write log, which must be empty. We also checked the test can fail: with the guard switched off, the same crawl lets the Dismiss request through.
+- **The refresh never guesses.** It returns the screens a change touches, *and* the shared files, which may touch every screen. The gate will use both.
+
 ### Check yourself
 
 1. Why does the crawl add the code scan's routes as seeds?
@@ -395,3 +402,4 @@ Step 2 is also what the gate needs: **impact analysis**, "this change touches th
 | 2026-10-29 | 2 Repo scan (built) | Matched AQE first, then four fixes, each with a test: the Real World App goes from 0 to 10 files linked to their screens. The folder rule now needs replacing |
 | 2026-10-29 | 2 Repo scan (fix 5) | Ownership by imports, not folders. Removing a wrong guess exposed a hidden gap (component names), so check what a fallback was covering before removing it |
 | 2026-10-29 | 3 Crawl and refresh | A safety net must fail closed and be restored in `finally`. Three stacked guard bugs, each reproduced on a hand-made app that counts writes |
+| 2026-10-29 | 3 Crawl and refresh (built) | Safety decisions as pure functions, a guard set by phase and restored in `finally`, and a real crawl test that proves zero writes, checked to fail when the guard is off |

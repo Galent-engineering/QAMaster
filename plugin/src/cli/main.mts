@@ -25,7 +25,7 @@ export const COMMANDS: Record<string, string> = {
   setup: 'Config, packages, browsers, launcher. Safe to re-run',
   pipeline: 'Onboarding pipeline: start | status | next | mark',
   doctor: 'Check settings, credentials, the test plan and the runner',
-  dsm: 'Design Structure Matrix: scan | build | render | run | refresh | changes | impact <files…>',
+  dsm: 'Design Structure Matrix: run | refresh | changes | impact <files…> | scan | build | render',
   requirements: 'Fetch requirements: --sprint NAME | --current-sprint | --from D --to D',
   testgen: 'Test generation: context | validate <run> | render <run>',
   review: 'Record the review of a run (only after the person says yes)',
@@ -47,7 +47,7 @@ export const COMMANDS: Record<string, string> = {
 type Options = { json: boolean; repo: string };
 
 /** The built commands. Each gets the global options and its own arguments, and returns the exit code. */
-const HANDLERS: Record<string, (opts: Options, args: string[]) => number> = {
+const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promise<number>> = {
   dsm: (opts, args) => dsm(loadConfig(opts.repo), args, opts.json),
 };
 
@@ -88,7 +88,7 @@ function parseGlobals(argv: string[]): [Options, string | undefined, string[]] {
   return [opts, argv[i], argv.slice(i + 1)];
 }
 
-function dispatch(opts: Options, command: string | undefined, args: string[]): number {
+async function dispatch(opts: Options, command: string | undefined, args: string[]): Promise<number> {
   if (!command || command === 'help' || command === '--help' || command === '-h') {
     if (opts.json) console.log(JSON.stringify({ version: pluginVersion(), commands: COMMANDS }, null, 2));
     else process.stdout.write(help());
@@ -103,12 +103,12 @@ function dispatch(opts: Options, command: string | undefined, args: string[]): n
   throw new BlockedError(`Unknown command "${command}". Run qam help for the list.`);
 }
 
-export function main(argv: string[]): number {
+export async function main(argv: string[]): Promise<number> {
   let opts: Options = { json: argv.includes('--json'), repo: '.' };
   try {
     const [parsed, command, args] = parseGlobals(argv);
     opts = parsed;
-    return dispatch(opts, command, args);
+    return await dispatch(opts, command, args);
   } catch (e) {
     if (!(e instanceof BlockedError)) throw e;
     if (opts.json) console.log(JSON.stringify({ result: 'blocked', reasons: [e.message] }));
@@ -117,4 +117,4 @@ export function main(argv: string[]): number {
   }
 }
 
-if (import.meta.main) process.exitCode = main(process.argv.slice(2));
+if (import.meta.main) process.exitCode = await main(process.argv.slice(2));

@@ -67,8 +67,8 @@ test('fake repo reader diffs the given range and reads only known files', async 
 
 test('fake crawler returns a copy of the model and records the options', async () => {
   const crawler = new FakeCrawler();
-  const model = await crawler.crawl({ baseUrl: UI_MODEL.base_url, out: 'dsm/ui-model.json' });
+  const model = await crawler.crawl({ baseUrl: UI_MODEL.base_url });
   assert.deepEqual(model, UI_MODEL);
   assert.notEqual(model, UI_MODEL);
-  assert.equal(crawler.crawls[0].out, 'dsm/ui-model.json');
+  assert.equal(crawler.crawls[0].baseUrl, UI_MODEL.base_url);
 });

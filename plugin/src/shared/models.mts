@@ -204,11 +204,11 @@ export type Requirement = {
 
 export type CrawlOptions = {
   baseUrl: string;
-  out: string;
   loginMode?: 'auto' | 'manual' | 'none';
-  routes?: string[]; // re-crawl only these and merge with `previous`
-  previous?: string;
-  seeds?: string[];
+  routes?: string[]; // re-crawl only these and merge them into `previous`
+  previous?: UiModel | null;
+  seeds?: string[]; // extra start routes, such as routes found in the code
+  now?: Date;
 };
 
 /** A link, button, tab or menu item the crawler saw. `key` is "<route>::<kind>:<name>". */
@@ -271,6 +271,8 @@ export type UiEdge = {
 
 export type UiModel = {
   generated_at: string;
+  login?: Record<string, unknown>;
+  blocked_requests?: { method: string; url: string }[];
   base_url: string;
   mode: 'full' | 'incremental';
   truncated: boolean;

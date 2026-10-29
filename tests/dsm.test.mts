@@ -157,8 +157,9 @@ test('qam dsm blocks with the step to take', () => {
   const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-dsm-'));
   const cases: [string[], RegExp][] = [
     [['dsm', 'build'], /No DSM settings at .*dsm-config\.json\. Run qam setup/],
-    [['dsm', 'refresh'], /qam dsm refresh isn't built yet/],
-    [['dsm'], /Use qam dsm scan, build or render/],
+    [['dsm', 'refresh'], /No DSM settings at .*dsm-config\.json\. Run qam setup/],
+    [['dsm'], /Use qam dsm run, refresh, changes, impact, scan, build, render/],
+    [['dsm', 'run', '--login-mode', 'sso'], /--login-mode must be auto, manual or none/],
     [['dsm', 'build', '--nope'], /Unknown option '--nope'/],
   ];
   for (const [args, message] of cases) {
@@ -173,4 +174,9 @@ test('qam dsm blocks with the step to take', () => {
     /No ui-model\.json or code-model\.json .* Run qam dsm run first/,
   );
   assert.match(qam('--repo', empty, 'dsm', 'render').stderr, /No dsm\.json .* Run qam dsm build first/);
+  assert.match(
+    qam('--repo', empty, 'dsm', 'run').stderr,
+    /no application\.base_url and no repositories\. Run qam setup/,
+  );
+  assert.match(qam('--repo', empty, 'dsm', 'impact').stderr, /Name the changed files/);
 });

@@ -78,3 +78,56 @@ export function readRepo(
   const [ref, commit] = resolved;
   return { ref, commit, files: readTree(dir, ref, want, maxBytes) };
 }
+
+/** What changed in one repository since the commit the last DSM build saw. Paths are relative to `dir`. */
+export type RepoChange = {
+  repo: string;
+  branch: string;
+  from: string | null;
+  to: string | null;
+  ref: string | null;
+  files: string[];
+  log: string[];
+  error: string | null;
+  rewritten?: boolean;
+};
+
+/**
+ * Fetches `branch` from origin when asked and there is one (Q15 allows fetch), then compares its commit with `from`.
+ * A `from` that no longer exists means history was rewritten.
+ */
+export function changesSince(
+  dir: string,
+  repo: string,
+  branch: string,
+  from: string | null,
+  fetch: boolean,
+): RepoChange {
+  const rec: RepoChange = { repo, branch, from, to: null, ref: null, files: [], log: [], error: null };
+  if (!fs.existsSync(dir)) return { ...rec, error: `path not found: ${dir}` };
+  if (fetch && git(dir, ['remote']).stdout.toString('utf8').split(/\s+/).includes('origin')) {
+    const r = spawnSync('git', ['-C', dir, 'fetch', '--quiet', 'origin', branch], { encoding: 'utf8' });
+    if (r.status !== 0) rec.error = `fetch failed: ${(r.stderr || '').trim().slice(0, 300)}`;
+  }
+  const resolved = resolveRef(dir, branch);
+  if (!resolved) return rec;
+  [rec.ref, rec.to] = resolved;
+  if (!from || from === rec.to) return rec;
+  if (!git(dir, ['cat-file', '-e', `${from}^{commit}`]).ok) {
+    return {
+      ...rec,
+      rewritten: true,
+      error: `previous commit ${from.slice(0, 10)} no longer exists (history rewritten): full rebuild`,
+    };
+  }
+  // --relative: paths relative to the app's folder, as the code model keys them, even inside a monorepo
+  rec.files = git(dir, ['diff', '--name-only', '--relative', from, rec.to])
+    .stdout.toString('utf8')
+    .split('\n')
+    .filter(Boolean);
+  rec.log = git(dir, ['log', '--format=%h %an: %s', '-n', '50', `${from}..${rec.to}`, '--', '.'])
+    .stdout.toString('utf8')
+    .split('\n')
+    .filter(Boolean);
+  return rec;
+}
