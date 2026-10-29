@@ -70,7 +70,7 @@ Not in step 3:
 | # | Feature | Learn | Build | Test | Move | Commit |
 |---|---|---|---|---|---|---|
 | 1 | DSM build and render | ✓ 2026-10-29 | ✓ | ✓ 5 golden fixtures | ✓ | ✓ |
-| 2 | Repo scan | | | | | |
+| 2 | Repo scan | ✓ 2026-10-29 | | | | |
 | 3 | UI crawl and DSM refresh | | | | | |
 | 4 | Setup and pipeline | | | | | |
 | 5 | Application knowledge | | | | | |
@@ -140,6 +140,84 @@ The concepts behind each feature are explained for people in [learning.md](learn
 - `qam dsm build` blocks when there is neither a crawl nor a scan; AQE built an empty matrix.
 - An element-level redirect edge uses the screen part of `from`; AQE raised a KeyError if `from` held an element key.
 - `build` takes `now`, so tests pin the clock instead of ignoring `generated_at`.
+
+### 2. Repo scan (Learn done 2026-10-29)
+
+**Version:** `scan_repo.mts` is identical in 0.1.5 and 0.2.0 (680 lines). Nothing to choose.
+
+**What it does:** `scan(config)` reads each repository in `config.repositories` and writes `code-model.json`, which the DSM build (feature 1) reads. There's no AI and no network. Per repository:
+1. **Read the files** at `origin/<branch>`, then `<branch>`, then `HEAD`, using `git ls-tree` and one `git cat-file --batch`. If the path isn't a git repo, it reads the working tree instead. Only source extensions count (`TEXT_EXT`), files over 1.5 MB are skipped, and `include`/`exclude` rules filter the paths.
+2. **Find routes**, by regular expression, for:
+   - router objects (Angular, Vue, React data routers), with nesting, `redirectTo` and lazy modules;
+   - JSX `<Route>` elements;
+   - Next.js `pages/` and `app/`;
+   - ASP.NET MVC controllers and actions, Razor Pages and WebForms `.aspx`;
+   - Spring `@Controller`, Django `urls.py` and Flask decorators;
+   - standalone HTML pages.
+
+   Parameters such as `{id}`, `[slug]`, `<int:pk>` and `:x` all become `:id`. `route_normalization` rules from the config apply last.
+3. **Work out owners** (which routes each file serves), with a confidence for each:
+   - `direct`: the file declares the route's component, is its template or MVC view, or is a sibling or code-behind of such a file;
+   - `module`: the file is inside a lazy-loaded module's folder;
+   - `inferred`: the file is in the same folder as owned files, if that folder has 25 routes or fewer;
+   - `shared`: none of the above.
+4. **Find navigation references** in each file (`routerLink`, `navigate`, `<Link to>`, `href`, form `action`, `location =`, redirects, MVC `RedirectToAction`, `ActionLink` and `asp-*` tags). Each one becomes an edge from every route the file owns, or from `(shared)` if it owns none. Relative targets are resolved against the owning route.
+5. **List UI elements** per template file (forms, controls, buttons, click handlers). These become `code_elements` in the DSM.
+6. **Remove duplicate edges** (same from, to, kind, file and line) and self-edges.
+
+**Reads, writes, calls:**
+- It reads the repos through `git` only and never writes to them.
+- `fetch: true` in the config is never used: the scan reads whatever `origin/<branch>` already is.
+- It writes `code-model.json` and exits 1 if any repo path was missing.
+
+**Python behaviour it relies on:**
+- Every pattern is in Python `re` syntax, translated at run time by `pyRe` (Unicode `\w`, Python's `^`/`$`, `(?P<name>)`).
+- `os.walk` order and `sorted`.
+
+Most of this disappears in a native port: the patterns can be written once as JavaScript regexes. The cases where JavaScript would match differently (Unicode `\w`, `$` before a final newline) are covered by the fixtures.
+
+**Fixtures** (`tests/fixtures/scan/`). AQE's output was produced on a git copy of each repo (branch `main`, commit date fixed at 2026-10-29T00:00:00Z, so the commit hash can be reproduced), with `path` written as `<repo>`:
+
+| Case | From | What it covers |
+|---|---|---|
+| `rwa/` | 17 Real World App files (routing, forms, links) plus its MIT licence | The same 6 routes and 14 edges as scanning the whole app: the subset is representative |
+| `polyglot/` | Hand-made, 31 files | One tiny app per supported framework: Angular (children, lazy module, `templateUrl`, `[routerLink]` arrays, `redirectTo`, `**`), React Router v6 (nested, `index`, `element=`), Vue, Next.js `pages/` and `app/` (route group), MVC (attribute routes, `[controller]`/`[action]`, views, `ApiController`, `RedirectToAction`, `ActionLink`, `asp-*`), Razor Pages with code-behind, WebForms with code-behind, Spring, Django, Flask, static HTML (relative, `../`, `#`, `mailto:`, external and asset links), and excluded `dist/` and `*.spec.ts` files |
+
+**Problems found.** Each was reproduced on a fixture. Numbers 1 to 4 decide whether `path:` tags work at all (Q8).
+1. **A folder inside a bigger repo scans nothing, and says nothing.**
+   - Cause: `git ls-tree` lists paths relative to the folder, but `git cat-file <ref>:<path>` reads them from the repo root.
+   - Effect: every read misses. The result is `files_scanned: 0`, no routes and no error. Any monorepo, or an app in a `web/` folder, gets an empty scan.
+2. **Real World App: no file owns a screen.** There are three causes:
+   - React Router v5 puts the screen as a child (`<Route path="/signup"><SignUpForm/></Route>`), but only `element=`/`component=` are read. So these routes have no component, and nothing links them to a file.
+   - Custom route components (`<PrivateRoute path=…>`, Okta's `<SecureRoute>`) aren't routes to the scan. 6 of about 12 routes are missed.
+   - Path patterns aren't expanded: `/(public)?` becomes `/(public)`, `/(public|contacts|personal)?` is dropped, and `/bankaccounts*` is dropped.
+
+   In this app every private route wraps exactly one screen component, so "the first component inside the route" would link every screen to its file.
+3. **`element={<X />}` breaks nesting.**
+   - Cause: the `<Route …>` regex stops at the first `>`, which is the one inside `<X />`. The route looks self-closing, so it's never pushed as a parent.
+   - Effect, in polyglot: `/projects/:projectId` comes out as `/:id`, and `/` (Layout) and `/` (index) are both reported. Any React Router v6 app with nested routes gets wrong paths.
+4. **Routes from file paths assume the app is at the repo root.**
+   - Next.js, static HTML and WebForms routes keep the folder they sit in: `/next/pages/blog/:id`, `/public/about.html`, `/webforms/Default.aspx`.
+   - The fix is the same as for problem 1: treat the configured folder as the root.
+5. **Ownership is coarse:**
+   - **By folder:** a file inherits every route in its folder (25 or fewer), so MVC's `ApiDataController.cs` "owns" all four Account and Reports screens.
+   - **By file:** a file's navigation counts as coming from every route it owns. The `RedirectToAction` in `Logout` becomes an edge from `/Account` and `/Account/Profile/:id` too.
+6. **Small misses:**
+   - Vue's `redirect:` isn't read (only Angular's `redirectTo`).
+   - Vue single-file components are never linked to a route (no class, function or const name).
+   - Flask's `redirect('/x')` is counted twice, as `navigate` and as `redirect`.
+   - `Html.ActionLink("Profile", …)` points to `/Account/Profile`, not the real `/Account/Profile/:id`.
+7. **It reads committed code only.** Uncommitted and unpushed edits aren't scanned when `origin/<branch>` exists. That's fine for the gate (it runs on commits), but it surprises a developer running `qam dsm scan` locally.
+8. **Speed:** the sibling search compares every file with every other file. That takes 0.2 s for 1,000 files, 0.35 s for 2,000 and 0.85 s for 4,000, so about 5 s for 10,000. Fine for v1; note it for very large repos.
+
+**Port plan for Build** (proposed; the person decides):
+- Split it like feature 1:
+  - a pure `scan(files, repo, rules)` over a list of `{ path, text }`, tested against the golden fixtures with no git;
+  - the git reading in `adapters/git.mts` behind `RepoReader.listTree` and `readFile`. That adapter fixes problem 1 by reading paths relative to the configured folder.
+- First match AQE exactly (golden). Then fix problems 1 to 4 one at a time. Each fix gets its own test, and each changed golden line is listed here as an intended difference.
+- Leave 5, 6 and 8 for later, and list them in the Roadmap. Import-graph ownership (a screen owns the files its component imports) is the real answer to problem 5, and it's a v2 feature.
+
+**Left out (not MVP):** none of the scan. `fetch` stays unused: QAMaster never fetches on the user's behalf.
 
 ## Roadmap: what comes after the v1 MVP
 

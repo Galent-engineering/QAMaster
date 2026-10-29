@@ -217,6 +217,76 @@ plugin/bin/qam --repo <copy of a QA project> dsm render
 
 ---
 
+## Lesson 2: the repo scan (feature 2)
+
+### What it's for
+
+The crawl sees the app from the outside. The scan reads its **source code** and answers one question the crawl can't: *which files make up which screen?* That answer is what turns a code change into "re-test these screens" and gives test cases their `path:` tags. If the scan gets it wrong, the whole gate gets weaker: QAMaster can't tell which test cases a change touches.
+
+### How it works, in four steps
+
+1. **Read the files** from git, at `origin/<branch>`. It never writes to the repo.
+2. **Find the routes.** It knows the usual ways apps declare screens: a routes list (Angular, Vue), `<Route path=…>` elements (React), files in `pages/` (Next.js), controller methods (ASP.NET, Spring), `urls.py` (Django), decorators (Flask), and plain `.html` files. `/orders/{id}`, `/orders/[id]`, `/orders/<int:id>` and `/orders/:orderId` all become `/orders/:id`.
+3. **Give each file its owners**, the routes it serves, with a confidence:
+
+   | Confidence | Why the file owns the route | Example (polyglot fixture) |
+   |---|---|---|
+   | `direct` | It declares the screen's component, is its template or view, or sits next to one with the same name | `home.component.html` owns `/home` |
+   | `module` | It's inside a lazy-loaded module's folder | `admin/admin.module.ts` owns `/admin/…` |
+   | `inferred` | Its folder holds owned files (25 routes or fewer) | `ApiDataController.cs` "owns" the Account screens |
+   | `shared` | None of the above: layout, services, utilities | `machines/authMachine.ts` in the Real World App |
+
+4. **Find the links** in each file (`routerLink`, `<Link to>`, `href`, `navigate(…)`, redirects, …). Each one becomes a code edge from the routes the file owns, or from `(shared)` when it owns none.
+
+It's all regular expressions. That makes it fast (4,000 files in under a second) and language-agnostic, but it only knows the patterns someone wrote down.
+
+### What the Real World App taught us
+
+The app has about 12 screens. The scan found 6, and linked **0 of 17** relevant files to any screen. Three small patterns explain all of it:
+
+```tsx
+<Route exact path="/signup">            {/* the screen is a child, not element= */}
+  <SignUpForm authService={authService} />
+</Route>
+<PrivateRoute exact path="/user/settings">   {/* a custom route: not a <Route> to the scan */}
+  <UserSettingsContainer />
+</PrivateRoute>
+<Route exact path="/(public)?">        {/* a path pattern: read as "/(public)" */}
+```
+
+So every link in the app is drawn from `(shared)`, which is why the Lesson 1 matrix has a big `(shared)` row and no files on any screen.
+
+The hand-made polyglot fixture found two more problems that would hit real teams:
+- **Nested React routes come out wrong.** `<Route path="projects" element={<Projects />}>` has a `>` inside `<Projects />`, so the scan thinks the tag ends there, and the child `:projectId` loses its parent.
+- **An app in a subfolder scans nothing.** If the configured path is `web/` inside a bigger repo, git lists `src/App.jsx` but the scan asks for it at the repo root. It reads 0 files and reports no error.
+
+### The design choice for Build
+
+As in Lesson 1, split the **pure** part from the **outside world**:
+- `scan(files, repo, rules)` takes a list of `{ path, text }` and returns the code model. Tests feed it the fixture files directly, with no git.
+- Reading git goes in an adapter behind `RepoReader` (`listTree`, `readFile`). That's also where the subfolder bug gets fixed: the adapter reads paths relative to the configured folder.
+
+Then port in two passes: first match AQE exactly (golden tests on both fixtures), then fix the problems one at a time, each with a failing test first and its changed output written down.
+
+### Check yourself
+
+1. Why can't the crawl alone tell which files belong to a screen?
+2. In the Real World App, why does every code edge start at `(shared)`?
+3. A file is `inferred` to own `/Account`. How sure should the gate be that changing it affects that screen?
+4. Why put git reading behind `RepoReader` instead of calling `git` inside `scan`?
+5. Why match AQE's output first, even though we know about the bugs?
+
+<details><summary>Answers</summary>
+
+1. The browser only sees rendered pages. Which source files produced them is only in the code.
+2. No file owns any screen (the routes have no component the scan can see), and a file with no owners sends its links from `(shared)`.
+3. Not very. It only shares a folder with files that own `/Account`; `ApiDataController.cs` is an example where it's wrong. It's a hint, not evidence.
+4. So `scan` stays pure and testable on plain fixture files, and the git-specific problems (subfolders, refs, uncommitted files) live and get fixed in one place, with their own tests.
+5. So every later difference is a deliberate fix with its own test, not an accident of the port. Golden first, then change one thing at a time.
+</details>
+
+---
+
 ## Journal
 
 | Date | Feature | What we learned |
@@ -224,3 +294,4 @@ plugin/bin/qam --repo <copy of a QA project> dsm render
 | 2026-10-29 | Setup | QAMaster's repo, CLI with exit codes, models, config, adapters and fakes (steps 1–2) |
 | 2026-10-29 | 1 DSM build | The build is identical in AQE 0.1.5 and 0.2.0. A real app exposes scan gaps (Q8) and a crawl safety bug (Q15) |
 | 2026-10-29 | 1 DSM build (built) | Ported as one pure function with the clock passed in; it matches AQE on all five fixtures without the Python layer |
+| 2026-10-29 | 2 Repo scan | Regex route finding is fast but pattern-bound: on the Real World App no file owns a screen. Subfolder apps scan nothing. Port pure, git behind RepoReader |

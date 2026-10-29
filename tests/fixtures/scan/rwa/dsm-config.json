@@ -1,0 +1,43 @@
+{
+ "project": "rwa",
+ "output_dir": "dsm",
+ "repositories": [
+  {
+   "name": "rwa",
+   "path": "<repo>",
+   "branch": "main",
+   "fetch": false,
+   "include": [],
+   "exclude": [
+    "node_modules/",
+    "dist/",
+    "build/",
+    "bin/",
+    "obj/",
+    ".git/",
+    "vendor/",
+    "packages/",
+    "wwwroot/lib/",
+    "*.min.js",
+    "*.spec.ts",
+    "*.test.*",
+    "cypress/",
+    "data/",
+    "scripts/",
+    "__tests__/"
+   ]
+  }
+ ],
+ "application": {
+  "route_normalization": [
+   {
+    "pattern": "/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?=/|$)",
+    "replace": "/:id"
+   },
+   {
+    "pattern": "/\\d+(?=/|$)",
+    "replace": "/:id"
+   }
+  ]
+ }
+}

@@ -1,0 +1,474 @@
+{
+ "generated_at": "2026-10-29T08:40:41+00:00",
+ "repos": [
+  {
+   "name": "rwa",
+   "path": "<repo>",
+   "ref": "main",
+   "commit": "feeca6ac3577b44a90ba980aa7941ee2e62364e8",
+   "files_scanned": 17,
+   "frameworks": [
+    "react-router"
+   ]
+  }
+ ],
+ "routes": [
+  {
+   "route": "/signup",
+   "repo": "rwa",
+   "file": "src/containers/App.tsx",
+   "line": 63,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/signin",
+   "repo": "rwa",
+   "file": "src/containers/App.tsx",
+   "line": 66,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/implicit/callback",
+   "repo": "rwa",
+   "file": "src/containers/AppOkta.tsx",
+   "line": 86,
+   "kind": "route",
+   "framework": "react-router",
+   "component": "LoginCallback"
+  },
+  {
+   "route": "/contacts",
+   "repo": "rwa",
+   "file": "src/containers/TransactionsContainer.tsx",
+   "line": 33,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/personal",
+   "repo": "rwa",
+   "file": "src/containers/TransactionsContainer.tsx",
+   "line": 40,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/(public)",
+   "repo": "rwa",
+   "file": "src/containers/TransactionsContainer.tsx",
+   "line": 47,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  }
+ ],
+ "files": {
+  "rwa:backend/auth.ts": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/",
+     "kind": "navigate",
+     "line": 51
+    },
+    {
+     "target": "/",
+     "kind": "navigate",
+     "line": 53
+    },
+    {
+     "target": "/",
+     "kind": "redirect",
+     "line": 51
+    },
+    {
+     "target": "/",
+     "kind": "redirect",
+     "line": 53
+    }
+   ]
+  },
+  "rwa:index.html": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/manifest.json",
+     "kind": "href",
+     "line": 14
+    }
+   ],
+   "elements": {
+    "controls": [
+     "description",
+     "theme-color",
+     "viewport"
+    ],
+    "controls_count": 3
+   }
+  },
+  "rwa:src/components/BankAccountForm.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/bankaccounts",
+     "kind": "navigate",
+     "line": 76
+    }
+   ],
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "accountNumber",
+     "bankName",
+     "routingNumber"
+    ],
+    "controls_count": 3,
+    "buttons": [
+     "Save"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "rwa:src/components/NavBar.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/",
+     "kind": "link",
+     "line": 150
+    }
+   ],
+   "elements": {
+    "buttons": [
+     "(unnamed)"
+    ],
+    "buttons_count": 1,
+    "click_handlers": [
+     "toggleDrawer"
+    ],
+    "click_handlers_count": 1
+   }
+  },
+  "rwa:src/components/PrivateRoute.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "rwa:src/components/SignInForm.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/forgotpassword",
+     "kind": "link",
+     "line": 165
+    },
+    {
+     "target": "/signup",
+     "kind": "link",
+     "line": 168
+    }
+   ],
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "password",
+     "username"
+    ],
+    "controls_count": 2,
+    "buttons": [
+     "Sign In"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "rwa:src/components/SignUpForm.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/signin",
+     "kind": "link",
+     "line": 194
+    }
+   ],
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "confirmPassword",
+     "firstName",
+     "lastName",
+     "password",
+     "username"
+    ],
+    "controls_count": 5,
+    "buttons": [
+     "Sign Up"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "rwa:src/components/TransactionCreateStepThree.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/transaction/new",
+     "kind": "navigate",
+     "line": 134
+    }
+   ],
+   "elements": {
+    "buttons": [
+     "Return To Transactions"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "rwa:src/components/TransactionItem.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/transaction/:id",
+     "kind": "navigate",
+     "line": 79
+    }
+   ],
+   "elements": {
+    "click_handlers": [
+     "showTransactionDetail"
+    ],
+    "click_handlers_count": 1
+   }
+  },
+  "rwa:src/components/UserSettingsForm.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "email",
+     "firstName",
+     "lastName",
+     "phoneNumber"
+    ],
+    "controls_count": 4,
+    "buttons": [
+     "Save"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "rwa:src/containers/App.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "rwa:src/containers/AppOkta.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "rwa:src/containers/BankAccountsContainer.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "buttons": [
+     "Create"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "rwa:src/containers/PrivateRoutesContainer.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "rwa:src/containers/TransactionsContainer.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "rwa:src/index.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "rwa:src/machines/authMachine.ts": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/signin",
+     "kind": "navigate",
+     "line": 153
+    },
+    {
+     "target": "/",
+     "kind": "navigate",
+     "line": 160
+    }
+   ]
+  }
+ },
+ "edges": [
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "rwa",
+   "file": "backend/auth.ts",
+   "line": 51,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "rwa",
+   "file": "backend/auth.ts",
+   "line": 53,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "redirect",
+   "repo": "rwa",
+   "file": "backend/auth.ts",
+   "line": 51,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "redirect",
+   "repo": "rwa",
+   "file": "backend/auth.ts",
+   "line": 53,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/manifest.json",
+   "type": "code",
+   "kind": "href",
+   "repo": "rwa",
+   "file": "index.html",
+   "line": 14,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/bankaccounts",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "rwa",
+   "file": "src/components/BankAccountForm.tsx",
+   "line": 76,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "link",
+   "repo": "rwa",
+   "file": "src/components/NavBar.tsx",
+   "line": 150,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/forgotpassword",
+   "type": "code",
+   "kind": "link",
+   "repo": "rwa",
+   "file": "src/components/SignInForm.tsx",
+   "line": 165,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/signup",
+   "type": "code",
+   "kind": "link",
+   "repo": "rwa",
+   "file": "src/components/SignInForm.tsx",
+   "line": 168,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/signin",
+   "type": "code",
+   "kind": "link",
+   "repo": "rwa",
+   "file": "src/components/SignUpForm.tsx",
+   "line": 194,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/transaction/new",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "rwa",
+   "file": "src/components/TransactionCreateStepThree.tsx",
+   "line": 134,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/transaction/:id",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "rwa",
+   "file": "src/components/TransactionItem.tsx",
+   "line": 79,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/signin",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "rwa",
+   "file": "src/machines/authMachine.ts",
+   "line": 153,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "rwa",
+   "file": "src/machines/authMachine.ts",
+   "line": 160,
+   "confidence": "shared"
+  }
+ ],
+ "errors": []
+}

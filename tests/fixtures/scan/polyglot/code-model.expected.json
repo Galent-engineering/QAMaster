@@ -1,0 +1,1121 @@
+{
+ "generated_at": "2026-10-29T08:40:41+00:00",
+ "repos": [
+  {
+   "name": "polyglot",
+   "path": "<repo>",
+   "ref": "main",
+   "commit": "4f09d0a16f087cbab3518fafa48735d00815744e",
+   "files_scanned": 31,
+   "frameworks": [
+    "angular",
+    "aspnet-mvc",
+    "django",
+    "flask",
+    "html",
+    "nextjs",
+    "razor-pages",
+    "react-router",
+    "spring-mvc",
+    "vue",
+    "webforms"
+   ]
+  }
+ ],
+ "routes": [
+  {
+   "route": "/admin",
+   "repo": "polyglot",
+   "file": "angular/src/app/admin/admin.module.ts",
+   "line": 3,
+   "kind": "route",
+   "framework": "angular",
+   "component": "AdminHomeComponent",
+   "prefixed": "/admin"
+  },
+  {
+   "route": "/admin/users",
+   "repo": "polyglot",
+   "file": "angular/src/app/admin/admin.module.ts",
+   "line": 4,
+   "kind": "route",
+   "framework": "angular",
+   "component": "UsersComponent",
+   "prefixed": "/admin"
+  },
+  {
+   "route": "/",
+   "repo": "polyglot",
+   "file": "angular/src/app/app-routing.module.ts",
+   "line": 7,
+   "kind": "route",
+   "framework": "angular",
+   "component": null,
+   "redirect_to": "/home"
+  },
+  {
+   "route": "/home",
+   "repo": "polyglot",
+   "file": "angular/src/app/app-routing.module.ts",
+   "line": 8,
+   "kind": "route",
+   "framework": "angular",
+   "component": "HomeComponent"
+  },
+  {
+   "route": "/orders/:id",
+   "repo": "polyglot",
+   "file": "angular/src/app/app-routing.module.ts",
+   "line": 10,
+   "kind": "route",
+   "framework": "angular",
+   "component": "OrderDetailComponent"
+  },
+  {
+   "route": "/orders",
+   "repo": "polyglot",
+   "file": "angular/src/app/app-routing.module.ts",
+   "line": 9,
+   "kind": "route",
+   "framework": "angular",
+   "component": "OrdersComponent"
+  },
+  {
+   "route": "/admin",
+   "repo": "polyglot",
+   "file": "angular/src/app/app-routing.module.ts",
+   "line": 12,
+   "kind": "route",
+   "framework": "angular",
+   "component": null,
+   "lazy": "angular/src/app/admin/admin.module"
+  },
+  {
+   "route": "/products",
+   "repo": "polyglot",
+   "file": "django/shop/urls.py",
+   "line": 4,
+   "kind": "action",
+   "framework": "django",
+   "component": "views.product_list"
+  },
+  {
+   "route": "/products/:id",
+   "repo": "polyglot",
+   "file": "django/shop/urls.py",
+   "line": 5,
+   "kind": "action",
+   "framework": "django",
+   "component": "views.product_detail"
+  },
+  {
+   "route": "/login",
+   "repo": "polyglot",
+   "file": "flask/app.py",
+   "line": 1,
+   "kind": "action",
+   "framework": "flask",
+   "component": null
+  },
+  {
+   "route": "/reports/:id",
+   "repo": "polyglot",
+   "file": "flask/app.py",
+   "line": 4,
+   "kind": "action",
+   "framework": "flask",
+   "component": null
+  },
+  {
+   "route": "/Account",
+   "repo": "polyglot",
+   "file": "mvc/Controllers/AccountController.cs",
+   "line": 3,
+   "kind": "action",
+   "framework": "aspnet-mvc",
+   "component": "AccountController.Index",
+   "controller": "Account",
+   "action": "Index",
+   "views": [
+    "mvc/Views/Account/Index.cshtml"
+   ]
+  },
+  {
+   "route": "/Account/Profile/:id",
+   "repo": "polyglot",
+   "file": "mvc/Controllers/AccountController.cs",
+   "line": 5,
+   "kind": "action",
+   "framework": "aspnet-mvc",
+   "component": "AccountController.Profile",
+   "controller": "Account",
+   "action": "Profile"
+  },
+  {
+   "route": "/Account/Logout",
+   "repo": "polyglot",
+   "file": "mvc/Controllers/AccountController.cs",
+   "line": 7,
+   "kind": "action",
+   "framework": "aspnet-mvc",
+   "component": "AccountController.Logout",
+   "controller": "Account",
+   "action": "Logout"
+  },
+  {
+   "route": "/reports/Monthly",
+   "repo": "polyglot",
+   "file": "mvc/Controllers/ReportsController.cs",
+   "line": 4,
+   "kind": "action",
+   "framework": "aspnet-mvc",
+   "component": "ReportsController.Monthly",
+   "controller": "Reports",
+   "action": "Monthly"
+  },
+  {
+   "route": "/next/app/pricing",
+   "repo": "polyglot",
+   "file": "next/app/(marketing)/pricing/page.tsx",
+   "line": 1,
+   "kind": "page-file",
+   "framework": "nextjs",
+   "component": null
+  },
+  {
+   "route": "/next/pages/blog/:id",
+   "repo": "polyglot",
+   "file": "next/pages/blog/[slug].tsx",
+   "line": 1,
+   "kind": "page-file",
+   "framework": "nextjs",
+   "component": null
+  },
+  {
+   "route": "/next/pages",
+   "repo": "polyglot",
+   "file": "next/pages/index.tsx",
+   "line": 1,
+   "kind": "page-file",
+   "framework": "nextjs",
+   "component": null
+  },
+  {
+   "route": "/Orders",
+   "repo": "polyglot",
+   "file": "razor/Pages/Orders/Index.cshtml",
+   "line": 1,
+   "kind": "page-file",
+   "framework": "razor-pages",
+   "component": null
+  },
+  {
+   "route": "/",
+   "repo": "polyglot",
+   "file": "react/src/App.jsx",
+   "line": 5,
+   "kind": "route",
+   "framework": "react-router",
+   "component": "Layout"
+  },
+  {
+   "route": "/",
+   "repo": "polyglot",
+   "file": "react/src/App.jsx",
+   "line": 6,
+   "kind": "route",
+   "framework": "react-router",
+   "component": "Dashboard"
+  },
+  {
+   "route": "/projects",
+   "repo": "polyglot",
+   "file": "react/src/App.jsx",
+   "line": 7,
+   "kind": "route",
+   "framework": "react-router",
+   "component": "Projects"
+  },
+  {
+   "route": "/:id",
+   "repo": "polyglot",
+   "file": "react/src/App.jsx",
+   "line": 8,
+   "kind": "route",
+   "framework": "react-router",
+   "component": "ProjectPage"
+  },
+  {
+   "route": "/settings",
+   "repo": "polyglot",
+   "file": "react/src/App.jsx",
+   "line": 10,
+   "kind": "route",
+   "framework": "react-router",
+   "component": "Settings"
+  },
+  {
+   "route": "/cart/view",
+   "repo": "polyglot",
+   "file": "spring/src/main/java/shop/CartController.java",
+   "line": 4,
+   "kind": "action",
+   "framework": "spring-mvc",
+   "component": null
+  },
+  {
+   "route": "/cart/checkout",
+   "repo": "polyglot",
+   "file": "spring/src/main/java/shop/CartController.java",
+   "line": 5,
+   "kind": "action",
+   "framework": "spring-mvc",
+   "component": null
+  },
+  {
+   "route": "/public/about.html",
+   "repo": "polyglot",
+   "file": "static/public/about.html",
+   "line": 1,
+   "kind": "page-file",
+   "framework": "html",
+   "component": null
+  },
+  {
+   "route": "/public/contact.html",
+   "repo": "polyglot",
+   "file": "static/public/contact.html",
+   "line": 1,
+   "kind": "page-file",
+   "framework": "html",
+   "component": null
+  },
+  {
+   "route": "/",
+   "repo": "polyglot",
+   "file": "vue/src/router/index.js",
+   "line": 3,
+   "kind": "route",
+   "framework": "vue",
+   "component": "HomeView"
+  },
+  {
+   "route": "/about",
+   "repo": "polyglot",
+   "file": "vue/src/router/index.js",
+   "line": 4,
+   "kind": "route",
+   "framework": "vue",
+   "component": "AboutView"
+  },
+  {
+   "route": "/old-about",
+   "repo": "polyglot",
+   "file": "vue/src/router/index.js",
+   "line": 5,
+   "kind": "route",
+   "framework": "vue",
+   "component": null
+  },
+  {
+   "route": "/webforms/Default.aspx",
+   "repo": "polyglot",
+   "file": "webforms/Default.aspx",
+   "line": 1,
+   "kind": "page-file",
+   "framework": "webforms",
+   "component": null
+  }
+ ],
+ "files": {
+  "polyglot:angular/src/app/admin/admin.module.ts": {
+   "owners": [
+    "/admin",
+    "/admin/users"
+   ],
+   "confidence": "module"
+  },
+  "polyglot:angular/src/app/admin/users.component.ts": {
+   "owners": [
+    "/admin",
+    "/admin/users"
+   ],
+   "confidence": "direct"
+  },
+  "polyglot:angular/src/app/app-routing.module.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "polyglot:angular/src/app/home/home.component.html": {
+   "owners": [
+    "/home"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/orders",
+     "kind": "routerLink",
+     "line": 2
+    },
+    {
+     "target": "/admin/users",
+     "kind": "routerLink",
+     "line": 3
+    }
+   ],
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "query"
+    ],
+    "controls_count": 1,
+    "buttons": [
+     "Open order",
+     "Search"
+    ],
+    "buttons_count": 2,
+    "click_handlers": [
+     "open"
+    ],
+    "click_handlers_count": 1
+   }
+  },
+  "polyglot:angular/src/app/home/home.component.ts": {
+   "owners": [
+    "/home"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/orders/:id",
+     "kind": "navigate",
+     "line": 5
+    }
+   ]
+  },
+  "polyglot:angular/src/app/orders/orders.component.html": {
+   "owners": [
+    "/orders",
+    "/orders/:id"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/new",
+     "kind": "routerLink",
+     "line": 1,
+     "relative": "new"
+    },
+    {
+     "target": "/home",
+     "kind": "href",
+     "line": 2
+    }
+   ]
+  },
+  "polyglot:angular/src/app/orders/orders.component.ts": {
+   "owners": [
+    "/orders",
+    "/orders/:id"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/..",
+     "kind": "routerLink",
+     "line": 3,
+     "relative": "../"
+    }
+   ]
+  },
+  "polyglot:angular/src/app/shared/header.component.html": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/home",
+     "kind": "routerLink",
+     "line": 1
+    }
+   ]
+  },
+  "polyglot:angular/src/index.html": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "polyglot:django/shop/urls.py": {
+   "owners": [
+    "/products",
+    "/products/:id"
+   ],
+   "confidence": "direct"
+  },
+  "polyglot:flask/app.py": {
+   "owners": [
+    "/login",
+    "/reports/:id"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/dashboard",
+     "kind": "navigate",
+     "line": 3
+    },
+    {
+     "target": "/dashboard",
+     "kind": "redirect",
+     "line": 3
+    }
+   ]
+  },
+  "polyglot:mvc/Controllers/AccountController.cs": {
+   "owners": [
+    "/Account",
+    "/Account/Logout",
+    "/Account/Profile/:id"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/Home",
+     "kind": "redirect",
+     "line": 7
+    }
+   ]
+  },
+  "polyglot:mvc/Controllers/ApiDataController.cs": {
+   "owners": [
+    "/Account",
+    "/Account/Logout",
+    "/Account/Profile/:id",
+    "/reports/Monthly"
+   ],
+   "confidence": "inferred"
+  },
+  "polyglot:mvc/Controllers/ReportsController.cs": {
+   "owners": [
+    "/reports/Monthly"
+   ],
+   "confidence": "direct"
+  },
+  "polyglot:mvc/Views/Account/Index.cshtml": {
+   "owners": [
+    "/Account"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/Account/Profile",
+     "kind": "action-link",
+     "line": 2
+    },
+    {
+     "target": "/Reports/Monthly",
+     "kind": "asp-tag",
+     "line": 1
+    },
+    {
+     "target": "/Account/Logout",
+     "kind": "asp-tag",
+     "line": 3
+    }
+   ],
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "buttons": [
+     "Log out"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "polyglot:next/app/(marketing)/pricing/page.tsx": {
+   "owners": [
+    "/next/app/pricing"
+   ],
+   "confidence": "direct"
+  },
+  "polyglot:next/pages/_app.tsx": {
+   "owners": [
+    "/next/pages"
+   ],
+   "confidence": "inferred"
+  },
+  "polyglot:next/pages/blog/[slug].tsx": {
+   "owners": [
+    "/next/pages/blog/:id"
+   ],
+   "confidence": "direct"
+  },
+  "polyglot:next/pages/index.tsx": {
+   "owners": [
+    "/next/pages"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/blog",
+     "kind": "href",
+     "line": 1
+    }
+   ]
+  },
+  "polyglot:razor/Pages/Orders/Index.cshtml": {
+   "owners": [
+    "/Orders"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/Orders/Edit",
+     "kind": "asp-tag",
+     "line": 2
+    }
+   ]
+  },
+  "polyglot:razor/Pages/Orders/Index.cshtml.cs": {
+   "owners": [
+    "/Orders"
+   ],
+   "confidence": "direct"
+  },
+  "polyglot:react/src/App.jsx": {
+   "owners": [
+    "/:id",
+    "/projects",
+    "/settings"
+   ],
+   "confidence": "inferred"
+  },
+  "polyglot:react/src/Projects.jsx": {
+   "owners": [
+    "/:id",
+    "/projects"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/projects/:id",
+     "kind": "navigate",
+     "line": 3
+    },
+    {
+     "target": "/settings",
+     "kind": "link",
+     "line": 3
+    },
+    {
+     "target": "/..",
+     "kind": "link",
+     "line": 5,
+     "relative": "../"
+    }
+   ],
+   "elements": {
+    "buttons": [
+     "navigate('/projects/42')}>Open"
+    ],
+    "buttons_count": 1,
+    "click_handlers": [
+     "navigate"
+    ],
+    "click_handlers_count": 1
+   }
+  },
+  "polyglot:react/src/Settings.jsx": {
+   "owners": [
+    "/settings"
+   ],
+   "confidence": "direct",
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "email"
+    ],
+    "controls_count": 1,
+    "buttons": [
+     "Save settings"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "polyglot:spring/src/main/java/shop/CartController.java": {
+   "owners": [
+    "/cart/checkout",
+    "/cart/view"
+   ],
+   "confidence": "direct"
+  },
+  "polyglot:static/public/about.html": {
+   "owners": [
+    "/public/about.html"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/contact.html",
+     "kind": "href",
+     "line": 1,
+     "relative": "contact.html"
+    },
+    {
+     "target": "/../index.html",
+     "kind": "href",
+     "line": 1,
+     "relative": "../index.html"
+    }
+   ]
+  },
+  "polyglot:static/public/contact.html": {
+   "owners": [
+    "/public/contact.html"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/static/thanks",
+     "kind": "form-action",
+     "line": 1
+    }
+   ],
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "message"
+    ],
+    "controls_count": 1
+   }
+  },
+  "polyglot:vue/src/router/index.js": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "polyglot:vue/src/views/AboutView.vue": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/",
+     "kind": "link",
+     "line": 1
+    }
+   ],
+   "elements": {
+    "controls": [
+     "name"
+    ],
+    "controls_count": 1,
+    "buttons": [
+     "Save"
+    ],
+    "buttons_count": 1,
+    "click_handlers": [
+     "save"
+    ],
+    "click_handlers_count": 1
+   }
+  },
+  "polyglot:webforms/Default.aspx": {
+   "owners": [
+    "/webforms/Default.aspx"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/Search.aspx",
+     "kind": "form-action",
+     "line": 1,
+     "relative": "Search.aspx"
+    }
+   ],
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "q"
+    ],
+    "controls_count": 1
+   }
+  },
+  "polyglot:webforms/Default.aspx.cs": {
+   "owners": [
+    "/webforms/Default.aspx"
+   ],
+   "confidence": "direct",
+   "nav": [
+    {
+     "target": "/Search.aspx",
+     "kind": "redirect",
+     "line": 1
+    }
+   ]
+  }
+ },
+ "edges": [
+  {
+   "from": "/home",
+   "to": "/orders",
+   "type": "code",
+   "kind": "routerLink",
+   "repo": "polyglot",
+   "file": "angular/src/app/home/home.component.html",
+   "line": 2,
+   "confidence": "direct"
+  },
+  {
+   "from": "/home",
+   "to": "/admin/users",
+   "type": "code",
+   "kind": "routerLink",
+   "repo": "polyglot",
+   "file": "angular/src/app/home/home.component.html",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/home",
+   "to": "/orders/:id",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "polyglot",
+   "file": "angular/src/app/home/home.component.ts",
+   "line": 5,
+   "confidence": "direct"
+  },
+  {
+   "from": "/orders",
+   "to": "/orders/new",
+   "type": "code",
+   "kind": "routerLink",
+   "repo": "polyglot",
+   "file": "angular/src/app/orders/orders.component.html",
+   "line": 1,
+   "confidence": "direct"
+  },
+  {
+   "from": "/orders/:id",
+   "to": "/orders/:id/new",
+   "type": "code",
+   "kind": "routerLink",
+   "repo": "polyglot",
+   "file": "angular/src/app/orders/orders.component.html",
+   "line": 1,
+   "confidence": "direct"
+  },
+  {
+   "from": "/orders",
+   "to": "/home",
+   "type": "code",
+   "kind": "href",
+   "repo": "polyglot",
+   "file": "angular/src/app/orders/orders.component.html",
+   "line": 2,
+   "confidence": "direct"
+  },
+  {
+   "from": "/orders/:id",
+   "to": "/home",
+   "type": "code",
+   "kind": "href",
+   "repo": "polyglot",
+   "file": "angular/src/app/orders/orders.component.html",
+   "line": 2,
+   "confidence": "direct"
+  },
+  {
+   "from": "/orders",
+   "to": "/",
+   "type": "code",
+   "kind": "routerLink",
+   "repo": "polyglot",
+   "file": "angular/src/app/orders/orders.component.ts",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/orders/:id",
+   "to": "/orders",
+   "type": "code",
+   "kind": "routerLink",
+   "repo": "polyglot",
+   "file": "angular/src/app/orders/orders.component.ts",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "(shared)",
+   "to": "/home",
+   "type": "code",
+   "kind": "routerLink",
+   "repo": "polyglot",
+   "file": "angular/src/app/shared/header.component.html",
+   "line": 1,
+   "confidence": "shared"
+  },
+  {
+   "from": "/login",
+   "to": "/dashboard",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "polyglot",
+   "file": "flask/app.py",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/reports/:id",
+   "to": "/dashboard",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "polyglot",
+   "file": "flask/app.py",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/login",
+   "to": "/dashboard",
+   "type": "code",
+   "kind": "redirect",
+   "repo": "polyglot",
+   "file": "flask/app.py",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/reports/:id",
+   "to": "/dashboard",
+   "type": "code",
+   "kind": "redirect",
+   "repo": "polyglot",
+   "file": "flask/app.py",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/Account",
+   "to": "/Home",
+   "type": "code",
+   "kind": "redirect",
+   "repo": "polyglot",
+   "file": "mvc/Controllers/AccountController.cs",
+   "line": 7,
+   "confidence": "direct"
+  },
+  {
+   "from": "/Account/Logout",
+   "to": "/Home",
+   "type": "code",
+   "kind": "redirect",
+   "repo": "polyglot",
+   "file": "mvc/Controllers/AccountController.cs",
+   "line": 7,
+   "confidence": "direct"
+  },
+  {
+   "from": "/Account/Profile/:id",
+   "to": "/Home",
+   "type": "code",
+   "kind": "redirect",
+   "repo": "polyglot",
+   "file": "mvc/Controllers/AccountController.cs",
+   "line": 7,
+   "confidence": "direct"
+  },
+  {
+   "from": "/Account",
+   "to": "/Account/Profile",
+   "type": "code",
+   "kind": "action-link",
+   "repo": "polyglot",
+   "file": "mvc/Views/Account/Index.cshtml",
+   "line": 2,
+   "confidence": "direct"
+  },
+  {
+   "from": "/Account",
+   "to": "/Reports/Monthly",
+   "type": "code",
+   "kind": "asp-tag",
+   "repo": "polyglot",
+   "file": "mvc/Views/Account/Index.cshtml",
+   "line": 1,
+   "confidence": "direct"
+  },
+  {
+   "from": "/Account",
+   "to": "/Account/Logout",
+   "type": "code",
+   "kind": "asp-tag",
+   "repo": "polyglot",
+   "file": "mvc/Views/Account/Index.cshtml",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/next/pages",
+   "to": "/blog",
+   "type": "code",
+   "kind": "href",
+   "repo": "polyglot",
+   "file": "next/pages/index.tsx",
+   "line": 1,
+   "confidence": "direct"
+  },
+  {
+   "from": "/Orders",
+   "to": "/Orders/Edit",
+   "type": "code",
+   "kind": "asp-tag",
+   "repo": "polyglot",
+   "file": "razor/Pages/Orders/Index.cshtml",
+   "line": 2,
+   "confidence": "direct"
+  },
+  {
+   "from": "/:id",
+   "to": "/projects/:id",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "polyglot",
+   "file": "react/src/Projects.jsx",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/projects",
+   "to": "/projects/:id",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "polyglot",
+   "file": "react/src/Projects.jsx",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/:id",
+   "to": "/settings",
+   "type": "code",
+   "kind": "link",
+   "repo": "polyglot",
+   "file": "react/src/Projects.jsx",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/projects",
+   "to": "/settings",
+   "type": "code",
+   "kind": "link",
+   "repo": "polyglot",
+   "file": "react/src/Projects.jsx",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/:id",
+   "to": "/",
+   "type": "code",
+   "kind": "link",
+   "repo": "polyglot",
+   "file": "react/src/Projects.jsx",
+   "line": 5,
+   "confidence": "direct"
+  },
+  {
+   "from": "/projects",
+   "to": "/",
+   "type": "code",
+   "kind": "link",
+   "repo": "polyglot",
+   "file": "react/src/Projects.jsx",
+   "line": 5,
+   "confidence": "direct"
+  },
+  {
+   "from": "/public/about.html",
+   "to": "/public/contact.html",
+   "type": "code",
+   "kind": "href",
+   "repo": "polyglot",
+   "file": "static/public/about.html",
+   "line": 1,
+   "confidence": "direct"
+  },
+  {
+   "from": "/public/about.html",
+   "to": "/index.html",
+   "type": "code",
+   "kind": "href",
+   "repo": "polyglot",
+   "file": "static/public/about.html",
+   "line": 1,
+   "confidence": "direct"
+  },
+  {
+   "from": "/public/contact.html",
+   "to": "/static/thanks",
+   "type": "code",
+   "kind": "form-action",
+   "repo": "polyglot",
+   "file": "static/public/contact.html",
+   "line": 1,
+   "confidence": "direct"
+  },
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "link",
+   "repo": "polyglot",
+   "file": "vue/src/views/AboutView.vue",
+   "line": 1,
+   "confidence": "shared"
+  },
+  {
+   "from": "/webforms/Default.aspx",
+   "to": "/webforms/Search.aspx",
+   "type": "code",
+   "kind": "form-action",
+   "repo": "polyglot",
+   "file": "webforms/Default.aspx",
+   "line": 1,
+   "confidence": "direct"
+  },
+  {
+   "from": "/webforms/Default.aspx",
+   "to": "/Search.aspx",
+   "type": "code",
+   "kind": "redirect",
+   "repo": "polyglot",
+   "file": "webforms/Default.aspx.cs",
+   "line": 1,
+   "confidence": "direct"
+  },
+  {
+   "from": "/",
+   "to": "/home",
+   "type": "code",
+   "kind": "route-redirect",
+   "repo": "polyglot",
+   "file": "angular/src/app/app-routing.module.ts",
+   "line": 7,
+   "confidence": "direct"
+  }
+ ],
+ "errors": []
+}

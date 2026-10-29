@@ -1,0 +1,5 @@
+<h1>Home</h1>
+<a routerLink="/orders">Orders</a>
+<a [routerLink]="['/admin', 'users']">Users</a>
+<button (click)="open(1)">Open order</button>
+<form [formGroup]="search"><input formControlName="query"><button type="submit">Search</button></form>
