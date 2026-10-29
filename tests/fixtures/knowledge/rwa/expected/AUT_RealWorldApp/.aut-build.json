@@ -1,0 +1,29 @@
+{
+  "app": "RealWorldApp",
+  "dsm_generated_at": "2026-10-29T07:21:47+00:00",
+  "built_at": "2026-10-29 11:16 UTC",
+  "skills": [
+    "AUT_RealWorldApp",
+    "AUT_RealWorldApp-Bankaccounts",
+    "AUT_RealWorldApp-Contacts",
+    "AUT_RealWorldApp-Home",
+    "AUT_RealWorldApp-Implicit",
+    "AUT_RealWorldApp-Notifications",
+    "AUT_RealWorldApp-Personal",
+    "AUT_RealWorldApp-Public",
+    "AUT_RealWorldApp-Signin",
+    "AUT_RealWorldApp-Signup"
+  ],
+  "repos": [
+    {
+      "name": "cypress-realworld-app",
+      "path": "/Users/sarvagya/Desktop/Workspace/cypress-realworld-app",
+      "ref": "origin/develop",
+      "commit": "0729f68ac220f7cda4ad09c5693dba11d7c532c6",
+      "files_scanned": 126,
+      "frameworks": [
+        "react-router"
+      ]
+    }
+  ]
+}

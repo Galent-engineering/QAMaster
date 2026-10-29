@@ -73,7 +73,7 @@ Not in step 3:
 | 2 | Repo scan | ✓ 2026-10-29 | ✓ | ✓ 2 golden fixtures, fixes 1–5 | ✓ | ✓ fixes 1–4 |
 | 3 | UI crawl and DSM refresh | ✓ 2026-10-29 | ✓ | ✓ real crawl of app.mjs: 0 writes | ✓ skill, agent, `/qamaster:dsm` | ✓ build |
 | 4 | Setup and pipeline | ✓ 2026-10-29 | ✓ | ✓ 9 tests, real setup on a demo copy | ✓ no skills (onboard and status are step 9) | ✓ `feature/4_setup-and-pipeline` |
-| 5 | Application knowledge | | | | | |
+| 5 | Application knowledge | in progress | | | | |
 | — | Step 4: ADO adapter | | | | | |
 | 6 | Requirements | | | | | |
 | 7 | TestGen | | | | | |
@@ -504,6 +504,27 @@ Checks:
 - git 2.20 as the minimum;
 - `file://` accepted as a git URL;
 - removing `claude-hooks` deletes only its record, since `.qamaster/` also holds plans and verdicts. The hooks will check the record (step 9).
+
+### 5. Application knowledge (Learn in progress, 2026-10-29)
+
+**Version:** `aut-skill/build_aut_skills.mts` (571 lines) is the same in 0.1.5 and 0.2.0.
+
+**What it does:** it turns `dsm/dsm.json` into a main `AUT_<App>` skill and one `AUT_<App>-<Component>` skill per DSM module. Each `SKILL.md` has two blocks:
+- a **generated** block of DSM facts, rewritten every time;
+- a **curated** block that Claude writes from the source code, kept as is.
+
+**Fixtures** (`tests/fixtures/knowledge/`), each produced by AQE's own builder:
+- `shop/expected`: the shop DSM, app "Shop";
+- `rwa/expected`: the Real World App DSM;
+- `curated/input` and `expected`: the shop skills with a hand-written curated block in `AUT_Shop-Cart`, rebuilt to show the block is kept and its `Summary:` reaches the description.
+
+**Problems found so far** (each reproduced with AQE):
+1. **Every rebuild rewrites every file.** Rebuilding the same DSM a minute later changed all 9 files, because each carries "skill generated <time>". That's noise in git, and reviewers can't see real changes.
+2. **Curated text can be lost silently.** When a curated block's end marker is damaged (one edited character), the rebuild replaces the whole file with the template. The QA-written text is gone, with no warning.
+3. **Exit codes clash:** `needs-input` exits 3 (QAMaster: awaiting approval) and `no-dsm` exits 4.
+4. **Components follow the first URL segment**, so the Real World App's transaction tabs (`/contacts`, `/personal`, `/public`) become three components. The scan now knows they share one container file, which could group them (still to decide).
+
+Still to do: the rest of Learn, then Improve, Build, Test and Move.
 
 ## Roadmap: what comes after the v1 MVP
 

@@ -1,0 +1,27 @@
+{
+  "app": "Shop",
+  "dsm_generated_at": "2026-10-29T07:21:47+00:00",
+  "built_at": "2026-10-29 11:16 UTC",
+  "skills": [
+    "AUT_Shop",
+    "AUT_Shop-Admin",
+    "AUT_Shop-Cart",
+    "AUT_Shop-Checkout",
+    "AUT_Shop-Help",
+    "AUT_Shop-Home",
+    "AUT_Shop-Login",
+    "AUT_Shop-Products"
+  ],
+  "repos": [
+    {
+      "name": "shop",
+      "path": "/src/shop",
+      "ref": "main",
+      "commit": "cccccccccccccccccccccccccccccccccccccccc",
+      "files_scanned": 6,
+      "frameworks": [
+        "react-router"
+      ]
+    }
+  ]
+}
