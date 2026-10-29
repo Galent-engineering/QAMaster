@@ -59,6 +59,8 @@ The order follows the dependencies, starting with the pure functions that are ea
 | 8 | **Automation** | `e2e-automation/scaffold` 274, `check_scripts` 157, `shared/bdd-quality` 83, `shared/aut-app` 69, `framework/TestAutomation` with `scripts/locator-sync` | `src/automation/` behind the `Framework` adapter (Q25; its methods are designed in this feature's Learn phase), `plugin/framework/` | `qam app create`, `qam check-scripts` | `AutomationCode` (playwright-bdd parts only), `UI-Locator-Sync` | 7 |
 | 9 | **Reports** | `reports/build_report`, `build_all`, `compose_summary`, `dsm_to_report`, `testgen_to_report`, `playwright_to_report`, `types/*` (six report types) | `src/reports/`, `plugin/reports/templates/` | `qam report all\|manual\|<type>` | `QE-Reports` and its six report skills | 1, 7, 8 |
 
+**Reordered 2026-10-29 (your call):** feature 7, TestGen, comes next, before step 4 and feature 6. This gives the earliest QE-engine demo: app in, reviewed test cases out. Requirements are optional in the pipeline, and generating cases needs no ADO. Decision 4 still holds: the ADO adapter comes before feature 6. Step 4's Learn is kept on `feature/step4_ado-adapter`.
+
 Not in step 3:
 - **`qam review`** records who reviewed a run (Q12). It's new, so it comes with publish (step 7).
 - **Hooks and commands** belong to step 9, along with the Q14 hook rules.
@@ -76,7 +78,7 @@ Not in step 3:
 | 5 | Application knowledge | ✓ 2026-10-29, 10 AQE problems reproduced | ✓ | ✓ 3 golden fixtures + AQE agreement, fixes 1–10 | ✓ `AUT-Skill-Builder` | ✓ `feature/5_application-knowledge` |
 | — | Step 4: ADO adapter | | | | | |
 | 6 | Requirements | | | | | |
-| 7 | TestGen | | | | | |
+| 7 | TestGen | ✓ 2026-10-29, 8 AQE validator holes reproduced; waiting for review | | | | |
 | 8 | Automation | | | | | |
 | 9 | Reports | | | | | |
 
@@ -699,6 +701,79 @@ The golden came first. Commit `3ff334a` is a plain port that writes AQE's shop, 
 - **Components:** decided for v1 (first URL segment). Grouping by shared container file comes back with the gate.
 
 **Left out (not MVP):** the MCP connection step (v2, with context sources) and the hook (step 9).
+
+### 7. TestGen (Learn done 2026-10-29, waiting for review)
+
+Done ahead of step 4 and feature 6 (see the reorder note under Order), on `feature/7_testgen`.
+
+**Versions:** `testgen/testgen.mts` is 559 lines in 0.1.5 and 764 in 0.2.0. The `Domain_Test_Design_Skill` and its 39 sub-skills are the same in both (40 folders, 6,732 lines).
+- **0.2.0 adds:**
+  - API steps (`api:` evidence, from AQE's API model);
+  - revision mode for imported test cases (`tc:`);
+  - `locator:` evidence;
+  - the Manual Test Case Report fields (severity, sub-module, feature, channel, coverage, test data);
+  - a ban on generic wording ("valid data", "as expected");
+  - Scenario Outlines in the rendered feature files.
+- **0.1.5** fails the demo's own run, since it has no `tc:` evidence type.
+- **Choice:** 0.2.0 without API steps and revision mode, which are v2 (Roadmap). `locator:` waits for feature 8, which writes the locator files.
+
+**What it does:**
+- **`context`** prints a fact pack for Claude: entry screens, candidate journeys, and per component the screens, forms, fields, elements, navigation and source files. It also gives the evidence formats and lists the domain and AUT skills.
+- **`validate <run>`** reads a run's `manifest.json` and `testcases.json`, which Claude writes, and checks:
+  - **structure:** required fields and allowed values;
+  - **wording:** no generic phrases, no vague expected results;
+  - **every step:** the screen is in the DSM; the first screen is an entry screen (or a deep link with a reason); each next screen is a DSM navigation from the last; a named element is on that screen;
+  - **every evidence reference** resolves: `dsm:screen|element|relation|journey`, `code:<repo>:<path>[:<line>]`, `aut:<Skill>[#<heading>]`, `domain:<SubSkill>[#<heading>]`, `req:<id>`;
+  - **coverage:** every required category per component, every screen visited, every form with a positive and a negative test, and every candidate journey walked by an E2E or Business test. Exclusions need a reason.
+  - It writes `review.json` and exits 1 on any finding.
+- **`render <run>`** (only after a pass) writes `testcases.md`, `<Component>.feature` (Background, Scenario Outline with Examples, `@TC-…` tags) and `testcases.csv`.
+
+**Fixtures** (`tests/fixtures/testgen/`):
+- **The golden run:** `shop/run`, a hand-written run of six Cart cases (one per category, walking journey 1) on the feature 1 shop DSM, made by `make-run.mjs`. AQE's validator passes it with 0 findings and 0 gaps.
+- **AQE's own output** (`shop/aqe/`): `review.json`, `testcases.md`, `Cart.feature`, `testcases.csv` and the full `context.json`. These are the goldens for Build.
+- `shop/testgen.json`: AQE's default settings.
+- `aqe-runs.json` and `aqe-repro.mjs`: each problem below, reproduced on AQE 0.2.0 and 0.1.5, with the same results in both.
+
+**Problems found.** Q10 promises "hallucination tolerance 0". Each run changes one thing in the passing golden run that should fail, and AQE still passes it (exit 0):
+1. **An invented element passes when its name is part of a real one.** "Check" passes on `/cart` because "checkout" contains it. Element matching is a substring test for any name over 3 characters, so "Save" would match "Unsaved changes".
+2. **UI named in the step text is never checked.** A step that says "Click the Apply voucher button", with no `element` field, passes. Only the optional `element` field is compared with the DSM.
+3. **An invented business rule passes with real-looking citations.** "The order total drops by 10 percent", citing `code:shop:src/Cart.tsx:9999` (the file exists; line 9999 doesn't) and `aut:AUT_Shop` (no heading), passes. Citations are checked for existence, at the file and skill level only, never for what they say.
+4. **An invented requirement passes.** `req:US-999` passes as soon as `manifest.requirements` lists it, and that manifest is written by the same model, with no `requirements/` folder at all. Given as a string, `req:US-1` also passes because "US-12" contains it.
+5. **The tolerance is a setting.** With `hallucination_tolerance: 2`, a run with two "invented UI element?" findings reports **pass**. Q10 has no such setting.
+6. **CSV formula injection.** A title starting with `=HYPERLINK(…)` is written as it is into `testcases.csv`, which a spreadsheet runs as a formula. Test case text comes from the model and from page text.
+7. **The result isn't tied to its inputs, and its name misleads.** `review.json` doesn't say which DSM or skills it was checked against, so a later DSM change can't make it stale. It's named "review", and AQE's pipeline counts it as the reviewed stage, though no person reviewed anything. Q12 makes review the person's.
+8. **Exit codes:** with no DSM, `validate` exits 1 (QAMaster: fail) instead of blocked.
+
+The common thread: the validator proves that **references exist**, not that **claims are true**. Fixes 1–5 and 7 close the gaps a program can check. What a cited line *says* stays the reviewer's job (Q12). The report and the skill now say so plainly, and they make every citation precise enough to check in seconds.
+
+**Improve: proposed fixes** (★ = my choice, for your review):
+
+| # | Fix |
+|---|---|
+| 1 | ★ An element matches only exactly, after normalising case and punctuation, ignoring a trailing kind word ("Coupon field", "Keep shopping link"). No substrings |
+| 2 | ★ A step that clicks, types, selects or opens something must name its `element`. Names quoted in the action text (`"…"` or `'…'`) are checked like `element` |
+| 3 | ★ `code:` with a line must point inside the file, read through the `RepoReader` at the scanned commit. Business and E2E cases, and any expected result stating a rule, need a citation with a line or a heading (`code:…:<line>`, `aut:<Skill>#<heading>`, `req:<id>`). A bare file or skill isn't enough |
+| 4 | `req:<id>` must match exactly an ID in `requirements/<scope>/requirements.json`, which feature 6 writes. The manifest names the scope; it no longer lists requirements itself |
+| 5 | The tolerance is fixed at 0 (Q10). A `hallucination_tolerance` other than 0 in the settings blocks with a pointer to Q10 |
+| 6 | CSV cells starting with `=`, `+`, `-`, `@`, a tab or a carriage return get a leading `'` |
+| 7 | The result is `validation.json`, recording the DSM's `generated_at`, the skills' build record and a hash of `manifest.json` and `testcases.json`. The pipeline marks it stale when any of them moves, and render, review and publish refuse a run changed since. "Reviewed" stays the person's (`run.json` `reviewedBy`, Q12) |
+| 8 | No DSM, or a missing run folder, is blocked (exit 2) with the next step |
+
+**Port plan for Build:**
+- **Pure modules:** `src/testgen/facts.mts` (the fact pack, built on `knowledge/build.mts`'s model), `validate.mts` and `render.mts`. `qam testgen context|validate|render` goes in the CLI.
+- **Goldens first:** QAMaster's context, validation and rendered files must match `shop/aqe/` on the golden run before any fix. Then one test per fix, each run on its `aqe-runs.json` case.
+- ★ **`qam review <run>`** (Q12) belongs with publish in porting step 7. I'd build its local half now, recording `reviewedBy` from `git config user.email` after the person's yes, so the demo ends with "reviewed test cases". Recording the ADO identity waits for step 4.
+
+**Moves with it:**
+- the `TestGen` skill, rewritten for `qam`: no MCP step (requirements come from feature 6, code from the local clones), no revision mode, and the rule that validation isn't review;
+- `Domain_Test_Design_Skill` and its 39 sub-skills, copied as they are, apart from one line that names `/autonomous-qe:generate-dsm`;
+- the TestGen hook belongs to step 9.
+
+**Left out:** API steps and the API model, revision mode and test case import (v2), `locator:` evidence (feature 8), and the `.xlsx` export AQE's demo run has (feature 9 builds the reports).
+
+**Open points, for you:**
+- the ★ fixes, especially fix 2 (how strict to be about UI named in the step text) and fix 3 (what counts as a precise citation);
+- whether `qam review` comes forward into this feature for the demo.
 
 ## Roadmap: what comes after the v1 MVP
 

@@ -1,0 +1,54 @@
+{
+  "_comment": "TestGen settings (hook .claude/hooks/testgen.mts, skill TestGen, tool tools/testgen/testgen.mts).",
+  "output_dir": "testgen/output",
+  "hallucination_tolerance": 0,
+  "_hallucination_tolerance_comment": "Number of unverifiable facts allowed in a run. 0 = every screen, element, navigation step and cited source must be found in the DSM, AUT skills, code model, locator files, domain skill or fetched requirements.",
+  "required_categories": [
+    "Positive",
+    "Negative",
+    "Boundary",
+    "E2E",
+    "Business",
+    "Edge"
+  ],
+  "require_every_screen_covered": true,
+  "require_every_form_positive_and_negative": true,
+  "require_every_journey_covered": true,
+  "max_fix_attempts": 3,
+  "vague_expected_phrases": [
+    "works fine",
+    "works as expected",
+    "as expected",
+    "should work",
+    "is correct",
+    "correctly",
+    "properly",
+    "successfully completes",
+    "no issues",
+    "behaves normally",
+    "appropriate",
+    "appropriately",
+    "etc",
+    "done",
+    "ok",
+    "fine",
+    "verified",
+    "pass",
+    "passes",
+    "valid result"
+  ],
+  "trigger_patterns": [
+    "\\btest ?gen\\b",
+    "\\b(generate|create|write|design|produce|draft|prepare|build)\\b[^.?!]{0,60}\\b(test cases?|test scenarios?|tests|test suite|regression (suite|pack))\\b"
+  ],
+  "min_expected_length": 15,
+  "exclude_patterns": [
+    "\\bautomat(e|ion|ed)\\b",
+    "\\bscripts?\\b",
+    "\\bplaywright\\b",
+    "\\bstep definitions?\\b",
+    "\\bpage (objects?|classes?|methods?)\\b"
+  ],
+  "require_report_fields": true,
+  "_comment_require_report_fields": "When true, every test case carries the Manual Test Case Report fields: severity, sub_module, one-word feature, channel, coverage and test_data."
+}

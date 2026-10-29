@@ -1,0 +1,95 @@
+{
+  "_comment": "AQE testgen validator holes, reproduced by aqe-repro.mjs (2026-10-29) on a copy of the shop fixture project: tests/fixtures/dsm/shop (dsm.json, code-model.json), tests/fixtures/knowledge/shop/aqe as .claude/skills, config aut-skills app_name Shop, shop/testgen.json. Each run mutates the passing golden run in shop/run (made by make-run.mjs). AQE 0.2.0 results; 0.1.5 gave the same exit and status unless a 0.1.5 key says otherwise.",
+  "runs": [
+    {
+      "id": "golden",
+      "problem": "none: the hand-written Cart run passes",
+      "change": "tests/fixtures/testgen/shop run as it is",
+      "exit": 0,
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "id": "element-substring",
+      "problem": "an invented element passes when its name is part of a real one: \"Check\" is inside \"checkout\"",
+      "change": "TC-CART-001 last step: element \"Check\" on /cart (the DSM has Coupon, checkout, Keep shopping)",
+      "exit": 0,
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "id": "ui-in-prose",
+      "problem": "UI named in the action text is never checked: only the optional element field is",
+      "change": "TC-CART-001 last step: no element field; action names an \"Apply voucher\" button that is not in the DSM",
+      "exit": 0,
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "id": "invented-rule",
+      "problem": "an invented business rule passes when it cites a real file at a line that does not exist, and a skill without a heading",
+      "change": "TC-CART-002 last step: expected \"total drops by 10 percent\", evidence code:shop:src/Cart.tsx:9999 (the file is in the code model) and aut:AUT_Shop",
+      "exit": 0,
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "id": "invented-requirement",
+      "problem": "a requirement ID passes if the manifest lists it; the manifest is written by the same model, and nothing checks requirements/",
+      "change": "manifest.requirements gains US-999 (no requirements/ folder at all); TC-CART-003 cites req:US-999",
+      "exit": 0,
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "id": "requirement-substring",
+      "problem": "with requirements given as a string, req:US-1 passes because \"US-12\" contains it",
+      "change": "manifest.requirements \"US-12\"; TC-CART-003 cites req:US-1",
+      "exit": 0,
+      "status": "pass",
+      "errors": []
+    },
+    {
+      "id": "tolerance-config",
+      "problem": "raising hallucination_tolerance in config/testgen.json lets invented elements through, and the run still reports pass",
+      "change": "config hallucination_tolerance 2; TC-CART-004 and 005 last steps name elements Voucher code and Gift card (not in the DSM)",
+      "exit": 0,
+      "status": "pass",
+      "errors": [
+        "TC-CART-004 step 4: element \"Voucher code\" is not on /cart in the DSM (invented UI element?)",
+        "TC-CART-005 step 4: element \"Gift card\" is not on /cart in the DSM (invented UI element?)"
+      ]
+    },
+    {
+      "id": "csv-formula",
+      "problem": "a cell starting with = is written as it is into testcases.csv, which a spreadsheet runs as a formula",
+      "change": "TC-CART-001 title starts with =HYPERLINK(...); testgen render",
+      "exit": 0,
+      "status": "pass",
+      "errors": [],
+      "csv_row_starts": "TC-CART-001,\"=HYPERLINK(\"\"http://example.test\"\",\"\"Cart\"\") Ca"
+    },
+    {
+      "id": "unbound-result",
+      "problem": "review.json does not say which DSM it was checked against, and its name says \"review\" though no person reviewed anything (AQE's pipeline counts it as the reviewed stage)",
+      "change": "validate the golden run, read review.json",
+      "review_keys": [
+        "status",
+        "hallucination_tolerance",
+        "cases",
+        "errors",
+        "gaps",
+        "by_category",
+        "by_type"
+      ]
+    },
+    {
+      "id": "no-dsm-exit",
+      "problem": "no DSM exits 1 (QAMaster: fail) instead of blocked",
+      "change": "remove dsm/dsm.json; testgen validate",
+      "exit": 1,
+      "status": null,
+      "errors": null
+    }
+  ]
+}
