@@ -1,0 +1,15 @@
+{
+ "project": "RealWorldApp",
+ "output_dir": "dsm",
+ "application": {
+  "base_url": "http://localhost:3000/",
+  "start_paths": [
+   "/"
+  ]
+ },
+ "matrix": {
+  "default_level": "page",
+  "module_depth": 1,
+  "max_element_nodes": 4000
+ }
+}

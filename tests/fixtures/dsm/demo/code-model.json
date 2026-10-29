@@ -1,0 +1,58 @@
+{
+ "generated_at": "2026-10-29T04:47:42+00:00",
+ "repos": [
+  {
+   "name": "autonomousQeDemo",
+   "path": "/Users/sarvagya/Desktop/Workspace/autonomousQeDemo",
+   "ref": "remove-cart-items-30",
+   "commit": "bd7b8b4e0e82ae4e9603bf338a301827acfe5735",
+   "files_scanned": 8,
+   "frameworks": []
+  }
+ ],
+ "routes": [],
+ "files": {
+  "autonomousQeDemo:site/cart.js": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "autonomousQeDemo:site/coupon.js": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "autonomousQeDemo:site/index.html": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "buttons": [
+     "Add to cart",
+     "Apply",
+     "Sign in"
+    ],
+    "buttons_count": 4
+   }
+  },
+  "autonomousQeDemo:site/login.js": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "autonomousQeDemo:tests/conftest.py": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "autonomousQeDemo:tests/test_cart.py": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "autonomousQeDemo:tests/test_coupon.py": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "autonomousQeDemo:tests/test_login.py": {
+   "owners": [],
+   "confidence": "shared"
+  }
+ },
+ "edges": [],
+ "errors": []
+}

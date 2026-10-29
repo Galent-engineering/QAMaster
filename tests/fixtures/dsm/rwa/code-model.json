@@ -1,0 +1,1005 @@
+{
+ "generated_at": "2026-10-29T07:16:46+00:00",
+ "repos": [
+  {
+   "name": "cypress-realworld-app",
+   "path": "/Users/sarvagya/Desktop/Workspace/cypress-realworld-app",
+   "ref": "origin/develop",
+   "commit": "0729f68ac220f7cda4ad09c5693dba11d7c532c6",
+   "files_scanned": 126,
+   "frameworks": [
+    "react-router"
+   ]
+  }
+ ],
+ "routes": [
+  {
+   "route": "/signup",
+   "repo": "cypress-realworld-app",
+   "file": "src/containers/App.tsx",
+   "line": 63,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/signin",
+   "repo": "cypress-realworld-app",
+   "file": "src/containers/App.tsx",
+   "line": 66,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/implicit/callback",
+   "repo": "cypress-realworld-app",
+   "file": "src/containers/AppOkta.tsx",
+   "line": 86,
+   "kind": "route",
+   "framework": "react-router",
+   "component": "LoginCallback"
+  },
+  {
+   "route": "/contacts",
+   "repo": "cypress-realworld-app",
+   "file": "src/containers/TransactionsContainer.tsx",
+   "line": 33,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/personal",
+   "repo": "cypress-realworld-app",
+   "file": "src/containers/TransactionsContainer.tsx",
+   "line": 40,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/(public)",
+   "repo": "cypress-realworld-app",
+   "file": "src/containers/TransactionsContainer.tsx",
+   "line": 47,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  }
+ ],
+ "files": {
+  "cypress-realworld-app:amplify/backend/types/amplify-dependent-resources-ref.d.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/app.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/auth.ts": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/",
+     "kind": "navigate",
+     "line": 51
+    },
+    {
+     "target": "/",
+     "kind": "navigate",
+     "line": 53
+    },
+    {
+     "target": "/",
+     "kind": "redirect",
+     "line": 51
+    },
+    {
+     "target": "/",
+     "kind": "redirect",
+     "line": 53
+    }
+   ]
+  },
+  "cypress-realworld-app:backend/bankaccount-routes.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/banktransfer-routes.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/comment-routes.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/contact-routes.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/database.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/gql-playground-routes.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/graphql/resolvers/Mutation.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/graphql/resolvers/Query.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/graphql/resolvers/index.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/helpers.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/like-routes.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/notification-routes.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/testdata-routes.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/transaction-routes.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/types.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/user-routes.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:backend/validators.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:cypress.config.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:cypress.d.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:eslint.config.mjs": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:index.html": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/manifest.json",
+     "kind": "href",
+     "line": 14
+    }
+   ],
+   "elements": {
+    "controls": [
+     "description",
+     "theme-color",
+     "viewport"
+    ],
+    "controls_count": 3
+   }
+  },
+  "cypress-realworld-app:src/components/AlertBar.cy.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/AlertBar.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/BankAccountForm.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/bankaccounts",
+     "kind": "navigate",
+     "line": 76
+    }
+   ],
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "accountNumber",
+     "bankName",
+     "routingNumber"
+    ],
+    "controls_count": 3,
+    "buttons": [
+     "Save"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "cypress-realworld-app:src/components/BankAccountItem.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/BankAccountList.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/CommentForm.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "content"
+    ],
+    "controls_count": 1
+   }
+  },
+  "cypress-realworld-app:src/components/CommentList.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/CommentListItem.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/EmptyList.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/Footer.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/MainLayout.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/NavBar.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/",
+     "kind": "link",
+     "line": 150
+    }
+   ],
+   "elements": {
+    "buttons": [
+     "(unnamed)"
+    ],
+    "buttons_count": 1,
+    "click_handlers": [
+     "toggleDrawer"
+    ],
+    "click_handlers_count": 1
+   }
+  },
+  "cypress-realworld-app:src/components/NavDrawer.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "click_handlers": [
+     "showTemporaryDrawer",
+     "signOutPending"
+    ],
+    "click_handlers_count": 5
+   }
+  },
+  "cypress-realworld-app:src/components/NotificationList.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/NotificationListItem.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "click_handlers": [
+     "updateNotification"
+    ],
+    "click_handlers_count": 2
+   }
+  },
+  "cypress-realworld-app:src/components/PrivateRoute.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/SignInForm.cy.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/SignInForm.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/forgotpassword",
+     "kind": "link",
+     "line": 165
+    },
+    {
+     "target": "/signup",
+     "kind": "link",
+     "line": 168
+    }
+   ],
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "password",
+     "username"
+    ],
+    "controls_count": 2,
+    "buttons": [
+     "Sign In"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "cypress-realworld-app:src/components/SignUpForm.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/signin",
+     "kind": "link",
+     "line": 194
+    }
+   ],
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "confirmPassword",
+     "firstName",
+     "lastName",
+     "password",
+     "username"
+    ],
+    "controls_count": 5,
+    "buttons": [
+     "Sign Up"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "cypress-realworld-app:src/components/SkeletonList.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/SvgCypressLogo.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/SvgRwaIconLogo.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/SvgRwaLogo.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/SvgUndrawNavigatorA479.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/SvgUndrawPersonalFinanceTqcd.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/SvgUndrawPersonalSettingsKihd.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/SvgUndrawReminders697P.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/SvgUndrawTransferMoneyRywa.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/TransactionAmount.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/TransactionContactsList.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/TransactionCreateStepOne.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/TransactionCreateStepThree.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/transaction/new",
+     "kind": "navigate",
+     "line": 134
+    }
+   ],
+   "elements": {
+    "buttons": [
+     "Return To Transactions"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "cypress-realworld-app:src/components/TransactionCreateStepTwo.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "amount",
+     "description"
+    ],
+    "controls_count": 2,
+    "click_handlers": [
+     "setTransactionType"
+    ],
+    "click_handlers_count": 2
+   }
+  },
+  "cypress-realworld-app:src/components/TransactionDateRangeFilter.cy.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/TransactionDateRangeFilter.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "buttons": [
+     "handleDateRangeClose()}>\n            Close"
+    ],
+    "buttons_count": 1,
+    "click_handlers": [
+     "handleDateRangeClick",
+     "handleDateRangeClose"
+    ],
+    "click_handlers_count": 3
+   }
+  },
+  "cypress-realworld-app:src/components/TransactionDetail.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "click_handlers": [
+     "transactionLike",
+     "transactionUpdate"
+    ],
+    "click_handlers_count": 3
+   }
+  },
+  "cypress-realworld-app:src/components/TransactionInfiniteList.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/TransactionItem.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/transaction/:id",
+     "kind": "navigate",
+     "line": 79
+    }
+   ],
+   "elements": {
+    "click_handlers": [
+     "showTransactionDetail"
+    ],
+    "click_handlers_count": 1
+   }
+  },
+  "cypress-realworld-app:src/components/TransactionList.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "buttons": [
+     "Create A Transaction"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "cypress-realworld-app:src/components/TransactionListAmountRangeFilter.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "buttons": [
+     "handleAmountRangeClose()}\n          >\n            Close"
+    ],
+    "buttons_count": 1,
+    "click_handlers": [
+     "handleAmountRangeClick",
+     "handleAmountRangeClose"
+    ],
+    "click_handlers_count": 2
+   }
+  },
+  "cypress-realworld-app:src/components/TransactionListFilters.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/TransactionNavTabs.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/TransactionPersonalList.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/TransactionPublicList.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/TransactionTitle.cy.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/TransactionTitle.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/components/UserListItem.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "click_handlers": [
+     "setReceiver"
+    ],
+    "click_handlers_count": 1
+   }
+  },
+  "cypress-realworld-app:src/components/UserListSearchForm.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "q"
+    ],
+    "controls_count": 1
+   }
+  },
+  "cypress-realworld-app:src/components/UserSettingsForm.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "forms": [
+     "(unnamed)"
+    ],
+    "forms_count": 1,
+    "controls": [
+     "email",
+     "firstName",
+     "lastName",
+     "phoneNumber"
+    ],
+    "controls_count": 4,
+    "buttons": [
+     "Save"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "cypress-realworld-app:src/components/UsersList.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/App.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/AppAuth0.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/AppCognito.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/AppGoogle.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/AppOkta.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/BankAccountsContainer.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "buttons": [
+     "Create"
+    ],
+    "buttons_count": 1
+   }
+  },
+  "cypress-realworld-app:src/containers/NotificationsContainer.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/PrivateRoutesContainer.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/TransactionCreateContainer.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/TransactionDetailContainer.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/TransactionsContainer.cy.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/TransactionsContainer.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/containers/UserOnboardingContainer.tsx": {
+   "owners": [],
+   "confidence": "shared",
+   "elements": {
+    "click_handlers": [
+     "nextStep"
+    ],
+    "click_handlers_count": 1
+   }
+  },
+  "cypress-realworld-app:src/containers/UserSettingsContainer.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/index.auth0.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/index.cognito.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/index.google.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/index.okta.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/index.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/authMachine.ts": {
+   "owners": [],
+   "confidence": "shared",
+   "nav": [
+    {
+     "target": "/signin",
+     "kind": "navigate",
+     "line": 153
+    },
+    {
+     "target": "/",
+     "kind": "navigate",
+     "line": 160
+    }
+   ]
+  },
+  "cypress-realworld-app:src/machines/bankAccountsMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/contactsTransactionsMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/createTransactionMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/dataMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/drawerMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/notificationsMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/personalTransactionsMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/publicTransactionsMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/snackbarMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/transactionDetailMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/transactionFiltersMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/userOnboardingMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/machines/usersMachine.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/models/bankaccount.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/models/banktransfer.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/models/comment.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/models/contact.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/models/db-schema.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/models/index.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/models/like.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/models/notification.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/models/transaction.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/models/user.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/react-app-env.d.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/setup-tests.js": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/setupProxy.js": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/utils/asyncUtils.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/utils/historyUtils.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/utils/portUtils.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:src/utils/transactionUtils.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:vite.config.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "cypress-realworld-app:vite.cypress.config.ts": {
+   "owners": [],
+   "confidence": "shared"
+  }
+ },
+ "edges": [
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "cypress-realworld-app",
+   "file": "backend/auth.ts",
+   "line": 51,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "cypress-realworld-app",
+   "file": "backend/auth.ts",
+   "line": 53,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "redirect",
+   "repo": "cypress-realworld-app",
+   "file": "backend/auth.ts",
+   "line": 51,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "redirect",
+   "repo": "cypress-realworld-app",
+   "file": "backend/auth.ts",
+   "line": 53,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/manifest.json",
+   "type": "code",
+   "kind": "href",
+   "repo": "cypress-realworld-app",
+   "file": "index.html",
+   "line": 14,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/bankaccounts",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "cypress-realworld-app",
+   "file": "src/components/BankAccountForm.tsx",
+   "line": 76,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "link",
+   "repo": "cypress-realworld-app",
+   "file": "src/components/NavBar.tsx",
+   "line": 150,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/forgotpassword",
+   "type": "code",
+   "kind": "link",
+   "repo": "cypress-realworld-app",
+   "file": "src/components/SignInForm.tsx",
+   "line": 165,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/signup",
+   "type": "code",
+   "kind": "link",
+   "repo": "cypress-realworld-app",
+   "file": "src/components/SignInForm.tsx",
+   "line": 168,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/signin",
+   "type": "code",
+   "kind": "link",
+   "repo": "cypress-realworld-app",
+   "file": "src/components/SignUpForm.tsx",
+   "line": 194,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/transaction/new",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "cypress-realworld-app",
+   "file": "src/components/TransactionCreateStepThree.tsx",
+   "line": 134,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/transaction/:id",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "cypress-realworld-app",
+   "file": "src/components/TransactionItem.tsx",
+   "line": 79,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/signin",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "cypress-realworld-app",
+   "file": "src/machines/authMachine.ts",
+   "line": 153,
+   "confidence": "shared"
+  },
+  {
+   "from": "(shared)",
+   "to": "/",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "cypress-realworld-app",
+   "file": "src/machines/authMachine.ts",
+   "line": 160,
+   "confidence": "shared"
+  }
+ ],
+ "errors": []
+}

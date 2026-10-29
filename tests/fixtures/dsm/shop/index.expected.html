@@ -1,0 +1,322 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shop UI DSM</title>
+<style>
+:root{--bg:#f7f8fa;--panel:#ffffff;--ink:#1d2330;--muted:#5f6b7d;--line:#d9dee7;--grid:#eef1f5;--band:#f1f4f9;--diag:#c9d1de;
+--hover:rgba(37,99,235,.10);--accent:#2563eb;--added:#15803d;--removed:#b91c1c;--warn:#b45309;--cycle:#dc2626;
+--t-link:#2563eb;--t-form:#7c3aed;--t-click:#0d9488;--t-popup:#0891b2;--t-redirect:#64748b;--t-code:#ea580c;
+--t-contains:#94a3b8;--t-navigates:#2563eb;--t-submits:#7c3aed;--t-opens:#0d9488}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#0f141c;--panel:#161d28;--ink:#e6eaf1;--muted:#97a3b6;--line:#2a3443;
+--grid:#1c2431;--band:#1a2230;--diag:#3a4558;--hover:rgba(96,165,250,.14);--accent:#60a5fa;--added:#4ade80;--removed:#f87171;--warn:#fbbf24;--cycle:#f87171;
+--t-link:#60a5fa;--t-form:#a78bfa;--t-click:#2dd4bf;--t-popup:#22d3ee;--t-redirect:#94a3b8;--t-code:#fb923c;
+--t-contains:#64748b;--t-navigates:#60a5fa;--t-submits:#a78bfa;--t-opens:#2dd4bf}}
+:root[data-theme="dark"]{--bg:#0f141c;--panel:#161d28;--ink:#e6eaf1;--muted:#97a3b6;--line:#2a3443;
+--grid:#1c2431;--band:#1a2230;--diag:#3a4558;--hover:rgba(96,165,250,.14);--accent:#60a5fa;--added:#4ade80;--removed:#f87171;--warn:#fbbf24;--cycle:#f87171;
+--t-link:#60a5fa;--t-form:#a78bfa;--t-click:#2dd4bf;--t-popup:#22d3ee;--t-redirect:#94a3b8;--t-code:#fb923c;
+--t-contains:#64748b;--t-navigates:#60a5fa;--t-submits:#a78bfa;--t-opens:#2dd4bf}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font:13px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+header{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+header h1{font-size:16px;margin:0}
+header .meta{color:var(--muted);font-size:12px}
+.stats{display:flex;flex-wrap:wrap;gap:8px;margin-left:auto}
+.stat{padding:2px 8px;border:1px solid var(--line);border-radius:999px;font-size:12px;color:var(--muted)}
+.stat b{color:var(--ink)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;padding:8px 16px;border-bottom:1px solid var(--line);background:var(--panel)}
+.toolbar label{display:inline-flex;gap:5px;align-items:center;color:var(--muted)}
+select,input[type=search],button{font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:4px 8px}
+button{cursor:pointer}button:hover{border-color:var(--accent)}
+button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.types{display:inline-flex;flex-wrap:wrap;gap:4px}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:2px 8px;border:1px solid var(--line);border-radius:999px;cursor:pointer;user-select:none}
+.chip i{width:10px;height:10px;border-radius:2px;display:inline-block}
+.chip.off{opacity:.4}
+main{display:flex;height:calc(100% - 96px);min-height:300px}
+#wrap{position:relative;flex:1;overflow:auto;outline:none}
+#spacer{position:absolute;top:0;left:0;pointer-events:none}
+#cv{position:sticky;top:0;left:0;display:block}
+aside{width:380px;max-width:42vw;border-left:1px solid var(--line);background:var(--panel);overflow:auto;padding:12px 14px}
+aside h2{font-size:14px;margin:4px 0 8px}
+aside h3{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:14px 0 6px}
+.tabs{display:flex;gap:4px;margin-bottom:8px;flex-wrap:wrap}
+.kv{display:grid;grid-template-columns:110px 1fr;gap:3px 8px;word-break:break-word}
+.kv dt{color:var(--muted)}.kv dd{margin:0}
+ul.list{margin:0;padding-left:18px}ul.list li{margin:2px 0;word-break:break-word}
+.flag{display:inline-block;font-size:11px;padding:0 6px;border-radius:999px;border:1px solid var(--line);margin:0 3px 3px 0}
+.flag.broken,.flag.unresolved{color:var(--removed);border-color:var(--removed)}
+.flag.code-only,.flag.orphan{color:var(--warn);border-color:var(--warn)}
+.flag.added{color:var(--added);border-color:var(--added)}
+a{color:var(--accent)}
+.muted{color:var(--muted)}
+code{font-size:12px}
+#tip{position:fixed;pointer-events:none;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:6px 8px;
+font-size:12px;max-width:420px;box-shadow:0 4px 16px rgba(0,0,0,.18);display:none;z-index:5}
+.linkbtn{background:none;border:none;padding:0;color:var(--accent);cursor:pointer;text-align:left}
+@media (max-width:820px){main{flex-direction:column;height:auto}#wrap{height:70vh;flex:none}aside{width:auto;max-width:none;border-left:none;border-top:1px solid var(--line)}}
+</style>
+</head>
+<body>
+<header>
+  <h1>UI Design Structure Matrix</h1>
+  <span class="meta" id="meta"></span>
+  <div class="stats" id="stats"></div>
+</header>
+<div class="toolbar">
+  <label>Level <select id="level"><option value="page">Pages (screens)</option><option value="element">UI elements</option></select></label>
+  <label>Order <select id="order"><option value="partitioned">Partitioned (flow + cycles)</option><option value="module">By module</option><option value="alpha">Alphabetical</option><option value="fanin">Most used first</option></select></label>
+  <label>Module <select id="module"></select></label>
+  <label>Show <select id="flagf"><option value="">All nodes</option><option value="changed">Changed in last run</option><option value="cycle">In a cycle</option><option value="orphan">Orphan</option><option value="dead-end">Dead end</option><option value="code-only">Code only (not reached by crawl)</option><option value="ui-only">UI only (no code route)</option><option value="unresolved">Unresolved targets</option><option value="broken">Broken / error</option></select></label>
+  <input type="search" id="q" placeholder="Search route, title, element…" aria-label="Search">
+  <span class="types" id="types"></span>
+  <label>Cell <input type="range" id="zoom" min="6" max="34" value="16" aria-label="Cell size"></label>
+  <button id="csv" title="Download the current matrix as CSV">CSV</button>
+  <button id="json" title="Download the full DSM data">JSON</button>
+  <button id="theme" title="Toggle light/dark">◐</button>
+</div>
+<main>
+  <div id="wrap" tabindex="0" aria-label="Design structure matrix"><div id="spacer"></div><canvas id="cv"></canvas></div>
+  <aside id="side"></aside>
+</main>
+<div id="tip"></div>
+<script>
+const D = {"generated_at":"2026-10-29T07:21:47+00:00","project":"Shop","base_url":"http://shop.test/","convention":"row -> column: the row page/element contains, navigates to, submits to or opens the column","repos":[{"name":"shop","path":"/src/shop","ref":"main","commit":"cccccccccccccccccccccccccccccccccccccccc","files_scanned":6,"frameworks":["react-router"]}],"crawl":{"generated_at":"2026-10-29T00:00:00.000Z","mode":"full","truncated":false,"pending_routes":[]},"stats":{"pages":13,"page_relations":14,"elements":27,"element_relations":23,"cycles":2,"flags":{"orphan":2,"dead-end":2,"code-only":3,"ui-only":4,"unresolved":2,"broken":1,"redirect":1},"density":0.0897},"page":{"nodes":[{"id":"/","label":"/","module":"home","sources":["code","ui"],"routes":["/"],"url":"http://shop.test/","title":"Shop","status":200,"error":null,"depth":0,"discovered_by":"start","counts":{"link":1,"menuitem":1,"button":1,"tab":1,"form":0,"field":0,"dialog":0},"forms":[],"dialogs":[],"tables":[],"code_defs":["shop:src/App.tsx:10"],"files":[],"code_elements":{},"redirect_to":null,"headings":["Shop"],"fan_out":3,"fan_in":1,"scc":5,"in_cycle":true,"flags":[]},{"id":"/products","label":"/products","module":"products","sources":["code","ui"],"routes":["/products"],"url":"http://shop.test/products","title":"/products","status":200,"error":null,"depth":1,"discovered_by":"link","counts":{"link":1,"button":1,"form":0,"field":0,"dialog":1},"forms":[],"dialogs":["Filters"],"tables":[],"code_defs":["shop:src/App.tsx:11"],"files":["shop:src/Products.tsx"],"code_elements":{"buttons":["Cart"],"links":["Item 1"]},"redirect_to":null,"headings":["/products"],"fan_out":2,"fan_in":2,"scc":3,"in_cycle":true,"flags":[]},{"id":"/products/:id","label":"/products/:id","module":"products","sources":["code","ui"],"routes":["/products/:id"],"url":"http://shop.test/products/:id","title":"/products/:id","status":200,"error":null,"depth":2,"discovered_by":"link","counts":{"button":1,"form":0,"field":0,"dialog":0},"forms":[],"dialogs":[],"tables":[],"code_defs":["shop:src/App.tsx:12"],"files":["shop:src/Products.tsx"],"code_elements":{"buttons":["Cart"],"links":["Item 1"]},"redirect_to":null,"headings":["/products/:id"],"fan_out":1,"fan_in":1,"scc":3,"in_cycle":true,"flags":[]},{"id":"/cart","label":"/cart","module":"cart","sources":["code","ui"],"routes":["/cart"],"url":"http://shop.test/cart","title":"/cart","status":200,"error":null,"depth":2,"discovered_by":"click","counts":{"link":1,"form":1,"field":1,"dialog":0},"forms":[{"name":"checkout","method":"post","target":"/checkout","fields":[{"label":"Coupon","name":"coupon","type":"text","required":false}],"submits":["Checkout"]}],"dialogs":[],"tables":[],"code_defs":["shop:src/App.tsx:13"],"files":["shop:src/Cart.tsx"],"code_elements":{"buttons":["Checkout","Remove"]},"redirect_to":null,"headings":["/cart"],"fan_out":2,"fan_in":3,"scc":3,"in_cycle":true,"flags":[]},{"id":"/checkout","label":"/checkout","module":"checkout","sources":["ui"],"routes":["/checkout"],"url":"http://shop.test/checkout","title":"/checkout","status":200,"error":null,"depth":3,"discovered_by":"form","counts":{"link":1,"form":1,"field":2,"dialog":0},"forms":[{"name":"pay","method":"post","target":null,"fields":[{"label":null,"name":"card","type":"text","required":true},{"label":null,"name":null,"type":"password","required":true}],"submits":[]}],"dialogs":[],"tables":[],"code_defs":[],"files":["shop:src/Checkout.tsx"],"code_elements":{},"redirect_to":null,"headings":["/checkout"],"fan_out":2,"fan_in":1,"scc":2,"in_cycle":false,"flags":["ui-only"]},{"id":"/checkout/review","label":"/checkout/review","module":"checkout","sources":["ui"],"routes":["/checkout/review"],"url":"http://shop.test/checkout/review","title":"/checkout/review","status":500,"error":"HTTP 500","depth":4,"discovered_by":"link","counts":{"form":0,"field":0,"dialog":0},"forms":[],"dialogs":[],"tables":[],"code_defs":[],"files":[],"code_elements":{},"redirect_to":null,"headings":["/checkout/review"],"fan_out":0,"fan_in":1,"scc":0,"in_cycle":false,"flags":["dead-end","ui-only","broken"]},{"id":"/login","label":"/login","module":"login","sources":["ui"],"routes":["/login"],"url":"http://shop.test/login","title":"/login","status":200,"error":null,"depth":1,"discovered_by":"link","counts":{"form":0,"field":0,"dialog":0},"forms":[],"dialogs":[],"tables":[],"code_defs":[],"files":[],"code_elements":{},"redirect_to":"/","headings":["/login"],"fan_out":1,"fan_in":1,"scc":5,"in_cycle":true,"flags":["ui-only","redirect"]},{"id":"/help","label":"/#/help","module":"help","sources":["ui"],"routes":["/#/help"],"url":"http://shop.test/#/help","title":"Help","status":200,"error":null,"depth":1,"discovered_by":"link","counts":{"form":0,"field":0,"dialog":0},"forms":[],"dialogs":[],"tables":[],"code_defs":[],"files":[],"code_elements":{},"redirect_to":null,"headings":["Help"],"fan_out":0,"fan_in":1,"scc":4,"in_cycle":false,"flags":["dead-end","ui-only"]},{"id":"/admin","label":"/admin","module":"admin","sources":["code"],"routes":[],"url":null,"title":"","status":null,"error":null,"depth":null,"discovered_by":null,"counts":{},"forms":[],"dialogs":[],"tables":[],"code_defs":["shop:src/App.tsx:14"],"files":["shop:src/admin/Admin.tsx"],"code_elements":{},"redirect_to":null,"fan_out":2,"fan_in":0,"scc":8,"in_cycle":false,"flags":["orphan","code-only"]},{"id":"/admin/reports","label":"/admin/reports","module":"admin","sources":["code"],"routes":[],"url":null,"title":"","status":null,"error":null,"depth":null,"discovered_by":null,"counts":{},"forms":[],"dialogs":[],"tables":[],"code_defs":["shop:src/admin/Routes.tsx:3"],"files":[],"code_elements":{},"redirect_to":null,"fan_out":0,"fan_in":1,"scc":6,"in_cycle":false,"flags":["code-only"]},{"id":"/faq","label":"/faq","module":"faq","sources":["ui-target"],"routes":[],"url":null,"title":"","status":null,"error":null,"depth":null,"discovered_by":null,"counts":{},"forms":[],"dialogs":[],"tables":[],"code_defs":[],"files":[],"code_elements":{},"redirect_to":null,"fan_out":0,"fan_in":1,"scc":1,"in_cycle":false,"flags":["unresolved"]},{"id":"(shared)","label":"(shared layout / components)","module":"(shared)","sources":["code"],"routes":[],"url":null,"title":"","status":null,"error":null,"depth":null,"discovered_by":null,"counts":{},"forms":[],"dialogs":[],"tables":[],"code_defs":[],"files":[],"code_elements":{},"redirect_to":null,"fan_out":1,"fan_in":0,"scc":9,"in_cycle":false,"flags":["orphan","code-only"]},{"id":"/admin/audit","label":"/admin/audit","module":"admin","sources":["code-ref"],"routes":[],"url":null,"title":"","status":null,"error":null,"depth":null,"discovered_by":null,"counts":{},"forms":[],"dialogs":[],"tables":[],"code_defs":[],"files":[],"code_elements":{},"redirect_to":null,"fan_out":0,"fan_in":1,"scc":7,"in_cycle":false,"flags":["unresolved"]}],"cells":[{"r":0,"c":1,"t":{"link":1},"v":[{"s":"ui","label":"Products","el":"/::link:products"}]},{"r":0,"c":6,"t":{"link":1},"v":[{"s":"ui","label":"Sign in","el":null}]},{"r":0,"c":7,"t":{"link":1},"v":[{"s":"ui","label":"Help","el":null}]},{"r":1,"c":2,"t":{"link":1},"v":[{"s":"ui","label":"Item 1","el":"/products::link:item"}]},{"r":1,"c":3,"t":{"click":1,"code":1},"v":[{"s":"ui","label":"Cart","el":"/products::button:cart"},{"s":"code","kind":"navigate","ref":"shop:src/Products.tsx:20","conf":"direct"}]},{"r":2,"c":3,"t":{"click":1},"v":[{"s":"ui","label":"Add to cart","el":"/products/:id::button:add"}]},{"r":3,"c":1,"t":{"link":1},"v":[{"s":"ui","label":"Keep shopping","el":"/cart::link:back"}]},{"r":3,"c":4,"t":{"form":1},"v":[{"s":"ui","label":"POST checkout","el":"/cart::form:checkout"}]},{"r":4,"c":5,"t":{"link":1},"v":[{"s":"ui","label":"Review","el":"/checkout::link:review"}]},{"r":4,"c":10,"t":{"link":1},"v":[{"s":"ui","label":"FAQ","el":null}]},{"r":6,"c":0,"t":{"redirect":1},"v":[{"s":"ui","label":"redirect","el":null}]},{"r":8,"c":9,"t":{"code":1},"v":[{"s":"code","kind":"link","ref":"shop:src/admin/Admin.tsx:8","conf":"direct"}]},{"r":8,"c":12,"t":{"code":1},"v":[{"s":"code","kind":"navigate","ref":"shop:src/admin/Admin.tsx:9","conf":"direct"}]},{"r":11,"c":3,"t":{"code":1},"v":[{"s":"code","kind":"link","ref":"shop:src/Nav.tsx:5","conf":"shared"}]}],"orders":{"partitioned":[0,6,7,11,1,3,2,4,5,8,12,9,10],"module":[11,8,12,9,3,4,5,10,7,0,6,1,2]}},"element":{"nodes":[{"id":"/","label":"/","kind":"page","page":"/","module":"home","title":"Shop"},{"id":"/login","label":"/login","kind":"page","page":"/login","module":"login","title":"/login"},{"id":"/help","label":"/#/help","kind":"page","page":"/help","module":"help","title":"Help"},{"id":"(shared)","label":"(shared layout / components)","kind":"page","page":"(shared)","module":"(shared)","title":""},{"id":"/products","label":"/products","kind":"page","page":"/products","module":"products","title":"/products"},{"id":"/cart","label":"/cart","kind":"page","page":"/cart","module":"cart","title":"/cart"},{"id":"/products/:id","label":"/products/:id","kind":"page","page":"/products/:id","module":"products","title":"/products/:id"},{"id":"/checkout","label":"/checkout","kind":"page","page":"/checkout","module":"checkout","title":"/checkout"},{"id":"/checkout/review","label":"/checkout/review","kind":"page","page":"/checkout/review","module":"checkout","title":"/checkout/review"},{"id":"/admin","label":"/admin","kind":"page","page":"/admin","module":"admin","title":""},{"id":"/admin/audit","label":"/admin/audit","kind":"page","page":"/admin/audit","module":"admin","title":""},{"id":"/admin/reports","label":"/admin/reports","kind":"page","page":"/admin/reports","module":"admin","title":""},{"id":"/faq","label":"/faq","kind":"page","page":"/faq","module":"faq","title":""},{"id":"/::menuitem:account","label":"Account","kind":"menuitem","page":"/","module":"home","href":null,"selector":"#account","visible":true},{"id":"/::tab:deals","label":"Deals","kind":"tab","page":"/","module":"home","href":null,"selector":"#deals","visible":true},{"id":"/::link:products","label":"Products","kind":"link","page":"/","module":"home","href":"/products","selector":"#products","visible":true},{"id":"/products::link:item","label":"Item 1","kind":"link","page":"/products","module":"products","href":"/products/1","selector":"#item","visible":true},{"id":"/products::button:cart","label":"Cart","kind":"button","page":"/products","module":"products","href":null,"selector":"#cart","visible":true},{"id":"/products::dialog:filters","label":"dialog Filters","kind":"dialog","page":"/products","module":"products"},{"id":"/cart::link:back","label":"Keep shopping","kind":"link","page":"/cart","module":"cart","href":"/products","selector":"#back","visible":true},{"id":"/cart::form:checkout","label":"form checkout","kind":"form","page":"/cart","module":"cart","method":"post"},{"id":"/cart::field:coupon","label":"Coupon","kind":"field","page":"/cart","module":"cart","type":"text","required":false},{"id":"/products/:id::button:add","label":"Add to cart","kind":"button","page":"/products/:id","module":"products","href":null,"selector":"#add","visible":true},{"id":"/checkout::link:review","label":"Review","kind":"link","page":"/checkout","module":"checkout","href":"/checkout/review","selector":"#review","visible":true},{"id":"/checkout::form:pay","label":"form pay","kind":"form","page":"/checkout","module":"checkout","method":"post"},{"id":"/checkout::field:card","label":"card","kind":"field","page":"/checkout","module":"checkout","type":"text","required":true},{"id":"/checkout::field:cvv","label":"cvv","kind":"field","page":"/checkout","module":"checkout","type":"password","required":true}],"cells":[{"r":0,"c":13,"t":{"contains":1}},{"r":0,"c":14,"t":{"contains":1}},{"r":0,"c":15,"t":{"contains":1}},{"r":1,"c":0,"t":{"redirect":1}},{"r":4,"c":16,"t":{"contains":1}},{"r":4,"c":17,"t":{"contains":1}},{"r":4,"c":18,"t":{"contains":1}},{"r":5,"c":19,"t":{"contains":1}},{"r":5,"c":20,"t":{"contains":1}},{"r":6,"c":22,"t":{"contains":1}},{"r":7,"c":23,"t":{"contains":1}},{"r":7,"c":24,"t":{"contains":1}},{"r":15,"c":4,"t":{"navigates":1}},{"r":16,"c":6,"t":{"navigates":1}},{"r":17,"c":5,"t":{"navigates":1}},{"r":17,"c":18,"t":{"opens":1}},{"r":19,"c":4,"t":{"navigates":1}},{"r":20,"c":7,"t":{"submits":2}},{"r":20,"c":21,"t":{"contains":1}},{"r":22,"c":5,"t":{"navigates":1}},{"r":23,"c":8,"t":{"navigates":1}},{"r":24,"c":25,"t":{"contains":1}},{"r":24,"c":26,"t":{"contains":1}}],"orders":{"partitioned":[0,13,14,15,1,2,3,4,16,17,18,5,19,20,21,6,22,7,23,24,25,26,8,9,10,11,12],"module":[3,9,10,11,5,21,19,20,7,23,25,26,24,8,12,2,0,13,14,15,1,4,17,16,18,6,22]},"truncated":false},"change":{},"diff":{"first_run":true}};
+const PAGE_TYPES=['link','form','click','popup','redirect','code'];
+const EL_TYPES=['contains','navigates','submits','opens','redirect'];
+const TYPE_LABEL={link:'Link',form:'Form submit',click:'Click',popup:'Pop-up',redirect:'Redirect',code:'In code',contains:'Contains',navigates:'Navigates',submits:'Submits',opens:'Opens'};
+const st={level:(D.page.nodes.length?'page':'element'),order:'partitioned',module:'',flag:'',q:'',cs:16,off:new Set(),sel:null,tab:'overview'};
+try{const saved=JSON.parse(localStorage.getItem('dsm-view')||'{}');Object.assign(st,{level:saved.level||st.level,order:saved.order||st.order,cs:saved.cs||st.cs});}catch(e){}
+const $=id=>document.getElementById(id);
+const wrap=$('wrap'),cv=$('cv'),ctx=cv.getContext('2d'),tip=$('tip'),side=$('side');
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const css=n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const diff=D.diff||{};
+const addedNodes=new Set(diff.nodes_added||[]), changedNodes=new Set((diff.nodes_changed||[]).map(x=>x.id));
+const addedRel=new Set(diff.relations_added||[]), changedRel=new Set(diff.relations_changed||[]);
+const impacted=new Set(((D.change||{}).impacted_routes)||[]);
+
+function L(){return D[st.level];}
+function types(){return st.level==='page'?PAGE_TYPES:EL_TYPES;}
+let view=null;
+function compute(){
+  const lv=L(), N=lv.nodes, n=N.length;
+  const cellsOn=lv.cells.filter(c=>Object.keys(c.t).some(t=>!st.off.has(t)));
+  const fanIn=new Array(n).fill(0);cellsOn.forEach(c=>fanIn[c.c]++);
+  let ord=(st.order==='alpha')?[...Array(n).keys()].sort((a,b)=>N[a].label.localeCompare(N[b].label))
+    :(st.order==='fanin')?[...Array(n).keys()].sort((a,b)=>fanIn[b]-fanIn[a]||N[a].label.localeCompare(N[b].label))
+    :lv.orders[st.order]||lv.orders.partitioned;
+  const q=st.q.toLowerCase();
+  const pageNode=st.level==='page'?null:Object.fromEntries(D.page.nodes.map(p=>[p.id,p]));
+  ord=ord.filter(i=>{const nd=N[i];
+    if(st.module&&nd.module!==st.module)return false;
+    const p=st.level==='page'?nd:(pageNode[nd.page]||{});
+    if(st.flag){if(st.flag==='changed'){if(!(addedNodes.has(p.id)||changedNodes.has(p.id)||impacted.has(p.id)))return false;}
+      else if(st.flag==='cycle'){if(!p.in_cycle)return false;} else if(!(p.flags||[]).includes(st.flag))return false;}
+    if(q&&!(nd.label+' '+(nd.title||'')+' '+nd.id+' '+(nd.kind||'')).toLowerCase().includes(q))return false;
+    return true;});
+  const pos=new Int32Array(n).fill(-1);ord.forEach((v,i)=>pos[v]=i);
+  const cells=cellsOn.filter(c=>pos[c.r]>=0&&pos[c.c]>=0);
+  const cellMap=new Map(cells.map(c=>[c.r*n+c.c,c]));
+  ctx.font='12px system-ui,sans-serif';
+  let lw=120;for(const v of ord.slice(0,3000)){lw=Math.max(lw,ctx.measureText(N[v].label).width);}
+  const labelW=Math.min(340,lw+28), labelH=Math.min(220,lw+16);
+  view={N,n,ord,pos,cells,cellMap,labelW,labelH};
+  $('spacer').style.width=(labelW+ord.length*st.cs+40)+'px';$('spacer').style.height=(labelH+ord.length*st.cs+40)+'px';
+  resize();
+}
+function resize(){const r=wrap.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  cv.width=Math.max(1,r.width*dpr);cv.height=Math.max(1,r.height*dpr);cv.style.width=r.width+'px';cv.style.height=r.height+'px';
+  cv.style.marginBottom=(-r.height)+'px';draw();}
+function relKey(c){return view.N[c.r].id+' -> '+view.N[c.c].id;}
+function domType(t){let best=null,bn=-1;for(const k of types()){if(!st.off.has(k)&&(t[k]||0)>bn&&t[k]){best=k;bn=t[k];}}return best;}
+let hover=null;
+function draw(){
+  if(!view)return;
+  const dpr=window.devicePixelRatio||1,W=cv.width/dpr,H=cv.height/dpr,cs=st.cs,{N,ord,pos,cells,labelW,labelH}=view;
+  ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,W,H);
+  const sx=wrap.scrollLeft,sy=wrap.scrollTop,ox=labelW-sx,oy=labelH-sy,m=ord.length;
+  const i0=Math.max(0,Math.floor(sy/cs)),i1=Math.min(m,Math.ceil((sy+H-labelH)/cs)+1);
+  const j0=Math.max(0,Math.floor(sx/cs)),j1=Math.min(m,Math.ceil((sx+W-labelW)/cs)+1);
+  ctx.save();ctx.beginPath();ctx.rect(labelW,labelH,W-labelW,H-labelH);ctx.clip();
+  // module bands
+  let start=0;for(let k=1;k<=m;k++){if(k===m||N[ord[k]].module!==N[ord[start]].module){
+      if(groupIndex(start)%2===1){ctx.fillStyle=css('--band');ctx.fillRect(ox+start*cs,oy+start*cs,(k-start)*cs,(k-start)*cs);}
+      start=k;}}
+  // grid
+  if(cs>=8){ctx.strokeStyle=css('--grid');ctx.lineWidth=1;ctx.beginPath();
+    for(let i=i0;i<=i1;i++){ctx.moveTo(ox+j0*cs,oy+i*cs+.5);ctx.lineTo(ox+j1*cs,oy+i*cs+.5);}
+    for(let j=j0;j<=j1;j++){ctx.moveTo(ox+j*cs+.5,oy+i0*cs);ctx.lineTo(ox+j*cs+.5,oy+i1*cs);}ctx.stroke();}
+  // diagonal
+  ctx.fillStyle=css('--diag');for(let i=Math.max(i0,j0);i<Math.min(i1,j1);i++)ctx.fillRect(ox+i*cs,oy+i*cs,cs,cs);
+  // hover crosshair
+  if(hover){ctx.fillStyle=css('--hover');ctx.fillRect(ox+j0*cs,oy+hover.i*cs,(j1-j0)*cs,cs);ctx.fillRect(ox+hover.j*cs,oy+i0*cs,cs,(i1-i0)*cs);}
+  // cells
+  const changedOn=st.level==='page';
+  for(const c of cells){const i=pos[c.r],j=pos[c.c];if(i<i0||i>=i1||j<j0||j>=j1)continue;
+    const t=domType(c.t);if(!t)continue;const x=ox+j*cs,y=oy+i*cs,pad=cs>10?2:1;
+    ctx.fillStyle=css('--t-'+t);ctx.globalAlpha=(t==='code'&&Object.keys(c.t).length===1)?.75:1;
+    ctx.fillRect(x+pad,y+pad,cs-2*pad,cs-2*pad);ctx.globalAlpha=1;
+    const multi=Object.keys(c.t).filter(k=>!st.off.has(k)).length>1;
+    if(multi&&cs>=10){ctx.fillStyle=css('--panel');ctx.beginPath();ctx.moveTo(x+cs-pad,y+pad);ctx.lineTo(x+cs-pad-cs*.35,y+pad);ctx.lineTo(x+cs-pad,y+pad+cs*.35);ctx.fill();}
+    if(cs>=20){const tot=Object.entries(c.t).filter(([k])=>!st.off.has(k)).reduce((a,[,v])=>a+v,0);
+      ctx.fillStyle='#fff';ctx.font='11px system-ui,sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(tot,x+cs/2,y+cs/2+.5);}
+    if(changedOn&&(addedRel.has(relKey(c))||changedRel.has(relKey(c)))){ctx.strokeStyle=css('--added');ctx.lineWidth=2;ctx.strokeRect(x+1,y+1,cs-2,cs-2);}
+  }
+  // cycle blocks (partitioned page view)
+  if(st.level==='page'&&st.order==='partitioned'){ctx.strokeStyle=css('--cycle');ctx.lineWidth=1.5;
+    let s=0;for(let k=1;k<=m;k++){if(k===m||N[ord[k]].scc!==N[ord[s]].scc){if(k-s>1&&N[ord[s]].in_cycle)ctx.strokeRect(ox+s*cs+.5,oy+s*cs+.5,(k-s)*cs-1,(k-s)*cs-1);s=k;}}}
+  if(st.sel&&st.sel.type==='cell'){const i=pos[st.sel.r],j=pos[st.sel.c];if(i>=0&&j>=0){ctx.strokeStyle=css('--ink');ctx.lineWidth=2;ctx.strokeRect(ox+j*cs+1,oy+i*cs+1,cs-2,cs-2);}}
+  ctx.restore();
+  // row labels
+  ctx.fillStyle=css('--panel');ctx.fillRect(0,labelH,labelW,H-labelH);ctx.fillRect(labelW,0,W-labelW,labelH);ctx.fillRect(0,0,labelW,labelH);
+  ctx.save();ctx.beginPath();ctx.rect(0,labelH,labelW,H-labelH);ctx.clip();
+  ctx.font=(cs<11?Math.max(8,cs-2):12)+'px system-ui,sans-serif';ctx.textBaseline='middle';ctx.textAlign='left';
+  for(let i=i0;i<i1;i++){const v=ord[i];const y=oy+i*cs+cs/2;
+    if((st.sel&&st.sel.type==='node'&&st.sel.v===v)||(hover&&hover.i===i)){ctx.fillStyle=css('--hover');ctx.fillRect(0,oy+i*cs,labelW,cs);}
+    if(cs>=7){ctx.fillStyle=labelColor(v);const ind=st.level==='element'&&N[v].kind!=='page'?14:4;
+      ctx.fillText(trunc((st.level==='element'&&N[v].kind!=='page'?kindGlyph(N[v].kind)+' ':'')+N[v].label,labelW-ind-30),ind,y);
+      ctx.fillStyle=css('--muted');ctx.textAlign='right';ctx.fillText(i+1,labelW-4,y);ctx.textAlign='left';}}
+  ctx.restore();
+  // column labels
+  ctx.save();ctx.beginPath();ctx.rect(labelW,0,W-labelW,labelH);ctx.clip();
+  for(let j=j0;j<j1;j++){const v=ord[j];const x=ox+j*cs+cs/2;
+    if((st.sel&&st.sel.type==='node'&&st.sel.v===v)||(hover&&hover.j===j)){ctx.fillStyle=css('--hover');ctx.fillRect(ox+j*cs,0,cs,labelH);}
+    if(cs>=7){ctx.save();ctx.translate(x,labelH-4);ctx.rotate(-Math.PI/2);ctx.fillStyle=labelColor(v);
+      ctx.fillText(trunc(cs>=12?(j+1)+'  '+N[v].label:String(j+1),labelH-10),0,0);ctx.restore();}}
+  ctx.restore();
+  ctx.strokeStyle=css('--line');ctx.beginPath();ctx.moveTo(labelW+.5,0);ctx.lineTo(labelW+.5,H);ctx.moveTo(0,labelH+.5);ctx.lineTo(W,labelH+.5);ctx.stroke();
+  ctx.fillStyle=css('--muted');ctx.font='11px system-ui,sans-serif';ctx.textAlign='left';ctx.textBaseline='alphabetic';
+  ctx.fillText(ord.length+' × '+ord.length+'  (row → column)',8,labelH-8);
+}
+let groupCache=null;
+function groupIndex(k){if(!groupCache||groupCache.ord!==view.ord){const g=[];let gi=0;for(let i=0;i<view.ord.length;i++){if(i>0&&view.N[view.ord[i]].module!==view.N[view.ord[i-1]].module)gi++;g.push(gi);}groupCache={ord:view.ord,g};}return groupCache.g[k];}
+function kindGlyph(k){return {link:'↗',button:'▢',tab:'⇥',menuitem:'☰',form:'▤',field:'·',dialog:'◫'}[k]||'•';}
+function trunc(s,w){if(ctx.measureText(s).width<=w)return s;while(s.length>3&&ctx.measureText(s+'…').width>w)s=s.slice(0,-1);return s+'…';}
+function pageOf(v){if(st.level==='page')return view.N[v];return D.page.nodes.find(p=>p.id===view.N[v].page)||{};}
+function labelColor(v){const nd=st.level==='page'?view.N[v]:null;
+  if(nd){if(addedNodes.has(nd.id))return css('--added');const f=nd.flags||[];
+    if(f.includes('broken')||f.includes('unresolved'))return css('--removed');if(f.includes('code-only'))return css('--warn');}
+  return css('--ink');}
+function at(e){const r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top,{labelW,labelH,ord}=view,cs=st.cs;
+  const j=Math.floor((x-labelW+wrap.scrollLeft)/cs),i=Math.floor((y-labelH+wrap.scrollTop)/cs);
+  return {x,y,i:(y>labelH&&i>=0&&i<ord.length)?i:null,j:(x>labelW&&j>=0&&j<ord.length)?j:null};}
+cv.addEventListener('mousemove',e=>{const p=at(e);const h=(p.i!==null&&p.j!==null)?{i:p.i,j:p.j}:(p.i!==null&&p.x<view.labelW?{i:p.i,j:-1}:(p.j!==null&&p.y<view.labelH?{i:-1,j:p.j}:null));
+  hover=h&&h.i>=0&&h.j>=0?h:null;draw();
+  if(p.i!==null&&p.j!==null){const r=view.ord[p.i],c=view.ord[p.j],cell=view.cellMap.get(r*view.n+c);
+    tip.innerHTML='<b>'+esc(view.N[r].label)+'</b> → <b>'+esc(view.N[c].label)+'</b><br>'+(cell?Object.entries(cell.t).map(([k,v])=>esc(TYPE_LABEL[k]||k)+': '+v).join(' · '):(r===c?'(itself)':'<span class="muted">no relation</span>'));
+    tip.style.display='block';tip.style.left=Math.min(e.clientX+14,innerWidth-430)+'px';tip.style.top=(e.clientY+14)+'px';}
+  else if(p.i!==null||p.j!==null){const v=view.ord[p.i!==null?p.i:p.j];tip.innerHTML='<b>'+esc(view.N[v].label)+'</b>'+(view.N[v].title?'<br>'+esc(view.N[v].title):'');
+    tip.style.display='block';tip.style.left=Math.min(e.clientX+14,innerWidth-430)+'px';tip.style.top=(e.clientY+14)+'px';}
+  else tip.style.display='none';});
+cv.addEventListener('mouseleave',()=>{hover=null;tip.style.display='none';draw();});
+cv.addEventListener('click',e=>{const p=at(e);
+  if(p.i!==null&&p.j!==null){const r=view.ord[p.i],c=view.ord[p.j];st.sel={type:'cell',r,c};}
+  else if(p.i!==null)st.sel={type:'node',v:view.ord[p.i]};else if(p.j!==null)st.sel={type:'node',v:view.ord[p.j]};
+  st.tab='details';draw();panel();});
+wrap.addEventListener('scroll',()=>requestAnimationFrame(draw));
+window.addEventListener('resize',resize);
+
+function nodeLink(v,label){return '<button class="linkbtn" data-node="'+v+'">'+esc(label??view.N[v].label)+'</button>';}
+function flagsHtml(p){return (p.flags||[]).map(f=>'<span class="flag '+f+'">'+esc(f)+'</span>').join('')+(p.in_cycle?'<span class="flag broken">cycle</span>':'')+(addedNodes.has(p.id)?'<span class="flag added">new</span>':'')+(changedNodes.has(p.id)?'<span class="flag added">changed</span>':'')+(impacted.has(p.id)?'<span class="flag code-only">impacted by code change</span>':'');}
+function panel(){
+  const tabs=['overview','details','changes','insights','legend'];
+  let h='<div class="tabs">'+tabs.map(t=>'<button class="'+(st.tab===t?'on':'')+'" data-tab="'+t+'">'+t[0].toUpperCase()+t.slice(1)+'</button>').join('')+'</div>';
+  if(st.tab==='overview')h+=overview();else if(st.tab==='details')h+=details();else if(st.tab==='changes')h+=changes();else if(st.tab==='insights')h+=insights();else h+=legend();
+  side.innerHTML=h;}
+side.addEventListener('click',e=>{const t=e.target.closest('[data-tab]');if(t){st.tab=t.dataset.tab;panel();return;}
+  const n=e.target.closest('[data-node]');if(n){const v=+n.dataset.node;st.sel={type:'node',v};st.tab='details';scrollTo(v);panel();draw();return;}
+  const pid=e.target.closest('[data-page]');if(pid){if(st.level!=='page'){st.level='page';$('level').value='page';compute();}
+    const v=view.N.findIndex(x=>x.id===pid.dataset.page);if(v>=0){st.sel={type:'node',v};st.tab='details';scrollTo(v);panel();draw();}}});
+function scrollTo(v){const i=view.pos[v];if(i<0)return;wrap.scrollTop=Math.max(0,i*st.cs-120);wrap.scrollLeft=Math.max(0,i*st.cs-120);}
+function overview(){const s=D.stats,c=D.change||{};
+  return '<h2>'+esc(D.project||'Project')+'</h2><dl class="kv"><dt>Application</dt><dd>'+esc(D.base_url||'')+'</dd><dt>Generated</dt><dd>'+esc(D.generated_at)+'</dd>'
+  +(D.repos||[]).map(r=>'<dt>'+esc(r.name)+'</dt><dd><code>'+esc((r.commit||'').slice(0,10))+'</code> '+esc(r.ref||'working tree')+' · '+esc((r.frameworks||[]).join(', '))+'</dd>').join('')
+  +'<dt>Crawl</dt><dd>'+esc((D.crawl||{}).mode||'none')+((D.crawl||{}).truncated?' (stopped at max_pages)':'')+'</dd></dl>'
+  +'<h3>How to read</h3><p>Each row and column is the same '+(st.level==='page'?'screen':'UI element')+'. A mark in row <i>r</i>, column <i>c</i> means <b>r → c</b>: r '+(st.level==='page'?'links, submits, redirects or navigates to':'contains, navigates to, submits to or opens')+' c. In the partitioned order, marks <b>above</b> the diagonal follow the main flow and marks <b>below</b> it are backward navigation; red boxes are cycles (screens that can all reach each other). Shaded bands group modules.</p>'
+  +'<p class="muted">Click a cell or a label for details. Green outlines are relations added or changed in the last update.</p>'
+  +'<h3>Summary</h3><dl class="kv"><dt>Screens</dt><dd>'+s.pages+'</dd><dt>Screen relations</dt><dd>'+s.page_relations+' (density '+s.density+')</dd><dt>UI elements</dt><dd>'+s.elements+'</dd><dt>Element relations</dt><dd>'+s.element_relations+'</dd><dt>Cycles</dt><dd>'+s.cycles+'</dd>'
+  +Object.entries(s.flags||{}).map(([k,v])=>'<dt>'+esc(k)+'</dt><dd>'+v+'</dd>').join('')+'</dl>'
+  +(c.reason?'<h3>Last update</h3><p>'+esc(c.reason)+'</p>':'');}
+function details(){if(!st.sel)return '<p class="muted">Click a cell or a row/column label.</p>';
+  if(st.sel.type==='cell'){const {r,c}=st.sel,cell=view.cellMap.get(r*view.n+c);
+    let h='<h2>'+nodeLink(r)+' → '+nodeLink(c)+'</h2>';if(!cell)return h+'<p class="muted">No relation.</p>';
+    h+='<p>'+Object.entries(cell.t).map(([k,v])=>'<span class="flag">'+esc(TYPE_LABEL[k]||k)+' × '+v+'</span>').join('')+'</p>';
+    if(cell.v&&cell.v.length){h+='<h3>Evidence</h3><ul class="list">'+cell.v.map(x=>x.s==='code'?'<li>code · '+esc(x.kind)+' · <code>'+esc(x.ref)+'</code>'+(x.conf&&x.conf!=='direct'?' <span class="muted">('+esc(x.conf)+')</span>':'')+'</li>'
+      :'<li>UI · '+esc(x.label||'(no text)')+(x.el?' <span class="muted">'+esc(x.el.split('::').pop())+'</span>':'')+'</li>').join('')+'</ul>';}
+    return h;}
+  const v=st.sel.v,nd=view.N[v];
+  if(st.level==='element'&&nd.kind!=='page'){return '<h2>'+esc(kindGlyph(nd.kind)+' '+nd.label)+'</h2><dl class="kv"><dt>Kind</dt><dd>'+esc(nd.kind)+'</dd><dt>Page</dt><dd><button class="linkbtn" data-page="'+esc(nd.page)+'">'+esc(nd.page)+'</button></dd>'
+    +(nd.href?'<dt>href</dt><dd><code>'+esc(nd.href)+'</code></dd>':'')+(nd.type?'<dt>Type</dt><dd>'+esc(nd.type)+(nd.required?' (required)':'')+'</dd>':'')+(nd.method?'<dt>Method</dt><dd>'+esc(nd.method)+'</dd>':'')
+    +(nd.selector?'<dt>Selector</dt><dd><code>'+esc(nd.selector)+'</code></dd>':'')+'</dl>'+relList(v);}
+  const p=st.level==='page'?nd:(D.page.nodes.find(x=>x.id===nd.page)||nd);
+  let h='<h2>'+esc(p.label)+'</h2><p>'+flagsHtml(p)+'</p><dl class="kv">'
+    +(p.url?'<dt>URL</dt><dd><a href="'+esc(p.url)+'" target="_blank" rel="noopener">'+esc(p.url)+'</a></dd>':'')
+    +(p.title?'<dt>Title</dt><dd>'+esc(p.title)+'</dd>':'')+((p.headings||[]).length?'<dt>Headings</dt><dd>'+esc(p.headings.join(' · '))+'</dd>':'')
+    +'<dt>Module</dt><dd>'+esc(p.module)+'</dd><dt>Found by</dt><dd>'+esc((p.sources||[]).join(', '))+(p.discovered_by?' ('+esc(p.discovered_by)+(p.depth!=null?', depth '+p.depth:'')+')':'')+'</dd>'
+    +(p.status?'<dt>HTTP</dt><dd>'+esc(p.status)+'</dd>':'')+(p.error?'<dt>Error</dt><dd>'+esc(p.error)+'</dd>':'')+(p.redirect_to?'<dt>Redirects to</dt><dd>'+esc(p.redirect_to)+'</dd>':'')
+    +'<dt>Fan in / out</dt><dd>'+p.fan_in+' / '+p.fan_out+'</dd></dl>';
+  const cnt=Object.entries(p.counts||{}).filter(([,n])=>n);if(cnt.length)h+='<h3>UI elements (crawl)</h3><p>'+cnt.map(([k,n])=>'<span class="flag">'+esc(k)+' '+n+'</span>').join('')+'</p>';
+  (p.forms||[]).forEach(f=>{h+='<h3>Form '+esc(f.name)+' <span class="muted">'+esc(f.method||'')+(f.target?' → '+esc(f.target):'')+'</span></h3><ul class="list">'+f.fields.map(fd=>'<li>'+esc(fd.label||fd.name||'(field)')+' <span class="muted">'+esc(fd.type)+(fd.required?', required':'')+'</span></li>').join('')+'</ul>'+(f.submits&&f.submits.length?'<p class="muted">Buttons: '+esc(f.submits.join(', '))+'</p>':'');});
+  if((p.dialogs||[]).length)h+='<h3>Dialogs</h3><ul class="list">'+p.dialogs.map(d=>'<li>'+esc(d)+'</li>').join('')+'</ul>';
+  if((p.tables||[]).length)h+='<h3>Grids</h3><ul class="list">'+p.tables.map(t=>'<li>'+esc((t.columns||[]).join(' | ')||t.selector)+'</li>').join('')+'</ul>';
+  const ce=p.code_elements||{};if(Object.keys(ce).length)h+='<h3>Declared in code</h3>'+['forms','controls','buttons','click_handlers'].filter(k=>ce[k]).map(k=>'<p><b>'+esc(k)+':</b> '+esc(ce[k].slice(0,40).join(', '))+(ce[k].length>40?' …':'')+'</p>').join('');
+  if((p.code_defs||[]).length)h+='<h3>Route defined at</h3><ul class="list">'+p.code_defs.map(x=>'<li><code>'+esc(x)+'</code></li>').join('')+'</ul>';
+  if((p.files||[]).length)h+='<h3>Source files ('+p.files.length+')</h3><ul class="list">'+p.files.slice(0,60).map(x=>'<li><code>'+esc(x)+'</code></li>').join('')+'</ul>';
+  return h+relList(v);}
+function relList(v){const out=[],inc=[];for(const c of view.cells){if(c.r===v)out.push(c);if(c.c===v)inc.push(c);}
+  const li=(c,o)=>'<li>'+nodeLink(o)+' <span class="muted">'+Object.keys(c.t).map(k=>TYPE_LABEL[k]||k).join(', ')+'</span></li>';
+  return '<h3>Goes to ('+out.length+')</h3><ul class="list">'+out.slice(0,200).map(c=>li(c,c.c)).join('')+'</ul><h3>Comes from ('+inc.length+')</h3><ul class="list">'+inc.slice(0,200).map(c=>li(c,c.r)).join('')+'</ul>';}
+function pageBtn(id){return '<button class="linkbtn" data-page="'+esc(id)+'">'+esc(id)+'</button>';}
+function changes(){const c=D.change||{},d=diff;let h='<h2>Last update</h2>';
+  if(d.first_run)h+='<p>First build: nothing to compare yet.</p>';
+  h+='<dl class="kv">'+(c.reason?'<dt>Trigger</dt><dd>'+esc(c.reason)+'</dd>':'')+(c.crawl?'<dt>Crawl</dt><dd>'+esc(c.crawl)+'</dd>':'')+(d.previous_generated_at?'<dt>Compared with</dt><dd>'+esc(d.previous_generated_at)+'</dd>':'')+'</dl>';
+  (c.commits||[]).forEach(r=>{h+='<h3>'+esc(r.repo)+' '+esc((r.from||'').slice(0,8))+' → '+esc((r.to||'').slice(0,8))+'</h3><ul class="list">'+(r.log||[]).map(l=>'<li>'+esc(l)+'</li>').join('')+'</ul>';
+    if((r.files||[]).length)h+='<p class="muted">'+r.files.length+' changed file(s): '+esc(r.files.slice(0,30).join(', '))+(r.files.length>30?' …':'')+'</p>';});
+  if((c.impacted_routes||[]).length)h+='<h3>Screens impacted by the code change</h3><ul class="list">'+c.impacted_routes.map(x=>'<li>'+pageBtn(x)+'</li>').join('')+'</ul>';
+  const sec=(t,a,f)=>a&&a.length?'<h3>'+t+' ('+a.length+')</h3><ul class="list">'+a.slice(0,300).map(f).join('')+'</ul>':'';
+  h+=sec('Screens added',d.nodes_added,x=>'<li>'+pageBtn(x)+'</li>')+sec('Screens removed',d.nodes_removed,x=>'<li>'+esc(x)+'</li>')
+   +sec('Screens changed',d.nodes_changed,x=>'<li>'+pageBtn(x.id)+' <span class="muted">'+esc(x.what.join(', '))+'</span></li>')
+   +sec('Relations added',d.relations_added,x=>'<li>'+esc(x)+'</li>')+sec('Relations removed',d.relations_removed,x=>'<li>'+esc(x)+'</li>')+sec('Relations changed',d.relations_changed,x=>'<li>'+esc(x)+'</li>');
+  return h;}
+function insights(){const P=D.page.nodes;const by=f=>P.filter(p=>(p.flags||[]).includes(f));
+  const sec=(t,a,why)=>'<h3>'+t+' ('+a.length+')</h3>'+(why?'<p class="muted">'+why+'</p>':'')+'<ul class="list">'+a.slice(0,150).map(p=>'<li>'+pageBtn(p.id)+(p.error?' <span class="muted">'+esc(p.error)+'</span>':'')+'</li>').join('')+'</ul>';
+  const cyc={};P.filter(p=>p.in_cycle).forEach(p=>(cyc[p.scc]=cyc[p.scc]||[]).push(p.id));
+  const hubs=[...P].sort((a,b)=>b.fan_in-a.fan_in).slice(0,10);
+  return '<h2>Test design insights</h2>'
+   +'<h3>Most reached screens</h3><p class="muted">Regression and smoke candidates: many paths lead here.</p><ul class="list">'+hubs.map(p=>'<li>'+pageBtn(p.id)+' <span class="muted">in '+p.fan_in+' / out '+p.fan_out+'</span></li>').join('')+'</ul>'
+   +'<h3>Cycles ('+Object.keys(cyc).length+')</h3><p class="muted">Screens that can all reach each other: test back/forward navigation, state carry-over and session handling around these loops.</p><ul class="list">'+Object.values(cyc).map(a=>'<li>'+a.map(pageBtn).join(' ⇄ ')+'</li>').join('')+'</ul>'
+   +sec('Broken / error',by('broken'),'Pages that returned HTTP ≥ 400 or failed to load.')
+   +sec('Unresolved targets',by('unresolved'),'Navigations that point to a route no repository defines and the crawl did not reach: possible broken links.')
+   +sec('Code only',by('code-only'),'Routes defined in code that the crawl never reached: role-restricted, feature-flagged, needs data, or dead code. Cover them with targeted tests.')
+   +sec('UI only',by('ui-only'),'Screens reached in the UI with no matching route in the scanned code (other repo, server-rendered, or route not recognised).')
+   +sec('Orphans',by('orphan'),'No screen links to these.')+sec('Dead ends',by('dead-end'),'No onward navigation from these screens.');}
+function legend(){const ts=types();return '<h2>Legend</h2><ul class="list">'+ts.map(t=>'<li><span class="chip"><i style="background:var(--t-'+t+')"></i>'+esc(TYPE_LABEL[t])+'</span></li>').join('')+'</ul>'
+  +'<p>A small notch in the corner of a cell means more than one relation type. Numbers appear when cells are large enough.</p>'
+  +'<p>Label colours: <span style="color:var(--added)">new</span>, <span style="color:var(--removed)">broken or unresolved</span>, <span style="color:var(--warn)">code only</span>.</p>'
+  +'<p>Element glyphs: ☰ menu item, ⇥ tab, ↗ link, ▢ button, ▤ form, · field, ◫ dialog.</p>';}
+function chips(){$('types').innerHTML=types().map(t=>'<span class="chip'+(st.off.has(t)?' off':'')+'" data-t="'+t+'" role="button" tabindex="0"><i style="background:var(--t-'+t+')"></i>'+esc(TYPE_LABEL[t])+'</span>').join('');}
+$('types').addEventListener('click',e=>{const c=e.target.closest('[data-t]');if(!c)return;st.off.has(c.dataset.t)?st.off.delete(c.dataset.t):st.off.add(c.dataset.t);chips();compute();});
+function modules(){const ms=[...new Set(L().nodes.map(n=>n.module))].sort();$('module').innerHTML='<option value="">All</option>'+ms.map(m=>'<option'+(m===st.module?' selected':'')+'>'+esc(m)+'</option>').join('');}
+function save(){try{localStorage.setItem('dsm-view',JSON.stringify({level:st.level,order:st.order,cs:st.cs}));}catch(e){}}
+$('level').onchange=e=>{st.level=e.target.value;st.sel=null;st.off.clear();st.module='';chips();modules();save();compute();panel();};
+$('order').onchange=e=>{st.order=e.target.value;save();compute();};
+$('module').onchange=e=>{st.module=e.target.value;compute();};
+$('flagf').onchange=e=>{st.flag=e.target.value;compute();};
+$('q').oninput=e=>{st.q=e.target.value;compute();};
+$('zoom').oninput=e=>{st.cs=+e.target.value;save();compute();};
+$('theme').onclick=()=>{const r=document.documentElement,cur=r.dataset.theme||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');r.dataset.theme=cur==='dark'?'light':'dark';draw();};
+function download(name,text,type){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([text],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+$('csv').onclick=()=>{const {ord,N,cellMap,n}=view;const q=s=>'"'+String(s).replace(/"/g,'""')+'"';
+  const rows=[['',...ord.map(v=>q(N[v].label))].join(',')];
+  for(const r of ord)rows.push([q(N[r].label),...ord.map(c=>{const cell=cellMap.get(r*n+c);return cell?Object.entries(cell.t).filter(([k])=>!st.off.has(k)).reduce((a,[,v])=>a+v,0)||'':(r===c?'X':'');})].join(','));
+  download('dsm-'+st.level+'.csv',rows.join('\n'),'text/csv');};
+$('json').onclick=()=>download('dsm.json',JSON.stringify(D),'application/json');
+$('meta').textContent=(D.base_url||'')+' · updated '+new Date(D.generated_at).toLocaleString();
+$('stats').innerHTML=[['Screens',D.stats.pages],['Relations',D.stats.page_relations],['Elements',D.stats.elements],['Cycles',D.stats.cycles],['Code only',D.stats.flags['code-only']],['Broken',D.stats.flags.broken]].map(([k,v])=>'<span class="stat">'+k+' <b>'+v+'</b></span>').join('');
+$('level').value=st.level;$('order').value=st.order;$('zoom').value=st.cs;
+chips();modules();compute();panel();
+</script>
+</body>
+</html>

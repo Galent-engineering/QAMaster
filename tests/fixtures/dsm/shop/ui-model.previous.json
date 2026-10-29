@@ -1,0 +1,322 @@
+{
+ "generated_at": "2026-10-28T00:00:00.000Z",
+ "base_url": "http://shop.test/",
+ "mode": "full",
+ "truncated": false,
+ "pending_routes": [],
+ "pages": [
+  {
+   "route": "/",
+   "url": "http://shop.test/",
+   "depth": 0,
+   "discovered_by": "start",
+   "status": 200,
+   "title": "Shop",
+   "headings": [
+    "Shop"
+   ],
+   "elements": [
+    {
+     "key": "/::link:products",
+     "kind": "link",
+     "text": "Products",
+     "visible": true,
+     "selector": "#products",
+     "href": "/products"
+    },
+    {
+     "key": "/::menuitem:account",
+     "kind": "menuitem",
+     "text": "Account",
+     "visible": true,
+     "selector": "#account",
+     "href": null
+    },
+    {
+     "key": "/::button:hidden",
+     "kind": "button",
+     "text": "Hidden",
+     "visible": false,
+     "selector": "#hidden",
+     "href": null
+    },
+    {
+     "key": "/::tab:deals",
+     "kind": "tab",
+     "text": "Deals",
+     "visible": true,
+     "selector": "#deals",
+     "href": null
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/products",
+   "url": "http://shop.test/products",
+   "depth": 1,
+   "discovered_by": "link",
+   "status": 200,
+   "title": "/products",
+   "headings": [
+    "/products"
+   ],
+   "elements": [
+    {
+     "key": "/products::link:item",
+     "kind": "link",
+     "text": "Item 1",
+     "visible": true,
+     "selector": "#item",
+     "href": "/products/1"
+    },
+    {
+     "key": "/products::button:cart",
+     "kind": "button",
+     "text": "Cart",
+     "visible": true,
+     "selector": "#cart",
+     "href": null
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [
+    {
+     "key": "/products::dialog:filters",
+     "title": "Filters"
+    }
+   ],
+   "error": null
+  },
+  {
+   "route": "/products/:id",
+   "url": "http://shop.test/products/:id",
+   "depth": 2,
+   "discovered_by": "link",
+   "status": 200,
+   "title": "/products/:id",
+   "headings": [
+    "/products/:id"
+   ],
+   "elements": [
+    {
+     "key": "/products/:id::button:add",
+     "kind": "button",
+     "text": "Add to cart",
+     "visible": true,
+     "selector": "#add",
+     "href": null
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/cart",
+   "url": "http://shop.test/cart",
+   "depth": 2,
+   "discovered_by": "click",
+   "status": 200,
+   "title": "Basket",
+   "headings": [
+    "/cart"
+   ],
+   "elements": [],
+   "forms": [
+    {
+     "key": "/cart::form:checkout",
+     "id": "checkout",
+     "name": "",
+     "method": "post",
+     "target": "/checkout",
+     "fields": [
+      {
+       "key": "/cart::field:coupon",
+       "label": "Coupon",
+       "name": "coupon",
+       "type": "text",
+       "required": false
+      }
+     ],
+     "submits": [
+      "Checkout"
+     ]
+    }
+   ],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/checkout",
+   "url": "http://shop.test/checkout",
+   "depth": 3,
+   "discovered_by": "form",
+   "status": 200,
+   "title": "/checkout",
+   "headings": [
+    "/checkout"
+   ],
+   "elements": [
+    {
+     "key": "/checkout::link:review",
+     "kind": "link",
+     "text": "Review",
+     "visible": true,
+     "selector": "#review",
+     "href": "/checkout/review"
+    }
+   ],
+   "forms": [
+    {
+     "key": "/checkout::form:pay",
+     "id": "",
+     "name": "pay",
+     "method": "post",
+     "target": null,
+     "fields": [
+      {
+       "key": "/checkout::field:card",
+       "label": null,
+       "name": "card",
+       "type": "text",
+       "required": true
+      },
+      {
+       "key": "/checkout::field:cvv",
+       "label": null,
+       "name": null,
+       "id": "cvv",
+       "type": "password",
+       "required": true
+      }
+     ],
+     "submits": []
+    }
+   ],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/login",
+   "url": "http://shop.test/login",
+   "depth": 1,
+   "discovered_by": "link",
+   "status": 200,
+   "title": "/login",
+   "headings": [
+    "/login"
+   ],
+   "elements": [],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null,
+   "redirect_to": "/"
+  },
+  {
+   "route": "/#/help",
+   "url": "http://shop.test/#/help",
+   "depth": 1,
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Help",
+   "headings": [
+    "Help"
+   ],
+   "elements": [],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  }
+ ],
+ "edges": [
+  {
+   "from": "/",
+   "to": "/products",
+   "type": "link",
+   "via": "/::link:products",
+   "label": "Products"
+  },
+  {
+   "from": "/",
+   "to": "/Login?next=1",
+   "type": "link",
+   "via": null,
+   "label": "Sign in"
+  },
+  {
+   "from": "/",
+   "to": "/#/help",
+   "type": "link",
+   "via": null,
+   "label": "Help"
+  },
+  {
+   "from": "/products",
+   "to": "/products/:id",
+   "type": "link",
+   "via": "/products::link:item",
+   "label": "Item 1"
+  },
+  {
+   "from": "/products",
+   "to": "/cart",
+   "type": "click",
+   "via": "/products::button:cart",
+   "label": "Cart"
+  },
+  {
+   "from": "/products::button:cart",
+   "to": "/products::dialog:filters",
+   "type": "opens",
+   "via": "/products::button:cart",
+   "label": "Filters",
+   "element_level": true
+  },
+  {
+   "from": "/products/:id",
+   "to": "/cart",
+   "type": "click",
+   "via": "/products/:id::button:add",
+   "label": "Add to cart"
+  },
+  {
+   "from": "/cart",
+   "to": "/products",
+   "type": "link",
+   "via": "/cart::link:back",
+   "label": "Keep shopping"
+  },
+  {
+   "from": "/cart",
+   "to": "/checkout",
+   "type": "form",
+   "via": "/cart::form:checkout",
+   "label": "POST checkout"
+  },
+  {
+   "from": "/login",
+   "to": "/",
+   "type": "redirect",
+   "via": null,
+   "label": "redirect"
+  },
+  {
+   "from": "/",
+   "to": "/old-sale",
+   "type": "link",
+   "via": null,
+   "label": "Sale"
+  }
+ ],
+ "api_calls": []
+}

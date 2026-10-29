@@ -1,0 +1,2017 @@
+{
+ "generated_at": "2026-10-29T07:20:43.248Z",
+ "base_url": "http://localhost:3000/",
+ "hash_routing": false,
+ "mode": "full",
+ "recrawled_routes": [
+  "/",
+  "/transaction/new",
+  "/notifications",
+  "/contacts",
+  "/personal",
+  "/user/settings",
+  "/bankaccounts",
+  "/bankaccounts/new"
+ ],
+ "login": {
+  "mode": "auto",
+  "required": true,
+  "session": "new",
+  "login_route": "/signin",
+  "landed_route": "/"
+ },
+ "truncated": false,
+ "pending_routes": [],
+ "blocked_requests": [
+  {
+   "method": "POST",
+   "url": "http://localhost:3001/graphql"
+  },
+  {
+   "method": "POST",
+   "url": "http://localhost:3001/graphql"
+  },
+  {
+   "method": "POST",
+   "url": "http://localhost:3001/graphql"
+  },
+  {
+   "method": "POST",
+   "url": "http://localhost:3001/graphql"
+  }
+ ],
+ "pages": [
+  {
+   "route": "/",
+   "url": "http://localhost:3000/",
+   "depth": 0,
+   "discovered_from": null,
+   "discovered_by": "login",
+   "status": 200,
+   "title": "Cypress Real World App",
+   "headings": [],
+   "elements": [
+    {
+     "key": "/::link:item",
+     "kind": "link",
+     "text": "",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > div > header > div:nth-of-type(1) > h1 > a"
+    },
+    {
+     "key": "/::link:new",
+     "kind": "link",
+     "text": "NEW",
+     "href": "/transaction/new",
+     "target": "/transaction/new",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div:nth-of-type(1) > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-new-transaction"
+    },
+    {
+     "key": "/::link:8",
+     "kind": "link",
+     "text": "8",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div:nth-of-type(1) > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-notifications-link"
+    },
+    {
+     "key": "/::link:everyone",
+     "kind": "link",
+     "text": "EVERYONE",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-public-tab"
+    },
+    {
+     "key": "/::link:friends",
+     "kind": "link",
+     "text": "FRIENDS",
+     "href": "/contacts",
+     "target": "/contacts",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-contacts-tab"
+    },
+    {
+     "key": "/::link:mine",
+     "kind": "link",
+     "text": "MINE",
+     "href": "/personal",
+     "target": "/personal",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "nav-personal-tab"
+    },
+    {
+     "key": "/::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-home"
+    },
+    {
+     "key": "/::link:my-account",
+     "kind": "link",
+     "text": "My Account",
+     "href": "/user/settings",
+     "target": "/user/settings",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-user-settings"
+    },
+    {
+     "key": "/::link:bank-accounts",
+     "kind": "link",
+     "text": "Bank Accounts",
+     "href": "/bankaccounts",
+     "target": "/bankaccounts",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-bankaccounts"
+    },
+    {
+     "key": "/::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(4)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-notifications"
+    },
+    {
+     "key": "/::link:https-cypress-io",
+     "kind": "link",
+     "text": "",
+     "href": "https://cypress.io",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > main > footer > div > p > a"
+    },
+    {
+     "key": "/::button:open-drawer",
+     "kind": "button",
+     "text": "open drawer",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#root > div > div > header > div:nth-of-type(1) > button",
+     "test_attr": "data-test",
+     "test_id": "sidenav-toggle",
+     "aria_label": "open drawer"
+    },
+    {
+     "key": "/::button:logout",
+     "kind": "button",
+     "text": "Logout",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(5) > ul > div > div",
+     "test_attr": "data-test",
+     "test_id": "sidenav-signout",
+     "role": "button"
+    },
+    {
+     "key": "/::button:date-all",
+     "kind": "button",
+     "text": "Date: ALL",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(1) > div > div:nth-of-type(1) > div > div",
+     "test_attr": "data-test",
+     "test_id": "transaction-list-filter-date-range-button",
+     "role": "button"
+    },
+    {
+     "key": "/::button:amount-0-1-000",
+     "kind": "button",
+     "text": "Amount: $0 - $1,000",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(1) > div > div:nth-of-type(2) > div > div",
+     "test_attr": "data-test",
+     "test_id": "transaction-list-filter-amount-range-button",
+     "role": "button"
+    },
+    {
+     "key": "/::tab:everyone",
+     "kind": "tab",
+     "text": "EVERYONE",
+     "visible": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-public-tab",
+     "role": "tab"
+    },
+    {
+     "key": "/::tab:friends",
+     "kind": "tab",
+     "text": "FRIENDS",
+     "visible": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-contacts-tab",
+     "role": "tab"
+    },
+    {
+     "key": "/::tab:mine",
+     "kind": "tab",
+     "text": "MINE",
+     "visible": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "nav-personal-tab",
+     "role": "tab"
+    }
+   ],
+   "forms": [],
+   "tables": [
+    {
+     "selector": "div:nth-of-type(2) > div > div > div > div:nth-of-type(3) > div",
+     "columns": []
+    }
+   ],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/bankaccounts",
+   "url": "http://localhost:3000/bankaccounts",
+   "depth": 1,
+   "discovered_from": "/",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Cypress Real World App",
+   "headings": [
+    "Bank Accounts"
+   ],
+   "elements": [
+    {
+     "key": "/bankaccounts::link:item",
+     "kind": "link",
+     "text": "",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > div > header > div > h1 > a"
+    },
+    {
+     "key": "/bankaccounts::link:new",
+     "kind": "link",
+     "text": "NEW",
+     "href": "/transaction/new",
+     "target": "/transaction/new",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-new-transaction"
+    },
+    {
+     "key": "/bankaccounts::link:4",
+     "kind": "link",
+     "text": "4",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-notifications-link"
+    },
+    {
+     "key": "/bankaccounts::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-home"
+    },
+    {
+     "key": "/bankaccounts::link:my-account",
+     "kind": "link",
+     "text": "My Account",
+     "href": "/user/settings",
+     "target": "/user/settings",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-user-settings"
+    },
+    {
+     "key": "/bankaccounts::link:bank-accounts",
+     "kind": "link",
+     "text": "Bank Accounts",
+     "href": "/bankaccounts",
+     "target": "/bankaccounts",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-bankaccounts"
+    },
+    {
+     "key": "/bankaccounts::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(4)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-notifications"
+    },
+    {
+     "key": "/bankaccounts::link:create",
+     "kind": "link",
+     "text": "CREATE",
+     "href": "/bankaccounts/new",
+     "target": "/bankaccounts/new",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div > div > div > div:nth-of-type(2) > a",
+     "test_attr": "data-test",
+     "test_id": "bankaccount-new"
+    },
+    {
+     "key": "/bankaccounts::link:https-cypress-io",
+     "kind": "link",
+     "text": "",
+     "href": "https://cypress.io",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > main > footer > div > p > a"
+    },
+    {
+     "key": "/bankaccounts::button:open-drawer",
+     "kind": "button",
+     "text": "open drawer",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#root > div > div > header > div > button",
+     "test_attr": "data-test",
+     "test_id": "sidenav-toggle",
+     "aria_label": "open drawer"
+    },
+    {
+     "key": "/bankaccounts::button:logout",
+     "kind": "button",
+     "text": "Logout",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(5) > ul > div > div",
+     "test_attr": "data-test",
+     "test_id": "sidenav-signout",
+     "role": "button"
+    },
+    {
+     "key": "/bankaccounts::button:delete",
+     "kind": "button",
+     "text": "DELETE",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > ul > li > div > div:nth-of-type(2) > button",
+     "test_attr": "data-test",
+     "test_id": "bankaccount-delete"
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/bankaccounts/new",
+   "url": "http://localhost:3000/bankaccounts/new",
+   "depth": 2,
+   "discovered_from": "/bankaccounts",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Cypress Real World App",
+   "headings": [
+    "Create Bank Account"
+   ],
+   "elements": [
+    {
+     "key": "/bankaccounts/new::link:item",
+     "kind": "link",
+     "text": "",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > div > header > div > h1 > a"
+    },
+    {
+     "key": "/bankaccounts/new::link:new",
+     "kind": "link",
+     "text": "NEW",
+     "href": "/transaction/new",
+     "target": "/transaction/new",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-new-transaction"
+    },
+    {
+     "key": "/bankaccounts/new::link:4",
+     "kind": "link",
+     "text": "4",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-notifications-link"
+    },
+    {
+     "key": "/bankaccounts/new::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-home"
+    },
+    {
+     "key": "/bankaccounts/new::link:my-account",
+     "kind": "link",
+     "text": "My Account",
+     "href": "/user/settings",
+     "target": "/user/settings",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-user-settings"
+    },
+    {
+     "key": "/bankaccounts/new::link:bank-accounts",
+     "kind": "link",
+     "text": "Bank Accounts",
+     "href": "/bankaccounts",
+     "target": "/bankaccounts",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-bankaccounts"
+    },
+    {
+     "key": "/bankaccounts/new::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(4)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-notifications"
+    },
+    {
+     "key": "/bankaccounts/new::link:https-cypress-io",
+     "kind": "link",
+     "text": "",
+     "href": "https://cypress.io",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > main > footer > div > p > a"
+    },
+    {
+     "key": "/bankaccounts/new::button:open-drawer",
+     "kind": "button",
+     "text": "open drawer",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#root > div > div > header > div > button",
+     "test_attr": "data-test",
+     "test_id": "sidenav-toggle",
+     "aria_label": "open drawer"
+    },
+    {
+     "key": "/bankaccounts/new::button:logout",
+     "kind": "button",
+     "text": "Logout",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(5) > ul > div > div",
+     "test_attr": "data-test",
+     "test_id": "sidenav-signout",
+     "role": "button"
+    },
+    {
+     "key": "/bankaccounts/new::button:save",
+     "kind": "button",
+     "text": "SAVE",
+     "type": "submit",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": true,
+     "selector": "div > div > form > div:nth-of-type(4) > div > button",
+     "test_attr": "data-test",
+     "test_id": "bankaccount-submit"
+    }
+   ],
+   "forms": [
+    {
+     "key": "/bankaccounts/new::form:form-1",
+     "id": "",
+     "name": "",
+     "index": 0,
+     "action": "http://localhost:3000/bankaccounts/new#",
+     "method": "get",
+     "selector": "main > div:nth-of-type(2) > div > div > div > form",
+     "visible": true,
+     "fields": [
+      {
+       "key": "/bankaccounts/new::field:bankname",
+       "tag": "input",
+       "type": "text",
+       "name": "bankName",
+       "id": "bankaccount-bankName-input",
+       "label": "Bank Name",
+       "required": true,
+       "maxlength": null,
+       "pattern": null,
+       "options": null,
+       "visible": true,
+       "selector": "#bankaccount-bankName-input",
+       "placeholder": "Bank Name",
+       "name_attr": "bankName"
+      },
+      {
+       "key": "/bankaccounts/new::field:routingnumber",
+       "tag": "input",
+       "type": "text",
+       "name": "routingNumber",
+       "id": "bankaccount-routingNumber-input",
+       "label": "Routing Number",
+       "required": true,
+       "maxlength": null,
+       "pattern": null,
+       "options": null,
+       "visible": true,
+       "selector": "#bankaccount-routingNumber-input",
+       "placeholder": "Routing Number",
+       "name_attr": "routingNumber"
+      },
+      {
+       "key": "/bankaccounts/new::field:accountnumber",
+       "tag": "input",
+       "type": "text",
+       "name": "accountNumber",
+       "id": "bankaccount-accountNumber-input",
+       "label": "Account Number",
+       "required": true,
+       "maxlength": null,
+       "pattern": null,
+       "options": null,
+       "visible": true,
+       "selector": "#bankaccount-accountNumber-input",
+       "placeholder": "Account Number",
+       "name_attr": "accountNumber"
+      }
+     ],
+     "submits": [
+      "SAVE"
+     ],
+     "target": "/bankaccounts/new"
+    }
+   ],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/contacts",
+   "url": "http://localhost:3000/contacts",
+   "depth": 1,
+   "discovered_from": "/",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Cypress Real World App",
+   "headings": [],
+   "elements": [
+    {
+     "key": "/contacts::link:item",
+     "kind": "link",
+     "text": "",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > div > header > div:nth-of-type(1) > h1 > a"
+    },
+    {
+     "key": "/contacts::link:new",
+     "kind": "link",
+     "text": "NEW",
+     "href": "/transaction/new",
+     "target": "/transaction/new",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div:nth-of-type(1) > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-new-transaction"
+    },
+    {
+     "key": "/contacts::link:4",
+     "kind": "link",
+     "text": "4",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div:nth-of-type(1) > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-notifications-link"
+    },
+    {
+     "key": "/contacts::link:everyone",
+     "kind": "link",
+     "text": "EVERYONE",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-public-tab"
+    },
+    {
+     "key": "/contacts::link:friends",
+     "kind": "link",
+     "text": "FRIENDS",
+     "href": "/contacts",
+     "target": "/contacts",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-contacts-tab"
+    },
+    {
+     "key": "/contacts::link:mine",
+     "kind": "link",
+     "text": "MINE",
+     "href": "/personal",
+     "target": "/personal",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "nav-personal-tab"
+    },
+    {
+     "key": "/contacts::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-home"
+    },
+    {
+     "key": "/contacts::link:my-account",
+     "kind": "link",
+     "text": "My Account",
+     "href": "/user/settings",
+     "target": "/user/settings",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-user-settings"
+    },
+    {
+     "key": "/contacts::link:bank-accounts",
+     "kind": "link",
+     "text": "Bank Accounts",
+     "href": "/bankaccounts",
+     "target": "/bankaccounts",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-bankaccounts"
+    },
+    {
+     "key": "/contacts::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(4)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-notifications"
+    },
+    {
+     "key": "/contacts::link:https-cypress-io",
+     "kind": "link",
+     "text": "",
+     "href": "https://cypress.io",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > main > footer > div > p > a"
+    },
+    {
+     "key": "/contacts::button:open-drawer",
+     "kind": "button",
+     "text": "open drawer",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#root > div > div > header > div:nth-of-type(1) > button",
+     "test_attr": "data-test",
+     "test_id": "sidenav-toggle",
+     "aria_label": "open drawer"
+    },
+    {
+     "key": "/contacts::button:logout",
+     "kind": "button",
+     "text": "Logout",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(5) > ul > div > div",
+     "test_attr": "data-test",
+     "test_id": "sidenav-signout",
+     "role": "button"
+    },
+    {
+     "key": "/contacts::button:date-all",
+     "kind": "button",
+     "text": "Date: ALL",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(1) > div > div:nth-of-type(1) > div > div",
+     "test_attr": "data-test",
+     "test_id": "transaction-list-filter-date-range-button",
+     "role": "button"
+    },
+    {
+     "key": "/contacts::button:amount-0-1-000",
+     "kind": "button",
+     "text": "Amount: $0 - $1,000",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(1) > div > div:nth-of-type(2) > div > div",
+     "test_attr": "data-test",
+     "test_id": "transaction-list-filter-amount-range-button",
+     "role": "button"
+    },
+    {
+     "key": "/contacts::tab:everyone",
+     "kind": "tab",
+     "text": "EVERYONE",
+     "visible": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-public-tab",
+     "role": "tab"
+    },
+    {
+     "key": "/contacts::tab:friends",
+     "kind": "tab",
+     "text": "FRIENDS",
+     "visible": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-contacts-tab",
+     "role": "tab"
+    },
+    {
+     "key": "/contacts::tab:mine",
+     "kind": "tab",
+     "text": "MINE",
+     "visible": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "nav-personal-tab",
+     "role": "tab"
+    }
+   ],
+   "forms": [],
+   "tables": [
+    {
+     "selector": "div:nth-of-type(2) > div > div > div > div:nth-of-type(3) > div",
+     "columns": []
+    }
+   ],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/notifications",
+   "url": "http://localhost:3000/notifications",
+   "depth": 1,
+   "discovered_from": "/",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Cypress Real World App",
+   "headings": [
+    "Notifications"
+   ],
+   "elements": [
+    {
+     "key": "/notifications::link:item",
+     "kind": "link",
+     "text": "",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > div > header > div > h1 > a"
+    },
+    {
+     "key": "/notifications::link:new",
+     "kind": "link",
+     "text": "NEW",
+     "href": "/transaction/new",
+     "target": "/transaction/new",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-new-transaction"
+    },
+    {
+     "key": "/notifications::link:8",
+     "kind": "link",
+     "text": "8",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-notifications-link"
+    },
+    {
+     "key": "/notifications::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-home"
+    },
+    {
+     "key": "/notifications::link:my-account",
+     "kind": "link",
+     "text": "My Account",
+     "href": "/user/settings",
+     "target": "/user/settings",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-user-settings"
+    },
+    {
+     "key": "/notifications::link:bank-accounts",
+     "kind": "link",
+     "text": "Bank Accounts",
+     "href": "/bankaccounts",
+     "target": "/bankaccounts",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-bankaccounts"
+    },
+    {
+     "key": "/notifications::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(4)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-notifications"
+    },
+    {
+     "key": "/notifications::link:https-cypress-io",
+     "kind": "link",
+     "text": "",
+     "href": "https://cypress.io",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > main > footer > div > p > a"
+    },
+    {
+     "key": "/notifications::button:open-drawer",
+     "kind": "button",
+     "text": "open drawer",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#root > div > div > header > div > button",
+     "test_attr": "data-test",
+     "test_id": "sidenav-toggle",
+     "aria_label": "open drawer"
+    },
+    {
+     "key": "/notifications::button:logout",
+     "kind": "button",
+     "text": "Logout",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(5) > ul > div > div",
+     "test_attr": "data-test",
+     "test_id": "sidenav-signout",
+     "role": "button"
+    },
+    {
+     "key": "/notifications::button:dismiss",
+     "kind": "button",
+     "text": "DISMISS",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div > div > ul > li:nth-of-type(1) > button",
+     "test_attr": "data-test",
+     "test_id": "notification-mark-read-8NnQy36xaMtB"
+    },
+    {
+     "key": "/notifications::button:dismiss-2",
+     "kind": "button",
+     "text": "DISMISS",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div > div > ul > li:nth-of-type(2) > button",
+     "test_attr": "data-test",
+     "test_id": "notification-mark-read-YcLyZdwuGZAe"
+    },
+    {
+     "key": "/notifications::button:dismiss-3",
+     "kind": "button",
+     "text": "DISMISS",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div > div > ul > li:nth-of-type(3) > button",
+     "test_attr": "data-test",
+     "test_id": "notification-mark-read-W-3GmlnhnfiJ"
+    },
+    {
+     "key": "/notifications::button:dismiss-4",
+     "kind": "button",
+     "text": "DISMISS",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div > div > ul > li:nth-of-type(4) > button",
+     "test_attr": "data-test",
+     "test_id": "notification-mark-read-dicyOI5JYOvr"
+    },
+    {
+     "key": "/notifications::button:dismiss-5",
+     "kind": "button",
+     "text": "DISMISS",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div > div > ul > li:nth-of-type(5) > button",
+     "test_attr": "data-test",
+     "test_id": "notification-mark-read-W0NefbvUhE5h"
+    },
+    {
+     "key": "/notifications::button:dismiss-6",
+     "kind": "button",
+     "text": "DISMISS",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div > div > ul > li:nth-of-type(6) > button",
+     "test_attr": "data-test",
+     "test_id": "notification-mark-read-mq-7Xnl-74JR"
+    },
+    {
+     "key": "/notifications::button:dismiss-7",
+     "kind": "button",
+     "text": "DISMISS",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div > div > ul > li:nth-of-type(7) > button",
+     "test_attr": "data-test",
+     "test_id": "notification-mark-read--90uuJAZrMPg"
+    },
+    {
+     "key": "/notifications::button:dismiss-8",
+     "kind": "button",
+     "text": "DISMISS",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div > div > ul > li:nth-of-type(8) > button",
+     "test_attr": "data-test",
+     "test_id": "notification-mark-read-5lyq9USjvrJT"
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/personal",
+   "url": "http://localhost:3000/personal",
+   "depth": 1,
+   "discovered_from": "/",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Cypress Real World App",
+   "headings": [],
+   "elements": [
+    {
+     "key": "/personal::link:item",
+     "kind": "link",
+     "text": "",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > div > header > div:nth-of-type(1) > h1 > a"
+    },
+    {
+     "key": "/personal::link:new",
+     "kind": "link",
+     "text": "NEW",
+     "href": "/transaction/new",
+     "target": "/transaction/new",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div:nth-of-type(1) > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-new-transaction"
+    },
+    {
+     "key": "/personal::link:4",
+     "kind": "link",
+     "text": "4",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "#root > div > div > header > div:nth-of-type(1) > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-top-notifications-link"
+    },
+    {
+     "key": "/personal::link:everyone",
+     "kind": "link",
+     "text": "EVERYONE",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-public-tab"
+    },
+    {
+     "key": "/personal::link:friends",
+     "kind": "link",
+     "text": "FRIENDS",
+     "href": "/contacts",
+     "target": "/contacts",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-contacts-tab"
+    },
+    {
+     "key": "/personal::link:mine",
+     "kind": "link",
+     "text": "MINE",
+     "href": "/personal",
+     "target": "/personal",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "nav-personal-tab"
+    },
+    {
+     "key": "/personal::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-home"
+    },
+    {
+     "key": "/personal::link:my-account",
+     "kind": "link",
+     "text": "My Account",
+     "href": "/user/settings",
+     "target": "/user/settings",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-user-settings"
+    },
+    {
+     "key": "/personal::link:bank-accounts",
+     "kind": "link",
+     "text": "Bank Accounts",
+     "href": "/bankaccounts",
+     "target": "/bankaccounts",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-bankaccounts"
+    },
+    {
+     "key": "/personal::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(3) > ul > div > a:nth-of-type(4)",
+     "test_attr": "data-test",
+     "test_id": "sidenav-notifications"
+    },
+    {
+     "key": "/personal::link:https-cypress-io",
+     "kind": "link",
+     "text": "",
+     "href": "https://cypress.io",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": false,
+     "selector": "div > main > footer > div > p > a"
+    },
+    {
+     "key": "/personal::button:open-drawer",
+     "kind": "button",
+     "text": "open drawer",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#root > div > div > header > div:nth-of-type(1) > button",
+     "test_attr": "data-test",
+     "test_id": "sidenav-toggle",
+     "aria_label": "open drawer"
+    },
+    {
+     "key": "/personal::button:logout",
+     "kind": "button",
+     "text": "Logout",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(2) > div:nth-of-type(5) > ul > div > div",
+     "test_attr": "data-test",
+     "test_id": "sidenav-signout",
+     "role": "button"
+    },
+    {
+     "key": "/personal::button:date-all",
+     "kind": "button",
+     "text": "Date: ALL",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(1) > div > div:nth-of-type(1) > div > div",
+     "test_attr": "data-test",
+     "test_id": "transaction-list-filter-date-range-button",
+     "role": "button"
+    },
+    {
+     "key": "/personal::button:amount-0-1-000",
+     "kind": "button",
+     "text": "Amount: $0 - $1,000",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "div > div:nth-of-type(1) > div > div:nth-of-type(2) > div > div",
+     "test_attr": "data-test",
+     "test_id": "transaction-list-filter-amount-range-button",
+     "role": "button"
+    },
+    {
+     "key": "/personal::tab:everyone",
+     "kind": "tab",
+     "text": "EVERYONE",
+     "visible": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(1)",
+     "test_attr": "data-test",
+     "test_id": "nav-public-tab",
+     "role": "tab"
+    },
+    {
+     "key": "/personal::tab:friends",
+     "kind": "tab",
+     "text": "FRIENDS",
+     "visible": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(2)",
+     "test_attr": "data-test",
+     "test_id": "nav-contacts-tab",
+     "role": "tab"
+    },
+    {
+     "key": "/personal::tab:mine",
+     "kind": "tab",
+     "text": "MINE",
+     "visible": true,
+     "selector": "div > header > div:nth-of-type(2) > div > div > a:nth-of-type(3)",
+     "test_attr": "data-test",
+     "test_id": "nav-personal-tab",
+     "role": "tab"
+    }
+   ],
+   "forms": [],
+   "tables": [
+    {
+     "selector": "div:nth-of-type(2) > div > div > div > div:nth-of-type(3) > div",
+     "columns": []
+    }
+   ],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/transaction/new",
+   "url": "http://localhost:3000/transaction/new",
+   "depth": 1,
+   "discovered_from": "/",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "",
+   "headings": [],
+   "elements": [],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": "login did not succeed (check the username/password, or use --login-mode manual)"
+  },
+  {
+   "route": "/user/settings",
+   "url": "http://localhost:3000/user/settings",
+   "depth": 1,
+   "discovered_from": "/",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "",
+   "headings": [],
+   "elements": [],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": "login did not succeed (check the username/password, or use --login-mode manual)"
+  }
+ ],
+ "edges": [
+  {
+   "from": "/",
+   "to": "/transaction/new",
+   "type": "link",
+   "via": "/::link:new",
+   "label": "NEW"
+  },
+  {
+   "from": "/",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/::link:8",
+   "label": "8"
+  },
+  {
+   "from": "/",
+   "to": "/contacts",
+   "type": "link",
+   "via": "/::link:friends",
+   "label": "FRIENDS"
+  },
+  {
+   "from": "/",
+   "to": "/personal",
+   "type": "link",
+   "via": "/::link:mine",
+   "label": "MINE"
+  },
+  {
+   "from": "/",
+   "to": "/user/settings",
+   "type": "link",
+   "via": "/::link:my-account",
+   "label": "My Account"
+  },
+  {
+   "from": "/",
+   "to": "/bankaccounts",
+   "type": "link",
+   "via": "/::link:bank-accounts",
+   "label": "Bank Accounts"
+  },
+  {
+   "from": "/",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/::link:notifications",
+   "label": "Notifications"
+  },
+  {
+   "from": "/",
+   "to": "/contacts",
+   "type": "click",
+   "via": "/::link:friends",
+   "label": "FRIENDS"
+  },
+  {
+   "from": "/",
+   "to": "/personal",
+   "type": "click",
+   "via": "/::link:mine",
+   "label": "MINE"
+  },
+  {
+   "from": "/notifications",
+   "to": "/",
+   "type": "link",
+   "via": "/notifications::link:item",
+   "label": ""
+  },
+  {
+   "from": "/notifications",
+   "to": "/transaction/new",
+   "type": "link",
+   "via": "/notifications::link:new",
+   "label": "NEW"
+  },
+  {
+   "from": "/notifications",
+   "to": "/",
+   "type": "link",
+   "via": "/notifications::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/notifications",
+   "to": "/user/settings",
+   "type": "link",
+   "via": "/notifications::link:my-account",
+   "label": "My Account"
+  },
+  {
+   "from": "/notifications",
+   "to": "/bankaccounts",
+   "type": "link",
+   "via": "/notifications::link:bank-accounts",
+   "label": "Bank Accounts"
+  },
+  {
+   "from": "/contacts",
+   "to": "/",
+   "type": "link",
+   "via": "/contacts::link:item",
+   "label": ""
+  },
+  {
+   "from": "/contacts",
+   "to": "/transaction/new",
+   "type": "link",
+   "via": "/contacts::link:new",
+   "label": "NEW"
+  },
+  {
+   "from": "/contacts",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/contacts::link:4",
+   "label": "4"
+  },
+  {
+   "from": "/contacts",
+   "to": "/",
+   "type": "link",
+   "via": "/contacts::link:everyone",
+   "label": "EVERYONE"
+  },
+  {
+   "from": "/contacts",
+   "to": "/personal",
+   "type": "link",
+   "via": "/contacts::link:mine",
+   "label": "MINE"
+  },
+  {
+   "from": "/contacts",
+   "to": "/",
+   "type": "link",
+   "via": "/contacts::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/contacts",
+   "to": "/user/settings",
+   "type": "link",
+   "via": "/contacts::link:my-account",
+   "label": "My Account"
+  },
+  {
+   "from": "/contacts",
+   "to": "/bankaccounts",
+   "type": "link",
+   "via": "/contacts::link:bank-accounts",
+   "label": "Bank Accounts"
+  },
+  {
+   "from": "/contacts",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/contacts::link:notifications",
+   "label": "Notifications"
+  },
+  {
+   "from": "/contacts",
+   "to": "/",
+   "type": "click",
+   "via": "/contacts::link:everyone",
+   "label": "EVERYONE"
+  },
+  {
+   "from": "/contacts",
+   "to": "/personal",
+   "type": "click",
+   "via": "/contacts::link:mine",
+   "label": "MINE"
+  },
+  {
+   "from": "/personal",
+   "to": "/",
+   "type": "link",
+   "via": "/personal::link:item",
+   "label": ""
+  },
+  {
+   "from": "/personal",
+   "to": "/transaction/new",
+   "type": "link",
+   "via": "/personal::link:new",
+   "label": "NEW"
+  },
+  {
+   "from": "/personal",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/personal::link:4",
+   "label": "4"
+  },
+  {
+   "from": "/personal",
+   "to": "/",
+   "type": "link",
+   "via": "/personal::link:everyone",
+   "label": "EVERYONE"
+  },
+  {
+   "from": "/personal",
+   "to": "/contacts",
+   "type": "link",
+   "via": "/personal::link:friends",
+   "label": "FRIENDS"
+  },
+  {
+   "from": "/personal",
+   "to": "/",
+   "type": "link",
+   "via": "/personal::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/personal",
+   "to": "/user/settings",
+   "type": "link",
+   "via": "/personal::link:my-account",
+   "label": "My Account"
+  },
+  {
+   "from": "/personal",
+   "to": "/bankaccounts",
+   "type": "link",
+   "via": "/personal::link:bank-accounts",
+   "label": "Bank Accounts"
+  },
+  {
+   "from": "/personal",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/personal::link:notifications",
+   "label": "Notifications"
+  },
+  {
+   "from": "/personal",
+   "to": "/",
+   "type": "click",
+   "via": "/personal::link:everyone",
+   "label": "EVERYONE"
+  },
+  {
+   "from": "/personal",
+   "to": "/contacts",
+   "type": "click",
+   "via": "/personal::link:friends",
+   "label": "FRIENDS"
+  },
+  {
+   "from": "/bankaccounts",
+   "to": "/",
+   "type": "link",
+   "via": "/bankaccounts::link:item",
+   "label": ""
+  },
+  {
+   "from": "/bankaccounts",
+   "to": "/transaction/new",
+   "type": "link",
+   "via": "/bankaccounts::link:new",
+   "label": "NEW"
+  },
+  {
+   "from": "/bankaccounts",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/bankaccounts::link:4",
+   "label": "4"
+  },
+  {
+   "from": "/bankaccounts",
+   "to": "/",
+   "type": "link",
+   "via": "/bankaccounts::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/bankaccounts",
+   "to": "/user/settings",
+   "type": "link",
+   "via": "/bankaccounts::link:my-account",
+   "label": "My Account"
+  },
+  {
+   "from": "/bankaccounts",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/bankaccounts::link:notifications",
+   "label": "Notifications"
+  },
+  {
+   "from": "/bankaccounts",
+   "to": "/bankaccounts/new",
+   "type": "link",
+   "via": "/bankaccounts::link:create",
+   "label": "CREATE"
+  },
+  {
+   "from": "/bankaccounts/new",
+   "to": "/",
+   "type": "link",
+   "via": "/bankaccounts/new::link:item",
+   "label": ""
+  },
+  {
+   "from": "/bankaccounts/new",
+   "to": "/transaction/new",
+   "type": "link",
+   "via": "/bankaccounts/new::link:new",
+   "label": "NEW"
+  },
+  {
+   "from": "/bankaccounts/new",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/bankaccounts/new::link:4",
+   "label": "4"
+  },
+  {
+   "from": "/bankaccounts/new",
+   "to": "/",
+   "type": "link",
+   "via": "/bankaccounts/new::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/bankaccounts/new",
+   "to": "/user/settings",
+   "type": "link",
+   "via": "/bankaccounts/new::link:my-account",
+   "label": "My Account"
+  },
+  {
+   "from": "/bankaccounts/new",
+   "to": "/bankaccounts",
+   "type": "link",
+   "via": "/bankaccounts/new::link:bank-accounts",
+   "label": "Bank Accounts"
+  },
+  {
+   "from": "/bankaccounts/new",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/bankaccounts/new::link:notifications",
+   "label": "Notifications"
+  }
+ ],
+ "api_calls": [
+  {
+   "method": "GET",
+   "host": "localhost:3001",
+   "path": "/checkAuth",
+   "query_keys": [],
+   "statuses": [
+    200
+   ],
+   "pages": [
+    "/user/settings"
+   ],
+   "content_type": "application/json",
+   "response_keys": [
+    "user"
+   ]
+  },
+  {
+   "method": "POST",
+   "host": "localhost:3001",
+   "path": "/graphql",
+   "query_keys": [],
+   "statuses": [
+    200
+   ],
+   "pages": [
+    "/transaction/new",
+    "/notifications",
+    "/contacts",
+    "/personal",
+    "/user/settings",
+    "/bankaccounts",
+    "/bankaccounts/new"
+   ],
+   "content_type": "application/json",
+   "response_keys": [
+    "data"
+   ]
+  },
+  {
+   "method": "PATCH",
+   "host": "localhost:3001",
+   "path": "/notifications/-90uuJAZrMPg",
+   "query_keys": [],
+   "statuses": [
+    204
+   ],
+   "pages": [
+    "/notifications"
+   ],
+   "content_type": null,
+   "response_keys": []
+  },
+  {
+   "method": "PATCH",
+   "host": "localhost:3001",
+   "path": "/notifications/8NnQy36xaMtB",
+   "query_keys": [],
+   "statuses": [
+    204
+   ],
+   "pages": [
+    "/notifications"
+   ],
+   "content_type": null,
+   "response_keys": []
+  },
+  {
+   "method": "PATCH",
+   "host": "localhost:3001",
+   "path": "/notifications/W-3GmlnhnfiJ",
+   "query_keys": [],
+   "statuses": [
+    204
+   ],
+   "pages": [
+    "/notifications"
+   ],
+   "content_type": null,
+   "response_keys": []
+  },
+  {
+   "method": "PATCH",
+   "host": "localhost:3001",
+   "path": "/notifications/W0NefbvUhE5h",
+   "query_keys": [],
+   "statuses": [
+    204
+   ],
+   "pages": [
+    "/notifications"
+   ],
+   "content_type": null,
+   "response_keys": []
+  },
+  {
+   "method": "GET",
+   "host": "localhost:3001",
+   "path": "/notifications",
+   "query_keys": [],
+   "statuses": [
+    200
+   ],
+   "pages": [
+    "/",
+    "/transaction/new",
+    "/notifications",
+    "/contacts",
+    "/personal",
+    "/user/settings",
+    "/bankaccounts",
+    "/bankaccounts/new"
+   ],
+   "content_type": "application/json",
+   "response_keys": [
+    "results"
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "localhost:3001",
+   "path": "/transactions/contacts",
+   "query_keys": [],
+   "statuses": [
+    200
+   ],
+   "pages": [
+    "/",
+    "/contacts",
+    "/personal"
+   ],
+   "content_type": "application/json",
+   "response_keys": [
+    "pageData",
+    "results"
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "localhost:3001",
+   "path": "/transactions/public",
+   "query_keys": [],
+   "statuses": [
+    200
+   ],
+   "pages": [
+    "/",
+    "/contacts",
+    "/personal"
+   ],
+   "content_type": "application/json",
+   "response_keys": [
+    "pageData",
+    "results"
+   ]
+  },
+  {
+   "method": "GET",
+   "host": "localhost:3001",
+   "path": "/transactions",
+   "query_keys": [],
+   "statuses": [
+    200
+   ],
+   "pages": [
+    "/",
+    "/contacts",
+    "/personal"
+   ],
+   "content_type": "application/json",
+   "response_keys": [
+    "pageData",
+    "results"
+   ]
+  },
+  {
+   "method": "PATCH",
+   "host": "localhost:3001",
+   "path": "/users/uBmeaz5pX",
+   "query_keys": [],
+   "statuses": [
+    204
+   ],
+   "pages": [
+    "/user/settings"
+   ],
+   "content_type": null,
+   "response_keys": []
+  },
+  {
+   "method": "GET",
+   "host": "localhost:3001",
+   "path": "/users",
+   "query_keys": [],
+   "statuses": [
+    200
+   ],
+   "pages": [
+    "/transaction/new"
+   ],
+   "content_type": "application/json",
+   "response_keys": [
+    "results"
+   ]
+  }
+ ]
+}

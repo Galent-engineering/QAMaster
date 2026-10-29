@@ -1,0 +1,14 @@
+{
+ "project": "Shop",
+ "output_dir": "dsm",
+ "application": {
+  "base_url": "http://shop.test/",
+  "start_paths": [
+   "/"
+  ]
+ },
+ "matrix": {
+  "module_depth": 1,
+  "max_element_nodes": 4000
+ }
+}

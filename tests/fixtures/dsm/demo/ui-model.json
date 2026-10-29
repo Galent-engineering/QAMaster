@@ -1,0 +1,141 @@
+{
+ "generated_at": "2026-10-29T04:47:50.953Z",
+ "base_url": "http://127.0.0.1:8765/",
+ "hash_routing": false,
+ "mode": "full",
+ "recrawled_routes": [
+  "/"
+ ],
+ "login": {
+  "mode": "none"
+ },
+ "truncated": false,
+ "pending_routes": [],
+ "blocked_requests": [],
+ "pages": [
+  {
+   "route": "/",
+   "url": "http://127.0.0.1:8765/",
+   "depth": 0,
+   "discovered_from": null,
+   "discovered_by": "start",
+   "status": 200,
+   "title": "CheckMaster Shop",
+   "headings": [
+    "CheckMaster Shop",
+    "Sign in",
+    "Products",
+    "Cart"
+   ],
+   "elements": [
+    {
+     "key": "/::button:sign-in",
+     "kind": "button",
+     "text": "Sign in",
+     "type": "button",
+     "id": "sign-in",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#sign-in"
+    },
+    {
+     "key": "/::button:add-to-cart",
+     "kind": "button",
+     "text": "Add to cart",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#products > ul > li:nth-of-type(1) > button"
+    },
+    {
+     "key": "/::button:add-to-cart-2",
+     "kind": "button",
+     "text": "Add to cart",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#products > ul > li:nth-of-type(2) > button"
+    },
+    {
+     "key": "/::button:apply",
+     "kind": "button",
+     "text": "Apply",
+     "type": "button",
+     "id": "apply-coupon",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#apply-coupon"
+    }
+   ],
+   "forms": [
+    {
+     "key": "/::form:page-inputs",
+     "id": "page-inputs",
+     "name": "Inputs outside a form",
+     "index": -1,
+     "action": "",
+     "method": "none",
+     "selector": "body",
+     "visible": true,
+     "fields": [
+      {
+       "key": "/::field:username",
+       "tag": "input",
+       "type": "input",
+       "name": "",
+       "id": "username",
+       "label": "Username",
+       "required": false,
+       "maxlength": null,
+       "pattern": null,
+       "options": null,
+       "visible": true,
+       "selector": "#username"
+      },
+      {
+       "key": "/::field:password",
+       "tag": "input",
+       "type": "password",
+       "name": "",
+       "id": "password",
+       "label": "Password",
+       "required": false,
+       "maxlength": null,
+       "pattern": null,
+       "options": null,
+       "visible": true,
+       "selector": "#password"
+      },
+      {
+       "key": "/::field:coupon",
+       "tag": "input",
+       "type": "input",
+       "name": "",
+       "id": "coupon",
+       "label": "Coupon",
+       "required": false,
+       "maxlength": null,
+       "pattern": null,
+       "options": null,
+       "visible": true,
+       "selector": "#coupon"
+      }
+     ],
+     "submits": [],
+     "target": null
+    }
+   ],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  }
+ ],
+ "edges": [],
+ "api_calls": []
+}

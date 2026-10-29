@@ -9,6 +9,7 @@ Read before working on a feature:
 - [docs/architecture.md](docs/architecture.md): diagrams and the module map
 - [docs/decisions.md](docs/decisions.md): settled decisions. Don't reverse one silently; propose a new entry.
 - [docs/data-handling.md](docs/data-handling.md): what goes to Claude, and `QAMASTER_AI=off`
+- [docs/learning.md](docs/learning.md): concepts and design explained, one lesson per ported feature. Add a lesson when a feature finishes Learn
 
 Sources being ported, next to this repo: `../CheckMasterPlugin` (Python; port its tests before its code), `../autonomous-qe-0.2.0` (TypeScript, `tools/`), demos in `../CheckMasterDemo` and `../autonomousQeDemo`.
 

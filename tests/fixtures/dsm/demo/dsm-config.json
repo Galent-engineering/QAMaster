@@ -1,0 +1,15 @@
+{
+ "project": "autonomousQeDemo",
+ "output_dir": "dsm",
+ "matrix": {
+  "default_level": "page",
+  "module_depth": 1,
+  "max_element_nodes": 4000
+ },
+ "application": {
+  "base_url": "http://127.0.0.1:8765/",
+  "start_paths": [
+   "/"
+  ]
+ }
+}

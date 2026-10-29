@@ -19,6 +19,13 @@ Step 3 moves Autonomous-QE's engine into `plugin/src/` behind the adapters. It d
 - **Python-compatibility layers**, which are not ported (decision 2): `dsm/pyport.mts` (623 lines), `shared/pycompat.mts` (303) and `mcp_config/pycompat.mts` (306). They exist so the TypeScript ports printed byte-for-byte what the old Python tools printed.
 - **Shared helpers:** `shared/common.mts` (305 lines) is imported by almost every module. It mixes paths, JSON I/O, process running and CLI output. We port only the helpers a feature needs, when it needs them, into `src/shared/`. No bulk port.
 - **Known good data:** `../autonomousQeDemo` is a fully onboarded project. It has `dsm/` (`ui-model.json`, `code-model.json`, `dsm.json`, `index.html`), `config/`, a TestGen run (`testgen/output/20261029-1030-Home`), `requirements/`, `reports/` and a `site/` app with git history. Its files become the test fixtures: the same input has to give the same result in QAMaster as in AQE, or the difference is written down.
+- **Main demo app:** `../cypress-realworld-app` ([cypress-io/cypress-realworld-app](https://github.com/cypress-io/cypress-realworld-app), MIT, cloned at `0729f68` on 2026-10-29). `autonomousQeDemo` is a single static page, too small to exercise the DSM. The Real World App is a mid-sized payments app built for test practice:
+  - about 10 screens: sign in, sign up, the home feed with tabs, new transaction, transaction detail, bank accounts, notifications and user settings;
+  - forms with validation, sign-in, create and delete flows, and an Express REST API on port 3001;
+  - React Router routes, including a parameter route (`/transaction/:transactionId`) and pattern routes (`/(public|contacts|personal)?`, `/bankaccounts*`);
+  - seeded local data, recreated on every start, and its own Cypress tests to compare with ours.
+
+  Run it with the `realworld-app` entry in `.claude/launch.json` (`yarn dev` through corepack; front end on port 3000). Every feature builds its fixtures by running AQE on it first.
 
 ## The loop for each feature
 
@@ -77,8 +84,50 @@ Not in step 3:
 
 One section per feature, filled in during its Learn phase: inputs, outputs, side effects, surprises, which version won, what was left out and why.
 
-### 1. DSM build and render
-_Not started._
+The concepts behind each feature are explained for people in [learning.md](learning.md).
+
+### 1. DSM build and render (Learn done 2026-10-29)
+
+**Version:** `build_dsm.mts`, `render_html.mts`, `pyport.mts` and `dsm_template.html` are identical in 0.1.5 and 0.2.0. Nothing to choose.
+
+**What it does:** `build(ui, code, config, previous?, change?)` is a pure function apart from `generated_at`. Its steps:
+1. Merge pages from the crawl (`ui-model.json`) and routes from the code scan (`code-model.json`) into page nodes, keyed by `matchKey`: the part after `#`, no query, lower case, no trailing `/`.
+2. Attach source files to pages through `files[*].owners`.
+3. Add page relations from crawl edges (not element-level ones) and code edges. A `(shared)` node stands for layout code. Targets nobody visited become `ui-target` or `code-ref` nodes.
+4. Order the pages: Tarjan's strongly connected components, then the components in topological order, with ties broken by (start page, crawl depth, module, label).
+5. Work out fan-in, fan-out, cycles and the flags: `orphan`, `dead-end`, `code-only`, `ui-only`, `unresolved`, `broken`, `redirect`.
+6. Build the element-level matrix: each page followed by its visible elements, forms, fields and dialogs, with contains, navigates, submits, opens and redirect relations, capped at `matrix.max_element_nodes` (`truncated` is then true).
+7. Add stats (`density` rounded to 4 places) and the diff against the previous DSM: nodes and relations added, removed and changed.
+
+`render(dsm, out)` puts the DSM JSON into `dsm_template.html` (escaping `</`), sets the title to "<project> UI DSM", and writes the file atomically (a `.tmp` file, then a rename).
+
+**Callers:** `dsm_update` (feature 3) and `testcases` (v2). `impactedRoutes`, which the gate needs, lives in `dsm_update`, so it moves with feature 3, not here.
+
+**Python behaviour it really relies on**, to write natively, without `pyport`:
+- Truthiness: `[]`, `{}`, `''`, `0` and `null` are false (`truthy`, `or`).
+- Sorting: stable, comparing arrays element by element and strings by code point (`sorted`, `pyCmp`), not `localeCompare`. It decides the matrix order.
+- `round(x, 4)` for density, and `rstrip('/')` / `strip('/')`.
+- Floats: Python wrote `0.0`. In parsed JSON it's `0`, so it doesn't matter.
+
+**Fixtures** (`tests/fixtures/dsm/`), each built with AQE's own `build` / `render`:
+
+| Case | From | What it covers |
+|---|---|---|
+| `demo/` | autonomousQeDemo, real | 1 page, 9 elements, no code routes |
+| `rwa/` | Real World App, real crawl and scan | 16 pages, 40 relations, 115 elements, a cycle, every flag except `redirect` |
+| `shop/` | Hand-made | Branches the real apps missed: redirect, HTTP 500 page, hash route, `opens` dialog edge, form `submits`, `(shared)` code edges, unresolved targets, element truncation (`max_element_nodes: 14`), a diff against a previous crawl, and the rendered HTML |
+
+**Found on the way (not feature 1, but recorded for later features):**
+- **Feature 2, repo scan:** on the Real World App it found 6 of about 12 routes. It misses routes declared through a custom component (`<PrivateRoute path=…>`), turns `/(public)?` into `/(public)`, treats `/manifest.json` as a screen, and links **none** of 126 files to a screen (all `shared`). `path:` tags (Q8) would be empty for this app. This is the risk the README names, now confirmed.
+- **Feature 3, crawl safety (Q15), must fix:**
+  - The write guard only covers the app's own host. The API on another port (3001) wasn't guarded until it was added to `allowed_hosts`.
+  - The guard is switched off while the crawler signs in again (`crawl_ui.mjs` lines 547–549).
+  - Sign-in detection mistook `/user/settings` for a login page. The crawler typed the username into First name and submitted it, and dismiss clicks marked notifications as read.
+
+  The demo's data was restored with `git checkout` both times.
+- **Feature 3, crawl coverage:** the crawler never reached `/transaction/:id`, and lost the session on two screens.
+
+**Left out (not MVP):** nothing. Feature 1 is all MVP.
 
 ## Roadmap: what comes after the v1 MVP
 

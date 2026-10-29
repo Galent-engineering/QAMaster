@@ -1,0 +1,164 @@
+{
+ "generated_at": "2026-10-29T00:00:00+00:00",
+ "repos": [
+  {
+   "name": "shop",
+   "path": "/src/shop",
+   "ref": "main",
+   "commit": "cccccccccccccccccccccccccccccccccccccccc",
+   "files_scanned": 6,
+   "frameworks": [
+    "react-router"
+   ]
+  }
+ ],
+ "routes": [
+  {
+   "route": "/",
+   "repo": "shop",
+   "file": "src/App.tsx",
+   "line": 10,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/products",
+   "repo": "shop",
+   "file": "src/App.tsx",
+   "line": 11,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/products/:id",
+   "repo": "shop",
+   "file": "src/App.tsx",
+   "line": 12,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/cart",
+   "repo": "shop",
+   "file": "src/App.tsx",
+   "line": 13,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/admin",
+   "repo": "shop",
+   "file": "src/App.tsx",
+   "line": 14,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  },
+  {
+   "route": "/admin/reports",
+   "repo": "shop",
+   "file": "src/admin/Routes.tsx",
+   "line": 3,
+   "kind": "route",
+   "framework": "react-router",
+   "component": null
+  }
+ ],
+ "files": {
+  "shop:src/App.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "shop:src/Cart.tsx": {
+   "owners": [
+    "/cart"
+   ],
+   "confidence": "direct",
+   "elements": {
+    "buttons": [
+     "Checkout",
+     "Remove"
+    ],
+    "buttons_count": 2
+   }
+  },
+  "shop:src/Products.tsx": {
+   "owners": [
+    "/products",
+    "/products/:id"
+   ],
+   "confidence": "direct",
+   "elements": {
+    "buttons": [
+     "Cart"
+    ],
+    "links": [
+     "Item 1"
+    ]
+   }
+  },
+  "shop:src/Checkout.tsx": {
+   "owners": [
+    "/checkout"
+   ],
+   "confidence": "inferred"
+  },
+  "shop:src/admin/Admin.tsx": {
+   "owners": [
+    "/admin"
+   ],
+   "confidence": "direct"
+  },
+  "shop:src/Nav.tsx": {
+   "owners": [],
+   "confidence": "shared"
+  }
+ },
+ "edges": [
+  {
+   "from": "(shared)",
+   "to": "/cart",
+   "type": "code",
+   "kind": "link",
+   "repo": "shop",
+   "file": "src/Nav.tsx",
+   "line": 5,
+   "confidence": "shared"
+  },
+  {
+   "from": "/products",
+   "to": "/cart",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "shop",
+   "file": "src/Products.tsx",
+   "line": 20,
+   "confidence": "direct"
+  },
+  {
+   "from": "/admin",
+   "to": "/admin/reports",
+   "type": "code",
+   "kind": "link",
+   "repo": "shop",
+   "file": "src/admin/Admin.tsx",
+   "line": 8,
+   "confidence": "direct"
+  },
+  {
+   "from": "/admin",
+   "to": "/admin/audit",
+   "type": "code",
+   "kind": "navigate",
+   "repo": "shop",
+   "file": "src/admin/Admin.tsx",
+   "line": 9,
+   "confidence": "direct"
+  }
+ ],
+ "errors": []
+}

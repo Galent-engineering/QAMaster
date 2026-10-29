@@ -1,0 +1,311 @@
+{
+ "generated_at": "2026-10-29T04:47:50+00:00",
+ "project": "autonomousQeDemo",
+ "base_url": "http://127.0.0.1:8765/",
+ "convention": "row -> column: the row page/element contains, navigates to, submits to or opens the column",
+ "repos": [
+  {
+   "name": "autonomousQeDemo",
+   "path": "/Users/sarvagya/Desktop/Workspace/autonomousQeDemo",
+   "ref": "remove-cart-items-30",
+   "commit": "bd7b8b4e0e82ae4e9603bf338a301827acfe5735",
+   "files_scanned": 8,
+   "frameworks": []
+  }
+ ],
+ "crawl": {
+  "generated_at": "2026-10-29T04:47:50.953Z",
+  "mode": "full",
+  "truncated": false,
+  "pending_routes": []
+ },
+ "stats": {
+  "pages": 1,
+  "page_relations": 0,
+  "elements": 9,
+  "element_relations": 8,
+  "cycles": 0,
+  "flags": {
+   "orphan": 0,
+   "dead-end": 1,
+   "code-only": 0,
+   "ui-only": 0,
+   "unresolved": 0,
+   "broken": 0,
+   "redirect": 0
+  },
+  "density": 0
+ },
+ "page": {
+  "nodes": [
+   {
+    "id": "/",
+    "label": "/",
+    "module": "home",
+    "sources": [
+     "ui"
+    ],
+    "routes": [
+     "/"
+    ],
+    "url": "http://127.0.0.1:8765/",
+    "title": "CheckMaster Shop",
+    "status": 200,
+    "error": null,
+    "depth": 0,
+    "discovered_by": "start",
+    "counts": {
+     "button": 4,
+     "form": 1,
+     "field": 3,
+     "dialog": 0
+    },
+    "forms": [
+     {
+      "name": "page-inputs",
+      "method": "none",
+      "target": null,
+      "fields": [
+       {
+        "label": "Username",
+        "name": "",
+        "type": "input",
+        "required": false
+       },
+       {
+        "label": "Password",
+        "name": "",
+        "type": "password",
+        "required": false
+       },
+       {
+        "label": "Coupon",
+        "name": "",
+        "type": "input",
+        "required": false
+       }
+      ],
+      "submits": []
+     }
+    ],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": null,
+    "headings": [
+     "CheckMaster Shop",
+     "Sign in",
+     "Products",
+     "Cart"
+    ],
+    "fan_out": 0,
+    "fan_in": 0,
+    "scc": 0,
+    "in_cycle": false,
+    "flags": [
+     "dead-end"
+    ]
+   }
+  ],
+  "cells": [],
+  "orders": {
+   "partitioned": [
+    0
+   ],
+   "module": [
+    0
+   ]
+  }
+ },
+ "element": {
+  "nodes": [
+   {
+    "id": "/",
+    "label": "/",
+    "kind": "page",
+    "page": "/",
+    "module": "home",
+    "title": "CheckMaster Shop"
+   },
+   {
+    "id": "/::button:sign-in",
+    "label": "Sign in",
+    "kind": "button",
+    "page": "/",
+    "module": "home",
+    "href": null,
+    "selector": "#sign-in",
+    "visible": true
+   },
+   {
+    "id": "/::button:add-to-cart",
+    "label": "Add to cart",
+    "kind": "button",
+    "page": "/",
+    "module": "home",
+    "href": null,
+    "selector": "#products > ul > li:nth-of-type(1) > button",
+    "visible": true
+   },
+   {
+    "id": "/::button:add-to-cart-2",
+    "label": "Add to cart",
+    "kind": "button",
+    "page": "/",
+    "module": "home",
+    "href": null,
+    "selector": "#products > ul > li:nth-of-type(2) > button",
+    "visible": true
+   },
+   {
+    "id": "/::button:apply",
+    "label": "Apply",
+    "kind": "button",
+    "page": "/",
+    "module": "home",
+    "href": null,
+    "selector": "#apply-coupon",
+    "visible": true
+   },
+   {
+    "id": "/::form:page-inputs",
+    "label": "form page-inputs",
+    "kind": "form",
+    "page": "/",
+    "module": "home",
+    "method": "none"
+   },
+   {
+    "id": "/::field:username",
+    "label": "Username",
+    "kind": "field",
+    "page": "/",
+    "module": "home",
+    "type": "input",
+    "required": false
+   },
+   {
+    "id": "/::field:password",
+    "label": "Password",
+    "kind": "field",
+    "page": "/",
+    "module": "home",
+    "type": "password",
+    "required": false
+   },
+   {
+    "id": "/::field:coupon",
+    "label": "Coupon",
+    "kind": "field",
+    "page": "/",
+    "module": "home",
+    "type": "input",
+    "required": false
+   }
+  ],
+  "cells": [
+   {
+    "r": 0,
+    "c": 1,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 0,
+    "c": 2,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 0,
+    "c": 3,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 0,
+    "c": 4,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 0,
+    "c": 5,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 5,
+    "c": 6,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 5,
+    "c": 7,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 5,
+    "c": 8,
+    "t": {
+     "contains": 1
+    }
+   }
+  ],
+  "orders": {
+   "partitioned": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8
+   ],
+   "module": [
+    0,
+    2,
+    3,
+    4,
+    8,
+    7,
+    1,
+    6,
+    5
+   ]
+  },
+  "truncated": false
+ },
+ "change": {
+  "reason": "manual full rebuild",
+  "crawl": "full crawl (1 pages, 0 navigations)",
+  "warnings": [],
+  "commits": [],
+  "impacted_routes": [],
+  "new_code_routes": []
+ },
+ "diff": {
+  "previous_generated_at": "2026-10-29T04:43:52+00:00",
+  "nodes_added": [
+   "/"
+  ],
+  "nodes_removed": [],
+  "nodes_changed": [],
+  "relations_added": [],
+  "relations_removed": [],
+  "relations_changed": []
+ }
+}

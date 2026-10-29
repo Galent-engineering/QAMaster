@@ -1,0 +1,1305 @@
+{
+ "generated_at": "2026-10-29T07:21:47+00:00",
+ "project": "Shop",
+ "base_url": "http://shop.test/",
+ "convention": "row -> column: the row page/element contains, navigates to, submits to or opens the column",
+ "repos": [
+  {
+   "name": "shop",
+   "path": "/src/shop",
+   "ref": "main",
+   "commit": "cccccccccccccccccccccccccccccccccccccccc",
+   "files_scanned": 6,
+   "frameworks": [
+    "react-router"
+   ]
+  }
+ ],
+ "crawl": {
+  "generated_at": "2026-10-29T00:00:00.000Z",
+  "mode": "full",
+  "truncated": false,
+  "pending_routes": []
+ },
+ "stats": {
+  "pages": 13,
+  "page_relations": 14,
+  "elements": 27,
+  "element_relations": 23,
+  "cycles": 2,
+  "flags": {
+   "orphan": 2,
+   "dead-end": 2,
+   "code-only": 3,
+   "ui-only": 4,
+   "unresolved": 2,
+   "broken": 1,
+   "redirect": 1
+  },
+  "density": 0.0897
+ },
+ "page": {
+  "nodes": [
+   {
+    "id": "/",
+    "label": "/",
+    "module": "home",
+    "sources": [
+     "code",
+     "ui"
+    ],
+    "routes": [
+     "/"
+    ],
+    "url": "http://shop.test/",
+    "title": "Shop",
+    "status": 200,
+    "error": null,
+    "depth": 0,
+    "discovered_by": "start",
+    "counts": {
+     "link": 1,
+     "menuitem": 1,
+     "button": 1,
+     "tab": 1,
+     "form": 0,
+     "field": 0,
+     "dialog": 0
+    },
+    "forms": [],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [
+     "shop:src/App.tsx:10"
+    ],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": null,
+    "headings": [
+     "Shop"
+    ],
+    "fan_out": 3,
+    "fan_in": 1,
+    "scc": 5,
+    "in_cycle": true,
+    "flags": []
+   },
+   {
+    "id": "/products",
+    "label": "/products",
+    "module": "products",
+    "sources": [
+     "code",
+     "ui"
+    ],
+    "routes": [
+     "/products"
+    ],
+    "url": "http://shop.test/products",
+    "title": "/products",
+    "status": 200,
+    "error": null,
+    "depth": 1,
+    "discovered_by": "link",
+    "counts": {
+     "link": 1,
+     "button": 1,
+     "form": 0,
+     "field": 0,
+     "dialog": 1
+    },
+    "forms": [],
+    "dialogs": [
+     "Filters"
+    ],
+    "tables": [],
+    "code_defs": [
+     "shop:src/App.tsx:11"
+    ],
+    "files": [
+     "shop:src/Products.tsx"
+    ],
+    "code_elements": {
+     "buttons": [
+      "Cart"
+     ],
+     "links": [
+      "Item 1"
+     ]
+    },
+    "redirect_to": null,
+    "headings": [
+     "/products"
+    ],
+    "fan_out": 2,
+    "fan_in": 2,
+    "scc": 3,
+    "in_cycle": true,
+    "flags": []
+   },
+   {
+    "id": "/products/:id",
+    "label": "/products/:id",
+    "module": "products",
+    "sources": [
+     "code",
+     "ui"
+    ],
+    "routes": [
+     "/products/:id"
+    ],
+    "url": "http://shop.test/products/:id",
+    "title": "/products/:id",
+    "status": 200,
+    "error": null,
+    "depth": 2,
+    "discovered_by": "link",
+    "counts": {
+     "button": 1,
+     "form": 0,
+     "field": 0,
+     "dialog": 0
+    },
+    "forms": [],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [
+     "shop:src/App.tsx:12"
+    ],
+    "files": [
+     "shop:src/Products.tsx"
+    ],
+    "code_elements": {
+     "buttons": [
+      "Cart"
+     ],
+     "links": [
+      "Item 1"
+     ]
+    },
+    "redirect_to": null,
+    "headings": [
+     "/products/:id"
+    ],
+    "fan_out": 1,
+    "fan_in": 1,
+    "scc": 3,
+    "in_cycle": true,
+    "flags": []
+   },
+   {
+    "id": "/cart",
+    "label": "/cart",
+    "module": "cart",
+    "sources": [
+     "code",
+     "ui"
+    ],
+    "routes": [
+     "/cart"
+    ],
+    "url": "http://shop.test/cart",
+    "title": "/cart",
+    "status": 200,
+    "error": null,
+    "depth": 2,
+    "discovered_by": "click",
+    "counts": {
+     "link": 1,
+     "form": 1,
+     "field": 1,
+     "dialog": 0
+    },
+    "forms": [
+     {
+      "name": "checkout",
+      "method": "post",
+      "target": "/checkout",
+      "fields": [
+       {
+        "label": "Coupon",
+        "name": "coupon",
+        "type": "text",
+        "required": false
+       }
+      ],
+      "submits": [
+       "Checkout"
+      ]
+     }
+    ],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [
+     "shop:src/App.tsx:13"
+    ],
+    "files": [
+     "shop:src/Cart.tsx"
+    ],
+    "code_elements": {
+     "buttons": [
+      "Checkout",
+      "Remove"
+     ]
+    },
+    "redirect_to": null,
+    "headings": [
+     "/cart"
+    ],
+    "fan_out": 2,
+    "fan_in": 3,
+    "scc": 3,
+    "in_cycle": true,
+    "flags": []
+   },
+   {
+    "id": "/checkout",
+    "label": "/checkout",
+    "module": "checkout",
+    "sources": [
+     "ui"
+    ],
+    "routes": [
+     "/checkout"
+    ],
+    "url": "http://shop.test/checkout",
+    "title": "/checkout",
+    "status": 200,
+    "error": null,
+    "depth": 3,
+    "discovered_by": "form",
+    "counts": {
+     "link": 1,
+     "form": 1,
+     "field": 2,
+     "dialog": 0
+    },
+    "forms": [
+     {
+      "name": "pay",
+      "method": "post",
+      "target": null,
+      "fields": [
+       {
+        "label": null,
+        "name": "card",
+        "type": "text",
+        "required": true
+       },
+       {
+        "label": null,
+        "name": null,
+        "type": "password",
+        "required": true
+       }
+      ],
+      "submits": []
+     }
+    ],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [],
+    "files": [
+     "shop:src/Checkout.tsx"
+    ],
+    "code_elements": {},
+    "redirect_to": null,
+    "headings": [
+     "/checkout"
+    ],
+    "fan_out": 2,
+    "fan_in": 1,
+    "scc": 2,
+    "in_cycle": false,
+    "flags": [
+     "ui-only"
+    ]
+   },
+   {
+    "id": "/checkout/review",
+    "label": "/checkout/review",
+    "module": "checkout",
+    "sources": [
+     "ui"
+    ],
+    "routes": [
+     "/checkout/review"
+    ],
+    "url": "http://shop.test/checkout/review",
+    "title": "/checkout/review",
+    "status": 500,
+    "error": "HTTP 500",
+    "depth": 4,
+    "discovered_by": "link",
+    "counts": {
+     "form": 0,
+     "field": 0,
+     "dialog": 0
+    },
+    "forms": [],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": null,
+    "headings": [
+     "/checkout/review"
+    ],
+    "fan_out": 0,
+    "fan_in": 1,
+    "scc": 0,
+    "in_cycle": false,
+    "flags": [
+     "dead-end",
+     "ui-only",
+     "broken"
+    ]
+   },
+   {
+    "id": "/login",
+    "label": "/login",
+    "module": "login",
+    "sources": [
+     "ui"
+    ],
+    "routes": [
+     "/login"
+    ],
+    "url": "http://shop.test/login",
+    "title": "/login",
+    "status": 200,
+    "error": null,
+    "depth": 1,
+    "discovered_by": "link",
+    "counts": {
+     "form": 0,
+     "field": 0,
+     "dialog": 0
+    },
+    "forms": [],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": "/",
+    "headings": [
+     "/login"
+    ],
+    "fan_out": 1,
+    "fan_in": 1,
+    "scc": 5,
+    "in_cycle": true,
+    "flags": [
+     "ui-only",
+     "redirect"
+    ]
+   },
+   {
+    "id": "/help",
+    "label": "/#/help",
+    "module": "help",
+    "sources": [
+     "ui"
+    ],
+    "routes": [
+     "/#/help"
+    ],
+    "url": "http://shop.test/#/help",
+    "title": "Help",
+    "status": 200,
+    "error": null,
+    "depth": 1,
+    "discovered_by": "link",
+    "counts": {
+     "form": 0,
+     "field": 0,
+     "dialog": 0
+    },
+    "forms": [],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": null,
+    "headings": [
+     "Help"
+    ],
+    "fan_out": 0,
+    "fan_in": 1,
+    "scc": 4,
+    "in_cycle": false,
+    "flags": [
+     "dead-end",
+     "ui-only"
+    ]
+   },
+   {
+    "id": "/admin",
+    "label": "/admin",
+    "module": "admin",
+    "sources": [
+     "code"
+    ],
+    "routes": [],
+    "url": null,
+    "title": "",
+    "status": null,
+    "error": null,
+    "depth": null,
+    "discovered_by": null,
+    "counts": {},
+    "forms": [],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [
+     "shop:src/App.tsx:14"
+    ],
+    "files": [
+     "shop:src/admin/Admin.tsx"
+    ],
+    "code_elements": {},
+    "redirect_to": null,
+    "fan_out": 2,
+    "fan_in": 0,
+    "scc": 8,
+    "in_cycle": false,
+    "flags": [
+     "orphan",
+     "code-only"
+    ]
+   },
+   {
+    "id": "/admin/reports",
+    "label": "/admin/reports",
+    "module": "admin",
+    "sources": [
+     "code"
+    ],
+    "routes": [],
+    "url": null,
+    "title": "",
+    "status": null,
+    "error": null,
+    "depth": null,
+    "discovered_by": null,
+    "counts": {},
+    "forms": [],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [
+     "shop:src/admin/Routes.tsx:3"
+    ],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": null,
+    "fan_out": 0,
+    "fan_in": 1,
+    "scc": 6,
+    "in_cycle": false,
+    "flags": [
+     "code-only"
+    ]
+   },
+   {
+    "id": "/faq",
+    "label": "/faq",
+    "module": "faq",
+    "sources": [
+     "ui-target"
+    ],
+    "routes": [],
+    "url": null,
+    "title": "",
+    "status": null,
+    "error": null,
+    "depth": null,
+    "discovered_by": null,
+    "counts": {},
+    "forms": [],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": null,
+    "fan_out": 0,
+    "fan_in": 1,
+    "scc": 1,
+    "in_cycle": false,
+    "flags": [
+     "unresolved"
+    ]
+   },
+   {
+    "id": "(shared)",
+    "label": "(shared layout / components)",
+    "module": "(shared)",
+    "sources": [
+     "code"
+    ],
+    "routes": [],
+    "url": null,
+    "title": "",
+    "status": null,
+    "error": null,
+    "depth": null,
+    "discovered_by": null,
+    "counts": {},
+    "forms": [],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": null,
+    "fan_out": 1,
+    "fan_in": 0,
+    "scc": 9,
+    "in_cycle": false,
+    "flags": [
+     "orphan",
+     "code-only"
+    ]
+   },
+   {
+    "id": "/admin/audit",
+    "label": "/admin/audit",
+    "module": "admin",
+    "sources": [
+     "code-ref"
+    ],
+    "routes": [],
+    "url": null,
+    "title": "",
+    "status": null,
+    "error": null,
+    "depth": null,
+    "discovered_by": null,
+    "counts": {},
+    "forms": [],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": null,
+    "fan_out": 0,
+    "fan_in": 1,
+    "scc": 7,
+    "in_cycle": false,
+    "flags": [
+     "unresolved"
+    ]
+   }
+  ],
+  "cells": [
+   {
+    "r": 0,
+    "c": 1,
+    "t": {
+     "link": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Products",
+      "el": "/::link:products"
+     }
+    ]
+   },
+   {
+    "r": 0,
+    "c": 6,
+    "t": {
+     "link": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Sign in",
+      "el": null
+     }
+    ]
+   },
+   {
+    "r": 0,
+    "c": 7,
+    "t": {
+     "link": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Help",
+      "el": null
+     }
+    ]
+   },
+   {
+    "r": 1,
+    "c": 2,
+    "t": {
+     "link": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Item 1",
+      "el": "/products::link:item"
+     }
+    ]
+   },
+   {
+    "r": 1,
+    "c": 3,
+    "t": {
+     "click": 1,
+     "code": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Cart",
+      "el": "/products::button:cart"
+     },
+     {
+      "s": "code",
+      "kind": "navigate",
+      "ref": "shop:src/Products.tsx:20",
+      "conf": "direct"
+     }
+    ]
+   },
+   {
+    "r": 2,
+    "c": 3,
+    "t": {
+     "click": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Add to cart",
+      "el": "/products/:id::button:add"
+     }
+    ]
+   },
+   {
+    "r": 3,
+    "c": 1,
+    "t": {
+     "link": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Keep shopping",
+      "el": "/cart::link:back"
+     }
+    ]
+   },
+   {
+    "r": 3,
+    "c": 4,
+    "t": {
+     "form": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "POST checkout",
+      "el": "/cart::form:checkout"
+     }
+    ]
+   },
+   {
+    "r": 4,
+    "c": 5,
+    "t": {
+     "link": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Review",
+      "el": "/checkout::link:review"
+     }
+    ]
+   },
+   {
+    "r": 4,
+    "c": 10,
+    "t": {
+     "link": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "FAQ",
+      "el": null
+     }
+    ]
+   },
+   {
+    "r": 6,
+    "c": 0,
+    "t": {
+     "redirect": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "redirect",
+      "el": null
+     }
+    ]
+   },
+   {
+    "r": 8,
+    "c": 9,
+    "t": {
+     "code": 1
+    },
+    "v": [
+     {
+      "s": "code",
+      "kind": "link",
+      "ref": "shop:src/admin/Admin.tsx:8",
+      "conf": "direct"
+     }
+    ]
+   },
+   {
+    "r": 8,
+    "c": 12,
+    "t": {
+     "code": 1
+    },
+    "v": [
+     {
+      "s": "code",
+      "kind": "navigate",
+      "ref": "shop:src/admin/Admin.tsx:9",
+      "conf": "direct"
+     }
+    ]
+   },
+   {
+    "r": 11,
+    "c": 3,
+    "t": {
+     "code": 1
+    },
+    "v": [
+     {
+      "s": "code",
+      "kind": "link",
+      "ref": "shop:src/Nav.tsx:5",
+      "conf": "shared"
+     }
+    ]
+   }
+  ],
+  "orders": {
+   "partitioned": [
+    0,
+    6,
+    7,
+    11,
+    1,
+    3,
+    2,
+    4,
+    5,
+    8,
+    12,
+    9,
+    10
+   ],
+   "module": [
+    11,
+    8,
+    12,
+    9,
+    3,
+    4,
+    5,
+    10,
+    7,
+    0,
+    6,
+    1,
+    2
+   ]
+  }
+ },
+ "element": {
+  "nodes": [
+   {
+    "id": "/",
+    "label": "/",
+    "kind": "page",
+    "page": "/",
+    "module": "home",
+    "title": "Shop"
+   },
+   {
+    "id": "/login",
+    "label": "/login",
+    "kind": "page",
+    "page": "/login",
+    "module": "login",
+    "title": "/login"
+   },
+   {
+    "id": "/help",
+    "label": "/#/help",
+    "kind": "page",
+    "page": "/help",
+    "module": "help",
+    "title": "Help"
+   },
+   {
+    "id": "(shared)",
+    "label": "(shared layout / components)",
+    "kind": "page",
+    "page": "(shared)",
+    "module": "(shared)",
+    "title": ""
+   },
+   {
+    "id": "/products",
+    "label": "/products",
+    "kind": "page",
+    "page": "/products",
+    "module": "products",
+    "title": "/products"
+   },
+   {
+    "id": "/cart",
+    "label": "/cart",
+    "kind": "page",
+    "page": "/cart",
+    "module": "cart",
+    "title": "/cart"
+   },
+   {
+    "id": "/products/:id",
+    "label": "/products/:id",
+    "kind": "page",
+    "page": "/products/:id",
+    "module": "products",
+    "title": "/products/:id"
+   },
+   {
+    "id": "/checkout",
+    "label": "/checkout",
+    "kind": "page",
+    "page": "/checkout",
+    "module": "checkout",
+    "title": "/checkout"
+   },
+   {
+    "id": "/checkout/review",
+    "label": "/checkout/review",
+    "kind": "page",
+    "page": "/checkout/review",
+    "module": "checkout",
+    "title": "/checkout/review"
+   },
+   {
+    "id": "/admin",
+    "label": "/admin",
+    "kind": "page",
+    "page": "/admin",
+    "module": "admin",
+    "title": ""
+   },
+   {
+    "id": "/admin/audit",
+    "label": "/admin/audit",
+    "kind": "page",
+    "page": "/admin/audit",
+    "module": "admin",
+    "title": ""
+   },
+   {
+    "id": "/admin/reports",
+    "label": "/admin/reports",
+    "kind": "page",
+    "page": "/admin/reports",
+    "module": "admin",
+    "title": ""
+   },
+   {
+    "id": "/faq",
+    "label": "/faq",
+    "kind": "page",
+    "page": "/faq",
+    "module": "faq",
+    "title": ""
+   },
+   {
+    "id": "/::menuitem:account",
+    "label": "Account",
+    "kind": "menuitem",
+    "page": "/",
+    "module": "home",
+    "href": null,
+    "selector": "#account",
+    "visible": true
+   },
+   {
+    "id": "/::tab:deals",
+    "label": "Deals",
+    "kind": "tab",
+    "page": "/",
+    "module": "home",
+    "href": null,
+    "selector": "#deals",
+    "visible": true
+   },
+   {
+    "id": "/::link:products",
+    "label": "Products",
+    "kind": "link",
+    "page": "/",
+    "module": "home",
+    "href": "/products",
+    "selector": "#products",
+    "visible": true
+   },
+   {
+    "id": "/products::link:item",
+    "label": "Item 1",
+    "kind": "link",
+    "page": "/products",
+    "module": "products",
+    "href": "/products/1",
+    "selector": "#item",
+    "visible": true
+   },
+   {
+    "id": "/products::button:cart",
+    "label": "Cart",
+    "kind": "button",
+    "page": "/products",
+    "module": "products",
+    "href": null,
+    "selector": "#cart",
+    "visible": true
+   },
+   {
+    "id": "/products::dialog:filters",
+    "label": "dialog Filters",
+    "kind": "dialog",
+    "page": "/products",
+    "module": "products"
+   },
+   {
+    "id": "/cart::link:back",
+    "label": "Keep shopping",
+    "kind": "link",
+    "page": "/cart",
+    "module": "cart",
+    "href": "/products",
+    "selector": "#back",
+    "visible": true
+   },
+   {
+    "id": "/cart::form:checkout",
+    "label": "form checkout",
+    "kind": "form",
+    "page": "/cart",
+    "module": "cart",
+    "method": "post"
+   },
+   {
+    "id": "/cart::field:coupon",
+    "label": "Coupon",
+    "kind": "field",
+    "page": "/cart",
+    "module": "cart",
+    "type": "text",
+    "required": false
+   },
+   {
+    "id": "/products/:id::button:add",
+    "label": "Add to cart",
+    "kind": "button",
+    "page": "/products/:id",
+    "module": "products",
+    "href": null,
+    "selector": "#add",
+    "visible": true
+   },
+   {
+    "id": "/checkout::link:review",
+    "label": "Review",
+    "kind": "link",
+    "page": "/checkout",
+    "module": "checkout",
+    "href": "/checkout/review",
+    "selector": "#review",
+    "visible": true
+   },
+   {
+    "id": "/checkout::form:pay",
+    "label": "form pay",
+    "kind": "form",
+    "page": "/checkout",
+    "module": "checkout",
+    "method": "post"
+   },
+   {
+    "id": "/checkout::field:card",
+    "label": "card",
+    "kind": "field",
+    "page": "/checkout",
+    "module": "checkout",
+    "type": "text",
+    "required": true
+   },
+   {
+    "id": "/checkout::field:cvv",
+    "label": "cvv",
+    "kind": "field",
+    "page": "/checkout",
+    "module": "checkout",
+    "type": "password",
+    "required": true
+   }
+  ],
+  "cells": [
+   {
+    "r": 0,
+    "c": 13,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 0,
+    "c": 14,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 0,
+    "c": 15,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 1,
+    "c": 0,
+    "t": {
+     "redirect": 1
+    }
+   },
+   {
+    "r": 4,
+    "c": 16,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 4,
+    "c": 17,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 4,
+    "c": 18,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 5,
+    "c": 19,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 5,
+    "c": 20,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 6,
+    "c": 22,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 7,
+    "c": 23,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 7,
+    "c": 24,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 15,
+    "c": 4,
+    "t": {
+     "navigates": 1
+    }
+   },
+   {
+    "r": 16,
+    "c": 6,
+    "t": {
+     "navigates": 1
+    }
+   },
+   {
+    "r": 17,
+    "c": 5,
+    "t": {
+     "navigates": 1
+    }
+   },
+   {
+    "r": 17,
+    "c": 18,
+    "t": {
+     "opens": 1
+    }
+   },
+   {
+    "r": 19,
+    "c": 4,
+    "t": {
+     "navigates": 1
+    }
+   },
+   {
+    "r": 20,
+    "c": 7,
+    "t": {
+     "submits": 2
+    }
+   },
+   {
+    "r": 20,
+    "c": 21,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 22,
+    "c": 5,
+    "t": {
+     "navigates": 1
+    }
+   },
+   {
+    "r": 23,
+    "c": 8,
+    "t": {
+     "navigates": 1
+    }
+   },
+   {
+    "r": 24,
+    "c": 25,
+    "t": {
+     "contains": 1
+    }
+   },
+   {
+    "r": 24,
+    "c": 26,
+    "t": {
+     "contains": 1
+    }
+   }
+  ],
+  "orders": {
+   "partitioned": [
+    0,
+    13,
+    14,
+    15,
+    1,
+    2,
+    3,
+    4,
+    16,
+    17,
+    18,
+    5,
+    19,
+    20,
+    21,
+    6,
+    22,
+    7,
+    23,
+    24,
+    25,
+    26,
+    8,
+    9,
+    10,
+    11,
+    12
+   ],
+   "module": [
+    3,
+    9,
+    10,
+    11,
+    5,
+    21,
+    19,
+    20,
+    7,
+    23,
+    25,
+    26,
+    24,
+    8,
+    12,
+    2,
+    0,
+    13,
+    14,
+    15,
+    1,
+    4,
+    17,
+    16,
+    18,
+    6,
+    22
+   ]
+  },
+  "truncated": false
+ },
+ "change": {},
+ "diff": {
+  "first_run": true
+ }
+}
