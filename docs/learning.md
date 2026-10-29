@@ -36,9 +36,9 @@ code ───┤ scan ──┘                (AUT skills)   (TestGen)        
 
 The important idea: **the DSM connects the two halves**. It knows which screens exist (from the crawl) and which code files belong to which screen (from the scan). That lets QAMaster tag each test case with the files it covers (`path:src/checkout/**`), so when those files change, the gate knows which tests to run.
 
-**Try it:** open [learning/v1-plugin-setup.html](learning/v1-plugin-setup.html), the v1 plugin setup. It shows every stage of the loop, and which parts swap (requirements source, test case store, test framework and runner, crawler). Pick Jira or Cypress to see the setting it needs and when it ships.
+**Try it:** open [v2-plugin-setup.html](v2-plugin-setup.html), the plugin setup. It shows every stage of the loop, which parts swap (requirements source, test case store, test framework and runner, crawler), and where the port stands, feature by feature. Pick Jira or Cypress to see the setting it needs and when it ships.
 
-**The current picture:** [learning/v2-plugin-setup.html](learning/v2-plugin-setup.html) adds decisions Q26 to Q32:
+**The current picture:** [v2-plugin-setup.html](v2-plugin-setup.html) adds decisions Q26 to Q32:
 - the entry-point checklist;
 - code from a local folder, a git URL or a host's API;
 - plan presets, selectors and the model;

@@ -35,7 +35,10 @@ select{width:100%;font:13px var(--sans);padding:4px 6px;border-radius:var(--radi
 .out li{font-size:13px;color:var(--muted);margin-bottom:4px}.out li b{color:var(--text);font-weight:500}
 code{font-family:var(--mono);font-size:12px;color:var(--text)}
 .foot{font-size:12px;color:var(--hint);margin-top:16px}
-@media (max-width:600px){.row{grid-template-columns:1fr}}
+.prog{display:grid;grid-template-columns:44px 1fr 150px 92px;gap:10px;align-items:center;padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:4px;background:var(--card);font-size:13px}
+.prog .d{font-size:12px}.prog .b{margin-left:0;text-align:center}
+.demo{border-color:var(--acc);box-shadow:inset 3px 0 0 var(--acc)}
+@media (max-width:600px){.row,.prog{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -62,10 +65,23 @@ code{font-family:var(--mono);font-size:12px;color:var(--text)}
 <div class="row"><div class="n">Pull request</div><div class="d">Plan comment, check result, approval (Q28)</div><div class="stack"><select id="host" aria-label="Code host"><option value="github">Host: GitHub</option><option value="azure-repos">Host: Azure Repos</option><option value="bitbucket">Host: Bitbucket</option><option value="gitlab">Host: GitLab</option></select><select id="ci" aria-label="CI system"><option value="github-actions">CI: GitHub Actions</option><option value="azure-pipelines">CI: Azure Pipelines</option><option value="bitbucket-pipelines">CI: Bitbucket Pipelines</option><option value="gitlab-ci">CI: GitLab CI</option><option value="jenkins">CI: Jenkins</option></select></div></div>
 <div class="row"><div class="n">Verdict</div><div class="d">Pass, fail or blocked; gaps, stale cases, defects</div><div><select id="res" aria-label="Results"><option value="html">HTML reports</option><option value="adorun">+ ADO Test Run (dashboards)</option></select></div></div>
 
+<div class="ph">Where the port stands (porting-step3.md, 2026-10-29). Each feature builds one row of the picture above</div>
+<div class="prog"><b>1</b><div>DSM build and render <div class="d">the matrix and its page</div></div><div class="d">DSM: UI crawl</div><span class="b v1">done</span></div>
+<div class="prog"><b>2</b><div>Repo scan <div class="d">routes, screens and owners from the code</div></div><div class="d">Code source, reader</div><span class="b v1">done</span></div>
+<div class="prog"><b>3</b><div>UI crawl and DSM refresh <div class="d">safe crawl, impact of a change</div></div><div class="d">DSM: UI crawl</div><span class="b v1">done</span></div>
+<div class="prog"><b>4</b><div>Setup and pipeline <div class="d">qam setup, doctor, onboarding stages, integrations</div></div><div class="d">Code source, entry points</div><span class="b v1">done</span></div>
+<div class="prog"><b>5</b><div>Application knowledge <div class="d">AUT_&lt;App&gt; skills from the DSM</div></div><div class="d">Test design (input)</div><span class="b v1">done</span></div>
+<div class="prog"><b>S4</b><div>ADO adapter <div class="d">porting step 4, from CheckMaster</div></div><div class="d">Requirements, Publish</div><span class="b v11">next</span></div>
+<div class="prog"><b>6</b><div>Requirements <div class="d">sprint stories from Azure Boards</div></div><div class="d">Requirements</div><span class="b later">planned</span></div>
+<div class="prog demo"><b>7</b><div>TestGen <div class="d">first QE-engine demo: app in, reviewed test cases out</div></div><div class="d">Test design</div><span class="b later">planned</span></div>
+<div class="prog"><b>8</b><div>Automation <div class="d">playwright-bdd scripts, locators, script gate</div></div><div class="d">Automation</div><span class="b later">planned</span></div>
+<div class="prog"><b>9</b><div>Reports <div class="d">Manual Test Case Report, DSM report, summary</div></div><div class="d">Verdict (reports)</div><span class="b later">planned</span></div>
+<div class="prog"><b>S5–10</b><div>Gate side and wiring <div class="d">selection and verdict, runner, publish, feedback, hooks, end to end (tech.md steps 5–10)</div></div><div class="d">Plan, Run, Publish</div><span class="b later">planned</span></div>
+
 <div class="out"><h2>Installed and recorded</h2><ul id="ints" style="margin:0;padding-left:18px"></ul>
 <div class="d" style="margin-top:6px">Kept in <code>.qamaster/integrations.json</code> and <code>~/.qamaster/installs.json</code>; <code>qam doctor</code> verifies each.</div></div>
 <div class="out"><h2>Your stack</h2><ul id="sum" style="margin:0;padding-left:18px"></ul></div>
-<p class="foot">Saved 2026-10-29 from docs/decisions.md (Q4, Q11, Q16, Q20, Q23 to Q32) and docs/product.md scope. Replaces <a href="v1-plugin-setup.html">v1-plugin-setup.html</a> as the current picture; update it when those decisions change.</p>
+<p class="foot">Saved 2026-10-29 from docs/decisions.md (Q4, Q11, Q16, Q20, Q23 to Q32) and docs/product.md scope. It replaced the v1 page as the current picture; update it when those decisions change, and the progress rows when a feature moves.</p>
 </main>
 <script>
 const B={v1:'<span class="b v1">v1</span>',v11:'<span class="b v11">v1.1</span>',v2:'<span class="b v2">v2</span>',later:'<span class="b later">later</span>'};
