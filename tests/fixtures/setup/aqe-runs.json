@@ -1,0 +1,99 @@
+{
+  "_comment": "AQE setup and pipeline problems, reproduced by aqe-repro.mjs on scratch folders (2026-10-29). Each run lists AQE 0.2.0 results; 0.1.5 gave the same except where 0.1.5 is set.",
+  "runs": [
+    {
+      "id": "check-exit",
+      "problem": "setup --check exits 1 (\"fail\") when something is missing",
+      "command": "aqe setup --check (empty folder)",
+      "exit": 1,
+      "first_line": "Autonomous QE setup: incomplete"
+    },
+    {
+      "id": "no-install-ready",
+      "problem": "setup --no-install reports \"ready\" (exit 0) while Playwright is not installed",
+      "command": "aqe setup --no-install --json (empty folder)",
+      "exit": 0,
+      "status": "ready",
+      "npm_install": {
+        "step": "npm install",
+        "status": "skipped",
+        "detail": "run `aqe setup` without --no-install"
+      }
+    },
+    {
+      "id": "broken-config-ok",
+      "problem": "an existing config file that is not valid JSON is reported \"present (kept as is)\", and the setup stage is done",
+      "command": "aqe setup --no-install; break config/dsm-config.json; aqe setup --check --json; aqe pipeline status --json",
+      "exit": 0,
+      "status": "ready",
+      "config_step": {
+        "step": "config/dsm-config.json",
+        "status": "ok",
+        "detail": "present (kept as is)"
+      },
+      "setup_stage": "done"
+    },
+    {
+      "id": "start-replaces-inputs",
+      "problem": "a second pipeline start drops the app name recorded by the first",
+      "command": "aqe pipeline start --url https://app.example.test --repo <project> --app Shop; aqe pipeline start --url https://app.example.test --repo <project> --channels web",
+      "inputs_after": {
+        "url": "https://app.example.test",
+        "repo": "<project>",
+        "channels": [
+          "web"
+        ]
+      }
+    },
+    {
+      "id": "corrupt-state-overwritten",
+      "problem": "a state.json that is not valid JSON (here cut off mid-write) is replaced by a new file without a word: inputs and marks are lost",
+      "command": "truncate .autonomous-qe/state.json; aqe pipeline mark reports skipped",
+      "exit": 0,
+      "state_after": null
+    },
+    {
+      "id": "reset-unknown-stage",
+      "problem": "pipeline reset accepts an unknown stage (a typo) and does nothing",
+      "command": "aqe pipeline reset dsn",
+      "exit": 0
+    },
+    {
+      "id": "mark-done-ignored",
+      "problem": "pipeline mark dsm done exits 0 but the stage stays pending: evidence wins, and nothing says so",
+      "command": "aqe pipeline mark dsm done (no dsm/dsm.json)",
+      "exit": 0,
+      "dsm_stage": "pending"
+    },
+    {
+      "id": "start-unchecked-repo",
+      "problem": "pipeline start records a repository path that does not exist",
+      "command": "aqe pipeline start --url https://app.example.test --repo /no/such/folder",
+      "exit": 0,
+      "recorded": "/no/such/folder"
+    },
+    {
+      "id": "dsm-unreadable-repo",
+      "problem": "the configured repository is gone, but the DSM stage is done with no warning (errors are swallowed)",
+      "command": "config repository /no/such/clone; aqe pipeline status --json",
+      "dsm_stage": "done",
+      "evidence": "1 screens, 0 relations (built 2026-10-29T04:47:50+00:00)"
+    },
+    {
+      "id": "workspaces-object-lost",
+      "problem": "setup replaces a workspaces object ({packages, nohoist}) with an empty array",
+      "command": "package.json with workspaces {packages:[\"apps/*\"]}; aqe setup --no-install",
+      "workspaces_after": [],
+      "0.1.5": {
+        "workspaces_after": {
+          "packages": [
+            "apps/*"
+          ],
+          "nohoist": [
+            "**/x"
+          ]
+        }
+      }
+    }
+  ]
+}

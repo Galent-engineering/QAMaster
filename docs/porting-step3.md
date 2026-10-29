@@ -72,7 +72,7 @@ Not in step 3:
 | 1 | DSM build and render | ✓ 2026-10-29 | ✓ | ✓ 5 golden fixtures | ✓ | ✓ |
 | 2 | Repo scan | ✓ 2026-10-29 | ✓ | ✓ 2 golden fixtures, fixes 1–5 | ✓ | ✓ fixes 1–4 |
 | 3 | UI crawl and DSM refresh | ✓ 2026-10-29 | ✓ | ✓ real crawl of app.mjs: 0 writes | ✓ skill, agent, `/qamaster:dsm` | ✓ build |
-| 4 | Setup and pipeline | ✓ 2026-10-29 | ✓ | ✓ 9 tests, real setup on a demo copy | ✓ no skills (onboard and status are step 9) | ✓ `feature/4_setup-and-pipeline` |
+| 4 | Setup and pipeline | ✓ 2026-10-29, 10 AQE problems reproduced | ✓ | ✓ 2 golden fixtures, fixes 1–10 | ✓ no skills (onboard and status are step 9) | ✓ `feature/4_setup-and-pipeline` |
 | 5 | Application knowledge | | | | | |
 | — | Step 4: ADO adapter | | | | | |
 | 6 | Requirements | | | | | |
@@ -504,6 +504,69 @@ Checks:
 - git 2.20 as the minimum;
 - `file://` accepted as a git URL;
 - removing `claude-hooks` deletes only its record, since `.qamaster/` also holds plans and verdicts. The hooks will check the record (step 9).
+
+**Redo of the loop (2026-10-29): reproduce, golden, then fix.** The first build skipped reproducing AQE's problems. This pass did it.
+
+*Learn: reproduced on AQE.* `tests/fixtures/setup/aqe-repro.mjs` runs AQE's `setup` and `pipeline` on scratch folders. Its results are in `aqe-runs.json`. 0.1.5 and 0.2.0 behave the same in every case but the last.
+
+| # | What we did | What AQE did | QAMaster first build |
+|---|---|---|---|
+| 1 | `setup --check` with something missing | exit 1 ("fail") | fixed already: exit 2 |
+| 2 | `setup --no-install`, no Playwright | `ready`, exit 0 | same |
+| 3 | `config/dsm-config.json` cut off mid-edit, then `setup --check` and `pipeline status` | "present (kept as is)", `ready`, setup stage done | same; `setup --url` then said "Run qam setup", which loops |
+| 4 | `pipeline start --app Shop …`, then `pipeline start --channels web …` | the app name is gone | same (url and app gone) |
+| 5 | `state.json` cut off, then `pipeline mark reports skipped` | file replaced without a word; inputs and marks lost | same |
+| 6 | `pipeline reset dsn` (typo) | exit 0, nothing done | same |
+| 7 | `pipeline mark dsm done`, no `dsm.json` | exit 0, stage still pending, nothing said | same |
+| 8 | `pipeline start --repo /no/such/folder` | recorded | same (`--source`) |
+| 9 | configured repository deleted, DSM built | DSM done, no warning (the error is swallowed) | same |
+| 10 | `package.json` with `workspaces: {packages, nohoist}` | 0.2.0 replaces it with `[]`; 0.1.5 keeps it | not touched: workspaces come with feature 8 |
+| — | `doctor` with a `.qamaster/doctor.json` that can't be read | — | crash (stack trace, not exit 2) |
+
+*Golden.* AQE's own output is kept next to QAMaster's:
+- `setup.aqe.json` and `setup.expected.json`: setup on an empty folder;
+- `pipeline/status.aqe.json` and `pipeline/status.expected.json`: pipeline status on `pipeline/project/`, a QA project built from the demo's evidence files (DSM, state, requirements, AUT build record, a reviewed TestGen run).
+
+`aqe-goldens.mjs` rewrites the AQE files. The tests check that QAMaster's output matches its expected file, and that every step and stage both tools have has the same status in both:
+- setup: Node.js, npm, git, project link, `config/dsm-config.json`, `.gitignore`, `package.json`, npm install;
+- pipeline: setup, dsm, knowledge (AQE `aut-skills`), requirements, test-cases, app-folder, locators, scripts, script-gate (AQE `gate`), reports.
+
+The first build matched on all of them before any fix. The only intended differences:
+- a first-time project link is `created` (AQE says `updated`);
+- the overall result is `incomplete` (fix 2).
+
+*Improve and Build: the fixes.*
+
+| Fix | Change |
+|---|---|
+| 1 | `setup --check` blocks (exit 2). From the first build |
+| 2 ★ | Setup says `ready` only when Playwright is installed. With `--no-install` it says `incomplete` and still exits 0, because the person asked to skip the install |
+| 3 | A config file that isn't valid JSON is a failed step: setup blocks and writes nothing (the app, URL, sources and entry points wait), and the setup stage isn't done. The "invalid `qamaster.json`" message no longer sends people to `qam setup`, which can't fix it |
+| 4 | A later `pipeline start` adds to the recorded inputs; it keeps the ones it wasn't given, channels included |
+| 5 | A `state.json` that can't be read blocks every pipeline command and is never replaced: "Fix it, or delete it to start the record again" |
+| 6 | `pipeline reset <unknown stage>` blocks and lists the stages |
+| 7 ★ | `pipeline mark <stage> done` blocks: done comes from evidence. The message shows what the stage's evidence lacks and how to get it. The marks left are `pending`, `in_progress`, `failed` and `skipped` |
+| 8 ★ | `pipeline start --source` blocks a local folder that doesn't exist. Git URLs are only recorded: setup checks and clones them (Q26) |
+| 9 ★ | A configured repository that can't be read makes the DSM stage **stale**, with "can't read <name> (<path>): run qam doctor" |
+| 10 | `doctor` rewrites its own record when it can't be read |
+
+*Test.* `tests/setup.test.mts` has 4 golden tests and one test per fix. Each test was run against the first build (`0759576`, in a throwaway worktree): fixes 2–10 failed there, and fix 1 passed, as it was already in. All of them pass now. `npm run check` passes: typecheck, Biome and 101 tests.
+
+*Move.* `claude plugin validate ./plugin` passes. No skills move with this feature.
+
+**Open, for the person:**
+- **The launcher doesn't pin its project.** AQE's launcher passes its project folder (`AQE_PROJECT_DIR`). QAMaster's runs in the current folder, so `qa/.qamaster/bin/qam pipeline status` run from elsewhere reports on that folder (checked by hand). Pinning it isn't obvious, because the gate needs the app repo as its folder (Q22). This needs a decision: a `QAMASTER_QA_PROJECT` variable set by the launcher, or the launcher used only for project commands.
+- **A QA project inside the app repo.** Setup writes `package.json`, `.gitignore` and `node_modules/` into whatever folder it runs in. When that folder is the app repo (the demo's layout: its `repo` is itself), that's a write to a source repo, which Q15 forbids. Should setup refuse, warn, or allow it as Q22's "tests live in the app repo" case?
+- **Workspaces (problem 10)** belong to feature 8. Its merge must keep an object-form `workspaces`.
+- **The app name isn't normalised.** AQE turns "CheckMaster Shop" into `CheckMasterShop` for `AUT_<App>`, but QAMaster uses the name as given. Feature 5 owns the `AUT_` names.
+- **Running `npm run check` on this machine** also lints the untracked `.e2e-scriptgen/session.json`, which the AQE plugin's prompt hook wrote into this repo. It's not QAMaster's, so it was left alone; Biome on every tracked file passes.
+
+**The first build's ★ choices, reviewed:** I'd keep all five, but they're still yours to decide.
+- **The flag names** match Q26's words.
+- **`qam integrations list|add|remove|verify`** maps one-to-one onto Q27's record.
+- **git 2.20** is older than every git command QAMaster runs.
+- **`file://`** is what makes the clone path testable without a network.
+- **Removing `claude-hooks` keeps `.qamaster/`,** which also holds plans and verdicts.
 
 ## Roadmap: what comes after the v1 MVP
 

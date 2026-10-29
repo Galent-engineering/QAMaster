@@ -1,0 +1,38 @@
+{
+  "scope": "checkmaster-shop",
+  "source": "document",
+  "period": null,
+  "query": null,
+  "file": "requirements.xlsx",
+  "saved_at": "2026-10-29T04:56:23+00:00",
+  "count": 3,
+  "requirements": [
+    {
+      "id": "US-001",
+      "source": "document",
+      "title": "Coupon codes at checkout",
+      "type": "Issue",
+      "status": "Provided",
+      "description": "",
+      "acceptance_criteria": []
+    },
+    {
+      "id": "US-002",
+      "source": "document",
+      "title": "Sign in",
+      "type": "Issue",
+      "status": "Provided",
+      "description": "",
+      "acceptance_criteria": []
+    },
+    {
+      "id": "US-003",
+      "source": "document",
+      "title": "Shopping cart",
+      "type": "Issue",
+      "status": "Provided",
+      "description": "",
+      "acceptance_criteria": []
+    }
+  ]
+}

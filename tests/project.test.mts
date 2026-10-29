@@ -99,7 +99,7 @@ test('setup takes the app URL and a local git folder, and records the branch', (
     '--source',
     'app',
   );
-  assert.equal(r.result, 'ready');
+  assert.equal(r.result, 'incomplete', 'Playwright is not installed (fix 2)');
   const dsm = read(path.join(qa, 'config/dsm-config.json'));
   assert.equal(dsm.application.base_url, 'https://shop.example.test/');
   assert.deepEqual(

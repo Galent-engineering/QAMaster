@@ -1,0 +1,27 @@
+{
+ "status": "pass",
+ "hallucination_tolerance": 0,
+ "cases": 14,
+ "errors": [],
+ "gaps": [],
+ "by_category": {
+  "Positive": 4,
+  "Negative": 3,
+  "Boundary": 3,
+  "E2E": 1,
+  "Business": 1,
+  "Edge": 2
+ },
+ "by_type": {
+  "Functional": 14
+ },
+ "revision": {
+  "source_suite": "testcase",
+  "imported": 6,
+  "kept": 0,
+  "revised": 5,
+  "merged": 0,
+  "new": 9,
+  "retired": 1
+ }
+}

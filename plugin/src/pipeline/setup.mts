@@ -155,7 +155,15 @@ function configs(project: string, write: boolean): Step[] {
     .sort()
     .map((f): Step => {
       const target = path.join(project, 'config', f);
-      if (fs.existsSync(target)) return { step: `config/${f}`, status: 'ok', detail: 'present (kept as is)' };
+      if (fs.existsSync(target)) {
+        return readJson(target)
+          ? { step: `config/${f}`, status: 'ok', detail: 'present (kept as is)' }
+          : {
+              step: `config/${f}`,
+              status: 'failed',
+              detail: "isn't valid JSON: fix it, then run qam setup again (setup never overwrites a file you edited)",
+            };
+      }
       if (!write) return { step: `config/${f}`, status: 'missing', detail: 'would be created from the template' };
       fs.mkdirSync(path.dirname(target), { recursive: true });
       const text = fs.readFileSync(path.join(TEMPLATES, f), 'utf8');

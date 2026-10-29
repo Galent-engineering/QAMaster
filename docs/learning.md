@@ -425,12 +425,32 @@ Why that matters:
 
 Every place QAMaster plugs into is recorded with an ID (Q27). In v1 that's just Claude Code; git hooks, PR checks and AI assistants follow. The record means an upgrade can update each one, an uninstall can remove exactly what was added, and `qam doctor` can check each one still works.
 
+### What we found by trying to break it
+
+We ran AQE's own `setup` and `pipeline` on scratch folders and fed them the awkward cases: a broken file, a typo, a second run with different flags. Both AQE versions misbehaved the same way in nine of ten cases (`tests/fixtures/setup/aqe-runs.json`). Most problems are one of two kinds.
+
+**Saying "fine" when it isn't:**
+- `setup --no-install` said **ready** while the browser wasn't installed.
+- A config file cut off mid-edit was reported "present (kept as is)", and the pipeline called setup done.
+- When the app's code folder disappeared, the DSM stayed "done": the error was caught and thrown away.
+
+**Losing or ignoring what the person gave it:**
+- A second `pipeline start` dropped the inputs from the first one.
+- A `state.json` that couldn't be read was quietly replaced, so every recorded mark was lost.
+- `pipeline mark dsm done` and `pipeline reset dsn` (a typo) both "worked" and changed nothing.
+
+One rule covers both kinds: **when the tool can't tell, it says so.** It doesn't guess "fine", and it doesn't start again from nothing. In QAMaster, each of these cases now blocks (exit 2) with the next step, or shows the stage as stale with the reason. Each one has a test that failed on the first build and passes now.
+
+The goldens come first: QAMaster's setup and pipeline must give the same status as AQE on every step and stage both of them have (`setup.aqe.json`, `pipeline/status.aqe.json`). The fixes are the only differences, and each is listed.
+
 ### Check yourself
 
 1. Why must setup never overwrite an existing config file?
 2. A stage's evidence file exists but is older than the DSM. What should the pipeline say, and why not "done"?
 3. Why does setup check the git branch and access up front, instead of letting the scan fail later?
 4. What breaks if a terminal or CI calls the plugin's folder directly instead of the launcher?
+5. `state.json` can't be parsed. Why is blocking better than starting a fresh file?
+6. Why does `qam pipeline mark dsm done` refuse instead of recording the mark?
 
 <details><summary>Answers</summary>
 
@@ -438,6 +458,8 @@ Every place QAMaster plugs into is recorded with an ID (Q27). In v1 that's just 
 2. "Stale": the work exists but was built from older inputs, so it may be wrong. "Done" would hide that.
 3. Feature 2 found a scan that silently read 0 files. Checking up front turns a confusing empty DSM later into a clear message now.
 4. The plugin folder changes on every update, so the stored path breaks. The launcher reads the current folder from `.qamaster/plugin.json`.
+5. A fresh file throws away the inputs and every mark ("skipped: no ADO yet"), and nobody notices. Blocking keeps the file, so the person can fix it or choose to delete it.
+6. "Done" comes from evidence. A mark would be ignored anyway (evidence wins), so accepting it would only mislead. The refusal says what evidence the stage is missing and how to make it.
 </details>
 
 ---

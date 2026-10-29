@@ -1,0 +1,134 @@
+{
+  "_comment": "Design Structure Matrix (DSM) configuration. The application URL and repositories are NOT pre-set: node tools/dsm/dsm_update.mts run asks for them (or pass --url / --repo) and can save your answers here. Secrets never go here.",
+  "project": "autonomousQeDemo",
+  "output_dir": "dsm",
+  "repositories": [],
+  "application": {
+    "base_url": "http://127.0.0.1:8765/",
+    "start_paths": [
+      "/"
+    ],
+    "allowed_hosts": [],
+    "secrets_file": ".env.dsm",
+    "login": {
+      "_comment": "mode: auto = detect a login page and sign in (asks for username/password in the terminal, or uses .env.dsm); manual = open a visible browser so you sign in yourself, crawl starts once you are in; none = no login.",
+      "mode": "none",
+      "url": "",
+      "username_selector": "",
+      "password_selector": "",
+      "submit_selector": "",
+      "username_env": "DSM_APP_USERNAME",
+      "password_env": "DSM_APP_PASSWORD",
+      "post_login_wait_ms": 3000,
+      "manual_timeout_s": 300,
+      "save_session": true
+    },
+    "max_pages": 300,
+    "max_depth": 8,
+    "page_timeout_ms": 30000,
+    "settle_ms": 1200,
+    "headless": true,
+    "ignore_https_errors": false,
+    "hash_routing": "auto",
+    "route_normalization": [
+      {
+        "pattern": "/[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}(?=/|$)",
+        "replace": "/:id"
+      },
+      {
+        "pattern": "/\\d+(?=/|$)",
+        "replace": "/:id"
+      }
+    ],
+    "keep_query_params": [],
+    "exclude_url_patterns": [
+      "logout",
+      "signout",
+      "sign-out",
+      "logoff",
+      "delete",
+      "remove",
+      "\\.(pdf|xlsx?|docx?|zip|csv)(\\?|$)"
+    ],
+    "safety": {
+      "_comment": "Blocks POST/PUT/PATCH/DELETE to the app while crawling (after login) so exploration cannot change data. Add read-only POST endpoints (e.g. search APIs) to allow_mutating_patterns if pages need them to render.",
+      "block_mutating_requests": true,
+      "allow_mutating_patterns": [],
+      "dismiss_dialogs": true
+    },
+    "explore_clicks": {
+      "enabled": true,
+      "max_per_page": 40,
+      "selectors": [
+        "nav a:not([href])",
+        "[role=menuitem]",
+        "[role=tab]",
+        "[routerlink]",
+        "[ng-click]",
+        "button:not([type=submit])",
+        "[role=button]",
+        "a[href='#']",
+        "a[href^='javascript']"
+      ],
+      "deny_text_patterns": [
+        "delete",
+        "remove",
+        "logout",
+        "log out",
+        "sign out",
+        "submit",
+        "save",
+        "approve",
+        "reject",
+        "send",
+        "pay",
+        "lock",
+        "run",
+        "process",
+        "import",
+        "upload",
+        "publish",
+        "release",
+        "terminate",
+        "deactivate",
+        "reset",
+        "clear all",
+        "confirm"
+      ]
+    }
+  },
+  "matrix": {
+    "default_level": "page",
+    "module_depth": 1,
+    "max_element_nodes": 4000
+  },
+  "change_detection": {
+    "recrawl": "impacted",
+    "_comment_recrawl": "impacted = re-crawl only pages mapped to changed files (full crawl when shared/layout files change); full = always full crawl; none = rebuild from code only.",
+    "full_recrawl_every_runs": 10,
+    "keep_history": 30
+  },
+  "_repositories_example": [
+    {
+      "name": "my-ui-repo",
+      "path": "/absolute/path/to/local/clone",
+      "branch": "main",
+      "fetch": true,
+      "include": [],
+      "exclude": [
+        "node_modules/",
+        "dist/",
+        "build/",
+        "bin/",
+        "obj/",
+        ".git/",
+        "vendor/",
+        "packages/",
+        "wwwroot/lib/",
+        "*.min.js",
+        "*.spec.ts",
+        "*.test.*"
+      ]
+    }
+  ]
+}

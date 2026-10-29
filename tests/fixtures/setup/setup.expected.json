@@ -1,0 +1,55 @@
+{
+  "result": "incomplete",
+  "steps": [
+    {
+      "step": "Node.js",
+      "status": "ok",
+      "detail": "<version>"
+    },
+    {
+      "step": "npm",
+      "status": "ok",
+      "detail": "<version>"
+    },
+    {
+      "step": "git",
+      "status": "ok",
+      "detail": "<version>"
+    },
+    {
+      "step": "Project link",
+      "status": "created",
+      "detail": ".qamaster/plugin.json and .qamaster/bin/qam (terminals and CI: .qamaster/bin/qam help)"
+    },
+    {
+      "step": "config/dsm-config.json",
+      "status": "created",
+      "detail": "from the template; the app is never pre-set"
+    },
+    {
+      "step": "config/qamaster.json",
+      "status": "created",
+      "detail": "from the template; the app is never pre-set"
+    },
+    {
+      "step": ".gitignore",
+      "status": "created",
+      "detail": "node_modules/, .env, .env.*, !.env.example, dsm/.lock, dsm/.auth/, .qamaster/plugin.json, .qamaster/*.tmp, reports/output/"
+    },
+    {
+      "step": "package.json",
+      "status": "created",
+      "detail": "Playwright 1.64.1 for the crawl"
+    },
+    {
+      "step": ".claude/settings.json",
+      "status": "updated",
+      "detail": "added deny rules Read(./.env), Read(./.env.*), Read(./dsm/.auth/**) (Q16)"
+    },
+    {
+      "step": "npm install",
+      "status": "skipped",
+      "detail": "run qam setup without --no-install"
+    }
+  ]
+}

@@ -11,6 +11,7 @@ import path from 'node:path';
 import { resolveRef } from '../adapters/git.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
 import { BlockedError } from '../shared/errors.mts';
+import { isGitUrl } from './sources.mts';
 
 export const STATUSES = ['pending', 'in_progress', 'done', 'failed', 'skipped'] as const;
 export const CHANNELS = ['web', 'mobile-web', 'android', 'ios', 'api'];
@@ -75,9 +76,14 @@ export const STAGES: Stage[] = [
         ['Playwright', path.join(c.project, 'node_modules', 'playwright', 'package.json')],
       ];
       const missing = need.filter(([, p]) => !exists(p)).map(([n]) => n);
+      const broken = need.filter(([n, p]) => n.startsWith('config/') && exists(p) && !readJson(p)).map(([n]) => n);
       return {
-        done: !missing.length,
-        detail: missing.length ? `missing: ${missing.join(', ')}` : 'project link, config and Playwright present',
+        done: !missing.length && !broken.length,
+        detail:
+          [
+            ...(missing.length ? [`missing: ${missing.join(', ')}`] : []),
+            ...(broken.length ? [`not valid JSON: ${broken.join(', ')}`] : []),
+          ].join('; ') || 'project link, config and Playwright present',
       };
     },
     how: (c) => {
@@ -121,15 +127,18 @@ export const STAGES: Stage[] = [
       const cfg = readJson<{ repositories?: { name: string; path: string; branch?: string }[] }>(
         path.join(c.project, 'config', 'dsm-config.json'),
       );
-      const behind = (cfg?.repositories ?? []).filter((r) => {
-        const seen = state?.repos?.[r.name]?.commit;
-        const now = resolveRef(path.resolve(c.project, r.path), r.branch ?? 'main')?.[1];
-        return seen && now && seen !== now;
-      });
+      const repos = (cfg?.repositories ?? []).map((r) => ({
+        ...r,
+        seen: state?.repos?.[r.name]?.commit,
+        now: resolveRef(path.resolve(c.project, r.path), r.branch ?? 'main')?.[1],
+      }));
+      const behind = repos.filter((r) => r.seen && r.now && r.seen !== r.now);
+      // AQE swallowed this: a repository that can't be read leaves freshness unknown, so it's said, not hidden
+      const unread = repos.filter((r) => r.seen && !r.now);
       return {
         done: true,
-        stale: behind.length > 0,
-        detail: `${s?.pages ?? '?'} screens, ${s?.page_relations ?? '?'} relations (built ${c.dsm.generated_at})${behind.length ? `; new commits in ${behind.map((r) => r.name).join(', ')}` : ''}`,
+        stale: behind.length + unread.length > 0,
+        detail: `${s?.pages ?? '?'} screens, ${s?.page_relations ?? '?'} relations (built ${c.dsm.generated_at})${behind.length ? `; new commits in ${behind.map((r) => r.name).join(', ')}` : ''}${unread.length ? `; can't read ${unread.map((r) => `${r.name} (${r.path})`).join(', ')}: run qam doctor` : ''}`,
       };
     },
     how: (c) =>
@@ -305,19 +314,34 @@ export type PipelineStatus = {
 };
 
 const stateFile = (project: string) => path.join(project, QAMASTER_DIR, 'state.json');
-export const loadState = (project: string): PipelineState => readJson<PipelineState>(stateFile(project)) ?? {};
+/** The recorded inputs and marks. A file that isn't valid JSON blocks: it's never replaced (AQE started a new one). */
+export function loadState(project: string): PipelineState {
+  const file = stateFile(project);
+  if (!exists(file)) return {};
+  const state = readJson<PipelineState>(file);
+  if (!state || typeof state !== 'object')
+    throw new BlockedError(
+      `${file} isn't valid JSON, so the recorded inputs and marks can't be read. Fix it, or delete it to start the record again.`,
+    );
+  return state;
+}
 function saveState(project: string, state: PipelineState) {
   fs.mkdirSync(path.dirname(stateFile(project)), { recursive: true });
   fs.writeFileSync(stateFile(project), `${JSON.stringify(state, null, 2)}\n`);
 }
 
-/** Every stage, decided from evidence, then recorded marks for what evidence can't show. */
-export function status(project: string, appRepo: string, app: string | null): PipelineStatus {
+function context(project: string, appRepo = project, app: string | null = null): Ctx {
   const state = loadState(project);
   const cfg = readJson<{ output_dir?: string }>(path.join(project, 'config', 'dsm-config.json'));
   const dsmDir = path.join(project, cfg?.output_dir ?? 'dsm');
   const name = app ?? state.inputs?.app ?? null;
-  const c: Ctx = { project, appRepo, app: name, dsm: readJson(path.join(dsmDir, 'dsm.json')), dsmDir, state };
+  return { project, appRepo, app: name, dsm: readJson(path.join(dsmDir, 'dsm.json')), dsmDir, state };
+}
+
+/** Every stage, decided from evidence, then recorded marks for what evidence can't show. */
+export function status(project: string, appRepo: string, app: string | null): PipelineStatus {
+  const c = context(project, appRepo, app);
+  const { state, app: name } = c;
   const stages = STAGES.map((s): StageStatus => {
     const ev = s.detect(c);
     const mark = state.stages?.[s.id];
@@ -338,18 +362,23 @@ export function status(project: string, appRepo: string, app: string | null): Pi
 
 /** Records the onboarding inputs. Never credentials. */
 export function start(project: string, inputs: { url?: string; source?: string; app?: string; channels?: string }) {
-  if (!inputs.url && !inputs.source)
+  const state = loadState(project);
+  const before = state.inputs ?? {};
+  if (!inputs.url && !inputs.source && !before.url && !before.source)
     throw new BlockedError('Give at least one input: --url <app URL> or --source <code folder or git URL>.');
+  if (inputs.source && !isGitUrl(inputs.source) && !exists(path.resolve(project, inputs.source)))
+    throw new BlockedError(`--source ${inputs.source} isn't a folder. Give the app's code folder or a git URL.`);
   if (inputs.url && !/^https?:\/\/\S+$/.test(inputs.url))
     throw new BlockedError("--url must be the app's http(s) URL.");
-  const channels = (inputs.channels ?? 'web,api')
+  const channels = (inputs.channels ?? before.channels?.join(',') ?? 'web,api')
     .split(',')
     .map((x) => x.trim().toLowerCase())
     .filter(Boolean);
   const bad = channels.filter((x) => !CHANNELS.includes(x));
   if (bad.length) throw new BlockedError(`Unknown channel(s) ${bad.join(', ')}. Use ${CHANNELS.join(', ')}.`);
-  const state = loadState(project);
+  // a later start adds to the inputs; it doesn't drop the ones it wasn't given (AQE replaced them all)
   state.inputs = {
+    ...before,
     ...(inputs.url ? { url: inputs.url } : {}),
     ...(inputs.source ? { source: inputs.source } : {}),
     ...(inputs.app ? { app: inputs.app } : {}),
@@ -361,9 +390,17 @@ export function start(project: string, inputs: { url?: string; source?: string; 
 }
 
 export function mark(project: string, stage: string, value: string, note?: string) {
-  if (!STAGES.some((s) => s.id === stage) || !(STATUSES as readonly string[]).includes(value)) {
+  const known = STAGES.find((s) => s.id === stage);
+  // AQE accepted "done" and then ignored it, since evidence wins: say so instead
+  if (known && value === 'done') {
+    const c = context(project);
     throw new BlockedError(
-      `Use qam pipeline mark <${STAGES.map((s) => s.id).join('|')}> <${STATUSES.join('|')}> [--note TEXT].`,
+      `A stage is done when its evidence is there, not by a mark (${stage}: ${known.detect(c).detail}). ${known.how(c)}`,
+    );
+  }
+  if (!known || !(STATUSES as readonly string[]).includes(value)) {
+    throw new BlockedError(
+      `Use qam pipeline mark <${STAGES.map((s) => s.id).join('|')}> <${STATUSES.filter((x) => x !== 'done').join('|')}> [--note TEXT].`,
     );
   }
   const state = loadState(project);
@@ -375,6 +412,10 @@ export function mark(project: string, stage: string, value: string, note?: strin
 }
 
 export function reset(project: string, stage?: string) {
+  if (stage && !STAGES.some((s) => s.id === stage))
+    throw new BlockedError(
+      `There's no stage "${stage}". Use qam pipeline reset [${STAGES.map((s) => s.id).join('|')}].`,
+    );
   const state = loadState(project);
   if (stage) delete state.stages?.[stage];
   else state.stages = {};
