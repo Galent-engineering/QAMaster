@@ -1,0 +1,88 @@
+{
+ "_comment": "AQE 0.2.0 crawl_ui.mjs against app.mjs (account qa@example.test). 'writes' is what the API received. Ports are placeholders.",
+ "runs": [
+  {
+   "run": "as-configured",
+   "config_change": "the demo config, URL changed",
+   "summary": {
+    "out": "dsm/ui-model.json",
+    "pages": 9,
+    "edges": 41,
+    "truncated": false,
+    "blocked_requests": 0,
+    "errors": 1
+   },
+   "errors": [
+    "login did not succeed (check the username/password, or use --login-mode manual)"
+   ],
+   "writes": [
+    {
+     "method": "PATCH",
+     "path": "/users/me"
+    },
+    {
+     "method": "PATCH",
+     "path": "/notifications/1"
+    }
+   ]
+  },
+  {
+   "run": "no-settings",
+   "config_change": "exclude_url_patterns + 'settings'",
+   "summary": {
+    "out": "dsm/ui-model.json",
+    "pages": 8,
+    "edges": 34,
+    "truncated": false,
+    "blocked_requests": 0,
+    "errors": 0
+   },
+   "errors": [],
+   "writes": [
+    {
+     "method": "PATCH",
+     "path": "/notifications/1"
+    }
+   ]
+  },
+  {
+   "run": "api-guarded",
+   "config_change": "exclude 'settings', allowed_hosts + the API's host",
+   "summary": {
+    "out": "dsm/ui-model.json",
+    "pages": 8,
+    "edges": 34,
+    "truncated": false,
+    "blocked_requests": 1,
+    "errors": 0
+   },
+   "errors": [],
+   "writes": []
+  },
+  {
+   "run": "guard-left-off",
+   "config_change": "allowed_hosts + the API's host (settings crawled)",
+   "summary": {
+    "out": "dsm/ui-model.json",
+    "pages": 9,
+    "edges": 41,
+    "truncated": false,
+    "blocked_requests": 0,
+    "errors": 1
+   },
+   "errors": [
+    "login did not succeed (check the username/password, or use --login-mode manual)"
+   ],
+   "writes": [
+    {
+     "method": "PATCH",
+     "path": "/users/me"
+    },
+    {
+     "method": "PATCH",
+     "path": "/notifications/1"
+    }
+   ]
+  }
+ ]
+}

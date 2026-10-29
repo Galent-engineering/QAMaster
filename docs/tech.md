@@ -48,7 +48,7 @@ plugin/                          # everything an install copies
   templates/project/config/      # starter config for a QA project
   reports/templates/             # report HTML, CSS, JS
 .claude-plugin/marketplace.json  # source "./plugin"
-package.json                     # dev only: typescript, @biomejs/biome, @types/node
+package.json                     # dev only: typescript, @biomejs/biome, @types/node, playwright (crawler tests)
 tests/                           # node:test; fakes.mts has a fake for every adapter
   fixtures/ado/                  # recorded ADO responses
 scripts/                         # dev tooling: seed ADO from sheets, live connection check
@@ -145,6 +145,8 @@ interface Crawler {
   crawl(opts: CrawlOptions): Promise<UiModel>;   // blocks POST/PUT/PATCH/DELETE after login
 }
 ```
+
+A sixth interface, `Framework`, puts test generation behind an adapter: automation folder, script gate, locator sync, tag and link format (Q25). Its methods are designed in feature 8's Learn phase; v1 ships playwright-bdd only.
 
 `src/adapters/registry.mts` maps names to factories:
 - `STORES = { ado }`. Planned after v1: `file` (`testcases.xlsx` / `.csv` in ADO's import layout), then `xray` or `zephyr` (Q23)

@@ -25,7 +25,7 @@ plugin/
     adapters/            # TestCaseStore, RequirementSource, Runner, RepoReader, Crawler behind interfaces in base.mts
   commands/ skills/ agents/ hooks/ runners/ framework/ templates/ reports/
 .claude-plugin/          # marketplace.json (source "./plugin")
-package.json             # dev only: typescript, @biomejs/biome, @types/node
+package.json             # dev only: typescript, @biomejs/biome, @types/node, playwright (crawler tests)
 tests/                   # node:test; fakes.mts has a fake for every adapter, contracts.mts a suite per store interface
 scripts/                 # dev tooling: seed ADO, live connection check
 ```
@@ -114,6 +114,7 @@ For multi-step work, state a short plan first:
 
 ```bash
 npm install                              # dev tools only
+npx playwright install chromium          # once per machine: the browser for the crawler tests
 npm run check                            # typecheck + lint + all tests
 npm test                                 # all tests
 node --test --test-name-pattern "exit" tests/cli.test.mts   # one targeted test

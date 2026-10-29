@@ -303,6 +303,78 @@ The trade-off: a core file used by many screens (the app's `authMachine.ts`) now
 
 ---
 
+## Lesson 3: the crawl and the refresh (feature 3)
+
+### The crawl: a robot user
+
+The crawler is a real browser (Playwright's Chromium) that signs in and visits every screen it can reach. It works breadth-first: the landing page, then everything one click away, then two, and so on. On each screen it writes down what's there (links, buttons, tabs, forms and their fields, tables, dialogs) and where each link leads. It also clicks buttons that have no link, to find menus, dialogs and JavaScript navigation. The result is `ui-model.json`, the "outside view" half of the DSM (Lesson 1).
+
+Two details make the two views line up:
+- **Route normalisation:** `/orders/101` and `/orders/102` are one screen, `/orders/:id`, just as the code scan writes it.
+- **Code routes as seeds:** routes the scan found are added to the queue, so the crawl visits screens no link points to.
+
+### The hard part: exploring without changing anything
+
+A crawler that clicks buttons on a test system can do real damage: save forms, delete records, mark messages read. AQE has four layers of safety, and Q15 makes them a rule:
+
+| Layer | What it does | Where it can fail |
+|---|---|---|
+| Forms are recorded, never submitted | The crawler reads fields; it doesn't press Save | …unless it thinks the form is a sign-in form |
+| Deny list for clicks | Skips buttons named "delete", "save", "pay", "send", … | Only knows the words on the list: "Dismiss" isn't on it |
+| Write guard | After sign-in, blocks POST, PUT, PATCH and DELETE | Only for `allowed_hosts`, and it's switched off to sign in again |
+| Excluded URLs | Never opens "logout", "delete", downloads | Only knows the patterns on the list |
+
+The guard is the safety net under the other three: if it holds, a mistaken click or submit is blocked. We found it has holes.
+
+### What went wrong, on our own test app
+
+We wrote a small app (`tests/fixtures/crawl/app.mjs`) that counts every write its API receives, and ran AQE's crawler on it four ways:
+
+| Config | Writes that got through |
+|---|---|
+| As shipped | the profile form was saved, and a notification was marked read |
+| Profile screen excluded | the notification |
+| API's host guarded, profile screen crawled | both again: guard left off |
+| API's host guarded, profile screen excluded | none |
+
+Three separate bugs, stacked:
+1. **Wrong sign-in detection.** A page with an email field and no password looked like step 1 of a sign-in. The crawler typed the username into Email and pressed Save.
+2. **Guard switched off.** To sign in again, the crawler turns the guard off. The "sign-in" on the profile page failed, the crawler threw an error, and the line that turns the guard back on never ran. The rest of the crawl was unguarded.
+3. **Guard on one host only.** The API runs on another port, a different host to the browser, and the guard only watched the app's own host.
+
+This is exactly what happened to the Real World App's data in Lesson 1. Now each cause has a reproduction we can test the fix against: after a QAMaster crawl, the app's write log must be empty.
+
+The general lesson is about **safety nets**. A guard must fail *closed* (block when unsure, as with every host), and must never be switched off in a way an error can skip (always restore it in `finally`).
+
+### The refresh: rebuild only what changed
+
+Re-crawling a whole app after every commit is slow. The refresh does the least work that keeps the DSM true:
+1. Compare each repo's commit with the one in `state.json`. Nothing new: stop.
+2. Re-scan the code, and map the changed files to screens with the scan's owners (Lesson 2).
+3. Re-crawl only those screens, plus new routes. Do a full crawl when a shared file changed (it may affect every screen), history was rewritten, or it's been many runs since the last full crawl.
+4. Rebuild, diff against the previous DSM, and write `CHANGES.md`.
+
+Step 2 is also what the gate needs: **impact analysis**, "this change touches these screens". One gap matters there. When a changed file is shared (no owners), the refresh does re-crawl everything, but its report doesn't mention the file. For the gate, "this file may affect every screen" is important information, so QAMaster's `impact()` will return shared files next to the screens.
+
+### Check yourself
+
+1. Why does the crawl add the code scan's routes as seeds?
+2. The deny list skips "Delete" but clicked "Dismiss". Why isn't a better deny list the real fix?
+3. What does "fail closed" mean for the write guard, and which AQE behaviour was "fail open"?
+4. Why must turning the guard back on happen in `finally`?
+5. A commit changes only `NavBar.tsx`, which is shared. What should the refresh do, and what should the gate be told?
+
+<details><summary>Answers</summary>
+
+1. Some screens have no link pointing to them (reached by a typed URL, or a link the crawler's account can't see). The code knows they exist.
+2. A list of words can never be complete. "Dismiss", "Archive", "Mark read" all change data. The guard catches any write whatever the button says; the deny list just avoids clicking things in the first place.
+3. Block when unsure: every write to every host is blocked unless explicitly allowed. AQE allowed writes to any host not on its list, which failed open for the API on another port.
+4. `finally` runs even when an error is thrown. AQE turned it back on in the next line, which an error skipped.
+5. Re-crawl the whole app (the change may show on every screen), and tell the gate the change touches a shared file, so it doesn't conclude "no screens affected".
+</details>
+
+---
+
 ## Journal
 
 | Date | Feature | What we learned |
@@ -313,3 +385,4 @@ The trade-off: a core file used by many screens (the app's `authMachine.ts`) now
 | 2026-10-29 | 2 Repo scan | Regex route finding is fast but pattern-bound: on the Real World App no file owns a screen. Subfolder apps scan nothing. Port pure, git behind RepoReader |
 | 2026-10-29 | 2 Repo scan (built) | Matched AQE first, then four fixes, each with a test: the Real World App goes from 0 to 10 files linked to their screens. The folder rule now needs replacing |
 | 2026-10-29 | 2 Repo scan (fix 5) | Ownership by imports, not folders. Removing a wrong guess exposed a hidden gap (component names), so check what a fallback was covering before removing it |
+| 2026-10-29 | 3 Crawl and refresh | A safety net must fail closed and be restored in `finally`. Three stacked guard bugs, each reproduced on a hand-made app that counts writes |

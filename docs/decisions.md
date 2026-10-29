@@ -73,6 +73,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - Jira, Cypress or a CI trigger can be added without touching the pipeline.
   - Autonomous-QE had no seams, which is one reason it had no unit tests.
 - **Gave up:** a few lines of indirection per provider.
+- **Amended 2026-10-29:** a sixth interface, `Framework`, covers test generation (Q25).
 
 ## Data and source of truth
 
@@ -228,6 +229,13 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - `qam setup` adds deny rules for `.env*` files to the project's `.claude/settings.json`, so Claude can't read secret files even when asked ([data-handling.md](data-handling.md)).
 - **Why:** both projects agreed.
 - **Gave up:** nothing.
+- **Amended 2026-10-29 (the crawl session):**
+  - After the crawl signs in, its session (cookies and storage) is saved to `dsm/.auth/state.json` by default, so later crawls skip sign-in. This includes unattended refreshes of apps that need a person to sign in (SSO, MFA, CAPTCHA).
+  - The file is plain JSON, owner-only (`0600`), and its folder ignores itself in git.
+  - `login.save_session: false` in `dsm-config.json` turns saving off.
+  - `qam setup` denies Claude reading `dsm/.auth/`, as it does `.env*`.
+  - **Why:** the person chose convenience by default, with an off switch. It's also AQE's behaviour and setting.
+  - **Gave up:** the session file is a credential. Anyone who reads it is signed in as the crawl's test user until the session expires, including through backups, cloud sync or a shared copy of the project folder. Use a dedicated read-only test account, and turn saving off where that risk matters. AQE 0.2.0's encryption of the file is not ported, since its vault was ruled out above.
 
 ## Output and reach
 
@@ -270,6 +278,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Gave up:**
   - Every test case store other than ADO, including Jira add-ons and the spreadsheet fallback, waits until after v1 (Q23).
   - CI triggers and the git hook move to v1.1.
+- **Amended 2026-10-29:** generation is still playwright-bdd only in v1, but it sits behind the `Framework` adapter (Q25). Other frameworks become new adapters, not a rewrite.
 
 **Q21. Engineering discipline follows CheckMaster** (2026-10-28, accepted 2026-10-28, CM)
 - **Decision:** each item below has to be in place before the code that needs it ships.
@@ -340,6 +349,26 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Gave up:**
   - v1 needs ADO for the gate and publishing. Jira-only teams can still read requirements through MCP during test design, but they can't publish or gate until a non-ADO store ships.
   - The spreadsheet store loses tracker features: history, permissions and concurrent editing. Its open questions (xlsx or csv by default, how to keep formatting people add, merge conflicts) are settled when it's built.
+
+**Q25. Test generation goes behind a `Framework` adapter; v1 ships playwright-bdd only** (2026-10-29, accepted 2026-10-29, New; amends Q4 and Q20)
+- **Decision:**
+  - Everything framework-specific between a reviewed test case and a runnable test goes behind one adapter, `Framework`, paired with the `Runner` that runs its tests. That covers:
+    - creating the automation folder;
+    - the script quality gate;
+    - locator sync;
+    - the test-case tag and link format (Q9);
+    - the conventions the `AutomationCode` skill follows.
+
+    It is picked by name, like the other adapters, and has a fake for tests.
+  - Its exact methods are designed in feature 8's Learn phase, from two real cases: Autonomous-QE's playwright-bdd template, and its path for existing frameworks (`CodebaseOperations`). So the interface fits two cases, not one.
+  - v1 ships one implementation, playwright-bdd. Until feature 8, code in features 4 to 7 that has to name the framework does it in one place, not scattered.
+- **Why:**
+  - The person requires generated automation to be replaceable by the language or codebase a team works in (Java, .NET, Python, Cypress and others).
+  - Autonomous-QE handles other frameworks with branches in one code path, so each new tool costs a rewrite.
+  - Q4 already gives the gate this for runners. Generation is the one place it was missing.
+- **Gave up:**
+  - Some indirection in features 7 and 8, with one implementation in v1.
+  - The interface's shape stays open until feature 8. Recording the requirement now, rather than guessing the methods, was the person's choice.
 
 ---
 

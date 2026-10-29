@@ -56,7 +56,7 @@ The order follows the dependencies, starting with the pure functions that are ea
 | — | *Step 4: ADO adapter* | CheckMaster `adapters/ado.py` | `adapters/ado.mts` | `qam doctor` (ADO part), `qam req\|tc …` | — | step 2 |
 | 6 | **Requirements** | `requirements/requirements` 252 | `src/requirements/` through `RequirementSource` | `qam requirements fetch` | — | 4, step 4 |
 | 7 | **TestGen** | `testgen/testgen` 764 | `src/testgen/` | `qam testgen context\|validate\|render` | `TestGen`, `Domain_Test_Design_Skill` and its 39 sub-skills | 1, 5, 6 |
-| 8 | **Automation** | `e2e-automation/scaffold` 274, `check_scripts` 157, `shared/bdd-quality` 83, `shared/aut-app` 69, `framework/TestAutomation` with `scripts/locator-sync` | `src/automation/`, `plugin/framework/` | `qam app create`, `qam check-scripts` | `AutomationCode` (playwright-bdd parts only), `UI-Locator-Sync` | 7 |
+| 8 | **Automation** | `e2e-automation/scaffold` 274, `check_scripts` 157, `shared/bdd-quality` 83, `shared/aut-app` 69, `framework/TestAutomation` with `scripts/locator-sync` | `src/automation/` behind the `Framework` adapter (Q25; its methods are designed in this feature's Learn phase), `plugin/framework/` | `qam app create`, `qam check-scripts` | `AutomationCode` (playwright-bdd parts only), `UI-Locator-Sync` | 7 |
 | 9 | **Reports** | `reports/build_report`, `build_all`, `compose_summary`, `dsm_to_report`, `testgen_to_report`, `playwright_to_report`, `types/*` (six report types) | `src/reports/`, `plugin/reports/templates/` | `qam report all\|manual\|<type>` | `QE-Reports` and its six report skills | 1, 7, 8 |
 
 Not in step 3:
@@ -71,7 +71,7 @@ Not in step 3:
 |---|---|---|---|---|---|---|
 | 1 | DSM build and render | ✓ 2026-10-29 | ✓ | ✓ 5 golden fixtures | ✓ | ✓ |
 | 2 | Repo scan | ✓ 2026-10-29 | ✓ | ✓ 2 golden fixtures, fixes 1–5 | ✓ | ✓ fixes 1–4 |
-| 3 | UI crawl and DSM refresh | | | | | |
+| 3 | UI crawl and DSM refresh | ✓ 2026-10-29 | | | | |
 | 4 | Setup and pipeline | | | | | |
 | 5 | Application knowledge | | | | | |
 | — | Step 4: ADO adapter | | | | | |
@@ -217,7 +217,7 @@ Most of this disappears in a native port: the patterns can be written once as Ja
 - First match AQE exactly (golden). Then fix problems 1 to 4 one at a time. Each fix gets its own test, and each changed golden line is listed here as an intended difference.
 - Leave 5, 6 and 8 for later, and list them in the Roadmap. Import-graph ownership (a screen owns the files its component imports) is the real answer to problem 5, and it's a v2 feature.
 
-**Left out (not MVP):** none of the scan. `fetch` stays unused: QAMaster never fetches on the user's behalf.
+**Left out (not MVP):** none of the scan. The scan itself never fetches; the refresh (feature 3) does, which Q15 allows.
 
 **Built (2026-10-29):** `plugin/src/dsm/scan.mts` (pure: files in, code model out), `plugin/src/adapters/git.mts` (`readRepo`: one `ls-tree -z`, one `cat-file --batch`, or the folder on disk outside git), and `qam dsm scan [--config] [--out]` in `plugin/src/cli/dsm.mts`. `readRepo` is not yet the full `RepoReader`: `diff`, `head` and `readFile` come with the gate (step 5).
 
@@ -260,6 +260,92 @@ Most of this disappears in a native port: the patterns can be written once as Ja
 
   Both are on the Roadmap.
 
+### 3. UI crawl and DSM refresh (Learn done 2026-10-29)
+
+**Versions:**
+- `dsm_update.mts` (465 lines) is the same in 0.1.5 and 0.2.0.
+- `crawl_ui.mjs` differs. 0.2.0 adds three things:
+  - **stable test attributes** on every element (`data-testid`, `data-cy`, `aria-label`, …), which locator sync can use (feature 8);
+  - **`api_calls`**: each XHR/fetch the UI makes, with method, path, statuses, pages and response keys (never values). QAMaster's `UiModel` already has this field;
+  - **an encrypted vault** for the sign-in details, and encryption of the saved session.
+- **Choice:** 0.2.0's crawler without the vault. Q16 settled where crawl logins live: the terminal prompt or a git-ignored `.env.dsm`.
+
+**What the crawler does** (`crawl_ui.mjs`, Playwright Chromium):
+1. **Sign in** if the first page is a sign-in form. `auto` fills `DSM_APP_USERNAME`/`DSM_APP_PASSWORD` (environment or `.env.dsm`), or asks in the terminal (password hidden, OTP if asked). It handles one-page and two-step forms. `manual` opens a visible browser for SSO, CAPTCHA or MFA. The session can be saved in `dsm/.auth/state.json`, owner-only and git-ignored.
+2. **Explore breadth-first** from the landing page and `start_paths`, plus code routes as seeds. It stays on `allowed_hosts`, skips `exclude_url_patterns`, and stops at `max_pages`/`max_depth`. Routes are normalised (`/orders/101` → `/orders/:id`), with hash routes handled.
+3. **On each page, record** the title, headings, tables, links, buttons, tabs, menu items and forms with their fields. Each element gets its selector, visibility and test attributes. Then it clicks up to 40 safe elements without `href`, to find JS navigation, pop-ups and dialogs.
+4. **Write** `ui-model.json`: pages, edges (`link`, `form`, `click`, `popup`, `redirect`, `opens`), `api_calls`, `blocked_requests`, `login`, and `truncated`/`pending_routes`.
+
+**What the refresh does** (`dsm_update.mts`):
+- **`run`:**
+  1. fetch each repo, compare its commit with `state.json`, and stop with `no-change` if nothing is new;
+  2. re-scan, and map the changed files to screens through the code model's owners;
+  3. pick the crawl: incremental (only the impacted screens and new routes), full (shared files changed, history rewritten, no previous crawl, or every `full_recrawl_every_runs` runs), or none;
+  4. build, snapshot the previous `dsm.json` to `history/`, render, and write `CHANGES.md` and `state.json`.
+
+  A `.lock` file stops two runs at once.
+- **`check`** lists new commits without building. **`status`** shows the state.
+- In a terminal it asks for the URL and repository when they aren't saved, and can save them.
+
+**Fixtures** (`tests/fixtures/crawl/`):
+- `app.mjs` is a hand-made app with no dependencies. Its UI and API run on two ports, and the API records every write it receives at `GET /__writes`, so a test can prove a crawl changed nothing. It has the traps:
+  - a sign-in (`qa@example.test` / `qa-password`, fixture only);
+  - a profile form with an email field;
+  - a "Dismiss" button that sends PATCH to the API;
+  - a "Delete all" button;
+  - an `/orders/:id` pair, a redirect, an HTTP 500 page, a hash route, a `target=_blank` link, a dialog and a log-out link.
+- `aqe-runs.json` records four AQE crawls with the config changes and the writes that got through.
+- `ui-model.aqe.json` is the safe run's output, with ports as placeholders.
+
+**Problems found** (each reproduced on the fixture app; `aqe-runs.json`):
+
+| Config | Writes that reached the API |
+|---|---|
+| As the demo ships it | `PATCH /users/me` (the profile form) and `PATCH /notifications/1` |
+| `/settings` excluded | `PATCH /notifications/1` |
+| API host in `allowed_hosts`, `/settings` crawled | both again, with 0 blocked |
+| API host in `allowed_hosts` and `/settings` excluded | none (1 blocked) |
+
+1. **Sign-in detection fires on ordinary forms.** A visible email or "user" field with no password field counts as step 1 of a two-step sign-in. On `/settings` the crawler typed the username into Email and pressed Save. This is the Real World App incident.
+2. **The guard is left off.**
+   - The crawler turns the write guard off to sign in again mid-crawl.
+   - When that "sign-in" fails (as on `/settings`), it throws before turning the guard back on. Every page after that is unguarded: 0 requests blocked.
+3. **The guard covers only `allowed_hosts`**, which defaults to the app's own host. An API on another port or host, like the Real World App's `:3001`, is never guarded. "Dismiss" isn't in the deny list, so clicking it marked a notification read.
+4. **Smaller issues:**
+   - `api_calls` lists the redirecting page (`/old-orders`) as a caller;
+   - redirects aren't logged in the progress output;
+   - with `hash_routing: auto`, `/#/help` on a page that isn't a single-page app is a separate copy of `/`;
+   - two `history/` snapshots in the same second overwrite each other.
+5. **Refresh hides shared changes.** When a changed file has no owners, the refresh forces a full re-crawl, but `impacted_routes` and `CHANGES.md` don't mention the file. In the run log: a commit touching `shared/header.component.html` and `flask/app.py` reported only the two Flask screens. The gate needs `impact()` to return shared files ("may affect every screen"), not drop them.
+6. **Impact keys are repo-relative.** The gate's change has paths from the app repo root, while the code model keys files from the configured folder. After scan fix 1, an app in `web/` needs that prefix removed before matching.
+7. **Exit codes clash.**
+   - AQE's `needs-input` exits 3, which in QAMaster means "awaiting approval".
+   - Login problems exit 4, which QAMaster doesn't have.
+
+   Both become 2 (blocked) with the next step.
+
+**Port plan for Build** (proposed; the person decides the open points):
+- **The crawler goes behind `Crawler`** (`adapters/crawler-playwright.mts`). Playwright loads from the QA project's `node_modules`, as AQE does, so the plugin keeps no runtime dependencies (Q1).
+- **Fixes, each with a test on `app.mjs` asserting `GET /__writes` is empty:**
+  - the guard blocks every write to **any** host after sign-in, with `allow_mutating_patterns` as the only exception;
+  - the guard is never switched off. A re-login allows only the one form submit on the known login route, and is undone in `finally`;
+  - sign-in needs a password field, or the known login route for step 1 of a two-step form.
+- **The refresh becomes pure functions plus a command:**
+  - pure: change detection, the crawl decision, `impact(files)` returning `{ screens, shared }`;
+  - commands: `qam dsm run` (full), `refresh` (only on new commits, never prompts), `changes` (AQE `check`) and `impact <files…>`;
+  - no URL or repo prompts: `qam setup` (feature 4) writes the config;
+  - the terminal prompt for credentials stays (Q16).
+- **Open points:**
+  - (a) **Playwright for QAMaster's own tests: decided 2026-10-29.** `playwright` 1.64.1 is an exact dev dependency of `qamaster-dev`, so the end-to-end safety test (crawl `app.mjs`, then `GET /__writes` must be empty) always runs. It's not skipped when the browser is missing. The plugin still loads Playwright from the user's QA project, with no runtime dependency (Q1).
+  - (b) **The saved session: decided 2026-10-29** ([Q16 amendment](decisions.md)). It's saved by default, as AQE does (plain JSON, owner-only, git-ignored), and `login.save_session: false` turns it off. `qam setup` denies Claude reading `dsm/.auth/`. Build tests both settings.
+
+**Moves with it:**
+- the `Design-Structure-Matrix` skill and `ui-dsm-agent`, rewritten for `qam` and Q16, and without the vault;
+- the `generate-dsm` command;
+- the `dsm-gen` hook (SessionStart and after git pulls) belongs to step 9 with the other hooks.
+
+**Left out (not MVP):** the encrypted vault and session sealing (Q16), and the scheduled "UI DSM refresh" routine. The DSM from test cases (`testcases dsm`) is v2, with test-case import.
+
 ## Roadmap: what comes after the v1 MVP
 
 These AQE features are left out of step 3 on purpose. Each becomes its own feature later, through the same loop. The v2 / v3 split is a proposal: v2 is what makes the build stages richer for the teams already using v1, and v3 is broader tooling. [product.md](product.md#scope) carries the same lists.
@@ -272,7 +358,7 @@ These AQE features are left out of step 3 on purpose. Each becomes its own featu
 | Scan: import aliases (`@/x`, tsconfig `paths`) and import following for C#, Java and Python | new (QAMaster `dsm/scan.mts`) | v2 | Fix 5 follows relative JS/TS imports only. Apps that use aliases or back-end MVC pages get fewer `imported` owners |
 | Locators from the crawl, for apps without front-end source | `locators/from_crawl` 174 | v2 | v1 syncs locators from the front-end source |
 | API discovery and API test data | `api/api` 450, `API-TestGen` | v2 | v1 covers API through TestGen's API channel only |
-| Existing automation frameworks (detect, analyse, generate into them) | `codebase/*` 948, `CodebaseOperations`, `analyze_framework` 350 | v3 | v1 generates playwright-bdd only (Q20) |
+| Existing automation frameworks (detect, analyse, generate into them) | `codebase/*` 948, `CodebaseOperations`, `analyze_framework` 350 | v3 | v1 generates playwright-bdd only (Q20). Each framework becomes a `Framework` adapter (Q25), not a rewrite |
 | Impact and traceability matrices | `design/design` 243 | v3 | The gate's DSM impact and plan cover the v1 need |
 | Root cause evidence from commits and logs | `rca/rca` 160 | v3 | v1 writes defect drafts; RCA data stays manual |
 | Value metrics (tokens, time, effort saved) | `reports/value` 204 | v3 | Reporting extra |

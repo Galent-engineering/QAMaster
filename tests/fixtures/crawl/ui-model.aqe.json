@@ -1,0 +1,1108 @@
+{
+ "generated_at": "2026-10-29T09:09:07.132Z",
+ "base_url": "http://localhost:<ui-port>/",
+ "hash_routing": true,
+ "mode": "full",
+ "recrawled_routes": [
+  "/",
+  "/orders",
+  "/notifications",
+  "/#/help",
+  "/report",
+  "/orders/:id",
+  "/old-orders",
+  "/broken"
+ ],
+ "login": {
+  "mode": "auto",
+  "required": true,
+  "session": "new",
+  "login_route": "/login",
+  "landed_route": "/"
+ },
+ "truncated": false,
+ "pending_routes": [],
+ "blocked_requests": [
+  {
+   "method": "PATCH",
+   "url": "http://localhost:<api-port>/notifications/1"
+  }
+ ],
+ "pages": [
+  {
+   "route": "/",
+   "url": "http://localhost:<ui-port>/",
+   "depth": 0,
+   "discovered_from": null,
+   "discovered_by": "login",
+   "status": 200,
+   "title": "Home",
+   "headings": [
+    "Home",
+    "Filter orders"
+   ],
+   "elements": [
+    {
+     "key": "/::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(1)"
+    },
+    {
+     "key": "/::link:orders",
+     "kind": "link",
+     "text": "Orders",
+     "href": "/orders",
+     "target": "/orders",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(2)"
+    },
+    {
+     "key": "/::link:settings",
+     "kind": "link",
+     "text": "Settings",
+     "href": "/settings",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(3)"
+    },
+    {
+     "key": "/::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(4)"
+    },
+    {
+     "key": "/::link:help",
+     "kind": "link",
+     "text": "Help",
+     "href": "/#/help",
+     "target": "/#/help",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(5)"
+    },
+    {
+     "key": "/::link:log-out",
+     "kind": "link",
+     "text": "Log out",
+     "href": "/logout",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(6)"
+    },
+    {
+     "key": "/::link:open-report",
+     "kind": "link",
+     "text": "Open report",
+     "href": "/report",
+     "target": "/report",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "html > body > a"
+    },
+    {
+     "key": "/::button:filters",
+     "kind": "button",
+     "text": "Filters",
+     "type": "button",
+     "id": "filters",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#filters"
+    },
+    {
+     "key": "/::button:close",
+     "kind": "button",
+     "text": "Close",
+     "type": "button",
+     "id": "",
+     "visible": false,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#dlg > button"
+    },
+    {
+     "key": "/::button:delete-all-orders",
+     "kind": "button",
+     "text": "Delete all orders",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "html > body > button:nth-of-type(2)"
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [
+    {
+     "key": "/::dialog:filter-orders",
+     "title": "Filter orders",
+     "fields": 1,
+     "buttons": [
+      "Close"
+     ],
+     "opened_by": "/::button:filters"
+    }
+   ],
+   "error": null
+  },
+  {
+   "route": "/#/help",
+   "url": "http://localhost:<ui-port>/#/help",
+   "depth": 1,
+   "discovered_from": "/",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Home",
+   "headings": [
+    "Home",
+    "Filter orders"
+   ],
+   "elements": [
+    {
+     "key": "/#/help::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(1)"
+    },
+    {
+     "key": "/#/help::link:orders",
+     "kind": "link",
+     "text": "Orders",
+     "href": "/orders",
+     "target": "/orders",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(2)"
+    },
+    {
+     "key": "/#/help::link:settings",
+     "kind": "link",
+     "text": "Settings",
+     "href": "/settings",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(3)"
+    },
+    {
+     "key": "/#/help::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(4)"
+    },
+    {
+     "key": "/#/help::link:help",
+     "kind": "link",
+     "text": "Help",
+     "href": "/#/help",
+     "target": "/#/help",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(5)"
+    },
+    {
+     "key": "/#/help::link:log-out",
+     "kind": "link",
+     "text": "Log out",
+     "href": "/logout",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(6)"
+    },
+    {
+     "key": "/#/help::link:open-report",
+     "kind": "link",
+     "text": "Open report",
+     "href": "/report",
+     "target": "/report",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "html > body > a"
+    },
+    {
+     "key": "/#/help::button:filters",
+     "kind": "button",
+     "text": "Filters",
+     "type": "button",
+     "id": "filters",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#filters"
+    },
+    {
+     "key": "/#/help::button:close",
+     "kind": "button",
+     "text": "Close",
+     "type": "button",
+     "id": "",
+     "visible": false,
+     "disabled": false,
+     "inForm": false,
+     "selector": "#dlg > button"
+    },
+    {
+     "key": "/#/help::button:delete-all-orders",
+     "kind": "button",
+     "text": "Delete all orders",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "html > body > button:nth-of-type(2)"
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [
+    {
+     "key": "/#/help::dialog:filter-orders",
+     "title": "Filter orders",
+     "fields": 1,
+     "buttons": [
+      "Close"
+     ],
+     "opened_by": "/#/help::button:filters"
+    }
+   ],
+   "error": null
+  },
+  {
+   "route": "/broken",
+   "url": "http://localhost:<ui-port>/broken",
+   "depth": 3,
+   "discovered_from": "/orders/:id",
+   "discovered_by": "link",
+   "status": 500,
+   "title": "Server error",
+   "headings": [
+    "Server error"
+   ],
+   "elements": [
+    {
+     "key": "/broken::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(1)"
+    },
+    {
+     "key": "/broken::link:orders",
+     "kind": "link",
+     "text": "Orders",
+     "href": "/orders",
+     "target": "/orders",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(2)"
+    },
+    {
+     "key": "/broken::link:settings",
+     "kind": "link",
+     "text": "Settings",
+     "href": "/settings",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(3)"
+    },
+    {
+     "key": "/broken::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(4)"
+    },
+    {
+     "key": "/broken::link:help",
+     "kind": "link",
+     "text": "Help",
+     "href": "/#/help",
+     "target": "/#/help",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(5)"
+    },
+    {
+     "key": "/broken::link:log-out",
+     "kind": "link",
+     "text": "Log out",
+     "href": "/logout",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(6)"
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/notifications",
+   "url": "http://localhost:<ui-port>/notifications",
+   "depth": 1,
+   "discovered_from": "/",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Notifications",
+   "headings": [
+    "Notifications"
+   ],
+   "elements": [
+    {
+     "key": "/notifications::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(1)"
+    },
+    {
+     "key": "/notifications::link:orders",
+     "kind": "link",
+     "text": "Orders",
+     "href": "/orders",
+     "target": "/orders",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(2)"
+    },
+    {
+     "key": "/notifications::link:settings",
+     "kind": "link",
+     "text": "Settings",
+     "href": "/settings",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(3)"
+    },
+    {
+     "key": "/notifications::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(4)"
+    },
+    {
+     "key": "/notifications::link:help",
+     "kind": "link",
+     "text": "Help",
+     "href": "/#/help",
+     "target": "/#/help",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(5)"
+    },
+    {
+     "key": "/notifications::link:log-out",
+     "kind": "link",
+     "text": "Log out",
+     "href": "/logout",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(6)"
+    },
+    {
+     "key": "/notifications::button:dismiss",
+     "kind": "button",
+     "text": "Dismiss",
+     "type": "button",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": false,
+     "selector": "html > body > ul > li > button"
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/old-orders",
+   "url": "http://localhost:<ui-port>/old-orders",
+   "depth": 2,
+   "discovered_from": "/orders",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "",
+   "headings": [],
+   "elements": [],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null,
+   "redirect_to": "/orders"
+  },
+  {
+   "route": "/orders",
+   "url": "http://localhost:<ui-port>/orders",
+   "depth": 1,
+   "discovered_from": "/",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Orders",
+   "headings": [
+    "Orders"
+   ],
+   "elements": [
+    {
+     "key": "/orders::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(1)"
+    },
+    {
+     "key": "/orders::link:orders",
+     "kind": "link",
+     "text": "Orders",
+     "href": "/orders",
+     "target": "/orders",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(2)"
+    },
+    {
+     "key": "/orders::link:settings",
+     "kind": "link",
+     "text": "Settings",
+     "href": "/settings",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(3)"
+    },
+    {
+     "key": "/orders::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(4)"
+    },
+    {
+     "key": "/orders::link:help",
+     "kind": "link",
+     "text": "Help",
+     "href": "/#/help",
+     "target": "/#/help",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(5)"
+    },
+    {
+     "key": "/orders::link:log-out",
+     "kind": "link",
+     "text": "Log out",
+     "href": "/logout",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(6)"
+    },
+    {
+     "key": "/orders::link:order-101",
+     "kind": "link",
+     "text": "Order 101",
+     "href": "/orders/101",
+     "target": "/orders/:id",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "html > body > a:nth-of-type(1)"
+    },
+    {
+     "key": "/orders::link:order-102",
+     "kind": "link",
+     "text": "Order 102",
+     "href": "/orders/102",
+     "target": "/orders/:id",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "html > body > a:nth-of-type(2)"
+    },
+    {
+     "key": "/orders::link:old",
+     "kind": "link",
+     "text": "Old",
+     "href": "/old-orders",
+     "target": "/old-orders",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "html > body > a:nth-of-type(3)"
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/orders/:id",
+   "url": "http://localhost:<ui-port>/orders/101",
+   "depth": 2,
+   "discovered_from": "/orders",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Order",
+   "headings": [
+    "Order"
+   ],
+   "elements": [
+    {
+     "key": "/orders/:id::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(1)"
+    },
+    {
+     "key": "/orders/:id::link:orders",
+     "kind": "link",
+     "text": "Orders",
+     "href": "/orders",
+     "target": "/orders",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(2)"
+    },
+    {
+     "key": "/orders/:id::link:settings",
+     "kind": "link",
+     "text": "Settings",
+     "href": "/settings",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(3)"
+    },
+    {
+     "key": "/orders/:id::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(4)"
+    },
+    {
+     "key": "/orders/:id::link:help",
+     "kind": "link",
+     "text": "Help",
+     "href": "/#/help",
+     "target": "/#/help",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(5)"
+    },
+    {
+     "key": "/orders/:id::link:log-out",
+     "kind": "link",
+     "text": "Log out",
+     "href": "/logout",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(6)"
+    },
+    {
+     "key": "/orders/:id::link:invoice",
+     "kind": "link",
+     "text": "Invoice",
+     "href": "/broken",
+     "target": "/broken",
+     "external": false,
+     "visible": true,
+     "in_nav": false,
+     "selector": "html > body > a"
+    },
+    {
+     "key": "/orders/:id::button:add-note",
+     "kind": "button",
+     "text": "Add note",
+     "type": "submit",
+     "id": "",
+     "visible": true,
+     "disabled": false,
+     "inForm": true,
+     "selector": "#note > button"
+    }
+   ],
+   "forms": [
+    {
+     "key": "/orders/:id::form:note",
+     "id": "note",
+     "name": "",
+     "index": 0,
+     "action": "http://localhost:<ui-port>/orders/note",
+     "method": "post",
+     "selector": "#note",
+     "visible": true,
+     "fields": [
+      {
+       "key": "/orders/:id::field:note",
+       "tag": "textarea",
+       "type": "textarea",
+       "name": "note",
+       "id": "",
+       "label": "note",
+       "required": true,
+       "maxlength": null,
+       "pattern": null,
+       "options": null,
+       "visible": true,
+       "selector": "#note > textarea",
+       "name_attr": "note"
+      }
+     ],
+     "submits": [
+      "Add note"
+     ],
+     "target": "/orders/note"
+    }
+   ],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/report",
+   "url": "http://localhost:<ui-port>/report",
+   "depth": 1,
+   "discovered_from": "/",
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Report",
+   "headings": [
+    "Report"
+   ],
+   "elements": [
+    {
+     "key": "/report::link:home",
+     "kind": "link",
+     "text": "Home",
+     "href": "/",
+     "target": "/",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(1)"
+    },
+    {
+     "key": "/report::link:orders",
+     "kind": "link",
+     "text": "Orders",
+     "href": "/orders",
+     "target": "/orders",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(2)"
+    },
+    {
+     "key": "/report::link:settings",
+     "kind": "link",
+     "text": "Settings",
+     "href": "/settings",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(3)"
+    },
+    {
+     "key": "/report::link:notifications",
+     "kind": "link",
+     "text": "Notifications",
+     "href": "/notifications",
+     "target": "/notifications",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(4)"
+    },
+    {
+     "key": "/report::link:help",
+     "kind": "link",
+     "text": "Help",
+     "href": "/#/help",
+     "target": "/#/help",
+     "external": false,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(5)"
+    },
+    {
+     "key": "/report::link:log-out",
+     "kind": "link",
+     "text": "Log out",
+     "href": "/logout",
+     "target": null,
+     "external": true,
+     "visible": true,
+     "in_nav": true,
+     "selector": "html > body > nav > a:nth-of-type(6)"
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  }
+ ],
+ "edges": [
+  {
+   "from": "/",
+   "to": "/orders",
+   "type": "link",
+   "via": "/::link:orders",
+   "label": "Orders"
+  },
+  {
+   "from": "/",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/::link:notifications",
+   "label": "Notifications"
+  },
+  {
+   "from": "/",
+   "to": "/#/help",
+   "type": "link",
+   "via": "/::link:help",
+   "label": "Help"
+  },
+  {
+   "from": "/",
+   "to": "/report",
+   "type": "link",
+   "via": "/::link:open-report",
+   "label": "Open report"
+  },
+  {
+   "from": "/::button:filters",
+   "to": "/::dialog:filter-orders",
+   "type": "opens",
+   "via": "/::button:filters",
+   "label": "Filters",
+   "element_level": true
+  },
+  {
+   "from": "/orders",
+   "to": "/",
+   "type": "link",
+   "via": "/orders::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/orders",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/orders::link:notifications",
+   "label": "Notifications"
+  },
+  {
+   "from": "/orders",
+   "to": "/#/help",
+   "type": "link",
+   "via": "/orders::link:help",
+   "label": "Help"
+  },
+  {
+   "from": "/orders",
+   "to": "/orders/:id",
+   "type": "link",
+   "via": "/orders::link:order-101",
+   "label": "Order 101"
+  },
+  {
+   "from": "/orders",
+   "to": "/orders/:id",
+   "type": "link",
+   "via": "/orders::link:order-102",
+   "label": "Order 102"
+  },
+  {
+   "from": "/orders",
+   "to": "/old-orders",
+   "type": "link",
+   "via": "/orders::link:old",
+   "label": "Old"
+  },
+  {
+   "from": "/notifications",
+   "to": "/",
+   "type": "link",
+   "via": "/notifications::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/notifications",
+   "to": "/orders",
+   "type": "link",
+   "via": "/notifications::link:orders",
+   "label": "Orders"
+  },
+  {
+   "from": "/notifications",
+   "to": "/#/help",
+   "type": "link",
+   "via": "/notifications::link:help",
+   "label": "Help"
+  },
+  {
+   "from": "/#/help",
+   "to": "/",
+   "type": "link",
+   "via": "/#/help::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/#/help",
+   "to": "/orders",
+   "type": "link",
+   "via": "/#/help::link:orders",
+   "label": "Orders"
+  },
+  {
+   "from": "/#/help",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/#/help::link:notifications",
+   "label": "Notifications"
+  },
+  {
+   "from": "/#/help",
+   "to": "/report",
+   "type": "link",
+   "via": "/#/help::link:open-report",
+   "label": "Open report"
+  },
+  {
+   "from": "/#/help::button:filters",
+   "to": "/#/help::dialog:filter-orders",
+   "type": "opens",
+   "via": "/#/help::button:filters",
+   "label": "Filters",
+   "element_level": true
+  },
+  {
+   "from": "/report",
+   "to": "/",
+   "type": "link",
+   "via": "/report::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/report",
+   "to": "/orders",
+   "type": "link",
+   "via": "/report::link:orders",
+   "label": "Orders"
+  },
+  {
+   "from": "/report",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/report::link:notifications",
+   "label": "Notifications"
+  },
+  {
+   "from": "/report",
+   "to": "/#/help",
+   "type": "link",
+   "via": "/report::link:help",
+   "label": "Help"
+  },
+  {
+   "from": "/orders/:id",
+   "to": "/",
+   "type": "link",
+   "via": "/orders/:id::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/orders/:id",
+   "to": "/orders",
+   "type": "link",
+   "via": "/orders/:id::link:orders",
+   "label": "Orders"
+  },
+  {
+   "from": "/orders/:id",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/orders/:id::link:notifications",
+   "label": "Notifications"
+  },
+  {
+   "from": "/orders/:id",
+   "to": "/#/help",
+   "type": "link",
+   "via": "/orders/:id::link:help",
+   "label": "Help"
+  },
+  {
+   "from": "/orders/:id",
+   "to": "/broken",
+   "type": "link",
+   "via": "/orders/:id::link:invoice",
+   "label": "Invoice"
+  },
+  {
+   "from": "/orders/:id",
+   "to": "/orders/note",
+   "type": "form",
+   "via": "/orders/:id::form:note",
+   "label": "POST note"
+  },
+  {
+   "from": "/old-orders",
+   "to": "/orders",
+   "type": "redirect",
+   "via": null,
+   "label": "redirect"
+  },
+  {
+   "from": "/broken",
+   "to": "/",
+   "type": "link",
+   "via": "/broken::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/broken",
+   "to": "/orders",
+   "type": "link",
+   "via": "/broken::link:orders",
+   "label": "Orders"
+  },
+  {
+   "from": "/broken",
+   "to": "/notifications",
+   "type": "link",
+   "via": "/broken::link:notifications",
+   "label": "Notifications"
+  },
+  {
+   "from": "/broken",
+   "to": "/#/help",
+   "type": "link",
+   "via": "/broken::link:help",
+   "label": "Help"
+  }
+ ],
+ "api_calls": [
+  {
+   "method": "GET",
+   "host": "localhost:<api-port>",
+   "path": "/orders",
+   "query_keys": [],
+   "statuses": [
+    200
+   ],
+   "pages": [
+    "/orders",
+    "/old-orders"
+   ],
+   "content_type": "application/json",
+   "response_keys": [
+    "id",
+    "total"
+   ],
+   "response_is_array": true
+  }
+ ]
+}
