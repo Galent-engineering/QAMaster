@@ -488,13 +488,8 @@
    ]
   },
   "polyglot:mvc/Controllers/ApiDataController.cs": {
-   "owners": [
-    "/Account",
-    "/Account/Logout",
-    "/Account/Profile/:id",
-    "/reports/Monthly"
-   ],
-   "confidence": "inferred"
+   "owners": [],
+   "confidence": "shared"
   },
   "polyglot:mvc/Controllers/ReportsController.cs": {
    "owners": [
@@ -542,10 +537,8 @@
    "confidence": "direct"
   },
   "polyglot:next/pages/_app.tsx": {
-   "owners": [
-    "/next/pages"
-   ],
-   "confidence": "inferred"
+   "owners": [],
+   "confidence": "shared"
   },
   "polyglot:next/pages/blog/[slug].tsx": {
    "owners": [
@@ -586,12 +579,8 @@
    "confidence": "direct"
   },
   "polyglot:react/src/App.jsx": {
-   "owners": [
-    "/projects",
-    "/projects/:id",
-    "/settings"
-   ],
-   "confidence": "inferred"
+   "owners": [],
+   "confidence": "shared"
   },
   "polyglot:react/src/Projects.jsx": {
    "owners": [

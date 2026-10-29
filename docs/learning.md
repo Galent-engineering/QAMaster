@@ -233,7 +233,7 @@ The crawl sees the app from the outside. The scan reads its **source code** and 
    |---|---|---|
    | `direct` | It declares the screen's component, is its template or view, or sits next to one with the same name | `home.component.html` owns `/home` |
    | `module` | It's inside a lazy-loaded module's folder | `admin/admin.module.ts` owns `/admin/…` |
-   | `inferred` | Its folder holds owned files (25 routes or fewer) | `ApiDataController.cs` "owns" the Account screens |
+   | `imported` | A screen's file imports it, directly or through other files (QAMaster; AQE guessed from the folder instead) | `BankAccountForm.tsx` owns `/bankaccounts` |
    | `shared` | None of the above: layout, services, utilities | `machines/authMachine.ts` in the Real World App |
 
 4. **Find the links** in each file (`routerLink`, `<Link to>`, `href`, `navigate(…)`, redirects, …). Each one becomes a code edge from the routes the file owns, or from `(shared)` when it owns none.
@@ -280,13 +280,15 @@ Then port in two passes: first match AQE exactly (golden tests on both fixtures)
 
 **The result on the Real World App:** 12 screens instead of 6, and 10 files linked directly to their screen instead of 0. In the DSM, 10 of 16 screens now have source files.
 
-**What's still wrong:** the folder rule. `BankAccountForm.tsx` sits next to `SignInForm.tsx`, so it "inherits" `/signin`. Following what each screen component imports would put it under `/bankaccounts`, which is why import-graph ownership is the next idea on the list.
+**Fix 5: imports instead of folders.** AQE gave a file the screens of its folder: `BankAccountForm.tsx` sits next to `SignInForm.tsx`, so it "inherited" `/signin`. Now a file owns the screens whose files import it, so `BankAccountForm.tsx` belongs to `/bankaccounts`, where it's really used. Removing the guess exposed a gap the guess had hidden: the scan matched a route's component by its *declared* name, and one Real World App screen imports its component under a different name. It now follows the router file's imports first. Result: all 11 app screens have their own file.
+
+The trade-off: a core file used by many screens (the app's `authMachine.ts`) now owns all of them. That's true (changing it can break each one), but it means a change there selects many tests. The gate decides how to treat such files.
 
 ### Check yourself
 
 1. Why can't the crawl alone tell which files belong to a screen?
 2. In the Real World App, why does every code edge start at `(shared)`?
-3. A file is `inferred` to own `/Account`. How sure should the gate be that changing it affects that screen?
+3. AQE's folder rule gave `ApiDataController.cs` the Account screens. Why was that weak evidence, and why is "a screen's file imports it" stronger?
 4. Why put git reading behind `RepoReader` instead of calling `git` inside `scan`?
 5. Why match AQE's output first, even though we know about the bugs?
 
@@ -294,7 +296,7 @@ Then port in two passes: first match AQE exactly (golden tests on both fixtures)
 
 1. The browser only sees rendered pages. Which source files produced them is only in the code.
 2. No file owns any screen (the routes have no component the scan can see), and a file with no owners sends its links from `(shared)`.
-3. Not very. It only shares a folder with files that own `/Account`; `ApiDataController.cs` is an example where it's wrong. It's a hint, not evidence.
+3. Sharing a folder says nothing about what a screen uses: `ApiDataController.cs` is an API, not part of any Account page. An import is a real dependency: if the imported file changes, the screen's code changes with it.
 4. So `scan` stays pure and testable on plain fixture files, and the git-specific problems (subfolders, refs, uncommitted files) live and get fixed in one place, with their own tests.
 5. So every later difference is a deliberate fix with its own test, not an accident of the port. Golden first, then change one thing at a time.
 </details>
@@ -310,3 +312,4 @@ Then port in two passes: first match AQE exactly (golden tests on both fixtures)
 | 2026-10-29 | 1 DSM build (built) | Ported as one pure function with the clock passed in; it matches AQE on all five fixtures without the Python layer |
 | 2026-10-29 | 2 Repo scan | Regex route finding is fast but pattern-bound: on the Real World App no file owns a screen. Subfolder apps scan nothing. Port pure, git behind RepoReader |
 | 2026-10-29 | 2 Repo scan (built) | Matched AQE first, then four fixes, each with a test: the Real World App goes from 0 to 10 files linked to their screens. The folder rule now needs replacing |
+| 2026-10-29 | 2 Repo scan (fix 5) | Ownership by imports, not folders. Removing a wrong guess exposed a hidden gap (component names), so check what a fallback was covering before removing it |

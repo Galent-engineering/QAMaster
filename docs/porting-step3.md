@@ -70,7 +70,7 @@ Not in step 3:
 | # | Feature | Learn | Build | Test | Move | Commit |
 |---|---|---|---|---|---|---|
 | 1 | DSM build and render | ✓ 2026-10-29 | ✓ | ✓ 5 golden fixtures | ✓ | ✓ |
-| 2 | Repo scan | ✓ 2026-10-29 | ✓ | ✓ 2 golden fixtures, fixes 1–4 | ✓ | |
+| 2 | Repo scan | ✓ 2026-10-29 | ✓ | ✓ 2 golden fixtures, fixes 1–5 | ✓ | ✓ fixes 1–4 |
 | 3 | UI crawl and DSM refresh | | | | | |
 | 4 | Setup and pipeline | | | | | |
 | 5 | Application knowledge | | | | | |
@@ -159,7 +159,7 @@ The concepts behind each feature are explained for people in [learning.md](learn
 3. **Work out owners** (which routes each file serves), with a confidence for each:
    - `direct`: the file declares the route's component, is its template or MVC view, or is a sibling or code-behind of such a file;
    - `module`: the file is inside a lazy-loaded module's folder;
-   - `inferred`: the file is in the same folder as owned files, if that folder has 25 routes or fewer;
+   - `inferred`: the file is in the same folder as owned files, if that folder has 25 routes or fewer (replaced by `imported` in fix 5);
    - `shared`: none of the above.
 4. **Find navigation references** in each file (`routerLink`, `navigate`, `<Link to>`, `href`, form `action`, `location =`, redirects, MVC `RedirectToAction`, `ActionLink` and `asp-*` tags). Each one becomes an edge from every route the file owns, or from `(shared)` if it owns none. Relative targets are resolved against the owning route.
 5. **List UI elements** per template file (forms, controls, buttons, click handlers). These become `code_elements` in the DSM.
@@ -242,9 +242,23 @@ Most of this disappears in a native port: the patterns can be written once as Ja
 - A missing repository path exits 2 (blocked) with the fix to make; AQE exited 1.
 - Patterns are JavaScript regexes. `\w` and `\b` are ASCII, where Python's were Unicode.
 
-**Problem 5 is now the main gap.** With screens found, the folder rule spreads them: on the Real World App, 54 files are `inferred`, mostly wrongly. For example, `BankAccountForm.tsx` gets `/`, `/contacts`, `/signin` and more, because its folder holds the sign-in and transaction-list forms. Before the fixes these files were `shared` (unknown); now they're wrong with low confidence. Two options, for the person to choose:
-- link a screen to the files its component imports;
-- use only `direct` and `module` owners for `path:` tags.
+**Fix 5 (the person chose import ownership):** the folder rule (`inferred`) is gone.
+- **How it works:** a file now owns the screens whose files import it, following relative imports (`import … from './x'`, `require('./x')`, `import('./x')`, re-exports) all the way down. The confidence is `imported`. A file no screen reaches is `shared`.
+- **It exposed an older gap, now fixed too.** Screens were linked by the component's *declared* name. The Real World App's `/transaction/:id` imports `TransactionDetailContainer` from a file that declares `TransactionDetailsContainer`, so it was never linked; the folder rule had hidden this with a wrong guess. A route's component is now found through the router file's own imports first, then by declared name.
+- **On the whole Real World App:**
+  - all 11 app screens have their own file (`/implicit/callback` is Okta's library component);
+  - 55 files are `imported` and 60 `shared`, and none get a screen from their folder;
+  - `BankAccountForm.tsx` → `/bankaccounts` and `CommentForm.tsx` → `/transaction/:id` (before: `/`, `/contacts`, `/signin`…).
+- **In the polyglot repo:** only the three wrong folder guesses changed. `ApiDataController.cs`, Next's `_app.tsx` and the React router file became `shared`.
+
+**What fix 5 leaves:**
+- **A trade-off it creates:** core files used by many screens own them all. On the Real World App, `authMachine.ts` owns 6 screens and 11 files own 10. These are real dependencies, but their `path:` tags are broad, so a change there selects many tests. The gate (step 5) decides whether a file owning most screens counts as shared.
+- **Layout is shared, by design:** the router file renders the layout (`MainLayout`, `NavBar`), not a screen, so it stays `shared`, as AQE's `(shared)` intended. How the gate treats a change to a shared file is a step 5 question (Q8, "Not linked to code").
+- **Limits, independent of fix 5:**
+  - import aliases (`@/components/x`, tsconfig `paths`) and package imports aren't followed;
+  - C#, Java and Python files get no import following, so outside a direct link they are `shared`.
+
+  Both are on the Roadmap.
 
 ## Roadmap: what comes after the v1 MVP
 
@@ -255,6 +269,7 @@ These AQE features are left out of step 3 on purpose. Each becomes its own featu
 | Context sources: MCP config for Jira, Confluence, GitLab, Figma, Visio (`mcp-config-agent`, pipeline stage 3) | `mcp_config/*` 1,019 | v2 | v1 reads requirements and test cases over REST (Q5). MCP only adds context for test design |
 | Export to other AI tools, and the QAMaster MCP server | `export/export` 324, `mcp_server/server` 266 | v2 | v1 is Claude Code only. The CLI already gives other tools a way in |
 | Import existing test cases (Excel, HP ALM, Azure Test Plans) and gap analysis; revision mode in TestGen; Test Coverage report | `testcases/*` 993, `test-suite-analyst`, `TestCaseAnalysis`, `reports/types/test-coverage` | v2 | Teams with existing suites. v1 builds new cases from the application |
+| Scan: import aliases (`@/x`, tsconfig `paths`) and import following for C#, Java and Python | new (QAMaster `dsm/scan.mts`) | v2 | Fix 5 follows relative JS/TS imports only. Apps that use aliases or back-end MVC pages get fewer `imported` owners |
 | Locators from the crawl, for apps without front-end source | `locators/from_crawl` 174 | v2 | v1 syncs locators from the front-end source |
 | API discovery and API test data | `api/api` 450, `API-TestGen` | v2 | v1 covers API through TestGen's API channel only |
 | Existing automation frameworks (detect, analyse, generate into them) | `codebase/*` 948, `CodebaseOperations`, `analyze_framework` 350 | v3 | v1 generates playwright-bdd only (Q20) |

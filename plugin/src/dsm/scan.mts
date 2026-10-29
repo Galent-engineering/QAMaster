@@ -440,6 +440,46 @@ const RE = {
 };
 const ELEMENT_EXTS = new Set('.html .htm .cshtml .razor .aspx .ascx .tsx .jsx .vue .svelte .jsp .php .erb'.split(' '));
 
+const IMPORT_EXTS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.vue', '.svelte']);
+const IMPORT_RE = /(?:\bfrom\s*|\bimport\s*|\b(?:require|import)\(\s*)['"](\.\.?\/[^'"]+)['"]/g;
+const RESOLVE_SUFFIXES = [
+  '',
+  ...[...IMPORT_EXTS].map((e) => e),
+  ...['.ts', '.tsx', '.js', '.jsx'].map((e) => `/index${e}`),
+];
+
+/** The repo file a relative import names: as written, with a source extension added, or its folder's index. */
+export function resolveImport(from: string, spec: string, files: Map<string, string>): string | null {
+  const base = normPath(join(dirname(from), spec));
+  for (const b of [base, base.replace(/\.m?js$/, '')]) {
+    const hit = RESOLVE_SUFFIXES.map((x) => b + x).find((p) => files.has(p));
+    if (hit) return hit;
+  }
+  return null;
+}
+
+const DEFAULT_IMPORT_RE = /\bimport\s+(\w+)\s*(?:,\s*\{[^}]*\})?\s*from\s*['"](\.\.?\/[^'"]+)['"]/g;
+const NAMED_IMPORT_RE = /\bimport\s*(?:\w+\s*,\s*)?\{([^}]*)\}\s*from\s*['"](\.\.?\/[^'"]+)['"]/g;
+
+/**
+ * The file a component name comes from, through the importing file's own imports: `import Detail from
+ * './TransactionDetailContainer'` names the file even when it declares `TransactionDetailsContainer`.
+ */
+export function importedFile(from: string, name: string, files: Map<string, string>): string | null {
+  const text = files.get(from) ?? '';
+  for (const m of text.matchAll(DEFAULT_IMPORT_RE)) if (m[1] === name) return resolveImport(from, m[2], files);
+  for (const m of text.matchAll(NAMED_IMPORT_RE)) {
+    const names = m[1].split(',').map((n) =>
+      n
+        .trim()
+        .split(/\s+as\s+/)
+        .pop(),
+    );
+    if (names.includes(name)) return resolveImport(from, m[2], files);
+  }
+  return null;
+}
+
 type FileInfo = { owners: string[]; confidence: string; nav?: NavRef[]; elements?: Record<string, string[] | number> };
 type CodeEdge = NonNullable<CodeModel['edges']>[number];
 
@@ -588,7 +628,7 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
   };
   for (const r of routes) {
     if (r.kind === 'page-file' || r.kind === 'action') own(r.file).add(r.route);
-    const compFile = classFile.get(r.component || '');
+    const compFile = r.component ? (importedFile(r.file, r.component, files) ?? classFile.get(r.component)) : undefined;
     if (compFile) {
       own(compFile).add(r.route);
       confidence.set(compFile, 'direct');
@@ -649,26 +689,34 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
       }
     }
   }
-  // anything else: the nearest folder above it with owned files (if that folder serves 25 routes or fewer)
-  const ownedDirs = new Map<string, Set<string>>();
-  for (const [rel, rs] of owners) {
-    if (!rs.size || !['direct', 'module'].includes(confidence.get(rel) as string)) continue;
-    const d = dirname(rel);
-    if (!ownedDirs.has(d)) ownedDirs.set(d, new Set());
-    for (const x of rs) (ownedDirs.get(d) as Set<string>).add(x);
+  // anything else: what a screen's files import, followed all the way down (relative imports only). A component
+  // used on many screens owns them all, so a change to it impacts each. Files no screen reaches stay shared.
+  const imports = new Map<string, string[]>();
+  for (const [rel, text] of files) {
+    if (!IMPORT_EXTS.has(extOf(rel).toLowerCase())) continue;
+    const deps = [...text.matchAll(IMPORT_RE)].map((m) => resolveImport(rel, m[1], files));
+    imports.set(
+      rel,
+      deps.filter((d): d is string => d !== null),
+    );
   }
-  for (const [rel, rs] of owners) {
-    if (rs.size) continue;
-    for (let d = dirname(rel); !['', '/', '.'].includes(d); d = dirname(d)) {
-      const od = ownedDirs.get(d);
-      if (od && od.size <= 25) {
-        for (const x of od) rs.add(x);
-        confidence.set(rel, 'inferred');
-        break;
+  const isSeed = (rel: string) => ['direct', 'module'].includes(confidence.get(rel) ?? '');
+  for (const [seed, rs] of owners) {
+    if (!rs.size || !isSeed(seed)) continue;
+    const seen = new Set([seed]);
+    const queue = [seed];
+    while (queue.length) {
+      for (const dep of imports.get(queue.shift() as string) ?? []) {
+        if (seen.has(dep)) continue;
+        seen.add(dep);
+        queue.push(dep);
+        if (isSeed(dep)) continue; // its own screens are already known
+        for (const x of rs) own(dep).add(x);
+        confidence.set(dep, 'imported');
       }
     }
-    if (!rs.size) confidence.set(rel, 'shared');
   }
+  for (const [rel, rs] of owners) if (!rs.size) confidence.set(rel, 'shared');
 
   // ---- navigation edges, from each route the file serves (or "(shared)")
   const fileInfo: Record<string, FileInfo> = {};

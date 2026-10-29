@@ -6,6 +6,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import {
   expandPath,
+  importedFile,
   type RepoConfig,
   type RepoSnapshot,
   type ScanConfig,
@@ -137,6 +138,33 @@ test('fix 3: element={<X />} no longer ends the route tag, so nesting holds', ()
     scanJsxRoutes(text).map((r) => `${r.route} ${r.component}`),
     ['/ Layout', '/ Home', '/projects Projects', '/projects/:projectId Project'],
   );
+});
+
+test('fix 5: a screen owns what its component imports; the folder rule is gone', () => {
+  const owners = (rel: string) => {
+    const f = read('rwa/code-model.expected.json').files[`rwa:${rel}`];
+    return `${f.confidence} ${f.owners.join(',')}`;
+  };
+  assert.equal(owners('src/components/BankAccountForm.tsx'), 'imported /bankaccounts', 'AQE guessed /signin,/signup');
+  assert.equal(owners('src/machines/authMachine.ts'), 'imported /bankaccounts,/signin,/signup');
+  assert.equal(owners('src/components/NavBar.tsx'), 'shared ', 'layout is rendered by the router file, not a screen');
+  for (const name of ['rwa', 'polyglot']) {
+    const confidences = Object.values(read(`${name}/code-model.expected.json`).files).map(
+      (f) => (f as { confidence: string }).confidence,
+    );
+    assert.ok(!confidences.includes('inferred'), name);
+  }
+});
+
+test('fix 5: a route component is found through the router file imports, whatever the file declares', () => {
+  const files = new Map([
+    ['src/Routes.tsx', "import Detail from './screens/DetailContainer';\nimport { List as Txns } from './screens';\n"],
+    ['src/screens/DetailContainer.tsx', 'const DetailsContainer = () => null; export default DetailsContainer;'],
+    ['src/screens/index.ts', "export { List } from './List';"],
+  ]);
+  assert.equal(importedFile('src/Routes.tsx', 'Detail', files), 'src/screens/DetailContainer.tsx');
+  assert.equal(importedFile('src/Routes.tsx', 'Txns', files), 'src/screens/index.ts');
+  assert.equal(importedFile('src/Routes.tsx', 'Missing', files), null);
 });
 
 // ---- through git and the CLI
