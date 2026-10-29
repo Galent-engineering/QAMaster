@@ -277,7 +277,10 @@ export function validate(
       continue;
     }
     let prev: string | null = null;
+    // the values a case types or selects; quoted in an action they are data, not element names
+    const caseValues = Object.values(tc.test_data ?? {}).map(String);
     steps.forEach((st, idx) => {
+      const values = new Set([...caseValues, ...(typeof st.data === 'string' ? [st.data] : [])]);
       const sw = `${w} step ${idx + 1}`;
       for (const [field, value] of [
         ['action', st.action],
@@ -304,6 +307,7 @@ export function validate(
         for (const re of NAMED) {
           for (const m of s(st.action).matchAll(re)) {
             const name = m[1] ?? m[2];
+            if (values.has(name)) continue; // a quoted value the step types or selects, not a control
             const there = [route, facts.screen(st.leads_to)].some((r) => r && facts.hasElement(r, name));
             if (!there)
               errors.push(

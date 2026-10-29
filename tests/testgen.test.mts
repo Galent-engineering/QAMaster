@@ -106,6 +106,10 @@ test('fix 2: UI named in the action text is checked, and an acting step must nam
   });
   assert.match(prose.join('\n'), /names no element/);
   assert.match(prose.join('\n'), /the action names "Apply voucher", which is not on \/cart/);
+  // found in the demo dry run: a quoted value the step types is data, not an element
+  const { manifest, cases } = run();
+  lastStep(cases, 1).action = 'Type "SAVE10" in the Coupon field and submit the checkout form';
+  assert.equal(validate(manifest, cases, facts(), settings()).status, 'pass');
 });
 
 test('fix 3: a cited line must exist, and a business rule needs a line, heading or requirement', () => {

@@ -808,6 +808,23 @@ The golden came first. Commit `75597f6` is a plain port that gives AQE's own val
 
 Fix 3 covers business and E2E cases. An expected result in another category that states a rule can't be recognised by a program, so it stays with the reviewer, as the skill says.
 
+**Demo dry run (2026-10-29), on the Real World App.** I ran the whole flow on a fresh QA project, as the demo would go:
+- **Setup:** `qam setup --app RealWorldApp --url http://localhost:3000 --source ../cypress-realworld-app --entry claude-code` came out ready.
+- **The DSM:** a signed-in crawl and scan with the app's seeded test user found 17 screens and 73 navigations in 2 minutes, with 21 writes blocked.
+- **Knowledge:** `qam aut-skills` built 13 skills.
+- **Test cases:** six Bank Accounts cases, written as the TestGen skill directs, cite the form's validation rules by line (`BankAccountForm.tsx:10, 12, 15–16, 76, 147`).
+- **Validation and render:** after one fix below, validation passes with 0 findings and 0 gaps. `render` writes a feature file with Scenario Outlines tagged `@TC-BANK-…`.
+- **Two typical hallucinations are caught:** an invented "Verify with Plaid" button, and a citation of line 410 in the 160-line form file.
+
+What it found:
+- **Fix 2 was too strict about quoted values:** `Type "Chase Bank" in the Bank Name field` was read as an element named "Chase Bank" (15 false findings). Now a quoted value equal to the step's `data` or a `test_data` value is data, not an element. That's tested.
+- **Setup caught a shallow clone of the app,** the Q26 check working as meant. `git fetch --unshallow`, a read-only fetch, fixed it.
+- **Small things for earlier features**, not fixed here:
+  - feature 4: a blocked setup has already written its config files before the source check stops it, and a source outside the QA project is stored as a long `../../..` path;
+  - feature 3: the crawl took in `/cypress/support/component-index.html`, a test harness the Vite dev server serves, which became a "Cypress" component;
+  - feature 5: one candidate journey follows the "in code" sign-out redirects (`/bankaccounts → /signin → /signup`), which no user walks; the run excludes it with a reason;
+  - the pipeline: without ADO (step 4), `next` stops at the test case store; for the demo, mark it skipped with a note.
+
 **Moved (2026-10-29):**
 - **`plugin/skills/TestGen/SKILL.md`**, with the run format in `references/cases.md`. It's rewritten for `qam`: no MCP step, requirements from `qam requirements fetch`, code from the local clones, the strict element and citation rules, and "validation isn't review".
 - **`plugin/skills/Domain_Test_Design_Skill` and its 39 sub-skills**, as AQE has them, with two changes:
