@@ -702,7 +702,7 @@ The golden came first. Commit `3ff334a` is a plain port that writes AQE's shop, 
 
 **Left out (not MVP):** the MCP connection step (v2, with context sources) and the hook (step 9).
 
-### 7. TestGen (Learn done 2026-10-29, waiting for review)
+### 7. TestGen (Learn done 2026-10-29)
 
 Done ahead of step 4 and feature 6 (see the reorder note under Order), on `feature/7_testgen`.
 
@@ -771,9 +771,7 @@ The common thread: the validator proves that **references exist**, not that **cl
 
 **Left out:** API steps and the API model, revision mode and test case import (v2), `locator:` evidence (feature 8), and the `.xlsx` export AQE's demo run has (feature 9 builds the reports).
 
-**Open points, for you:**
-- the ★ fixes, especially fix 2 (how strict to be about UI named in the step text) and fix 3 (what counts as a precise citation);
-- whether `qam review` comes forward into this feature for the demo.
+**Decided 2026-10-29:** "all ★ yes, fix 2 strict, review in". So every ★ fix is in as proposed, with fix 2 at full strictness. `qam review <run>` (the local half) is built in this feature.
 
 ## Roadmap: what comes after the v1 MVP
 
