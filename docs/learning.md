@@ -548,6 +548,18 @@ We wrote a six-case run that AQE's validator passes, then changed one thing at a
 
 The deeper lesson: a validator can prove a **reference exists**. It can't prove a **claim is true**. "Line 42 of Cart.tsx says the coupon takes 10% off" is checkable only by reading line 42. So QAMaster closes every gap a program can check (exact element names, lines that exist, requirements from the fetched list, a fixed tolerance) and makes the rest easy for a person. Every rule cites a line or a heading the reviewer can open in seconds. And "validated" never counts as "reviewed".
 
+### How we built it
+
+- **Golden first.** The plain port reproduces AQE's validation, context and rendered files exactly. Every fix went in afterwards, and the good run still passes all of them.
+- **What a program can check, it checks:**
+  - element names, exactly;
+  - UI named in a step's text;
+  - a cited line, read from git at the commit the DSM scanned;
+  - a requirement ID, from the fetched file;
+  - a tolerance of 0, which no setting can raise.
+- **What it can't, it hands over.** `validation.json` records the DSM and a fingerprint of the run, so an edit afterwards or a rebuilt DSM marks it stale. `qam review` records the person's yes only on the exact files that were validated.
+- **The routing was tested too.** The domain router skill was winning "write test cases for…" over TestGen. One line in its description fixed that.
+
 ### Check yourself
 
 1. Why is a substring match a hallucination risk, even though it feels forgiving?

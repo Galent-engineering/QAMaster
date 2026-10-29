@@ -78,7 +78,7 @@ Not in step 3:
 | 5 | Application knowledge | ✓ 2026-10-29, 10 AQE problems reproduced | ✓ | ✓ 3 golden fixtures + AQE agreement, fixes 1–10 | ✓ `AUT-Skill-Builder` | ✓ `feature/5_application-knowledge` |
 | — | Step 4: ADO adapter | | | | | |
 | 6 | Requirements | | | | | |
-| 7 | TestGen | ✓ 2026-10-29, 8 AQE validator holes reproduced; waiting for review | | | | |
+| 7 | TestGen | ✓ 2026-10-29, 8 AQE validator holes reproduced | ✓ | ✓ 3 goldens, fixes 1–8, `qam review` | ✓ `TestGen`, `Domain_Test_Design_Skill` + 39 | ✓ `feature/7_testgen` |
 | 8 | Automation | | | | | |
 | 9 | Reports | | | | | |
 
@@ -772,6 +772,50 @@ The common thread: the validator proves that **references exist**, not that **cl
 **Left out:** API steps and the API model, revision mode and test case import (v2), `locator:` evidence (feature 8), and the `.xlsx` export AQE's demo run has (feature 9 builds the reports).
 
 **Decided 2026-10-29:** "all ★ yes, fix 2 strict, review in". So every ★ fix is in as proposed, with fix 2 at full strictness. `qam review <run>` (the local half) is built in this feature.
+
+**Built (2026-10-29):**
+
+| File | What it holds |
+|---|---|
+| `plugin/src/testgen/facts.mts` | What a case may cite, and `context()`. Pure: skill texts, line counts and requirement IDs come in as functions |
+| `plugin/src/testgen/validate.mts` | The validator, with fixes 1–3 and 5 |
+| `plugin/src/testgen/render.mts` | `testcases.md`, `<Component>.feature`, `testcases.csv` (fix 6) |
+| `plugin/src/testgen/run.mts` | A run's hash, and whether its validation still stands (fix 7) |
+| `plugin/src/cli/testgen.mts` | `qam testgen context\|validate\|render` and `qam review`. Lines are read with `git show <scanned commit>:./<path>` in the configured clone (read-only); requirements come from `requirements/<scope>/requirements.json` |
+| `plugin/templates/project/config/testgen.json` | AQE's settings, without the tolerance and without the hook's trigger patterns (step 9) |
+| `src/pipeline/pipeline.mts` | Test cases are stale when the run changed or the DSM was rebuilt since validation. A review is stale when the run changed since it |
+
+The golden came first. Commit `75597f6` is a plain port that gives AQE's own validation, context pack (minus its v2 parts) and rendered files for the golden run. All three goldens still pass with every fix in, so the good run stays good under the strict rules.
+
+**Tested:**
+- `tests/testgen.test.mts`, 14 tests:
+  - the three goldens;
+  - one test per fix, each built from its `aqe-runs.json` case;
+  - on a real QA project (setup, the shop DSM, a git clone): validate, render, context and review; a cited line checked in the scanned commit; the tolerance setting blocked; edits and DSM rebuilds made stale with review refused; no DSM or no run blocked.
+- Every fix test failed on the plain port (`75597f6`), in a throwaway worktree; the command tests failed there because the commands didn't exist yet. The goldens passed on both.
+- The command test found a real bug, an off-by-one in the line count (a final newline counted as a line), and it's fixed.
+- Feature 4's setup golden gains `config/testgen.json`, which AQE's setup also creates. The pipeline fixture's `validation.json` gains the binding a real validation writes.
+- `npm test`: 127 pass. Typecheck and Biome are clean.
+- By hand, on a copy of `autonomousQeDemo`: `qam setup --app "CheckMaster Shop"`, `qam aut-skills`, then `qam testgen context` (component Home, 40 domain skills, the AUT skills).
+
+**Intended differences from AQE:**
+- the fixes, 1–8;
+- `validation.json` instead of `review.json`, and `qam review` for the person's review;
+- no API steps, revision mode, `locator:` evidence or legacy `domain:7.7` section numbers;
+- `config/testgen.json` loses `hallucination_tolerance`, `trigger_patterns`, `exclude_patterns`, `max_fix_attempts` and `output_dir`;
+- missing values in rendered files print as empty, never `None`;
+- journey link text is in backticks (feature 5, fix 7).
+
+Fix 3 covers business and E2E cases. An expected result in another category that states a rule can't be recognised by a program, so it stays with the reviewer, as the skill says.
+
+**Moved (2026-10-29):**
+- **`plugin/skills/TestGen/SKILL.md`**, with the run format in `references/cases.md`. It's rewritten for `qam`: no MCP step, requirements from `qam requirements fetch`, code from the local clones, the strict element and citation rules, and "validation isn't review".
+- **`plugin/skills/Domain_Test_Design_Skill` and its 39 sub-skills**, as AQE has them, with two changes:
+  - a `/autonomous-qe:generate-dsm` line becomes `qam dsm impact`;
+  - the router's description no longer claims "write test cases for", and points to TestGen instead.
+
+  The trigger check showed the router winning that prompt over TestGen.
+- **Checks:** `claude plugin validate ./plugin` passes. Under `claude --plugin-dir ./plugin` with AQE switched off, "write test cases for the checkout module of our shop app" picks `qamaster:TestGen`, and "what test strategy fits a retail web shop" picks `qamaster:Domain_Test_Design_Skill`. **With AQE's plugin also on, AQE's TestGen wins.** Teams moving to QAMaster should turn AQE off.
 
 ## Roadmap: what comes after the v1 MVP
 
