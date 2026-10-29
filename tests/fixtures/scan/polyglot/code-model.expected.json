@@ -237,7 +237,7 @@
    "component": "Projects"
   },
   {
-   "route": "/:id",
+   "route": "/projects/:id",
    "repo": "polyglot",
    "file": "react/src/App.jsx",
    "line": 8,
@@ -587,16 +587,16 @@
   },
   "polyglot:react/src/App.jsx": {
    "owners": [
-    "/:id",
     "/projects",
+    "/projects/:id",
     "/settings"
    ],
    "confidence": "inferred"
   },
   "polyglot:react/src/Projects.jsx": {
    "owners": [
-    "/:id",
-    "/projects"
+    "/projects",
+    "/projects/:id"
    ],
    "confidence": "direct",
    "nav": [
@@ -987,30 +987,10 @@
    "confidence": "direct"
   },
   {
-   "from": "/:id",
-   "to": "/projects/:id",
-   "type": "code",
-   "kind": "navigate",
-   "repo": "polyglot",
-   "file": "react/src/Projects.jsx",
-   "line": 3,
-   "confidence": "direct"
-  },
-  {
    "from": "/projects",
    "to": "/projects/:id",
    "type": "code",
    "kind": "navigate",
-   "repo": "polyglot",
-   "file": "react/src/Projects.jsx",
-   "line": 3,
-   "confidence": "direct"
-  },
-  {
-   "from": "/:id",
-   "to": "/settings",
-   "type": "code",
-   "kind": "link",
    "repo": "polyglot",
    "file": "react/src/Projects.jsx",
    "line": 3,
@@ -1027,7 +1007,17 @@
    "confidence": "direct"
   },
   {
-   "from": "/:id",
+   "from": "/projects/:id",
+   "to": "/settings",
+   "type": "code",
+   "kind": "link",
+   "repo": "polyglot",
+   "file": "react/src/Projects.jsx",
+   "line": 3,
+   "confidence": "direct"
+  },
+  {
+   "from": "/projects",
    "to": "/",
    "type": "code",
    "kind": "link",
@@ -1037,8 +1027,8 @@
    "confidence": "direct"
   },
   {
-   "from": "/projects",
-   "to": "/",
+   "from": "/projects/:id",
+   "to": "/projects",
    "type": "code",
    "kind": "link",
    "repo": "polyglot",

@@ -1,16 +1,19 @@
 /**
  * qam dsm: the Design Structure Matrix in the QA project's dsm/ folder (config/dsm-config.json sets output_dir).
  *
+ *     qam dsm scan   [--config FILE] [--out FILE]  the configured repositories -> code-model.json
  *     qam dsm build  [--config FILE]               ui-model.json + code-model.json (+ the last dsm.json) -> dsm.json
  *     qam dsm render [--config FILE] [--out FILE]  dsm.json -> index.html
  *
- * run, refresh, changes and impact (crawl, scan and change impact) come with features 2 and 3.
+ * run, refresh, changes and impact (crawl and change impact) come with feature 3.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
+import { readRepo } from '../adapters/git.mts';
 import { build, type Dsm, type DsmConfig } from '../dsm/build.mts';
 import { render } from '../dsm/render.mts';
+import { MAX_FILE_BYTES, type ScanConfig, scan, wanted } from '../dsm/scan.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import type { CodeModel, UiModel } from '../shared/models.mts';
@@ -33,12 +36,12 @@ function writeAtomic(file: string, text: string): void {
 }
 
 /** The DSM settings and output folder: --config, else config/dsm-config.json in the QA project (or the repo). */
-function locate(cfg: Config, configArg: string | undefined): { config: DsmConfig; dir: string } {
+function locate(cfg: Config, configArg: string | undefined): { config: DsmConfig; dir: string; project: string } {
   const project = cfg.qaProject ?? cfg.root;
   const file = configArg ? path.resolve(configArg) : path.join(project, DSM_CONFIG);
   const config = readJson<DsmConfig>(file);
   if (!config) throw new BlockedError(`No DSM settings at ${file}. Run qam setup, or pass --config <file>.`);
-  return { config, dir: path.resolve(project, config.output_dir ?? 'dsm') };
+  return { config, dir: path.resolve(project, config.output_dir ?? 'dsm'), project };
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
@@ -46,8 +49,8 @@ const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
 export function dsm(cfg: Config, argv: string[], json: boolean): number {
   const [sub, ...rest] = argv;
   if (LATER.includes(sub)) throw new BlockedError(`qam dsm ${sub} isn't built yet.`);
-  if (sub !== 'build' && sub !== 'render') {
-    throw new BlockedError('Use qam dsm build or qam dsm render (run, refresh, changes and impact are coming).');
+  if (sub !== 'scan' && sub !== 'build' && sub !== 'render') {
+    throw new BlockedError('Use qam dsm scan, build or render (run, refresh, changes and impact are coming).');
   }
   let values: { config?: string; out?: string };
   try {
@@ -57,8 +60,36 @@ export function dsm(cfg: Config, argv: string[], json: boolean): number {
   }
   if (sub === 'build' && values.out)
     throw new BlockedError('--out is for qam dsm render; build always writes dsm.json.');
-  const { config, dir } = locate(cfg, values.config);
+  const { config, dir, project } = locate(cfg, values.config);
   const dsmFile = path.join(dir, 'dsm.json');
+
+  if (sub === 'scan') {
+    const repos = (config as ScanConfig).repositories ?? [];
+    if (!repos.length)
+      throw new BlockedError('No repositories in dsm-config.json. Add one: { "name", "path", "branch" }.');
+    // A relative repository path is relative to the QA project, like output_dir.
+    const model = scan(config as ScanConfig, (repo) =>
+      readRepo(path.resolve(project, repo.path), repo.branch ?? 'main', (p) => wanted(p, repo), MAX_FILE_BYTES),
+    );
+    const out = values.out ? path.resolve(values.out) : path.join(dir, 'code-model.json');
+    fs.mkdirSync(path.dirname(out), { recursive: true });
+    writeAtomic(out, `${JSON.stringify(model, null, 1)}\n`);
+    const summary = {
+      file: out,
+      routes: model.routes?.length ?? 0,
+      edges: model.edges?.length ?? 0,
+      errors: model.errors,
+    };
+    if (json) console.log(JSON.stringify({ result: model.errors.length ? 'blocked' : 'pass', ...summary }));
+    else {
+      const files = Object.keys(model.files ?? {}).length;
+      console.log(
+        `Scanned ${plural(files, 'file')}: ${plural(summary.routes, 'route')}, ${plural(summary.edges, 'link')} -> ${out}`,
+      );
+      for (const e of model.errors) console.error(`Blocked: ${e}. Fix the path in dsm-config.json.`);
+    }
+    return model.errors.length ? 2 : 0;
+  }
 
   if (sub === 'build') {
     const ui = readJson<UiModel>(path.join(dir, 'ui-model.json'));

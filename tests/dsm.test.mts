@@ -158,7 +158,7 @@ test('qam dsm blocks with the step to take', () => {
   const cases: [string[], RegExp][] = [
     [['dsm', 'build'], /No DSM settings at .*dsm-config\.json\. Run qam setup/],
     [['dsm', 'refresh'], /qam dsm refresh isn't built yet/],
-    [['dsm'], /Use qam dsm build or qam dsm render/],
+    [['dsm'], /Use qam dsm scan, build or render/],
     [['dsm', 'build', '--nope'], /Unknown option '--nope'/],
   ];
   for (const [args, message] of cases) {

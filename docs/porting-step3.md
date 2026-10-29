@@ -70,7 +70,7 @@ Not in step 3:
 | # | Feature | Learn | Build | Test | Move | Commit |
 |---|---|---|---|---|---|---|
 | 1 | DSM build and render | ✓ 2026-10-29 | ✓ | ✓ 5 golden fixtures | ✓ | ✓ |
-| 2 | Repo scan | ✓ 2026-10-29 | | | | |
+| 2 | Repo scan | ✓ 2026-10-29 | ✓ | ✓ 2 golden fixtures, fixes 1–4 | ✓ | |
 | 3 | UI crawl and DSM refresh | | | | | |
 | 4 | Setup and pipeline | | | | | |
 | 5 | Application knowledge | | | | | |
@@ -218,6 +218,33 @@ Most of this disappears in a native port: the patterns can be written once as Ja
 - Leave 5, 6 and 8 for later, and list them in the Roadmap. Import-graph ownership (a screen owns the files its component imports) is the real answer to problem 5, and it's a v2 feature.
 
 **Left out (not MVP):** none of the scan. `fetch` stays unused: QAMaster never fetches on the user's behalf.
+
+**Built (2026-10-29):** `plugin/src/dsm/scan.mts` (pure: files in, code model out), `plugin/src/adapters/git.mts` (`readRepo`: one `ls-tree -z`, one `cat-file --batch`, or the folder on disk outside git), and `qam dsm scan [--config] [--out]` in `plugin/src/cli/dsm.mts`. `readRepo` is not yet the full `RepoReader`: `diff`, `head` and `readFile` come with the gate (step 5).
+
+**Tested:** `tests/scan.test.mts`, 11 tests.
+- The port first matched AQE exactly on both fixtures. AQE's output stays as `code-model.aqe.json`; `code-model.expected.json` is QAMaster's reviewed output after the fixes. Two tests pin every route where the two differ.
+- Through real git: the committed polyglot repo gives the golden output, including the commit hash. Uncommitted files are ignored.
+- On the whole Real World App: 12 screens found (AQE: 6), 10 files linked directly to their screen (AQE: 0). In the DSM, 10 of 16 screens now have files (AQE: 0), and `ui-only` drops from 6 to 1.
+
+**Fixes (intended differences from AQE):**
+1. **Subfolder repos.** Files are listed and read relative to the configured folder (`<ref>:./<path>`). A web app inside a monorepo now scans its 31 files instead of 0.
+2. **React Router v5 and custom routes.**
+   - Any tag ending in `Route` with a `path` counts (`<PrivateRoute>`, `<SecureRoute>`).
+   - A route without `element=`/`component=` takes the first component inside it as its screen.
+   - Path patterns are expanded: `/(a|b)?` gives `/`, `/a` and `/b`; `/x*` gives `/x`.
+3. **Nesting.** An attribute value in `{…}` is skipped whole, so `element={<X />}` no longer ends the tag. `/projects/:projectId` is now `/projects/:id`, not `/:id`.
+4. **Page-file routes.** Covered by fix 1: configure the app's own folder (`site/next`) and Next.js pages give `/`, `/blog/:id` and `/pricing`.
+
+**Other differences:**
+- `ls-tree -z`, so unusual file names aren't quoted.
+- A relative repository `path` is relative to the QA project, not the shell's folder.
+- Outside git, files are read in path order (AQE used directory-listing order).
+- A missing repository path exits 2 (blocked) with the fix to make; AQE exited 1.
+- Patterns are JavaScript regexes. `\w` and `\b` are ASCII, where Python's were Unicode.
+
+**Problem 5 is now the main gap.** With screens found, the folder rule spreads them: on the Real World App, 54 files are `inferred`, mostly wrongly. For example, `BankAccountForm.tsx` gets `/`, `/contacts`, `/signin` and more, because its folder holds the sign-in and transaction-list forms. Before the fixes these files were `shared` (unknown); now they're wrong with low confidence. Two options, for the person to choose:
+- link a screen to the files its component imports;
+- use only `direct` and `module` owners for `path:` tags.
 
 ## Roadmap: what comes after the v1 MVP
 

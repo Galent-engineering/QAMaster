@@ -288,7 +288,16 @@ export type CodeModel = {
   routes?: { route: string; repo: string; file: string; line: number; [key: string]: unknown }[];
   files?: Record<string, { owners?: string[]; elements?: Record<string, unknown>; [key: string]: unknown }>;
   // `from` is a route, or "(shared)" for layout code used on every screen.
-  edges?: { from: string; to: string; kind: string; repo: string; file: string; line: number; confidence?: string }[];
+  edges?: {
+    from: string;
+    to: string;
+    type: string;
+    kind: string;
+    repo: string;
+    file: string;
+    line: number;
+    confidence?: string;
+  }[];
   [key: string]: unknown;
 };
 

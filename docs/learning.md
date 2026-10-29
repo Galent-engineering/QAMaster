@@ -268,6 +268,20 @@ As in Lesson 1, split the **pure** part from the **outside world**:
 
 Then port in two passes: first match AQE exactly (golden tests on both fixtures), then fix the problems one at a time, each with a failing test first and its changed output written down.
 
+### How we built it, and what the fixes changed
+
+- **Pure scan, git outside.** `scan(config, read)` in `plugin/src/dsm/scan.mts` gets each repository's files from `read` and never touches git. `adapters/git.mts` does the reading with two git commands, whatever the repo's size.
+- **AQE first, then one fix at a time.** The port matched AQE's output exactly before any fix. AQE's file is kept as `code-model.aqe.json` and ours as `code-model.expected.json`. A test lists every route where they differ, so a reviewer sees exactly what each fix changed.
+- **The fixes:**
+  - read paths relative to the app's folder (monorepos);
+  - treat `<PrivateRoute>`-style tags as routes, and take the first component inside a route as its screen;
+  - expand `/(a|b)?` patterns;
+  - skip `{…}` attribute values so `element={<X />}` doesn't end the tag.
+
+**The result on the Real World App:** 12 screens instead of 6, and 10 files linked directly to their screen instead of 0. In the DSM, 10 of 16 screens now have source files.
+
+**What's still wrong:** the folder rule. `BankAccountForm.tsx` sits next to `SignInForm.tsx`, so it "inherits" `/signin`. Following what each screen component imports would put it under `/bankaccounts`, which is why import-graph ownership is the next idea on the list.
+
 ### Check yourself
 
 1. Why can't the crawl alone tell which files belong to a screen?
@@ -295,3 +309,4 @@ Then port in two passes: first match AQE exactly (golden tests on both fixtures)
 | 2026-10-29 | 1 DSM build | The build is identical in AQE 0.1.5 and 0.2.0. A real app exposes scan gaps (Q8) and a crawl safety bug (Q15) |
 | 2026-10-29 | 1 DSM build (built) | Ported as one pure function with the clock passed in; it matches AQE on all five fixtures without the Python layer |
 | 2026-10-29 | 2 Repo scan | Regex route finding is fast but pattern-bound: on the Real World App no file owns a screen. Subfolder apps scan nothing. Port pure, git behind RepoReader |
+| 2026-10-29 | 2 Repo scan (built) | Matched AQE first, then four fixes, each with a test: the Real World App goes from 0 to 10 files linked to their screens. The folder rule now needs replacing |

@@ -25,7 +25,7 @@ export const COMMANDS: Record<string, string> = {
   setup: 'Config, packages, browsers, launcher. Safe to re-run',
   pipeline: 'Onboarding pipeline: start | status | next | mark',
   doctor: 'Check settings, credentials, the test plan and the runner',
-  dsm: 'Design Structure Matrix: build | render | run | refresh | changes | impact <files…>',
+  dsm: 'Design Structure Matrix: scan | build | render | run | refresh | changes | impact <files…>',
   requirements: 'Fetch requirements: --sprint NAME | --current-sprint | --from D --to D',
   testgen: 'Test generation: context | validate <run> | render <run>',
   review: 'Record the review of a run (only after the person says yes)',
