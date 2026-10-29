@@ -51,7 +51,7 @@ The order follows the dependencies, starting with the pure functions that are ea
 | 1 | **DSM build and render** | `dsm/build_dsm` 482, `render_html` 65, `dsm_template.html` | `src/dsm/build.mts`, `render.mts` | `qam dsm build`, `qam dsm render` | — | — |
 | 2 | **Repo scan** | `dsm/scan_repo` 680 | `src/dsm/scan.mts`, `adapters/git.mts` (the `RepoReader`) | `qam dsm scan` | — | 1 |
 | 3 | **UI crawl and DSM refresh** | `dsm/crawl_ui.mjs` 705, `dsm_update` 465 | `adapters/crawler-playwright.mts`, `src/dsm/update.mts` | `qam dsm run\|refresh\|changes\|impact` | `Design-Structure-Matrix`, `ui-dsm-agent` | 1, 2 |
-| 4 | **Setup and pipeline** | `setup/setup` 187, `pipeline/pipeline` 469, `shared/project` 101 | `src/pipeline/`, `src/cli/setup.mts` | `qam setup`, `qam pipeline …`, `qam doctor` (settings part) | — (onboard and status are commands: step 9) | 1–3 (DSM stage) |
+| 4 | **Setup and pipeline** | `setup/setup` 187, `pipeline/pipeline` 469, `shared/project` 101 | `src/pipeline/`, `src/cli/setup.mts`; repository input and validation (Q26); the integration seam and its record (Q27), with the entry-point checklist (Q29) | `qam setup`, `qam pipeline …`, `qam doctor` (settings, repositories, integrations) | — (onboard and status are commands: step 9) | 1–3 (DSM stage) |
 | 5 | **Application knowledge** | `aut-skill/build_aut_skills` 571 | `src/knowledge/` | `qam aut-skills` | `AUT-Skill-Builder` | 1 |
 | — | *Step 4: ADO adapter* | CheckMaster `adapters/ado.py` | `adapters/ado.mts` | `qam doctor` (ADO part), `qam req\|tc …` | — | step 2 |
 | 6 | **Requirements** | `requirements/requirements` 252 | `src/requirements/` through `RequirementSource` | `qam requirements fetch` | — | 4, step 4 |

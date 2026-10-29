@@ -148,6 +148,17 @@ interface Crawler {
 
 A sixth interface, `Framework`, puts test generation behind an adapter: automation folder, script gate, locator sync, tag and link format (Q25). Its methods are designed in feature 8's Learn phase; v1 ships playwright-bdd only.
 
+Integrations (Q27) are adapters of their own kind: where QAMaster is installed, not an outside system it talks to. Each kind (`claude-hooks` in v1; `git-hook`, and `pr-check:<ci>:<host>` for GitHub Actions or Azure Pipelines in v1.1; `branch-policy` later) has `install`, `remove`, `status` and `verify`. Every install is recorded in the repo's `.qamaster/integrations.json` and in `~/.qamaster/installs.json`.
+
+Pull requests go through a seventh interface, `CodeHost` (Q28): read the PR, post and update the plan comment, set the check result, read approvals. `github` and `azure-repos` come in v1.1, `bitbucket` and `gitlab` after. The host is detected from `origin`, or set with `QAMASTER_CODEHOST`.
+
+`qam setup` offers the entry points as a checklist after the first run (Q29). Each ticked one is installed as an integration: Claude Code (v1), the git hook shared by every IDE that pushes with git (v1.1), PR checks (v1.1), and AI assistants such as Copilot through the MCP server (v2).
+
+Three more choices are swappable:
+- **Repository reader:** local git, or a code host's API with no clone (Q30).
+- **Plan selectors:** `path`, `smoke`, `groups`, `dsm`, with presets `fast`, `standard` and `full`, and the model for `groups` (Q31).
+- **Runners and execution targets:** each framework lists the ones compatible with it, and mismatches are blocked (Q32).
+
 `src/adapters/registry.mts` maps names to factories:
 - `STORES = { ado }`. Planned after v1: `file` (`testcases.xlsx` / `.csv` in ADO's import layout), then `xray` or `zephyr` (Q23)
 - `REQUIREMENTS = { ado }`
@@ -316,4 +327,4 @@ All hooks use only the standard library and stay quiet when they allow (Q14).
 | 8 | Feedback: gaps, stale cases, defect drafts into reports | New + AQE | S |
 | 9 | Hooks, commands, skills; the Q14 hook rules | Both | S |
 | 10 | End to end against a demo app and a sandbox ADO project | — | M |
-| 11 (v1.1) | git pre-push hook, GitHub / Azure Pipelines triggers, PR comment, QA branch matching in CI | CM design + New | M |
+| 11 (v1.1) | git pre-push hook, `CodeHost` (github, azure-repos) and PR check integrations (GitHub Actions, Azure Pipelines), PR comment, QA branch matching in CI (Q28) | CM design + New | M |

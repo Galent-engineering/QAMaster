@@ -42,7 +42,8 @@ QAMaster builds a team's test cases and automation from the application and its 
 
 ### v1.1
 - git pre-push hook (`qam install-hooks`), so pushes from any terminal are gated.
-- GitHub and Azure Pipelines PR checks, with one plan comment per PR and approval by comment.
+- PR checks with one plan comment per PR and approval by comment, behind a replaceable code host (Q28): GitHub and Azure Repos first, run from GitHub Actions or Azure Pipelines.
+- After v1.1: Bitbucket and GitLab hosts, and Bitbucket Pipelines, GitLab CI and Jenkins.
 - In CI, run the QA project branch named like the app branch, else `main` (Q22).
 - Publishing gate results back to ADO as a Test Run.
 

@@ -74,6 +74,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - Autonomous-QE had no seams, which is one reason it had no unit tests.
 - **Gave up:** a few lines of indirection per provider.
 - **Amended 2026-10-29:** a sixth interface, `Framework`, covers test generation (Q25).
+- **Amended 2026-10-29:** a seventh interface, `CodeHost`, covers pull requests on GitHub, Azure Repos, Bitbucket and GitLab (Q28).
+- **Amended 2026-10-29:** `RepoReader` gets a second kind of implementation, reading through a code host's API with no clone (Q30).
 
 ## Data and source of truth
 
@@ -167,6 +169,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - CheckMaster's rules are explainable, and Claude's groups catch what globs miss.
   - Autonomous-QE's DSM impact analysis already knew which screens a commit touched, but nothing used it to choose tests.
 - **Gave up:** group picks depend on Claude and can differ between runs (as in CM-D15).
+- **Amended 2026-10-29:** the four sources become switchable *selectors* with presets, and the AI step's model can be chosen (Q31). The default preset is exactly the rules above.
 
 **Q12. A person decides at three gates** (2026-10-28, accepted 2026-10-28, AQE + CM-D6)
 - **Decision:**
@@ -210,6 +213,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - Hooks exit 0 to allow and 2 to block, with the reason on stderr.
 - **Why:** Autonomous-QE's Stop hooks could run for up to seven minutes at the end of every turn, and its PostToolUse hooks ran on every Bash call. That slows every session, even ones unrelated to QA.
 - **Gave up:** an automatic full gate after every edit. A turn can end with scripts that haven't been re-checked. `/qamaster:status` and the push gate catch that.
+- **Amended 2026-10-29:** the Claude Code hooks are the first kind of *integration* (Q27). Git hooks, PR checks and branch policies follow as further kinds, and every place QAMaster is plugged in is recorded.
 
 **Q15. Read-only toward repos and trackers, except where a decision says otherwise** (2026-10-28, accepted 2026-10-28, AQE + CM)
 - **Decision:**
@@ -219,6 +223,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - Tests run against production only after explicit confirmation.
 - **Why:** both projects' safety rules, unchanged.
 - **Gave up:** nothing.
+- **Amended 2026-10-29:** cloning a remote repository is the one write to a source repo, and only when the person asks for it, into a folder they choose (Q26). After the clone, only fetch, ls-tree and cat-file run.
 
 **Q16. Secrets never appear in chat or plugin files** (2026-10-28, accepted 2026-10-28, AQE + CM-D11)
 - **Decision:**
@@ -279,6 +284,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - Every test case store other than ADO, including Jira add-ons and the spreadsheet fallback, waits until after v1 (Q23).
   - CI triggers and the git hook move to v1.1.
 - **Amended 2026-10-29:** generation is still playwright-bdd only in v1, but it sits behind the `Framework` adapter (Q25). Other frameworks become new adapters, not a rewrite.
+- **Amended 2026-10-29 (integrations):** v1 builds the integration seam and its record (Q27), with Claude Code hooks as the only kind. The git pre-push hook and PR checks stay v1.1; branch policies come after.
 
 **Q21. Engineering discipline follows CheckMaster** (2026-10-28, accepted 2026-10-28, CM)
 - **Decision:** each item below has to be in place before the code that needs it ships.
@@ -369,6 +375,141 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Gave up:**
   - Some indirection in features 7 and 8, with one implementation in v1.
   - The interface's shape stays open until feature 8. Recording the requirement now, rather than guessing the methods, was the person's choice.
+- **Amended 2026-10-29:** each `Framework` declares the runners and execution targets it's compatible with (Q32).
+
+**Q26. The app's code is a local folder or a git URL, and setup validates it** (2026-10-29, accepted 2026-10-29, New; amends Q15)
+- **Decision:**
+  - `qam setup` accepts each repository as either:
+    - **a local folder:** if it's in git, setup records the branch and whether it's a subfolder of a bigger repo; if not, it's read from disk, with a warning that the gate has no diff for it;
+    - **a git URL** (https or ssh): setup asks whether to clone it or use an existing clone. There's no default folder; the person always chooses where. An existing clone must have that URL as its `origin`.
+  - Setup checks each repository, and `qam doctor` checks again:
+    - git is installed and new enough for the commands QAMaster runs (the minimum version is set at Build);
+    - the remote is reachable with the person's own git credentials (`git ls-remote`);
+    - the branch exists locally or on `origin`;
+    - the clone isn't shallow;
+    - a warning if there are uncommitted changes, since the scan reads committed code.
+
+    Each failure is blocked (exit 2) with the fix.
+  - In Claude Code there's no terminal to prompt from. Claude asks in chat and passes the answers as flags; it never picks a repository or folder itself.
+- **Why:**
+  - Teams often start from a repository URL, not a clone. A wrong path, a missing branch or a shallow clone otherwise shows up later as an empty or wrong DSM (feature 2 found an empty scan with no error).
+  - The person chose "always ask" for the clone folder.
+- **Gave up:**
+  - One write to the source side: the clone (Q15 amendment).
+  - Setup takes a few more questions.
+
+**Q27. Integrations: every place QAMaster plugs into is an adapter, and every install is recorded** (2026-10-29, accepted 2026-10-29, New; amends Q14 and Q20)
+- **Decision:**
+  - An *integration* is a place QAMaster hooks into:
+    - Claude Code hooks (v1);
+    - a git pre-push hook, and PR checks run by a CI system against a code host (Q28) (v1.1);
+    - branch policies, later.
+  - Each kind is an adapter with `install`, `remove`, `status` and `verify`.
+  - Every install writes a record:
+      - an ID, such as `git-hook:pre-push:shop`, `pr-check:github-actions:github:galent/shop` or `branch-policy:azure-repos:Shop/main`;
+    - the kind, and the app or repo it serves;
+    - the target (repo, branch or pipeline);
+    - the QAMaster version and the date.
+  - Records live in the app repo's `.qamaster/integrations.json`, next to its plans and verdicts (Q22). A user index, `~/.qamaster/installs.json`, lists every repo, so one command shows them all.
+  - One command lists, adds and removes integrations; its name is set at Build. `qam doctor` verifies each one, an upgrade updates each one, and an uninstall removes exactly what was added.
+  - A git hook chains with any hook or hook manager already there (husky, lefthook, pre-commit), never replacing it.
+- **Why:**
+  - The person wants QAMaster to know where it's installed, and to grow to git hooks, PRs and branches without a redesign.
+  - Without a record, upgrades and removals have to guess, and a forgotten hook keeps blocking pushes.
+- **Gave up:**
+  - A little bookkeeping on every install.
+  - The user index is per machine, so it lists only the repos installed from that machine.
+
+**Q28. The code host is a replaceable adapter: GitHub is one of several** (2026-10-29, accepted 2026-10-29, New; amends Q4 and Q27)
+- **Decision:**
+  - Everything QAMaster does with a pull request goes through one interface, `CodeHost`:
+    - read the PR (base and head commits, branches, changed files);
+    - post and update its one plan comment;
+    - set the check result on the head commit;
+    - read approval comments.
+  - Implementations:
+    - `github` and `azure-repos` in v1.1 (the PR checks already planned);
+    - `bitbucket` and `gitlab` after, as new adapters.
+  - The host is detected from the repo's `origin` URL (`github.com`, `dev.azure.com`, `bitbucket.org`, `gitlab.com`). A self-hosted server, or an override, uses `QAMASTER_CODEHOST`. Each host reads only its own `QAMASTER_<HOST>_*` settings, and the token comes from the environment or the host's own CLI login, never a file (Q16).
+  - The CI system that receives the PR event is a separate choice. A PR check integration (Q27) pairs a CI system with a code host, and its ID names both: `pr-check:<ci>:<host>:<repo>`.
+    - CI systems in v1.1: GitHub Actions and Azure Pipelines;
+    - after: Bitbucket Pipelines, GitLab CI and Jenkins.
+
+    Installing one writes that system's pipeline file, which runs `qam check` for the PR.
+  - The plan comment, verdict and approval rules are the same on every host (design.md, "same words everywhere").
+- **Why:**
+  - The person wants GitHub replaceable (Bitbucket, GitLab and others) without a redesign.
+  - Host and CI vary independently: Bitbucket with Jenkins, or Azure Repos with Azure Pipelines. One seam for each keeps every pairing possible.
+- **Gave up:**
+  - Some indirection in the v1.1 PR work.
+  - Features that only one host has (GitHub's check annotations, Azure's PR statuses) are used only through what all hosts share, unless an adapter adds them as extras.
+
+**Q29. Entry points are a checklist: developers pick every tool they work in** (2026-10-29, accepted 2026-10-29, New; builds on Q27, keeps Q18 and Q20)
+- **Decision:**
+  - An *entry point* is a tool where developers run the gate or see its results. After the first onboarding run, `qam setup` shows the entry points as a checklist; more can be added any time with the integrations command (Q27). Each ticked one is installed and recorded as an integration.
+  - The entry points, and when each can be ticked:
+    | Entry point | How it reaches QAMaster | Available |
+    |---|---|---|
+    | Claude Code | The plugin: commands, skills, hooks | v1 |
+    | Any IDE that pushes with git (VS Code, Visual Studio, PyCharm, IntelliJ, terminal) | One shared git pre-push hook gates them all. Ticking several IDEs installs it once and records each IDE against it | v1.1 |
+    | PR checks | A CI system against a code host (Q28) | v1.1 |
+    | AI assistants: GitHub Copilot (in VS Code, Visual Studio, JetBrains), Cursor, JetBrains AI | The QAMaster MCP server, plus instruction and prompt files exported for each tool (Q18) | v2 |
+    | IDE panels with their own UI (a VS Code extension, a JetBrains plugin) | A separate extension per IDE that calls the `qam` CLI | Later, not planned |
+  - Entry points not yet available show in the checklist as coming, so a team can see the plan.
+  - Every entry point calls the same `qam` CLI (Q3), so plans, verdicts and rules are the same wherever a developer starts.
+- **Why:**
+  - The person wants teams to add several tools together, not one at a time.
+  - Most IDEs need no special work: they all push through git, so one hook covers them.
+- **Gave up:** nothing in v1 scope. The timing of each entry point is as already decided (Q18, Q20, Q28).
+
+**Q30. The code can be read through the host's API, with no clone** (2026-10-29, accepted 2026-10-29, New; amends Q4)
+- **Decision:**
+  - Besides the local git reader, `RepoReader` has one implementation per code host that reads through its API: Bitbucket (Cloud and Data Center), GitHub, GitLab and Azure Repos.
+    - The scan downloads one archive of the commit.
+    - Diffs come from the host's compare endpoint.
+    - Each reader uses the same login as that host's `CodeHost` adapter (Q28), never a token in a file (Q16).
+  - Each API reader ships with its host's `CodeHost` adapter: GitHub and Azure Repos in v1.1, Bitbucket and GitLab after.
+  - The local git reader stays the default. Setup (Q26) offers the API reader when the source is a host URL and the person doesn't want a clone.
+- **Why:**
+  - The person wants Bitbucket, and other hosts, readable directly.
+  - It helps where no clone exists: CI runners and a central QA server.
+- **Gave up:**
+  - API rate limits, and a download per scanned commit.
+  - Uncommitted local changes are never seen, since the API only has pushed commits.
+
+**Q31. The plan's selection is made of switchable selectors, and the AI model can be chosen** (2026-10-29, accepted 2026-10-29, New; amends Q11)
+- **Decision:**
+  - Each of Q11's sources of reasons is a *selector*: `path`, `smoke`, `groups` (Claude) and `dsm` (impact and gaps). Each can be switched on or off, and they're bundled in presets:
+    - `fast`: path and smoke;
+    - `standard`: all four, exactly Q11, and the default;
+    - `full`: every linked case.
+  - Selectors are an adapter seam, so new algorithms are added as new selectors without changing the plan. Candidates for later: recent failures, flaky-test quarantine, coverage-based impact, risk scoring.
+  - A setting names the Claude model the `groups` selector uses; it runs as a subagent with that model. Unset, it uses the session's model.
+    - It only applies where AI runs. CI and the hook skip `groups` (Q11), and `QAMASTER_AI=off` turns it off entirely (Q24).
+  - The plan names the preset, the selectors and the model it used, so every verdict is traceable. The setting names are fixed at Build.
+  - v1 ships the four selectors, the three presets and the model setting.
+- **Why:**
+  - The person wants to choose the algorithm and the model.
+  - Teams trade speed against coverage differently, and better selection algorithms will come.
+- **Gave up:** a few more settings to explain. The default behaves exactly as Q11, so nothing changes unless someone opts in.
+
+**Q32. Run offers only runners and targets that fit the framework** (2026-10-29, accepted 2026-10-29, New; amends Q25)
+- **Decision:**
+  - Each `Framework` (Q25) declares the runners that can run its tests, and the *execution targets* it supports:
+    - local;
+    - Docker;
+    - a cloud grid such as BrowserStack, Sauce Labs, LambdaTest or Azure Playwright Testing.
+  - Setup, the integrations checklist and `qam doctor` offer only compatible pairs, and block a mismatch (exit 2) with the compatible choices listed.
+  - The execution target is part of the run's evidence, recorded in the verdict.
+  - In v1:
+    - playwright-bdd pairs with the playwright-bdd runner, and pytest with pytest;
+    - the target is local.
+
+    Docker and the cloud grids come later, as targets of the frameworks that support them.
+- **Why:**
+  - The person wants the Run step to show only options that work with the chosen framework.
+  - A mismatched runner otherwise fails late, at the first gate run.
+- **Gave up:** each new framework must list its runners and targets. That's a small table in its adapter.
 
 ---
 
