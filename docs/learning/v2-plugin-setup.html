@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QAMaster v2 plugin setup</title>
+<style>
+:root{--bg:#faf9f5;--card:#fff;--text:#1f1e1d;--muted:#5f5e5a;--hint:#888780;--border:#e3e1d9;--border-strong:#c9c6bb;
+--ok-bg:#eaf3de;--ok:#27500a;--acc-bg:#e6f1fb;--acc:#0c447c;--warn-bg:#faeeda;--warn:#633806;--radius:8px;
+--sans:system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1f1e1d;--card:#2c2c2a;--text:#f1efe8;--muted:#b4b2a9;
+--hint:#888780;--border:#444441;--border-strong:#5f5e5a;--ok-bg:#173404;--ok:#c0dd97;--acc-bg:#042c53;--acc:#b5d4f4;--warn-bg:#412402;--warn:#fac775}}
+:root[data-theme="dark"]{--bg:#1f1e1d;--card:#2c2c2a;--text:#f1efe8;--muted:#b4b2a9;--hint:#888780;--border:#444441;--border-strong:#5f5e5a;
+--ok-bg:#173404;--ok:#c0dd97;--acc-bg:#042c53;--acc:#b5d4f4;--warn-bg:#412402;--warn:#fac775}
+body{margin:0;background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.5}
+main{max-width:880px;margin:0 auto;padding:24px 16px 40px}
+h1{font-size:22px;font-weight:500;margin:0 0 4px}
+h2{font-size:14px;font-weight:500;margin:0 0 6px}
+.lead{color:var(--muted);font-size:14px;margin:0 0 8px}
+.legend{font-size:12px;color:var(--muted)}
+.ph{font-size:12px;color:var(--muted);margin:18px 0 6px}
+.row{display:grid;grid-template-columns:140px 1fr 210px;gap:12px;align-items:center;padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:6px;background:var(--card)}
+.n{font-weight:500;font-size:14px}.d{font-size:13px;color:var(--muted)}
+select{width:100%;font:13px var(--sans);padding:4px 6px;border-radius:var(--radius);border:1px solid var(--border-strong);background:var(--card);color:var(--text)}
+.stack{display:grid;gap:4px}
+.fixed{font-size:12px;color:var(--hint)}
+.b{display:inline-block;font-size:11px;padding:1px 7px;border-radius:9px;margin-left:6px;vertical-align:1px}
+.v1{background:var(--ok-bg);color:var(--ok)}.v11{background:var(--acc-bg);color:var(--acc)}.v2{background:var(--warn-bg);color:var(--warn)}
+.later{background:var(--bg);color:var(--hint);border:1px solid var(--border)}
+.eps{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:6px}
+.ep,.sel{display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer}
+.ep{padding:7px 10px;border:1px solid var(--border);border-radius:var(--radius);background:var(--card)}
+.sels{display:flex;flex-wrap:wrap;gap:4px 12px;margin-top:4px}
+.out{border:1px solid var(--border-strong);border-radius:12px;padding:12px 14px;margin-top:16px;background:var(--card)}
+.out li{font-size:13px;color:var(--muted);margin-bottom:4px}.out li b{color:var(--text);font-weight:500}
+code{font-family:var(--mono);font-size:12px;color:var(--text)}
+.foot{font-size:12px;color:var(--hint);margin-top:16px}
+@media (max-width:600px){.row{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<main>
+<h1>QAMaster v2 plugin setup</h1>
+<p class="lead">The big picture after decisions Q26 to Q32: entry points as a checklist, where the code comes from and how it's read, plan selectors and model, and runners and targets that fit the framework. Every picker is a swappable adapter; swapping a part never changes the pipeline.</p>
+<p class="legend"><span class="b v1" style="margin-left:0">v1</span> in v1 <span class="b v11">v1.1</span> next release <span class="b v2">v2</span> planned for v2 <span class="b later">later</span> planned adapter</p>
+
+<div class="ph">Entry points: tick every tool your team works in (Q29). Each becomes a recorded integration (Q27)</div>
+<div class="eps" id="eps"></div>
+
+<div class="ph">Build side, from Autonomous-QE</div>
+<div class="row"><div class="n">Code source</div><div class="d">Local folder or git URL, validated at setup (Q26)</div><div><select id="src" aria-label="Code source"><option value="local">Local folder</option><option value="url">Git URL, clone</option><option value="existing">Git URL, existing clone</option><option value="api">Host URL, no clone</option></select></div></div>
+<div class="row"><div class="n">Repository reader</div><div class="d">How the scan and the gate read the code (Q30)</div><div><select id="reader" aria-label="Repository reader"></select></div></div>
+<div class="row"><div class="n">DSM: UI crawl</div><div class="d">Robot browser maps the app, write guard on</div><div><select id="crawler" aria-label="Crawler"><option value="pw">Playwright (web)</option><option value="appium">Appium (mobile app)</option></select></div></div>
+<div class="row"><div class="n">Requirements</div><div class="d">Sprint stories and acceptance criteria</div><div><select id="req" aria-label="Requirement source"><option value="ado">Azure Boards</option><option value="jira">Jira board</option></select></div></div>
+<div class="row"><div class="n">Test design</div><div class="d">Claude writes cases from DSM, knowledge, stories</div><div class="fixed">Claude, AI switch on/off (Q24)</div></div>
+<div class="row"><div class="n">Automation</div><div class="d">Scripts, locators, gate, @TC tag (Q25)</div><div><select id="fw" aria-label="Test framework"><option value="bdd">playwright-bdd (TS)</option><option value="pytest">pytest (Python)</option><option value="cypress">Cypress (JS)</option><option value="jvm">Cucumber-JVM (Java)</option><option value="specflow">SpecFlow (.NET)</option></select></div></div>
+<div class="row"><div class="n">Publish</div><div class="d">Reviewed cases with path: tags and links</div><div><select id="store" aria-label="Test case store"><option value="ado">Azure Test Plans</option><option value="file">Spreadsheet file</option><option value="xray">Jira + Xray / Zephyr</option></select></div></div>
+
+<div class="ph">Gate side, from CheckMaster</div>
+<div class="row"><div class="n">Plan</div><div class="d">Which cases this change needs (Q31)<div class="sels" id="sels"></div></div><div class="stack"><select id="preset" aria-label="Selection preset"><option value="fast">Preset: fast</option><option value="standard" selected>Preset: standard</option><option value="full">Preset: full</option><option value="custom">Custom</option></select><select id="model" aria-label="Model for groups"><option value="session">Model: session's own</option><option value="opus">Model: Claude Opus 5.5</option><option value="sonnet">Model: Claude Sonnet 5.5</option><option value="haiku">Model: Claude Haiku 5.5</option></select></div></div>
+<div class="row"><div class="n">Run</div><div class="d">Only what fits the chosen framework (Q32)</div><div class="stack"><select id="runner" aria-label="Runner"></select><select id="target" aria-label="Execution target"></select></div></div>
+<div class="row"><div class="n">Pull request</div><div class="d">Plan comment, check result, approval (Q28)</div><div class="stack"><select id="host" aria-label="Code host"><option value="github">Host: GitHub</option><option value="azure-repos">Host: Azure Repos</option><option value="bitbucket">Host: Bitbucket</option><option value="gitlab">Host: GitLab</option></select><select id="ci" aria-label="CI system"><option value="github-actions">CI: GitHub Actions</option><option value="azure-pipelines">CI: Azure Pipelines</option><option value="bitbucket-pipelines">CI: Bitbucket Pipelines</option><option value="gitlab-ci">CI: GitLab CI</option><option value="jenkins">CI: Jenkins</option></select></div></div>
+<div class="row"><div class="n">Verdict</div><div class="d">Pass, fail or blocked; gaps, stale cases, defects</div><div><select id="res" aria-label="Results"><option value="html">HTML reports</option><option value="adorun">+ ADO Test Run (dashboards)</option></select></div></div>
+
+<div class="out"><h2>Installed and recorded</h2><ul id="ints" style="margin:0;padding-left:18px"></ul>
+<div class="d" style="margin-top:6px">Kept in <code>.qamaster/integrations.json</code> and <code>~/.qamaster/installs.json</code>; <code>qam doctor</code> verifies each.</div></div>
+<div class="out"><h2>Your stack</h2><ul id="sum" style="margin:0;padding-left:18px"></ul></div>
+<p class="foot">Saved 2026-10-29 from docs/decisions.md (Q4, Q11, Q16, Q20, Q23 to Q32) and docs/product.md scope. Replaces <a href="v1-plugin-setup.html">v1-plugin-setup.html</a> as the current picture; update it when those decisions change.</p>
+</main>
+<script>
+const B={v1:'<span class="b v1">v1</span>',v11:'<span class="b v11">v1.1</span>',v2:'<span class="b v2">v2</span>',later:'<span class="b later">later</span>'};
+const ORD=['v1','v11','v2','later'];const vmax=(...a)=>a.reduce((x,y)=>ORD.indexOf(y)>ORD.indexOf(x)?y:x);
+const EPS=[['claude','Claude Code','v1','claude-hooks','the plugin'],['vscode','VS Code','v11','git-hook'],['vs','Visual Studio','v11','git-hook'],['pycharm','PyCharm / IntelliJ','v11','git-hook'],['terminal','Terminal','v11','git-hook'],['pr','PR checks','v11','pr-check'],['copilot','GitHub Copilot','v2','mcp','MCP server'],['cursor','Cursor / JetBrains AI','v2','mcp','MCP server'],['panel','IDE panel (own UI)','later','extension','an IDE extension']];
+const on0=new Set(['claude','vscode','pr']);
+document.getElementById('eps').innerHTML=EPS.map(([id,l,v])=>`<label class="ep"><input type="checkbox" data-id="${id}" ${on0.has(id)?'checked':''}> ${l}${B[v]}</label>`).join('');
+const SELS=[['path','path: matches'],['smoke','smoke'],['groups','Claude groups'],['dsm','DSM impact']];
+const PRESET={fast:['path','smoke'],standard:['path','smoke','groups','dsm'],full:['path','smoke','groups','dsm']};
+document.getElementById('sels').innerHTML=SELS.map(([id,l])=>`<label class="sel"><input type="checkbox" data-sel="${id}"> ${l}</label>`).join('')+'<span class="b later" style="margin-left:0">more selectors later</span>';
+const READERS={local:[['git','Local git (default)','v1']],url:[['git','Local git (default)','v1']],existing:[['git','Local git (default)','v1']],api:[['api-github','GitHub API','v11'],['api-azure','Azure Repos API','v11'],['api-bitbucket','Bitbucket API','later'],['api-gitlab','GitLab API','later']]};
+const FW={bdd:{runners:[['playwright-bdd','playwright-bdd','v1']],targets:[['local','Local','v1'],['docker','Docker','later'],['azure-pw','Azure Playwright Testing','later'],['browserstack','BrowserStack','later'],['saucelabs','Sauce Labs','later'],['lambdatest','LambdaTest','later']],v:'v1',link:'<code>bdd:@TC-123</code>'},
+pytest:{runners:[['pytest','pytest','v1']],targets:[['local','Local','v1'],['docker','Docker','later'],['browserstack','BrowserStack','later']],v:'v1',link:'<code>pytest:tests/x.py::test_y</code>'},
+cypress:{runners:[['cypress','cypress run','later'],['cypress-cloud','Cypress Cloud','later']],targets:[['local','Local','later'],['docker','Docker','later'],['browserstack','BrowserStack','later']],v:'later',link:'like <code>cypress:@TC-123</code>'},
+jvm:{runners:[['maven','Maven','later'],['gradle','Gradle','later']],targets:[['local','Local','later'],['docker','Docker','later'],['selenium-grid','Selenium Grid','later'],['browserstack','BrowserStack','later'],['saucelabs','Sauce Labs','later']],v:'later',link:'like <code>junit:…</code>'},
+specflow:{runners:[['dotnet','dotnet test','later']],targets:[['local','Local','later'],['docker','Docker','later'],['selenium-grid','Selenium Grid','later'],['browserstack','BrowserStack','later']],v:'later',link:'like <code>specflow:…</code>'}};
+const info={
+src:{local:['v1','Local folder; branch and subfolder recorded.'],url:['v1','Clones into a folder you choose (always asked).'],existing:['v1','Checks the clone\'s origin matches.'],api:['v11','No clone: read through the host\'s API (Q30).']},
+crawler:{pw:['v1','Playwright from your QA project.'],appium:['later','A new Crawler adapter.']},
+req:{ado:['v1','<code>QAMASTER_REQUIREMENTS=ado</code>'],jira:['later','<code>QAMASTER_REQUIREMENTS=jira</code>; v1 reads Jira via MCP in test design.']},
+store:{ado:['v1','<code>QAMASTER_STORE=ado</code>'],file:['later','<code>QAMASTER_STORE=file</code> (Q23).'],xray:['later','<code>QAMASTER_STORE=xray</code> or <code>zephyr</code> (Q23).']},
+host:{github:['v11','from origin github.com'],'azure-repos':['v11','from origin dev.azure.com'],bitbucket:['later','from bitbucket.org or <code>QAMASTER_CODEHOST</code>'],gitlab:['later','from gitlab.com or <code>QAMASTER_CODEHOST</code>']},
+ci:{'github-actions':'v11','azure-pipelines':'v11','bitbucket-pipelines':'later','gitlab-ci':'later',jenkins:'later'},
+res:{html:['v1','Six HTML reports (Q17).'],adorun:['v11','ADO Test Run; ADO dashboards chart it.']}};
+const $=id=>document.getElementById(id);
+function fill(id,opts){const el=$(id),cur=el.value;el.innerHTML=opts.map(([v,l,b])=>`<option value="${v}">${l}${b==='v1'?'':' ('+(b==='v11'?'v1.1':b)+')'}</option>`).join('');if(opts.some(o=>o[0]===cur))el.value=cur;}
+function syncSels(){const p=$('preset').value;if(p==='custom')return;document.querySelectorAll('[data-sel]').forEach(c=>{c.checked=PRESET[p].includes(c.dataset.sel)});}
+function draw(){
+ fill('reader',READERS[$('src').value]);
+ const fw=FW[$('fw').value];fill('runner',fw.runners);fill('target',fw.targets);
+ const sels=[...document.querySelectorAll('[data-sel]:checked')].map(c=>c.dataset.sel);
+ const on=[...document.querySelectorAll('#eps input:checked')].map(i=>i.dataset.id);
+ const L=[],ides=[];
+ for(const [id,l,v,kind,how] of EPS){if(!on.includes(id))continue;
+  if(kind==='git-hook'){ides.push(l);continue}
+  if(kind==='pr-check'){const h=$('host').value,c=$('ci').value;L.push(`<li><code>pr-check:${c}:${h}:galent/shop</code>${B[vmax(info.host[h][0],info.ci[c])]}</li>`);continue}
+  L.push(`<li><code>${kind}${kind==='mcp'?':'+id:''}</code>${B[v]}: ${l}, via ${how}</li>`);}
+ if(ides.length)L.splice(1,0,`<li><code>git-hook:pre-push:shop</code>${B.v11}: one hook, recorded for ${ides.join(', ')}</li>`);
+ $('ints').innerHTML=L.join('')||'<li>Nothing ticked.</li>';
+ const rd=READERS[$('src').value].find(r=>r[0]===$('reader').value),ru=fw.runners.find(r=>r[0]===$('runner').value),tg=fw.targets.find(r=>r[0]===$('target').value);
+ const model=$('model').selectedOptions[0].text.replace('Model: ','');
+ const rows=[
+  ['Code source',...info.src[$('src').value]],
+  ['Repository reader',rd[2],rd[1]+(rd[0]==='git'?' (fetch, ls-tree, cat-file)':': archive + compare API, CodeHost login')],
+  ['Crawl',...info.crawler[$('crawler').value]],['Requirements',...info.req[$('req').value]],
+  ['Automation',fw.v,$('fw').selectedOptions[0].text+', link '+fw.link],['Test case store',...info.store[$('store').value]],
+  ['Plan','v1',`${$('preset').value==='custom'?'custom':'preset '+$('preset').value}: ${sels.length?sels.join(', '):'nothing selected'}${sels.includes('groups')?'; groups by '+model+' (skipped in CI and with QAMASTER_AI=off)':''}`],
+  ['Run',vmax(ru[2],tg[2]),`runner ${ru[1]}, target ${tg[1]}; mismatches blocked by <code>qam doctor</code>`],
+  ['Code host',info.host[$('host').value][0],info.host[$('host').value][1]],['Results',...info.res[$('res').value]]];
+ $('sum').innerHTML=rows.map(([l,v,t])=>`<li><b>${l}</b>${B[v]}: ${t}</li>`).join('')+'<li><b>Same everywhere</b>: every entry point calls the same <code>qam</code> CLI; the plan records preset, selectors and model; the verdict records runner and target.</li>';
+}
+$('preset').addEventListener('change',()=>{syncSels();draw()});
+document.addEventListener('change',e=>{if(e.target.dataset&&e.target.dataset.sel)$('preset').value='custom';if(e.target.id!=='preset')draw();});
+syncSels();draw();
+</script>
+</body>
+</html>

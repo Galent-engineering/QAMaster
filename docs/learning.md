@@ -38,6 +38,13 @@ The important idea: **the DSM connects the two halves**. It knows which screens 
 
 **Try it:** open [learning/v1-plugin-setup.html](learning/v1-plugin-setup.html), the v1 plugin setup. It shows every stage of the loop, and which parts swap (requirements source, test case store, test framework and runner, crawler). Pick Jira or Cypress to see the setting it needs and when it ships.
 
+**The current picture:** [learning/v2-plugin-setup.html](learning/v2-plugin-setup.html) adds decisions Q26 to Q32:
+- the entry-point checklist;
+- code from a local folder, a git URL or a host's API;
+- plan presets, selectors and the model;
+- runners and execution targets that fit the chosen framework;
+- code host and CI as separate choices.
+
 ### The design in five rules
 
 1. **One CLI, `qam`, is the only door** (Q3). Claude Code commands, hooks, CI and terminals all call it. It answers with an exit code: `0` pass, `1` fail, `2` blocked, `3` awaiting approval. *Why:* one tested path; CI and the IDE can never disagree.
