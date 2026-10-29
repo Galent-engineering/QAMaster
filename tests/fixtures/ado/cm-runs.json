@@ -1,0 +1,64 @@
+{
+  "_comment": "CheckMaster ado.py problems, reproduced 2026-10-29 with respx on CheckMaster's own code (a scratch pytest file run with uv run --project ../CheckMasterPlugin; not kept, since QAMaster keeps Python to the pytest shim). The other files here are CheckMaster's recorded responses (tests/fixtures/ado), unchanged.",
+  "runs": [
+    {
+      "id": "lost_update",
+      "scenario": "read test case 26 at rev 3 (tags: cart); someone else adds the tag flaky (rev 4); update(stale, add_tags Q4)",
+      "result": {
+        "ops_sent": [
+          {
+            "op": "add",
+            "path": "/fields/System.Tags",
+            "value": "cart; Q4"
+          }
+        ],
+        "rev_test_sent": false
+      }
+    },
+    {
+      "id": "ambiguous_plan",
+      "scenario": "plans Shop Web (1) and shop-web (7); repo ShopWeb, no CHECKMASTER_ADO_PLAN",
+      "result": {
+        "plans": [
+          "Shop Web",
+          "shop-web"
+        ],
+        "chosen": 1
+      }
+    },
+    {
+      "id": "plans_pagination",
+      "scenario": "page 1 of plans: Billing, with x-ms-continuationtoken p2; page 2: Shop Web",
+      "result": {
+        "error": "No test plan is named like this repo ('shop-web') in org/Shop (plans: 'Billing'). Rename the plan, or set CHECKMASTER_ADO_PLAN=<plan name> in the repo's .env."
+      }
+    },
+    {
+      "id": "suites_pagination",
+      "scenario": "page 1 of suites: suite 2 (TC 501), with x-ms-continuationtoken s2; page 2: suite 3 (TC 502)",
+      "result": {
+        "test_case_ids_read": "501",
+        "suite_on_page_2_read": false
+      }
+    },
+    {
+      "id": "throttled",
+      "scenario": "wit/workitems answers 429 with Retry-After: 1, then 200",
+      "result": {
+        "calls": 1,
+        "error": "Azure DevOps wit/workitems returned 429: "
+      }
+    },
+    {
+      "id": "closed_selected",
+      "scenario": "test case 501 State Closed, still in a suite",
+      "result": {
+        "returned": [
+          501,
+          502
+        ],
+        "fields_asked": "System.Title,System.Tags,Microsoft.VSTS.TCM.AutomatedTestName"
+      }
+    }
+  ]
+}

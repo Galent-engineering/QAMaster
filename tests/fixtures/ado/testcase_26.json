@@ -1,0 +1,17 @@
+{
+  "id": 26,
+  "fields": {
+    "System.WorkItemType": "Test Case",
+    "System.Title": "Adding items updates the cart total",
+    "System.State": "Design",
+    "System.Tags": "cart; path:site/cart.js",
+    "System.AssignedTo": {"displayName": "Ada Lovelace", "uniqueName": "ada@example.com"},
+    "Microsoft.VSTS.Common.Priority": 2,
+    "Microsoft.VSTS.TCM.AutomatedTestName": "tests/test_cart.py::test_total",
+    "Microsoft.VSTS.TCM.Steps": "<steps id=\"0\" last=\"3\"><step id=\"2\" type=\"ActionStep\"><parameterizedString isformatted=\"true\">&lt;DIV&gt;&lt;P&gt;Add a mug&lt;/P&gt;&lt;/DIV&gt;</parameterizedString><parameterizedString isformatted=\"true\">Total is $20.00</parameterizedString><description/></step><step id=\"3\" type=\"ActionStep\"><parameterizedString isformatted=\"true\">Add a T-shirt</parameterizedString><parameterizedString isformatted=\"true\"></parameterizedString><description/></step></steps>"
+  },
+  "relations": [
+    {"rel": "Microsoft.VSTS.Common.TestedBy-Reverse", "url": "https://dev.azure.com/org/_apis/wit/workItems/12"},
+    {"rel": "System.LinkTypes.Hierarchy-Reverse", "url": "https://dev.azure.com/org/_apis/wit/workItems/2"}
+  ]
+}

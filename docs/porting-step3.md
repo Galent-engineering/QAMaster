@@ -74,7 +74,7 @@ Not in step 3:
 | 3 | UI crawl and DSM refresh | ✓ 2026-10-29 | ✓ | ✓ real crawl of app.mjs: 0 writes | ✓ skill, agent, `/qamaster:dsm` | ✓ build |
 | 4 | Setup and pipeline | ✓ 2026-10-29, 10 AQE problems reproduced | ✓ | ✓ 2 golden fixtures, fixes 1–10 | ✓ no skills (onboard and status are step 9) | ✓ `feature/4_setup-and-pipeline` |
 | 5 | Application knowledge | ✓ 2026-10-29, 10 AQE problems reproduced | ✓ | ✓ 3 golden fixtures + AQE agreement, fixes 1–10 | ✓ `AUT-Skill-Builder` | ✓ `feature/5_application-knowledge` |
-| — | Step 4: ADO adapter | | | | | |
+| — | Step 4: ADO adapter | ✓ 2026-10-29, 6 CheckMaster problems reproduced; waiting for review | | | | |
 | 6 | Requirements | | | | | |
 | 7 | TestGen | | | | | |
 | 8 | Automation | | | | | |
@@ -699,6 +699,65 @@ The golden came first. Commit `3ff334a` is a plain port that writes AQE's shop, 
 - **Components:** decided for v1 (first URL segment). Grouping by shared container file comes back with the gate.
 
 **Left out (not MVP):** the MCP connection step (v2, with context sources) and the hook (step 9).
+
+### Step 4. ADO adapter (Learn done 2026-10-29, waiting for review)
+
+Porting step 4 (tech.md), built between features 5 and 6 (decision 4). It runs the same loop, on the branch `feature/step4_ado-adapter`.
+
+**Source:** CheckMaster's `plugin/src/checkmaster/adapters/ado.py` (494 lines, Python, `httpx`), its 17 tests in `tests/test_ado.py` (`respx`, all passing), and the recorded responses in `tests/fixtures/ado/`. Those responses are now copied to QAMaster's `tests/fixtures/ado/`, as tech.md plans. CLAUDE.md says to port the tests before the code.
+
+**What it does:**
+- **Auth:** `CHECKMASTER_ADO_TOKEN` as Basic auth, else a Bearer token from `az account get-access-token`. A 401, or ADO's 203 sign-in page, is blocked with the fix, and a 403 names the write scopes needed.
+- **The plan** is found by name: the one named like the repo, ignoring case, spaces and punctuation, else `CHECKMASTER_ADO_PLAN`. Its test cases are every suite's members, with tags and *Automated Test Name*.
+- **The tracker** (`req` and `tc`):
+  - **reading:** WIQL `find` over the whole project (naming the project, per CLAUDE.md's Learnings), and `show` with links, steps, fields and suites;
+  - **writing:** `create` and `update` as JSON Patch, with tags merged without regard to case, the parent replaced, *tested by* links added, and the test case added to a static suite by name or path;
+  - **removing:** `delete` moves a requirement to the Recycle Bin, and retires a test case (State Closed, out of every suite). Test plans, suites and shared steps are never deleted.
+
+**How it maps to QAMaster's interfaces** (`adapters/base.mts`, `tests/contracts.mts`):
+
+| QAMaster | CheckMaster | Change |
+|---|---|---|
+| `TestCaseStore.inPlan()` | `in_suites()` | same |
+| `find`, `show`, `create`, `update`, `retire` | the `Tracker` | split by kind: test cases in the store, requirements in `RequirementSource` |
+| `update` refuses a stale item (contract) | not done | **new** (problem 1) |
+| `addToSuite(id, suite)` | `ItemChange.suite` in create and update | its own method |
+| `RequirementSource.requirements({sprint} \| {currentSprint} \| {from, to})` | none | **new**: WIQL on `System.IterationPath` or dates, the team's current iteration, normalised to AQE's requirement shape (feature 6 uses it) |
+| Automated Test Name `bdd:@TC-…` or `pytest:<nodeid>` (Q9) | a bare pytest node ID, *AutomatedTestType* `pytest` | prefixed, with the type per runner |
+| `QAMASTER_ADO_*` | `CHECKMASTER_ADO_*` | renamed |
+
+**Problems found** (each reproduced with `respx` on CheckMaster's own code; evidence in `tests/fixtures/ado/cm-runs.json`):
+1. **Lost updates.** CheckMaster read test case 26 at rev 3, someone else added the tag `flaky` (rev 4), and `update` still went through, sending `Tags = "cart; Q4"`. Their tag is gone. It sends no `test` op on `/rev`, and it merges tags into the copy it read, not the current one. QAMaster's contract and tech.md both require refusing.
+2. **An ambiguous plan name is chosen silently.** With plans "Shop Web" and "shop-web" and the repo "ShopWeb", it took the first. The gate would read the wrong plan.
+3. **Plans aren't paginated.** With the plan on the second page (`x-ms-continuationtoken`), CheckMaster blocked with "No test plan is named like this repo (plans: 'Billing')". Microsoft's docs (Test Plans - List, 7.1) say incomplete lists carry that header.
+4. **Suites aren't paginated either.** Suite 3 on the second page was never read, so its test cases were left out of the plan. The gate would never select them. The same docs page (Get Test Suites For Plan) says so. Only the test cases in a suite are paginated.
+5. **No retry when throttled.** A 429 with `Retry-After: 1` blocked at once ("returned 429"), on one call. ADO throttles busy organisations, and the gate would block a push on a transient answer.
+6. **Closed test cases are still selected.** A test case closed by hand but left in a suite comes back from `in_suites`, and the fields asked for (`Title`, `Tags`, `AutomatedTestName`) can't tell.
+
+**Also noted** (design points, not reproduced bugs):
+- **Migrating from CheckMaster:** its *Automated Test Name* values are bare pytest node IDs. Under Q9 they'd read as no runner prefix, so the gate would mark every one BROKEN. ★ Proposal: read a bare value as `pytest:`, and write the prefix from then on.
+- **Test steps:** they're written as escaped text inside formatted XML. Fine for plain text, but a step meant to hold HTML shows escaped. Kept as is.
+
+**Improve: proposed fixes** (★ = my choice, for your review):
+
+| # | Fix |
+|---|---|
+| 1 | `update` sends `{"op":"test","path":"/rev","value":<rev read>}` first and merges tags into the current tags. A 412 or a failed test becomes blocked: "TC26 changed since you read it (rev 3 → 4). Read it again." |
+| 2 | ★ Two or more plans matching the repo name block, listing them and asking for `QAMASTER_ADO_PLAN` |
+| 3, 4 | Plans and suites follow `x-ms-continuationtoken`, as test cases already do |
+| 5 | ★ 429 and 503: wait for `Retry-After` (at most 30 s, 3 tries), then blocked with "ADO is throttling; try again" |
+| 6 | ★ `inPlan` asks for `System.State` and leaves out Closed test cases, so the gate never selects a retired case |
+| — | ★ A bare *Automated Test Name* reads as `pytest:` (migration) |
+
+**Port plan for Build:**
+- `adapters/ado.mts` uses `fetch`, with no `httpx` and no dependencies.
+- Tests come first: CheckMaster's 17 tests are ported to `node:test` against the recorded responses, with a small fake `fetch` that fails on any request it wasn't given (as `respx` does). Then the two contract suites run on the adapter. Then one test per fix.
+- `qam doctor` checks the store: credentials, the plan and the scopes. It writes `.qamaster/doctor.json`, which the pipeline's store stage already reads. After that, one live `qam doctor` against your ADO project (CLAUDE.md), read-only.
+- `RequirementSource.requirements` is new, with no CheckMaster code to port. It's built and tested against recorded responses, which need a sample (a sprint's WIQL and the team's iterations call). I'd record them from your sandbox project with your OK, or hand-write them from Microsoft's examples.
+
+**Open points, for you:**
+- **May I record real responses** (read-only) from the ADO project named in `CheckMasterDemo/.env`, for the requirements calls?
+- **The ★ fixes above.**
 
 ## Roadmap: what comes after the v1 MVP
 
