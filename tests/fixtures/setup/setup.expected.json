@@ -37,6 +37,11 @@
       "detail": "from the template; the app is never pre-set"
     },
     {
+      "step": "config/testgen.json",
+      "status": "created",
+      "detail": "from the template; the app is never pre-set"
+    },
+    {
       "step": ".gitignore",
       "status": "created",
       "detail": "node_modules/, .env, .env.*, !.env.example, dsm/.lock, dsm/.auth/, .qamaster/plugin.json, .qamaster/*.tmp, reports/output/"

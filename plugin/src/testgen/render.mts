@@ -33,10 +33,14 @@ const tagOf = (v: unknown) =>
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 
-/** A CSV row as Python's csv module writes it: quoted only when needed, CRLF. */
+/**
+ * A CSV row as Python's csv module writes it: quoted only when needed, CRLF. A cell a spreadsheet would run as a formula
+ * (=, +, -, @, tab, CR first) gets a leading ' (fix 6: AQE wrote "=HYPERLINK(...)" as it was).
+ */
 export function csvRow(values: unknown[]): string {
   const cells = values.map((v) => {
-    const t = s(v);
+    const raw = s(v);
+    const t = /^[=+\-@\t\r]/.test(raw) ? `'${raw}` : raw;
     return /[",\r\n]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t;
   });
   if (cells.length === 1 && cells[0] === '') return '""\r\n';

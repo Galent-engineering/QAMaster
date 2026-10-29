@@ -14,6 +14,7 @@ import { BlockedError } from '../shared/errors.mts';
 import { dsm } from './dsm.mts';
 import { autSkills } from './knowledge.mts';
 import { doctor, integrations, pipeline, setup } from './project.mts';
+import { review, testgen } from './testgen.mts';
 
 export const PASS = 0;
 export const FAIL = 1;
@@ -54,6 +55,8 @@ type Options = { json: boolean; repo: string };
 const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promise<number>> = {
   dsm: (opts, args) => dsm(loadConfig(opts.repo), args, opts.json),
   'aut-skills': (opts, args) => autSkills(loadConfig(opts.repo), args, opts.json),
+  testgen: (opts, args) => testgen(loadConfig(opts.repo), args, opts.json),
+  review: (opts, args) => review(loadConfig(opts.repo), args, opts.json),
   setup: (opts, args) => setup(loadConfig(opts.repo), args, opts.json),
   pipeline: (opts, args) => pipeline(loadConfig(opts.repo), args, opts.json),
   doctor: (opts, args) => doctor(loadConfig(opts.repo), args, opts.json),

@@ -12,6 +12,7 @@ import { resolveRef } from '../adapters/git.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
 import { pascal } from '../knowledge/build.mts';
 import { BlockedError } from '../shared/errors.mts';
+import { readRunRecord, runHash, validationProblem } from '../testgen/run.mts';
 import { isGitUrl } from './sources.mts';
 
 export const STATUSES = ['pending', 'in_progress', 'done', 'failed', 'skipped'] as const;
@@ -185,12 +186,15 @@ export const STAGES: Stage[] = [
       // written by qam testgen validate (feature 7)
       const ok = runs(c, 'validation.json', (v) => v.status === 'pass');
       if (!ok.length) return { done: false, detail: 'no TestGen run has passed validation' };
-      const last = path.join(c.project, 'testgen', 'output', ok[ok.length - 1], 'validation.json');
-      const stale = c.dsm ? mtime(last) < Date.parse(c.dsm.generated_at) : false;
+      // validation.json is bound to the DSM and to the run's files (feature 7 fix 7)
+      const why = validationProblem(
+        path.join(c.project, 'testgen', 'output', ok[ok.length - 1]),
+        c.dsm?.generated_at ?? null,
+      );
       return {
         done: true,
-        stale,
-        detail: `${ok.length} validated run(s), latest ${ok[ok.length - 1]}${stale ? ' (older than the DSM)' : ''}`,
+        stale: why !== null,
+        detail: `${ok.length} validated run(s), latest ${ok[ok.length - 1]}${why ? ` (${why})` : ''}`,
       };
     },
     how: () =>
@@ -202,9 +206,15 @@ export const STAGES: Stage[] = [
     detect: (c) => {
       // run.json reviewedBy, set by qam review (feature 7) after the person's yes
       const ok = runs(c, 'run.json', (r) => Boolean(r.reviewedBy));
-      return ok.length
-        ? { done: true, detail: `${ok.length} reviewed run(s)` }
-        : { done: false, detail: 'no run reviewed yet' };
+      if (!ok.length) return { done: false, detail: 'no run reviewed yet' };
+      // a review stands for the files the person saw
+      const latest = path.join(c.project, 'testgen', 'output', ok[ok.length - 1]);
+      const changed = readRunRecord(latest)?.run_hash !== runHash(latest);
+      return {
+        done: true,
+        stale: changed,
+        detail: `${ok.length} reviewed run(s)${changed ? `; ${ok[ok.length - 1]} changed since its review` : ''}`,
+      };
     },
     how: () => 'Show the person the test cases; only after their yes, run qam review <run>.',
   },

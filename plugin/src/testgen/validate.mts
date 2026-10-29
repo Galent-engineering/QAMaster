@@ -74,9 +74,8 @@ export const GENERIC_PHRASES = [
   'correct details',
 ];
 
-/** config/testgen.json */
+/** config/testgen.json. There's no tolerance setting: it's 0 (Q10), and the CLI blocks a hallucination_tolerance. */
 export type TestGenSettings = {
-  hallucination_tolerance?: number;
   required_categories?: string[];
   require_every_screen_covered?: boolean;
   require_every_form_positive_and_negative?: boolean;
@@ -122,7 +121,7 @@ export type Manifest = {
   domain?: string;
   domain_evidence?: string[];
   required_types?: string[];
-  requirements?: unknown;
+  requirements_scope?: string; // the requirements/<scope>/ folder req: evidence is checked against
   coverage_exclusions?: { component?: string; item?: string; reason?: string }[];
   generated_at?: string;
   [key: string]: unknown;
@@ -137,6 +136,14 @@ export type Report = {
   by_type: Record<string, number>;
 };
 
+/** A step that does something to the UI must name the element it acts on (fix 2). */
+const ACTS =
+  /\b(click|tap|press|type|enter|select|choose|tick|check|uncheck|toggle|submit|upload|drag|drop|hover|clear|fill|open)\b/i;
+/** UI named in the action text: "quoted names", and "the <name> button|link|field|tab|checkbox|dropdown|menu item". */
+const NAMED = [/"([^"]+)"|'([^']+)'/g, /\bthe ([^,.;]+?) (?:button|link|field|tab|checkbox|dropdown|menu item)\b/gi];
+/** A citation precise enough for a reviewer to check a rule in seconds: a line, a heading or a requirement (fix 3). */
+const PRECISE = /^(code:[^:]+:[^:]+:\d+|aut:[^#]+#.+|domain:[^#]+#.+|req:.+)$/;
+
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&');
 const s = (v: unknown) => (v === null || v === undefined ? 'None' : String(v)); // AQE printed Python's None
 const pair = (a: unknown, b: unknown) => JSON.stringify([a ?? null, b ?? null]);
@@ -149,7 +156,7 @@ export function validate(
 ): Report {
   const empty = (error: string): Report => ({
     status: 'fail',
-    hallucination_tolerance: cfg.hallucination_tolerance ?? 0,
+    hallucination_tolerance: 0,
     cases: 0,
     errors: [error],
     gaps: [],
@@ -235,6 +242,11 @@ export function validate(
         errors.push(
           `${w}: business scenario not traced to the AUT skill, code or a requirement (aut:/code:/req: evidence)`,
         );
+      // a rule needs a citation a reviewer can open: a bare file or skill passed in AQE, whatever the rule said
+      else if (!(tc.evidence ?? []).some((r) => PRECISE.test(String(r))))
+        errors.push(
+          `${w}: cite where the business rule is written: code:<repo>:<path>:<line>, aut:<Skill>#<heading> or req:<id> (a whole file or skill isn't checkable)`,
+        );
     }
     checkEvidence(w, tc.evidence);
     for (const r of tc.domain_rules ?? []) {
@@ -285,6 +297,21 @@ export function validate(
         errors.push(`${sw}: vague or too short expected "${s(st.expected)}" (state what is shown or stored)`);
       if (st.element && route && !facts.hasElement(route, st.element))
         errors.push(`${sw}: element "${s(st.element)}" is not on ${route} in the DSM (invented UI element?)`);
+      // AQE checked only the element field, so UI named in the action text was never compared with the DSM
+      if (route && !st.element && ACTS.test(s(st.action)))
+        errors.push(`${sw}: the action acts on the UI but names no element: add the element it uses, from ${route}`);
+      if (route) {
+        for (const re of NAMED) {
+          for (const m of s(st.action).matchAll(re)) {
+            const name = m[1] ?? m[2];
+            const there = [route, facts.screen(st.leads_to)].some((r) => r && facts.hasElement(r, name));
+            if (!there)
+              errors.push(
+                `${sw}: the action names "${name}", which is not on ${route} in the DSM (invented UI element?)`,
+              );
+          }
+        }
+      }
       checkEvidence(sw, st.evidence);
       if (!route) return;
       if (prev === null) {
@@ -378,14 +405,13 @@ export function validate(
     }
   }
 
-  const tolerance = cfg.hallucination_tolerance ?? 0;
   const byCategory: Record<string, number> = {};
   for (const c of CATEGORIES) byCategory[c] = cases.filter((tc) => tc.category === c).length;
   const byType: Record<string, number> = {};
   for (const t of TYPES) if (cases.some((tc) => tc.type === t)) byType[t] = cases.filter((tc) => tc.type === t).length;
   return {
-    status: errors.length <= tolerance && !gaps.length ? 'pass' : 'fail',
-    hallucination_tolerance: tolerance,
+    status: errors.length === 0 && !gaps.length ? 'pass' : 'fail',
+    hallucination_tolerance: 0,
     cases: cases.length,
     errors,
     gaps,

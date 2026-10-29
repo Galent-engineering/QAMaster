@@ -11,7 +11,7 @@
  *     code:<repo>:<path>[:<line>]     the file is in the scanned code
  *     aut:<Skill>[#<heading>]         the AUT skill (and heading) exists
  *     domain:<SubSkill>[#<heading>]   Domain_Test_Design_Skill or a sub-skill (prefix optional), and the heading
- *     req:<id>                        a requirement listed in the manifest
+ *     req:<id>                        a requirement in requirements/<manifest.requirements_scope>/requirements.json
  *
  * Pure: skill texts come through `skill(dir, name)`, so tests need no files.
  */
@@ -58,7 +58,13 @@ export type FactsInput = {
   autSkills: string[]; // folders in the skills directory
   domainSkills: string[]; // Domain_Test_Design_Skill and its sub-skills
   skill: (name: string) => string | null; // the SKILL.md text of an AUT or domain skill
+  lines: (file: string) => number | null; // lines in "<repo>:<path>" at the scanned commit; null if it can't be read
+  requirements: (scope: string) => string[] | null; // IDs saved under requirements/<scope>/; null if none
 };
+
+/** Words that name an element's kind rather than the element: "Coupon field" is the Coupon element. */
+const KIND = /^(?:the )?(.*?)(?: (?:field|button|link|tab|menu item|menuitem|menu|checkbox|dropdown|form|dialog))?$/;
+const bare = (name: string) => KIND.exec(name)?.[1] || name;
 
 export class Facts {
   readonly dsm: Dsm;
@@ -113,12 +119,14 @@ export class Facts {
     return [...this.model.byId.keys()].find((n) => n.toLowerCase() === low) ?? null;
   }
 
+  /**
+   * The element is on the screen by its exact name, ignoring case, punctuation and a kind word ("Coupon field").
+   * AQE also accepted any part of a name over 3 characters, so an invented "Check" passed as part of "checkout".
+   */
   hasElement(route: string, label: unknown): boolean {
-    const target = norm(label);
-    const names = this.elements.get(route) ?? new Set<string>();
+    const target = bare(norm(label));
     if (!target) return false;
-    if (names.has(target)) return true;
-    for (const n of names) if (target === n || (Array.from(target).length > 3 && n.includes(target))) return true;
+    for (const n of this.elements.get(route) ?? []) if (n === target || bare(n) === target) return true;
     return false;
   }
 
@@ -135,7 +143,7 @@ export class Facts {
   }
 
   /** null when the evidence reference checks out, else the reason it doesn't. */
-  verify(refIn: unknown, manifest: { requirements?: unknown }): string | null {
+  verify(refIn: unknown, manifest: { requirements_scope?: unknown }): string | null {
     const ref = String(refIn).trim();
     const [kind, , rest] = partition(ref, ':');
     if (kind === 'dsm') {
@@ -162,7 +170,15 @@ export class Facts {
     if (kind === 'code') {
       const parts = rest.split(':');
       const key = parts.length >= 2 ? parts.slice(0, 2).join(':') : rest;
-      return this.codeFiles.has(key) ? null : `${key} is not in the scanned repository (DSM code model)`;
+      if (!this.codeFiles.has(key)) return `${key} is not in the scanned repository (DSM code model)`;
+      if (parts.length < 3) return null;
+      // a cited line must exist (AQE checked the file only, so line 9999 of a 40-line file passed)
+      const line = Number(parts[2]);
+      const count = this.input.lines(key);
+      if (count === null) return `can't read ${key} at the scanned commit to check line ${parts[2]}`;
+      return Number.isInteger(line) && line >= 1 && line <= count
+        ? null
+        : `${key} has no line ${parts[2]} (${count} lines)`;
     }
     if (kind === 'aut') {
       const [skill, , heading] = partition(rest, '#');
@@ -170,13 +186,13 @@ export class Facts {
     }
     if (kind === 'domain') return this.verifyDomain(rest);
     if (kind === 'req') {
-      const reqs = manifest.requirements || {};
-      const known = Array.isArray(reqs)
-        ? reqs.map(String).includes(rest)
-        : typeof reqs === 'object'
-          ? Object.hasOwn(reqs, rest)
-          : String(reqs).includes(rest);
-      return known ? null : `requirement ${rest} is not in manifest.requirements (fetch it first)`;
+      // from the fetched file, not the manifest: the manifest is written by the model whose claims are checked
+      const scope = manifest.requirements_scope;
+      if (!scope)
+        return `req:${rest} needs manifest.requirements_scope, the requirements/<scope>/ folder qam requirements fetch wrote`;
+      const ids = this.input.requirements(String(scope));
+      if (ids === null) return `no requirements/${scope}/requirements.json (run qam requirements fetch)`;
+      return ids.includes(rest) ? null : `requirement ${rest} is not in requirements/${scope}/requirements.json`;
     }
     return `unknown evidence type in ${ref}`;
   }
