@@ -177,7 +177,7 @@ export const STAGES: Stage[] = [
         : { done: false, detail: 'none fetched yet (optional)' };
     },
     how: () =>
-      'Ask the user which sprint or dates, then run qam requirements fetch --sprint <name> (or --current-sprint, or --from/--to). Without requirements: qam pipeline mark requirements skipped --note "…".',
+      'Fetching sprint stories isn\'t built yet: qam pipeline mark requirements skipped --note "…".',
   },
   {
     id: 'test-cases',
@@ -364,7 +364,8 @@ export function status(project: string, appRepo: string, app: string | null): Pi
       stage: s.id,
       title: s.title,
       status: st,
-      evidence: ev.detail,
+      // a deliberate skip, not the last failed check it stopped (a skipped store kept showing doctor's old 404)
+      evidence: st === 'skipped' && mark?.status === 'skipped' ? 'marked skipped' : ev.detail,
       ...(mark?.note ? { note: mark.note } : {}),
       how: s.how(c),
     };

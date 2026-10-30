@@ -15,7 +15,7 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
 2. **Inputs.** Each needs to exist before you start; if one is missing, stop and run its step:
    - the DSM: the `Design-Structure-Matrix` skill;
    - the AUT skills for the scope: `AUT-Skill-Builder`;
-   - requirements, if the team uses them: `qam requirements fetch`, then name the folder it wrote in `manifest.requirements_scope`.
+   - requirements: fetching sprint stories isn't built yet, so leave `manifest.requirements_scope` out and use no `req:` evidence.
 3. **Domain.** Use `Domain_Test_Design_Skill` to find the domain and load its sub-skills: `-Domain-<Domain>`, `-App-<Type>`, `-Test-<Type>` and `-Core-Techniques`. Record `manifest.domain` and `manifest.domain_evidence`.
 4. **Facts.** `qam testgen context --component <Name>` prints the only screens, elements, forms, navigations, journeys and source files you may use. Read the source files it lists in the local clone (`config/dsm-config.json` `repositories`) for business rules. The clones are read-only.
 5. **Write** `manifest.json` and `testcases.json` in the run folder; the format is in [references/cases.md](references/cases.md). Per component, cover:

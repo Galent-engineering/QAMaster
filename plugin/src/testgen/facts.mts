@@ -189,9 +189,9 @@ export class Facts {
       // from the fetched file, not the manifest: the manifest is written by the model whose claims are checked
       const scope = manifest.requirements_scope;
       if (!scope)
-        return `req:${rest} needs manifest.requirements_scope, the requirements/<scope>/ folder qam requirements fetch wrote`;
+        return `req:${rest} needs manifest.requirements_scope, a requirements/<scope>/ folder (fetching sprint stories isn't built yet)`;
       const ids = this.input.requirements(String(scope));
-      if (ids === null) return `no requirements/${scope}/requirements.json (run qam requirements fetch)`;
+      if (ids === null) return `no requirements/${scope}/requirements.json (fetching sprint stories isn't built yet)`;
       return ids.includes(rest) ? null : `requirement ${rest} is not in requirements/${scope}/requirements.json`;
     }
     return `unknown evidence type in ${ref}`;

@@ -192,3 +192,18 @@ test('fix 10: doctor rewrites its own record when it cannot be read, instead of 
   assert.equal(r.err, '');
   assert.equal(typeof read(path.join(dir, '.qamaster/doctor.json')).ok, 'boolean');
 });
+
+test('a stage marked skipped shows the mark, not the failed check it stopped', () => {
+  const dir = tmp();
+  fs.mkdirSync(path.join(dir, '.qamaster'));
+  const failed = { store: { ok: false, at: '2026-10-30T00:00:00Z', detail: 'Azure DevOps returned 404' } };
+  fs.writeFileSync(path.join(dir, '.qamaster/doctor.json'), JSON.stringify(failed));
+  assert.equal(qam(dir, 'pipeline', 'mark', 'store', 'skipped', '--note', 'Local CSV for now').status, 0);
+  const store = (json(dir, 'pipeline', 'status').stages as { stage: string }[]).find((s) => s.stage === 'store');
+  assert.deepEqual(store, { ...store, status: 'skipped', evidence: 'marked skipped', note: 'Local CSV for now' });
+  qam(dir, 'pipeline', 'mark', 'store', 'failed');
+  const again = (json(dir, 'pipeline', 'status').stages as { stage: string; evidence: string }[]).find(
+    (s) => s.stage === 'store',
+  );
+  assert.equal(again?.evidence, 'last check failed: Azure DevOps returned 404', 'a failed mark keeps the evidence');
+});

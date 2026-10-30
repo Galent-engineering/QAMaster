@@ -44,7 +44,7 @@
       "title": "Requirements",
       "status": "done",
       "evidence": "1 scope(s) saved",
-      "how": "Ask the user which sprint or dates, then run qam requirements fetch --sprint <name> (or --current-sprint, or --from/--to). Without requirements: qam pipeline mark requirements skipped --note \"…\"."
+      "how": "Fetching sprint stories isn't built yet: qam pipeline mark requirements skipped --note \"…\"."
     },
     {
       "stage": "test-cases",
