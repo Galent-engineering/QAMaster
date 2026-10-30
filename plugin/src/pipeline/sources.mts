@@ -34,6 +34,8 @@ export const DEFAULT_EXCLUDE = [
   '__tests__/',
   '*.cy.[jt]s',
   '*.cy.[jt]sx',
+  // copies of the app's own routers kept as data (Juice Shop's data/static/codefixes/: 489 routes instead of 48)
+  'codefixes/',
 ];
 
 export type SourceSpec = {

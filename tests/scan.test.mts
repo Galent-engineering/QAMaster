@@ -13,6 +13,7 @@ import {
   scanJsxRoutes,
   wanted,
 } from '../plugin/src/dsm/scan.mts';
+import { DEFAULT_EXCLUDE } from '../plugin/src/pipeline/sources.mts';
 import { tmpDir } from './tmp.mts';
 
 const FIXTURES = path.resolve(import.meta.dirname, 'fixtures/scan');
@@ -257,4 +258,10 @@ test('qam dsm scan blocks on a missing repository path and on no repositories', 
   assert.match(r.stderr, /repository rwa: path not found: .*nowhere\. Fix the path in dsm-config\.json/);
   fs.writeFileSync(path.join(qa, 'config/dsm-config.json'), '{}');
   assert.match(qamScan(qa).stderr, /No repositories in dsm-config\.json/);
+});
+
+test('the default excludes skip copies of routers kept as data, not the real routers', () => {
+  const repo: RepoConfig = { name: 'shop', path: '.', exclude: DEFAULT_EXCLUDE };
+  assert.equal(wanted('routes/basket.ts', repo), true);
+  assert.equal(wanted('data/static/codefixes/accessLogDisclosureChallenge_1_correct.ts', repo), false);
 });
