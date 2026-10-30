@@ -12,8 +12,9 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
 ## Procedure
 
 1. **The run must be reviewed.** `qam pipeline status` shows Review as done. If not, stop and use the `TestGen` skill. `qam publish` refuses a run that isn't validated, wasn't reviewed, or changed after its review.
-2. **The store.** `QAMASTER_STORE` is `ado` (the default) or `file` (a CSV in `testcases/`, kept in git). Run `qam doctor` first; fix what it reports. Ask the person which store if neither is set up.
+2. **The store.** `QAMASTER_STORE` is `ado` (the default) or `file` (a CSV in `testcases/`, kept in git). Run `qam doctor` first; fix what it reports. A missing Azure DevOps project is the exception when the person wants a new project with that name: the dry run then offers to create it. Ask the person which store if neither is set up.
 3. **Dry run:** `qam publish <run>`. Exit 3 means there is something to approve. Show the person the preview as it is, then say plainly:
+   - an Azure DevOps **project that will be created**, if the preview says the project doesn't exist: its name, its process (the organization's default) and that it is private. Creating a project is an organization-level change; say so, and that it needs the "Create new projects" permission (decision Q35);
    - what will be **created** and **updated**, and in which suite;
    - each **conflict**: someone changed that test case in the store since the last publish, so it won't be written;
    - **not linked to code**: cases with no `path:` tag, which the gate can't select by code;

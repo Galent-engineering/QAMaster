@@ -1,0 +1,29 @@
+{
+  "count": 3,
+  "value": [
+    {
+      "id": "adcc42ab-9882-485e-a3ed-7678f01f66bc",
+      "name": "Agile",
+      "description": "This template is flexible and will work great for most teams using Agile planning methods.",
+      "url": "https://dev.azure.com/org/_apis/process/processes/adcc42ab-9882-485e-a3ed-7678f01f66bc",
+      "type": "system",
+      "isDefault": true
+    },
+    {
+      "id": "6b724908-ef14-45cf-84f8-768b5384da45",
+      "name": "Scrum",
+      "description": "This template is for teams who follow the Scrum framework.",
+      "url": "https://dev.azure.com/org/_apis/process/processes/6b724908-ef14-45cf-84f8-768b5384da45",
+      "type": "system",
+      "isDefault": false
+    },
+    {
+      "id": "b8a3a935-7e91-48b8-a94c-606d37c3e9f2",
+      "name": "Basic",
+      "description": "This template is flexible for any process and great for teams getting started with Azure DevOps.",
+      "url": "https://dev.azure.com/org/_apis/process/processes/b8a3a935-7e91-48b8-a94c-606d37c3e9f2",
+      "type": "system",
+      "isDefault": false
+    }
+  ]
+}

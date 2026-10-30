@@ -28,6 +28,9 @@ export type WriteCheck = {
   testCaseType: 'present' | 'missing' | 'unknown';
 };
 
+/** A project a store would create, or did (Q35), and the plan publish then creates in it. */
+export type NewProject = { name: string; process: string; plan: string };
+
 /** Where test cases live: QAMASTER_STORE; v1 has ado (Q23). */
 export interface TestCaseStore {
   /** Where the test cases come from, for `qam doctor`: "Azure DevOps galent/Shop, plan Shop Web". */
@@ -47,6 +50,11 @@ export interface TestCaseStore {
   ensurePlan(): Promise<{ id: number; name: string; created: boolean }>;
   /** A static suite of the plan, by name, created under the plan's root suite when missing. Publish --apply only. */
   ensureSuite(name: string): Promise<{ id: number; name: string; created: boolean }>;
+  /**
+   * Optional: the project the store lives in, created when missing (Q35); null when it exists. With dryRun nothing is
+   * written: the answer is what would be created, and the plan it then gets. Publish creates only with --apply.
+   */
+  ensureProject?(dryRun?: boolean): Promise<NewProject | null>;
   /**
    * Optional: whether the credential's user may create plans, suites and test cases, asked of the store with reads
    * only (no write is sent). Optional so a store that can't answer needn't, and doctor says so.

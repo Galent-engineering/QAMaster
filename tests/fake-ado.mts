@@ -54,6 +54,17 @@ export class FakeAdo {
   missingProject = false;
   /** Set: projects answers with this status instead (403), as for a token without Project and Team (Read). */
   projectsStatus: number | null = null;
+  /** The organization's processes (process/processes); a new project gets the default one. */
+  processes = [
+    { id: 'adcc42ab-9882-485e-a3ed-7678f01f66bc', name: 'Agile', type: 'system', isDefault: true },
+    { id: '6b724908-ef14-45cf-84f8-768b5384da45', name: 'Scrum', type: 'system', isDefault: false },
+  ];
+  /** The body of every POST projects: the projects created. */
+  createdProjects: Json[] = [];
+  /** Set: POST projects answers with this status instead (403, as without "Create new projects"). */
+  createStatus: number | null = null;
+  /** What operations/{id} answers for a creation, poll by poll (the last repeats); succeeded makes the project exist. */
+  operationStatuses = ['inProgress', 'succeeded'];
   /** 'METHOD path' of every call, to count them. */
   log: string[] = [];
   private nextId = 1000;
@@ -117,8 +128,8 @@ export class FakeAdo {
       const names = this.missingProject ? this.otherProjects : [this.project, ...this.otherProjects];
       return ok({ count: names.length, value: names.map((name) => ({ name, state: 'wellFormed' })) });
     }
-    if (this.missingProject && url.pathname.startsWith(`/${this.org}/${this.project}/`))
-      return ok(
+    const noProject = () =>
+      ok(
         {
           $id: '1',
           innerException: null,
@@ -127,7 +138,23 @@ export class FakeAdo {
         },
         404,
       );
+    if (this.missingProject && url.pathname.startsWith(`/${this.org}/${this.project}/`)) return noProject();
     let m: RegExpMatchArray | null;
+    if (method === 'GET' && p === `projects/${this.project}`)
+      return this.missingProject ? noProject() : ok({ id: 'p-1', name: this.project, state: 'wellFormed' });
+    if (method === 'GET' && p === 'process/processes')
+      return ok({ count: this.processes.length, value: this.processes });
+    if (method === 'POST' && p === 'projects') {
+      if (this.createStatus) return ok({ message: 'create refused' }, this.createStatus);
+      this.createdProjects.push(body);
+      return ok({ id: 'op-1', status: 'queued', url: `https://dev.azure.com/${this.org}/_apis/operations/op-1` }, 202);
+    }
+    m = p.match(/^operations\/(.+)$/);
+    if (method === 'GET' && m) {
+      const status = this.operationStatuses.length > 1 ? this.operationStatuses.shift() : this.operationStatuses[0];
+      if (status === 'succeeded') this.missingProject = false;
+      return ok({ id: m[1], status, resultMessage: null, detailedMessage: null });
+    }
     const planRef = (pl: { id: number; name: string; areaPath?: string; suites: Suite[] }) => ({
       id: pl.id,
       name: pl.name,

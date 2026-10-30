@@ -270,6 +270,11 @@ Auth: `QAMASTER_ADO_TOKEN` as Basic auth if set, else a Bearer token from `az ac
 | Update | `PATCH …/wit/workitems/{id}` with a `test` op on `/rev` | Work Items (Read & Write) |
 | Add to a suite | `POST …/testplan/Plans/{plan}/Suites/{suite}/TestCase` | Test Management (Read & Write) |
 | Create a suite | `POST …/testplan/Plans/{plan}/suites` | Test Management (Read & Write) |
+| Projects in the organization | `GET {org}/_apis/projects` (follow `x-ms-continuationtoken`) | Project and Team (Read) |
+| Does the project exist | `GET {org}/_apis/projects/{project}` (a 404 is "no") | Project and Team (Read) |
+| Default process, for a new project | `GET {org}/_apis/process/processes` (the one with `isDefault`) | Work Items (Read) |
+| Create the project (Q35, `--apply` only) | `POST {org}/_apis/projects` (private, Git), answered with an operation | Project and Team (Read, write, & manage), and "Create new projects" in the organization |
+| Wait for the new project | `GET {org}/_apis/operations/{id}` until `succeeded`, `failed` or `cancelled` (at most 2 minutes) | The token that created it |
 
 The gate needs only the read scopes. Publishing and `work-items` need read and write. The two WIQL notes (name the project, not `@project`) come from CheckMaster's Learnings.
 

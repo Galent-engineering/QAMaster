@@ -28,7 +28,7 @@ import {
   retag,
   type TestCase,
 } from '../shared/models.mts';
-import type { RequirementSource, TestCaseStore, WriteCheck } from './base.mts';
+import type { NewProject, RequirementSource, TestCaseStore, WriteCheck } from './base.mts';
 
 export const API_VERSION = '7.1';
 /** Microsoft Entra resource ID for Azure DevOps, for a token from `az login`. */
@@ -76,6 +76,9 @@ const WRITE_SCOPES = 'Work Items (Read & Write) and Test Management (Read & Writ
 const MAX_TRIES = 3;
 const MAX_WAIT_S = 30;
 const MAX_PROJECT_CHOICES = 20;
+/** A new project is polled every 2 s for at most 2 minutes; creation usually takes well under one. */
+const PROJECT_POLLS = 60;
+const PROJECT_POLL_MS = 2000;
 
 // biome-ignore lint/suspicious/noExplicitAny: ADO's JSON is read field by field, as CheckMaster's dicts were
 type Json = Record<string, any>;
@@ -389,6 +392,70 @@ export class AdoClient {
       ? `Existing projects, closest first:\n${suggestions.map((n) => `  ${n}`).join('\n')}${more > 0 ? `\n  ... and ${more} more` : ''}`
       : 'The organization has no projects yet.';
     return new NoProjectError(`${head} ${listed}\nEither:\n${fixes('one of them')}`, projects, suggestions);
+  }
+
+  /** Whether the configured project exists (asked at org level, so a missing one is a plain 404). */
+  async projectExists(): Promise<boolean> {
+    try {
+      await this.send('GET', `projects/${encodeURIComponent(this.project)}`, { orgLevel: true });
+      return true;
+    } catch (e) {
+      if (e instanceof AdoStatusError && e.status === 404) return false;
+      throw e;
+    }
+  }
+
+  /** The organization's default process (Agile, Scrum, …), the one a new project gets. */
+  async defaultProcess(): Promise<{ id: string; name: string }> {
+    const found = (await this.pages('process/processes', {}, true)).find((p) => p.isDefault);
+    if (!found)
+      throw new BlockedError(
+        `Azure DevOps names no default process in ${this.organization}. Create the project '${this.project}' in Azure DevOps, then publish again.`,
+      );
+    return { id: String(found.id), name: String(found.name) };
+  }
+
+  /**
+   * Creates the configured project, private and with Git, on the given process (Q35). ADO queues the creation, so its
+   * operation is polled, for a bounded time. Publish calls it only with --apply.
+   */
+  async createProject(processId: string): Promise<void> {
+    const name = this.project;
+    let op: Json;
+    try {
+      op = (await this.send('POST', 'projects', {
+        orgLevel: true,
+        json: {
+          name,
+          description: 'Created by QAMaster publish.',
+          visibility: 'private',
+          capabilities: {
+            versioncontrol: { sourceControlType: 'Git' },
+            processTemplate: { templateTypeId: processId },
+          },
+        },
+      })) as Json;
+    } catch (e) {
+      if (e instanceof AdoStatusError && e.status === 403)
+        throw new BlockedError(
+          `Azure DevOps refused to create the project '${name}' (403). It needs the organization permission "Create new projects" (Project Collection Administrators have it) and a token with Project and Team (Read, write, & manage). Ask an organization admin for it, or to create the project, then publish again.`,
+        );
+      throw e;
+    }
+    const check = `Look for '${name}' in https://dev.azure.com/${encodeURIComponent(this.organization)}/_settings/projects, then run qam publish again.`;
+    for (let poll = 1; ; poll++) {
+      const now = (await this.send('GET', `operations/${op.id}`, { orgLevel: true })) as Json;
+      if (now.status === 'succeeded') return;
+      if (now.status === 'failed' || now.status === 'cancelled')
+        throw new BlockedError(
+          `Azure DevOps couldn't create the project '${name}' (${now.status}): ${now.resultMessage || now.detailedMessage || 'no reason given'}. ${check}`,
+        );
+      if (poll >= PROJECT_POLLS)
+        throw new BlockedError(
+          `Azure DevOps is still creating the project '${name}' after ${(PROJECT_POLLS * PROJECT_POLL_MS) / 1000} seconds. ${check}`,
+        );
+      await this.wait(PROJECT_POLL_MS);
+    }
   }
 
   async wiql(query: string, top: number): Promise<number[]> {
@@ -759,6 +826,17 @@ class AdoItems {
     const name = this.settings.plan || this.settings.repoName;
     const made = (await this.client.send('POST', 'testplan/plans', { json: { name } })) as Json;
     return { id: made.id, name: made.name, created: true };
+  }
+
+  /**
+   * The project, created when missing (Q35): private, Git, the organization's default process. null when it exists.
+   * With dryRun nothing is written: the answer is what would be created, and the plan it then gets.
+   */
+  async ensureProject(dryRun = false): Promise<NewProject | null> {
+    if (await this.client.projectExists()) return null;
+    const proc = await this.client.defaultProcess();
+    if (!dryRun) await this.client.createProject(proc.id);
+    return { name: this.client.project, process: proc.name, plan: this.settings.plan || this.settings.repoName };
   }
 
   /** A static suite of the plan by name (case ignored), created under the root suite when missing. Publish --apply only. */

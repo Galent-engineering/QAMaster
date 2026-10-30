@@ -256,6 +256,58 @@ test("listProjects: every page of the organization's projects, with their names"
   );
 });
 
+/** A missing project 'Shop', the org's processes, and a creation that is queued, then in progress, then done. */
+function mockNewProject(polls: { status: number; body?: unknown }[]) {
+  const op = fixture('project-create.json');
+  return new Mock()
+    .on('GET', `${ORG}/projects/Shop`, NO_PROJECT, { status: 404 })
+    .on('GET', `${ORG}/process/processes`, fixture('processes.json'))
+    .on('POST', `${ORG}/projects`, op, { status: 202 })
+    .seq('GET', `${ORG}/operations/${op.id}`, polls);
+}
+
+test('ensureProject: a dry run names the project, the default process and the plan, and writes nothing', async () => {
+  const m = mockNewProject([]);
+  assert.deepEqual(await store(m).ensureProject(true), { name: 'Shop', process: 'Agile', plan: 'shop-web' });
+  assert.equal(m.to('POST', `${ORG}/projects`).length, 0);
+  const exists = new Mock().on('GET', `${ORG}/projects/Shop`, { id: 'p', name: 'Shop', state: 'wellFormed' });
+  assert.equal(await store(exists).ensureProject(), null, 'an existing project is left alone');
+  assert.equal(exists.to('POST', `${ORG}/projects`).length, 0);
+});
+
+test('ensureProject: creates a private Git project with the default process, then polls the operation', async () => {
+  const m = mockNewProject([
+    { status: 200, body: { ...fixture('operation.json'), status: 'inProgress' } },
+    { status: 200, body: fixture('operation.json') },
+  ]);
+  assert.deepEqual(await store(m).ensureProject(), { name: 'Shop', process: 'Agile', plan: 'shop-web' });
+  const body = sent(m.to('POST', `${ORG}/projects`)[0]);
+  assert.equal(body.name, 'Shop');
+  assert.equal(body.visibility, 'private');
+  assert.deepEqual(body.capabilities, {
+    versioncontrol: { sourceControlType: 'Git' },
+    processTemplate: { templateTypeId: 'adcc42ab-9882-485e-a3ed-7678f01f66bc' },
+  });
+  assert.equal(m.to('GET', `${ORG}/operations/066488b8-b14e-43d1-befc-a2e655266e2b`).length, 2);
+});
+
+test('ensureProject: a failed or endless creation, and a refused one (403), block with what to do', async () => {
+  const failed = mockNewProject([
+    { status: 200, body: { ...fixture('operation.json'), status: 'failed', resultMessage: 'The name is reserved.' } },
+  ]);
+  await assert.rejects(
+    store(failed).ensureProject(),
+    blocked(/couldn't create the project 'Shop'.*The name is reserved/),
+  );
+  const endless = mockNewProject([{ status: 200, body: { ...fixture('operation.json'), status: 'inProgress' } }]);
+  await assert.rejects(
+    store(endless).ensureProject(),
+    blocked(/still creating the project 'Shop'.*_settings\/projects/),
+  );
+  const refused = mockNewProject([]).on('POST', `${ORG}/projects`, { message: 'denied' }, { status: 403 });
+  await assert.rejects(store(refused).ensureProject(), blocked(/Create new projects/));
+});
+
 test('cm: test cases read tags and the automation link, and skip missing items', async () => {
   const m = new Mock();
   mockPlan(m);

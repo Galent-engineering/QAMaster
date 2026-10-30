@@ -11,6 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
+import type { NewProject } from '../adapters/base.mts';
 import { withCache } from '../adapters/cache.mts';
 import { buildStore } from '../adapters/registry.mts';
 import type { Dsm } from '../dsm/build.mts';
@@ -25,7 +26,7 @@ import {
   suggestSmoke,
 } from '../publish/publish.mts';
 import type { Config } from '../shared/config.mts';
-import { BlockedError, NoPlanError } from '../shared/errors.mts';
+import { BlockedError, NoPlanError, NoProjectError } from '../shared/errors.mts';
 import type { Item, Ledger } from '../shared/models.mts';
 import { runDir } from './testgen.mts';
 
@@ -93,16 +94,23 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   const derived: Derived[] = run.cases.filter((c) => !leftOut.has(c.id)).map((c) => derive(c, ctx));
 
   // inPlan first: it fails loudly when the store can't be reached, so an ID missing below really is gone. A store with
-  // no plan at all gets one on --apply (Q33); one with other plans is the person's choice, which doctor lists.
+  // no plan at all gets one on --apply (Q33); one with other plans is the person's choice, which doctor lists. A missing
+  // project is created on --apply too, and then its plan (Q35).
   let planToCreate: string | null = null;
+  let projectToCreate: NewProject | null = null;
   try {
     await store.inPlan();
   } catch (e) {
-    if (!(e instanceof NoPlanError && e.plans.length === 0)) throw e;
-    planToCreate = e.createName;
+    if (e instanceof NoProjectError && store.ensureProject) {
+      projectToCreate = await store.ensureProject(true);
+      if (!projectToCreate) throw e;
+      planToCreate = projectToCreate.plan;
+    } else if (e instanceof NoPlanError && e.plans.length === 0) planToCreate = e.createName;
+    else throw e;
   }
   const items = new Map<number, Item>();
-  for (const e of ledger?.entries ?? []) {
+  // a project still to be created holds nothing to read
+  for (const e of projectToCreate ? [] : (ledger?.entries ?? [])) {
     try {
       items.set(e.trackerId, await store.show(e.trackerId));
     } catch (err) {
@@ -111,7 +119,9 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   }
   // a case left out of this publish is not "no longer generated"
   const entries = (ledger?.entries ?? []).filter((e) => !leftOut.has(e.localId));
-  const smokeInStore = (await store.find({ kind: 'test_case', tag: 'smoke', limit: 1000 })).length;
+  const smokeInStore = projectToCreate
+    ? 0
+    : (await store.find({ kind: 'test_case', tag: 'smoke', limit: 1000 })).length;
   const suggestion = suggestSmoke(derived, entries, smokeInStore, cfg.project);
   const confirmed = new Set(suggestion.ids.filter((id) => !skipSmoke.has(id)));
   const result = diff({ derived, ledger: entries, items, module: run.scope.module, confirmedSmoke: confirmed });
@@ -128,6 +138,11 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     `QAMaster publish ${run.name} → ${where} (${v.apply ? 'applying' : 'dry run'})`,
     `Reviewed by ${run.reviewedBy}${run.reviewedAt ? ` on ${run.reviewedAt.slice(0, 10)}` : ''}`,
     ...(run.ownerWarning ? [`Warning: ${run.ownerWarning}`] : []),
+    ...(projectToCreate
+      ? [
+          `The ADO project '${projectToCreate.name}' doesn't exist; --apply will create it (process ${projectToCreate.process}, private).`,
+        ]
+      : []),
     ...(planToCreate ? [`The test plan '${planToCreate}' doesn't exist yet; --apply will create it.`] : []),
     ...(cached.age() ? [`Store as of ${cached.age()} (from the cache). Run with --refresh to read it again.`] : []),
   ];
@@ -176,6 +191,8 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     };
     if (result.declinedSmoke.length) save([], result.declinedSmoke);
     if (creates.length || updates.length) {
+      const made = projectToCreate && store.ensureProject ? await store.ensureProject() : null;
+      if (made) lines.push(`Created ADO project ${made.name}.`);
       const plan = await store.ensurePlan();
       if (plan.created) lines.push(`Created test plan ${plan.name}.`);
     }
@@ -228,6 +245,9 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
         storeAsOf: cached.age(),
         reviewedBy: run.reviewedBy,
         ...(run.ownerWarning ? { warning: run.ownerWarning } : {}),
+        ...(projectToCreate
+          ? { createProject: { name: projectToCreate.name, process: projectToCreate.process, visibility: 'private' } }
+          : {}),
         changes: result.changes.map(({ change: _write, ...c }) => c),
         notLinked,
         smoke: { suggested: suggestion.ids, skipped: [...skipSmoke], max: cfg.project.smoke.max },

@@ -1,0 +1,12 @@
+{
+  "_links": {
+    "self": { "href": "https://dev.azure.com/org/_apis/operations/066488b8-b14e-43d1-befc-a2e655266e2b" }
+  },
+  "id": "066488b8-b14e-43d1-befc-a2e655266e2b",
+  "pluginId": "ff1f4a89-a8c5-4b29-8d5e-2d4d7c94a1a4",
+  "status": "succeeded",
+  "url": "https://dev.azure.com/org/_apis/operations/066488b8-b14e-43d1-befc-a2e655266e2b",
+  "resultMessage": null,
+  "detailedMessage": null,
+  "resultUrl": { "resultUrl": "https://dev.azure.com/org/_apis/projects/Shop" }
+}

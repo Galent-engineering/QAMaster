@@ -17,6 +17,7 @@ type Snapshot = { where: string; plan?: Stamped<[number, TestCase][]>; items: Re
 
 export class CachedStore implements TestCaseStore {
   checkWrite?: () => Promise<WriteCheck>;
+  ensureProject?: TestCaseStore['ensureProject'];
   private inner: TestCaseStore;
   private file: string;
   private refresh: boolean;
@@ -30,6 +31,7 @@ export class CachedStore implements TestCaseStore {
     this.refresh = !!o.refresh;
     this.now = o.now ?? (() => new Date());
     if (inner.checkWrite) this.checkWrite = () => (inner.checkWrite as () => Promise<WriteCheck>)();
+    if (inner.ensureProject) this.ensureProject = inner.ensureProject.bind(inner);
   }
 
   /** When the oldest cached answer this store gave was read from the live store, or null if every read was live. */

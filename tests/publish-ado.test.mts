@@ -12,6 +12,7 @@ import { STORES } from '../plugin/src/adapters/registry.mts';
 import { publish } from '../plugin/src/cli/publish.mts';
 import { setupProject } from '../plugin/src/pipeline/setup.mts';
 import { loadConfig } from '../plugin/src/shared/config.mts';
+import { BlockedError } from '../plugin/src/shared/errors.mts';
 import { runHash } from '../plugin/src/testgen/run.mts';
 import { FakeAdo } from './fake-ado.mts';
 import { tmpDir } from './tmp.mts';
@@ -168,6 +169,40 @@ test('ado publish: the test plan is created on --apply when the repo has none, a
   assert.equal(r.code, 0, r.out);
   assert.match(r.out, /Created test plan/);
   assert.equal(ado.plans.length, 1);
+});
+
+test('ado publish: a missing project is created on --apply, then its plan, and not before (Q35)', async () => {
+  const ado = new FakeAdo(false);
+  ado.missingProject = true;
+  const p = project(ado);
+  p.writeRun([kase('TC-CART-001')]);
+  const dry = await p.run();
+  assert.equal(dry.code, 3, dry.out);
+  assert.match(dry.out, /The ADO project 'Shop' doesn't exist; --apply will create it \(process Agile, private\)\./);
+  assert.match(dry.out, /test plan 'shop-web' doesn't exist yet; --apply will create it/);
+  assert.match(dry.out, /Create \(1\)/);
+  assert.deepEqual(
+    ado.log.filter((l) => !l.startsWith('GET')),
+    [],
+    'a dry run creates nothing',
+  );
+  const r = await p.run('--apply');
+  assert.equal(r.code, 0, r.out);
+  assert.match(r.out, /Created ADO project Shop\.\nCreated test plan shop-web\./);
+  assert.equal(ado.createdProjects.length, 1);
+  assert.equal(ado.createdProjects[0].visibility, 'private');
+  assert.deepEqual(ado.log.filter((l) => l.startsWith('POST')).slice(0, 2), ['POST projects', 'POST testplan/plans']);
+  assert.equal(ado.plans.length, 1);
+});
+
+test('ado publish: a refused project creation (403) names the permission and writes nothing else', async () => {
+  const ado = new FakeAdo(false);
+  ado.missingProject = true;
+  ado.createStatus = 403;
+  const p = project(ado);
+  p.writeRun([kase('TC-CART-001')]);
+  await assert.rejects(p.run('--apply'), (e) => e instanceof BlockedError && /Create new projects/.test(e.message));
+  assert.equal(ado.plans.length, 0);
 });
 
 test('ado publish: a case no longer generated is closed and taken out of its suites only with --retire', async () => {

@@ -551,6 +551,22 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - Moving a project from `file` to `ado` (`qam publish --to ado`): out of scope until asked. Today you'd start a new ledger.
   - Jira stores (`xray`, `zephyr`) stay after v1, as Q23 says.
 
+**Q35. Publish can create a missing ADO project, only with `--apply`** (2026-10-30, accepted 2026-10-30, New; extends Q33, keeps Q7)
+- **Decision:**
+  - **When the configured project doesn't exist** (TF200016), `qam publish` doesn't block. Its preview says so first: "The ADO project 'X' doesn't exist; --apply will create it (process P, private)." The plan line follows, since a new project has no plan.
+  - **Only `--apply` creates it**, after the person's yes to that preview (Q7). A dry run sends no write. Nothing else creates a project: doctor and the gate only report it missing (with the organization's projects, closest first).
+  - **The new project is private, uses Git, and gets the organization's default process** (`GET process/processes`, the one with `isDefault`). QAMaster asks no questions about it. A team that wants another process or public visibility creates the project in Azure DevOps first.
+  - **Creation is asynchronous in ADO.** `POST projects` returns an operation, which the store polls (`GET operations/{id}`) for at most two minutes. A failure or a timeout blocks (exit 2) with the reason and where to look; running publish again doesn't create the project twice.
+  - **It needs the organization permission "Create new projects"** (Project Collection Administrators have it) and a token with Project and Team (Read, write, & manage). A 403 blocks with exactly that.
+  - **In the code**, it is the optional `TestCaseStore.ensureProject()`, passed through the cache. Publish calls it before `ensurePlan()` (Q33). The `file` store doesn't have it.
+  - **The publish flags `--leave-out`, `--skip-smoke` and `--refresh` are approved as shipped.** The person signed them off on 2026-10-30; they were in the code before any decision named them.
+- **Why:**
+  - The person wants no hand setup in ADO before a first publish. A missing project was the first wall new users hit.
+  - A project is an organization-level write, so it gets the same preview-then-yes gate as every other publish write.
+- **Gave up:**
+  - No choice of process, visibility or version control from QAMaster. The defaults fit a new QA project; anything else is made in ADO.
+  - A token that can create projects is broader than publishing needs. Teams that don't want that create the project by hand, and publish then never asks.
+
 ---
 
 ## Open questions
