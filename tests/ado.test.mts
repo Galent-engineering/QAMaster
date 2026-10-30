@@ -602,9 +602,10 @@ test('review C: qam ado call drops a leading slash from the route', () => {
 });
 
 test('review D: step text with <placeholders> survives the round trip, escaped twice as ADO writes it', () => {
-  const steps = [{ action: 'Enter <username> and <password>', expected: 'Total is < $20 & tax' }];
+  // the re-review found the apostrophe: written as &#x27; and read back literally
+  const steps = [{ action: "Don't enter <username> or <password>", expected: 'Total is < $20 & tax, it\'s "final"' }];
   const xml = stepsXml(steps);
-  assert.match(xml, /Enter &amp;lt;username&amp;gt;/);
+  assert.match(xml, /enter &amp;lt;username&amp;gt;/);
   assert.deepEqual(parseSteps(xml), steps);
 });
 

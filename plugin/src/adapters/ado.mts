@@ -111,7 +111,9 @@ export function plain(html: string): string {
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')
     .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+    // numeric entities in either form: escapeHtml writes ' as &#x27;, ADO's editor as &#39;
+    .replace(/&#x([0-9a-f]+);/gi, (_, h: string) => String.fromCodePoint(Number.parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d: string) => String.fromCodePoint(Number(d)))
     .replace(/&amp;/g, '&');
   return text
     .split('\n')

@@ -934,6 +934,9 @@ It uses `IN GROUP 'Microsoft.RequirementCategory'` instead of a fixed list of ty
   - **F:** a requirement at the root iteration has no sprint;
   - **G:** work-item links encode the organization and project;
   - **H:** `retire` leaves a query-based suite to its query and says so. The fake ADO now has suite types, which it lacked.
+- **A second review** of these corrections (7 agents) confirmed one more problem: an apostrophe in a step came back as `&#x27;`. Step text now decodes numeric entities in both forms, and the round-trip test covers it. The four other findings were refuted:
+  - as intended: two sibling suites with the same name block;
+  - as older than these corrections, and not regressions: a misleading message when a 503'd update had landed, a read that keeps getting 503 being called throttling, and `retire` unlinking a requirement-based suite, which it always did by taking a test case out of every suite.
 
 **Intended differences from CheckMaster:**
 - the fixes;
