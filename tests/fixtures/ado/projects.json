@@ -1,0 +1,33 @@
+{
+  "count": 3,
+  "value": [
+    {
+      "id": "eb6e4656-77fc-42a1-9181-4c6d8e9da5d1",
+      "name": "Fabrikam-Fiber",
+      "description": "Team Foundation Version Control projects.",
+      "url": "https://dev.azure.com/org/_apis/projects/eb6e4656-77fc-42a1-9181-4c6d8e9da5d1",
+      "state": "wellFormed",
+      "revision": 411,
+      "visibility": "private",
+      "lastUpdateTime": "2025-03-18T10:00:00.000Z"
+    },
+    {
+      "id": "6ce954b1-ce1f-45d1-b94d-e6bf2464ba2c",
+      "name": "ShopWeb",
+      "url": "https://dev.azure.com/org/_apis/projects/6ce954b1-ce1f-45d1-b94d-e6bf2464ba2c",
+      "state": "wellFormed",
+      "revision": 412,
+      "visibility": "private",
+      "lastUpdateTime": "2025-03-18T10:00:00.000Z"
+    },
+    {
+      "id": "281f9a5b-af0d-49b4-a1df-fe6f5e5f84d0",
+      "name": "Shap",
+      "url": "https://dev.azure.com/org/_apis/projects/281f9a5b-af0d-49b4-a1df-fe6f5e5f84d0",
+      "state": "wellFormed",
+      "revision": 413,
+      "visibility": "private",
+      "lastUpdateTime": "2025-03-18T10:00:00.000Z"
+    }
+  ]
+}

@@ -84,6 +84,31 @@ test('doctor: when no plan matches, the plans are numbered, creating one is last
   assert.doesNotMatch(record.store.detail, /\n/, "the record's one-line detail, as before");
 });
 
+test('doctor: a project that does not exist lists the projects, closest first, and --json carries them as data', async () => {
+  const ado = new FakeAdo();
+  ado.missingProject = true; // the org has 'Billing' and 'Shop Web'
+  const { cfg, dir } = project(ado);
+  const r = await run(cfg, []);
+  assert.equal(r.code, 2);
+  assert.match(
+    r.out,
+    /FIX +test case store +Azure DevOps project 'Shop' doesn't exist in org\. Existing projects, closest first:/,
+  );
+  // continuation lines stay under the detail column
+  assert.match(r.out, /\n {8,}Shop Web\n {8,}Billing\n/);
+  assert.match(r.out, /QAMASTER_ADO_PROJECT=/);
+  const j = JSON.parse((await run(cfg, [], true)).out);
+  const store = j.checks.find((c: { check: string }) => c.check === 'test case store');
+  assert.deepEqual(store.projects, ['Billing', 'Shop Web']);
+  assert.deepEqual(store.suggestions, ['Shop Web', 'Billing']);
+  const record = JSON.parse(fs.readFileSync(path.join(dir, '.qamaster/doctor.json'), 'utf8'));
+  assert.doesNotMatch(record.store.detail, /\n/, "the record's one-line detail, as before");
+  // a token that can't list projects still names the missing project, with the scope it needs
+  ado.projectsStatus = 403;
+  const refused = await run(cfg, []);
+  assert.match(refused.out, /project 'Shop' doesn't exist in org.*Project and Team \(Read\)/s);
+});
+
 test('doctor: a configured plan name that matches nothing gets the same choices; two matching plans keep their message', async () => {
   const ado = new FakeAdo();
   const { cfg } = project(ado, { ...ENV, QAMASTER_ADO_PLAN: 'Nope' }, { plan: 'Nope' });

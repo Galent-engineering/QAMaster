@@ -20,7 +20,7 @@ import {
   stepsXml,
   WRITE_BITS,
 } from '../plugin/src/adapters/ado.mts';
-import { BlockedError, NoPlanError } from '../plugin/src/shared/errors.mts';
+import { BlockedError, NoPlanError, NoProjectError } from '../plugin/src/shared/errors.mts';
 import { requirementSourceContract, testCaseStoreContract } from './contracts.mts';
 import { FakeAdo } from './fake-ado.mts';
 
@@ -181,6 +181,79 @@ test('plan choices: the existing plans are numbered, a new plan is the last choi
     assert.match(e.message, /Choose one:\n {2}1\. Create a new plan/);
     return true;
   });
+});
+
+/** ADO's 404 for a project that doesn't exist (the usual error envelope; the message is TF200016's). */
+const NO_PROJECT = {
+  $id: '1',
+  innerException: null,
+  message:
+    'TF200016: The following project does not exist: Shop. Verify that the name of the project is correct and that the project exists on the specified Azure DevOps Server.',
+  typeName:
+    'Microsoft.TeamFoundation.Core.WebApi.ProjectDoesNotExistWithNameException, Microsoft.TeamFoundation.Core.WebApi',
+  typeKey: 'ProjectDoesNotExistWithNameException',
+  errorCode: 0,
+  eventId: 3000,
+};
+
+test('missing project: TF200016 lists the projects, closest first, and the ways out; the error carries them', async () => {
+  const m = new Mock()
+    .on('GET', `${BASE}/testplan/plans`, NO_PROJECT, { status: 404 })
+    .on('GET', `${ORG}/projects`, fixture('projects.json'));
+  await assert.rejects(store(m).plan(), (e) => {
+    assert.ok(e instanceof NoProjectError);
+    assert.deepEqual(e.projects, ['Fabrikam-Fiber', 'ShopWeb', 'Shap']);
+    // a name containing 'Shop' first, then by edit distance
+    assert.deepEqual(e.suggestions, ['ShopWeb', 'Shap', 'Fabrikam-Fiber']);
+    assert.match(e.message, /^Azure DevOps project 'Shop' doesn't exist in org\. Existing projects, closest first:\n/);
+    assert.match(e.message, /\n {2}ShopWeb\n {2}Shap\n {2}Fabrikam-Fiber\n/);
+    assert.match(e.message, /QAMASTER_ADO_PROJECT=<one of them, or a new name>/);
+    assert.match(e.message, /QAMASTER_STORE=file/);
+    assert.match(e.message, /qam publish --apply/);
+    return true;
+  });
+  assert.equal(m.to('GET', `${ORG}/projects`).length, 1);
+});
+
+test('missing project: listing paged by continuation token; a refused listing falls back to a scope hint', async () => {
+  const m = new Mock()
+    .on('GET', `${BASE}/testplan/plans`, NO_PROJECT, { status: 404 })
+    .on('GET', `${ORG}/projects`, { value: [{ name: 'A' }] }, { headers: { 'x-ms-continuationtoken': '1' } })
+    .on('GET', `${ORG}/projects`, { value: [{ name: 'Shop2' }] }, { params: { continuationToken: '1' } });
+  await assert.rejects(store(m).plan(), (e) => {
+    assert.ok(e instanceof NoProjectError);
+    assert.deepEqual(e.projects, ['A', 'Shop2']);
+    assert.deepEqual(e.suggestions, ['Shop2', 'A']);
+    return true;
+  });
+  const refused = new Mock()
+    .on('GET', `${BASE}/testplan/plans`, NO_PROJECT, { status: 404 })
+    .on('GET', `${ORG}/projects`, { message: 'no' }, { status: 403 });
+  await assert.rejects(store(refused).plan(), (e) => {
+    assert.ok(e instanceof NoProjectError);
+    assert.deepEqual(e.projects, []);
+    assert.match(e.message, /^Azure DevOps project 'Shop' doesn't exist in org/);
+    assert.match(e.message, /Listing the organization's projects needs a token with Project and Team \(Read\)/);
+    assert.match(e.message, /QAMASTER_STORE=file/);
+    return true;
+  });
+  // an ordinary 404 (no TF200016) keeps its plain message and lists nothing
+  const other = new Mock().on(
+    'GET',
+    `${BASE}/testplan/plans`,
+    { message: 'The requested resource does not exist.' },
+    { status: 404 },
+  );
+  await assert.rejects(store(other).plan(), (e) => !(e instanceof NoProjectError) && blocked(/returned 404/)(e));
+  assert.equal(other.to('GET', `${ORG}/projects`).length, 0);
+});
+
+test("listProjects: every page of the organization's projects, with their names", async () => {
+  const m = new Mock().on('GET', `${ORG}/projects`, fixture('projects.json'));
+  assert.deepEqual(
+    (await client(m).listProjects()).map((p) => p.name),
+    ['Fabrikam-Fiber', 'ShopWeb', 'Shap'],
+  );
 });
 
 test('cm: test cases read tags and the automation link, and skip missing items', async () => {

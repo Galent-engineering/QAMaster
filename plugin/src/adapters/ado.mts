@@ -16,7 +16,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import type { Config } from '../shared/config.mts';
-import { BlockedError, NoPlanError } from '../shared/errors.mts';
+import { BlockedError, NoPlanError, NoProjectError } from '../shared/errors.mts';
 import {
   type Filter,
   type Item,
@@ -75,6 +75,7 @@ const REQ_FIELDS = [
 const WRITE_SCOPES = 'Work Items (Read & Write) and Test Management (Read & Write)';
 const MAX_TRIES = 3;
 const MAX_WAIT_S = 30;
+const MAX_PROJECT_CHOICES = 20;
 
 // biome-ignore lint/suspicious/noExplicitAny: ADO's JSON is read field by field, as CheckMaster's dicts were
 type Json = Record<string, any>;
@@ -208,6 +209,19 @@ export function automationFields(link: string): Record<string, string> {
 
 // ---- HTTP
 
+/** Levenshtein distance, ignoring case: how far a project name is from the configured one. */
+function distance(a: string, b: string): number {
+  const [x, y] = [a.toLowerCase(), b.toLowerCase()];
+  let row = Array.from({ length: y.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= x.length; i++) {
+    const next = [i];
+    for (let j = 1; j <= y.length; j++)
+      next[j] = Math.min(row[j] + 1, next[j - 1] + 1, row[j - 1] + (x[i - 1] === y[j - 1] ? 0 : 1));
+    row = next;
+  }
+  return row[y.length];
+}
+
 /** ADO's error body is JSON with the sentence in "message"; show that, not the blob. */
 function errorText(body: string): string {
   try {
@@ -304,11 +318,13 @@ export class AdoClient {
             : `Azure DevOps refused ${method} ${path} (403). Changes need a token with ${WRITE_SCOPES}, and permission for this change in the project.`,
           403,
         );
-      if (resp.status >= 400)
-        throw new AdoStatusError(
-          `Azure DevOps ${path} returned ${resp.status}: ${errorText(await resp.text())}`,
-          resp.status,
-        );
+      if (resp.status >= 400) {
+        const text = await resp.text();
+        // TF200016: the project itself doesn't exist, so say which ones do
+        if (resp.status === 404 && !opts.orgLevel && /TF200016|ProjectDoesNotExist/.test(text))
+          throw await this.noProject();
+        throw new AdoStatusError(`Azure DevOps ${path} returned ${resp.status}: ${errorText(text)}`, resp.status);
+      }
       return resp;
     }
   }
@@ -335,6 +351,44 @@ export class AdoClient {
       token = resp.headers.get('x-ms-continuationtoken');
     } while (token);
     return all;
+  }
+
+  /** The organization's projects (org level, every page). */
+  listProjects = () => this.pages('projects', {}, true);
+
+  /** The error for a missing project: the organization's projects, closest to the configured name first, and the fixes. */
+  private async noProject(): Promise<NoProjectError> {
+    const head = `Azure DevOps project '${this.project}' doesn't exist in ${this.organization}.`;
+    const fixes = (which: string) =>
+      [
+        `  - set QAMASTER_ADO_PROJECT=<${which}, or a new name> in the repo's .env;`,
+        "  - or set QAMASTER_STORE=file in the repo's .env to keep test cases in a local file, with no Azure DevOps (Q34);",
+        '  - or, with a new name, `qam publish --apply` creates the project.',
+      ].join('\n');
+    let projects: string[];
+    try {
+      projects = (await this.listProjects()).map((p) => String(p.name));
+    } catch (e) {
+      if (!(e instanceof BlockedError)) throw e;
+      return new NoProjectError(
+        `${head} Listing the organization's projects needs a token with Project and Team (Read). Either:\n${fixes('an existing project')}`,
+        [],
+        [],
+      );
+    }
+    // a name containing the configured one first, then by edit distance
+    const wanted = this.project.toLowerCase();
+    const rank = (n: string) => [n.toLowerCase().includes(wanted) ? 0 : 1, distance(n, wanted)];
+    const sorted = [...projects].sort((a, b) => {
+      const [ra, rb] = [rank(a), rank(b)];
+      return ra[0] - rb[0] || ra[1] - rb[1];
+    });
+    const suggestions = sorted.slice(0, MAX_PROJECT_CHOICES);
+    const more = sorted.length - suggestions.length;
+    const listed = suggestions.length
+      ? `Existing projects, closest first:\n${suggestions.map((n) => `  ${n}`).join('\n')}${more > 0 ? `\n  ... and ${more} more` : ''}`
+      : 'The organization has no projects yet.';
+    return new NoProjectError(`${head} ${listed}\nEither:\n${fixes('one of them')}`, projects, suggestions);
   }
 
   async wiql(query: string, top: number): Promise<number[]> {

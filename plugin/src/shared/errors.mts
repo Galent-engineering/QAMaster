@@ -20,3 +20,18 @@ export class NoPlanError extends BlockedError {
     this.createName = createName;
   }
 }
+
+/**
+ * The configured Azure DevOps project doesn't exist (TF200016). The message lists the organization's projects, closest
+ * first, and the ways out; `projects` (as listed) and `suggestions` (closest first) are the same as data for --json.
+ */
+export class NoProjectError extends BlockedError {
+  override name = 'NoProjectError';
+  readonly projects: string[];
+  readonly suggestions: string[];
+  constructor(message: string, projects: string[], suggestions: string[]) {
+    super(message);
+    this.projects = projects;
+    this.suggestions = suggestions;
+  }
+}

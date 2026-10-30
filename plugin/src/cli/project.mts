@@ -28,7 +28,7 @@ import { mark, reset, start, status, table } from '../pipeline/pipeline.mts';
 import { pluginVersion, type SetupOptions, type Step, setupProject } from '../pipeline/setup.mts';
 import { checkSource } from '../pipeline/sources.mts';
 import type { Config } from '../shared/config.mts';
-import { BlockedError, NoPlanError } from '../shared/errors.mts';
+import { BlockedError, NoPlanError, NoProjectError } from '../shared/errors.mts';
 
 const project = (cfg: Config) => cfg.qaProject ?? cfg.root;
 const appName = (cfg: Config, dir: string) => cfg.project.app?.name ?? path.basename(dir);
@@ -270,6 +270,8 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
     state?: WriteCheck['state'];
     plans?: { id: number; name: string }[];
     createName?: string;
+    projects?: string[];
+    suggestions?: string[];
   }[] = [];
   const dsmFile = path.join(dir, 'config', 'dsm-config.json');
   const dsm = fs.existsSync(dsmFile) ? readJson(dsmFile) : null;
@@ -319,9 +321,10 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
   } catch (e) {
     if (!(e instanceof BlockedError)) throw e;
     store = { ok: false, at: new Date().toISOString(), detail: e.message.replace(/\s+/g, ' ') };
-    // the numbered plan choices keep their lines, and are also data for --json
+    // the numbered plan choices and the project list keep their lines, and are also data for --json
     if (e instanceof NoPlanError) Object.assign(storeCheck, { plans: e.plans, createName: e.createName });
-    storeCheck.detail = e instanceof NoPlanError ? e.message : store.detail;
+    if (e instanceof NoProjectError) Object.assign(storeCheck, { projects: e.projects, suggestions: e.suggestions });
+    storeCheck.detail = e instanceof NoPlanError || e instanceof NoProjectError ? e.message : store.detail;
   }
   storeCheck.ok = store.ok;
   storeCheck.detail ||= store.detail;

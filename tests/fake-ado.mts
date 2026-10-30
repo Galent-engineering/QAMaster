@@ -48,6 +48,12 @@ export class FakeAdo {
   /** The only team that exists; @CurrentIteration with another is the live 500 VS402612. */
   team = 'Shop Team';
   currentIteration = 'Shop\\Sprint 24';
+  /** The organization's other projects, as projects lists them with this one. */
+  otherProjects = ['Billing', 'Shop Web'];
+  /** true: this project doesn't exist, so every project-level call is the 404 TF200016 (envelope hand-built). */
+  missingProject = false;
+  /** Set: projects answers with this status instead (403), as for a token without Project and Team (Read). */
+  projectsStatus: number | null = null;
   /** 'METHOD path' of every call, to count them. */
   log: string[] = [];
   private nextId = 1000;
@@ -106,6 +112,21 @@ export class FakeAdo {
       .replace(`/${this.org}/${this.project}/_apis/`, '')
       .replace(`/${this.org}/_apis/`, '');
     this.log.push(`${method} ${p}`);
+    if (method === 'GET' && url.pathname === `/${this.org}/_apis/projects`) {
+      if (this.projectsStatus) return ok({ message: 'projects refused' }, this.projectsStatus);
+      const names = this.missingProject ? this.otherProjects : [this.project, ...this.otherProjects];
+      return ok({ count: names.length, value: names.map((name) => ({ name, state: 'wellFormed' })) });
+    }
+    if (this.missingProject && url.pathname.startsWith(`/${this.org}/${this.project}/`))
+      return ok(
+        {
+          $id: '1',
+          innerException: null,
+          message: `TF200016: The following project does not exist: ${this.project}. Verify that the name of the project is correct and that the project exists on the specified Azure DevOps Server.`,
+          typeKey: 'ProjectDoesNotExistWithNameException',
+        },
+        404,
+      );
     let m: RegExpMatchArray | null;
     const planRef = (pl: { id: number; name: string; areaPath?: string; suites: Suite[] }) => ({
       id: pl.id,
