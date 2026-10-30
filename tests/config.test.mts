@@ -120,7 +120,7 @@ test('asProjectConfig names the key to fix', () => {
 test('asProjectConfig accepts the documented example', () => {
   const example = {
     app: { name: 'Shop', url: 'https://shop.example.test', repo: '../shop', channels: ['web', 'api'] },
-    publish: { pathDepth: 3, suiteBy: 'module' },
+    publish: { pathDepth: 4, suiteBy: 'module' },
     smoke: { max: 20, priorities: ['P1'], categories: ['Positive', 'E2E'] },
     testgen: { hallucination_tolerance: 0 },
     ai: 'on',
@@ -130,4 +130,11 @@ test('asProjectConfig accepts the documented example', () => {
   const c = asProjectConfig(example, 'qamaster.json');
   assert.equal(c.app?.name, 'Shop');
   assert.deepEqual(c.owners, { Checkout: 'a.rao@example.com' });
+});
+
+test('publish.pathDepth defaults to 4, in the schema and in the template qam setup copies', () => {
+  // 3 cut Juice Shop's frontend/src/app/address-create to frontend/src/app/**, the whole Angular app
+  assert.equal(DEFAULT_PROJECT_CONFIG.publish.pathDepth, 4);
+  const template = path.resolve(import.meta.dirname, '../plugin/templates/project/config/qamaster.json');
+  assert.equal(JSON.parse(fs.readFileSync(template, 'utf8')).publish.pathDepth, 4);
 });

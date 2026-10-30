@@ -206,7 +206,7 @@ Publishing (9) happens before automation (10–13) on purpose. Manual cases are 
 load      the run's testcases.json; refuse unless validation == pass and reviewedBy is set
           warn (don't block) if config.owners names an owner for the run's module and reviewedBy differs
 derive    tags:   path:<glob>   from DSM evidence on every screen the case visits (dsm.json screen → source files),
-                                collapsed to folders at config.publish.pathDepth (default 3), deduplicated
+                                collapsed to folders at config.publish.pathDepth (default 4), deduplicated
                   <module>, <module>-<sub-module>
                   smoke         suggested when priority P1 and category in {Positive, E2E}, up to config.smoke.max;
                                 written only if QA confirms it in the preview; never re-suggested once removed (ledger)
@@ -323,7 +323,7 @@ All hooks use only the standard library and stay quiet when they allow (Q14).
 | 4 | Port the ADO adapter to TypeScript, with fixtures from CM's tests | CM | M |
 | 5 | Port selection, approve, run, verdict | CM | M |
 | 6 | playwright-bdd runner; copy the pytest shim | New + CM | M |
-| 7 | Publish: derivation, ledger, dry run, apply | New | M |
+| 7 | Publish: derivation, ledger, dry run, apply; the `file` store and the store cache (Q34) | New | M |
 | 8 | Feedback: gaps, stale cases, defect drafts into reports | New + AQE | S |
 | 9 | Hooks, commands, skills; the Q14 hook rules | Both | S |
 | 10 | End to end against a demo app and a sandbox ADO project | — | M |

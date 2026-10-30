@@ -20,7 +20,7 @@ const config = (env: Record<string, string> = {}) => loadConfig(tmpDir('qam-adap
 test('an unknown adapter names the known ones', () => {
   assert.throws(() => buildStore(config({ QAMASTER_STORE: 'jira' })), {
     name: 'BlockedError',
-    message: "QAMASTER_STORE=jira isn't a known adapter. Use one of: ado.",
+    message: "QAMASTER_STORE=jira isn't a known adapter. Use one of: ado, file.",
   });
   assert.throws(() => buildRunner(config({ QAMASTER_RUNNER: 'cypress' })), /Use one of: playwright-bdd, pytest\./);
   assert.throws(() => buildRunner(config({ QAMASTER_RUNNER: 'toString' })), /isn't a known adapter/);

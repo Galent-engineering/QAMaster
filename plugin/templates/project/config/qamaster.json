@@ -1,6 +1,6 @@
 {
   "publish": {
-    "pathDepth": 3,
+    "pathDepth": 4,
     "suiteBy": "module"
   },
   "smoke": {

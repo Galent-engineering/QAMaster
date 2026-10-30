@@ -525,6 +525,32 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - Two ways of reaching ADO: the CLI for Claude's work, REST for the engine.
   - Recipes can drift from the API. Each one records the date it last worked.
 
+**Q34. The `file` store ships in v1, and every store sits behind a local cache** (2026-10-30, accepted 2026-10-30, New; amends Q23, refines Q6 and Q7)
+- **Decision:**
+  - **The source of truth is whatever `QAMASTER_STORE` names.** `ado` is the default. `file` is added to v1: a CSV in the QA project, kept in git, which is the master copy when it's chosen. Q6 already says the master is whatever the configured `TestCaseStore` holds; this makes that true for more than one store.
+  - **`file` store format: CSV, one row per step**, in the column layout of ADO Test Plans' own import (ID, Title, Step action, Step expected, State, Suite, Requirement, Automated Test, Tags). Q23's open question "xlsx or csv" is settled as **CSV**: XLSX needs a zip and XML library, and `plugin/` has no runtime dependencies. XLSX can come later behind the same adapter, once a dependency is agreed.
+  - **IDs and revisions in the file store:** the store assigns the next whole number, starting at 1000 so they don't look like ADO IDs in reports. Each test case carries a revision that goes up on every write, so "update refuses if the revision changed" works as in ADO.
+  - **A local cache wraps any store**, in `.qamaster/cache/store.json` (git-ignored):
+    - It holds the store's test cases as last read, with their revisions, the store's `where()` string and the time.
+    - **The cache is never the master.** Reads (`inPlan`, `show`, `find`) may come from it, and every message that used it says how old it is.
+    - **Writes always go to the store.** `update` checks the revision against the **live** store, never the cache. A stale cache can make a preview miss a conflict, but it can't make `--apply` overwrite one. The cache is updated after each write.
+    - It refreshes on `publish --refresh`, on `doctor`, and when it doesn't exist. Deleting it is always safe.
+    - With the `file` store the cache passes straight through, since the file is already local.
+  - **The ledger records which store it belongs to.** `.qamaster/ledger.json` gets a `store` field (the store's `where()` string). Publishing to a different store than the ledger names is blocked, with the fix, so IDs from one store are never taken for IDs from another.
+  - **Q7 is unchanged.** Dry run until `--apply`, idempotent, never deletes, refuses an unvalidated or unreviewed run.
+- **Why:**
+  - Teams without ADO, and demos with no sandbox project, can run the whole publish flow. The manual walkthrough's store stage was already marked "Local CSV for now".
+  - A second `TestCaseStore` implementation proves the interface isn't shaped around ADO. The shared contract suite (`tests/contracts.mts`) holds both to the same behaviour.
+  - The cache gives fast previews and offline work without a second source of truth.
+- **Gave up:**
+  - The `file` store has no history, permissions or concurrent editing (as Q23 said). Two people editing the CSV merge through git.
+  - A preview from a stale cache can be wrong about conflicts. It says so, and `--apply` still checks live.
+  - XLSX waits.
+- **Not decided here:**
+  - Whether the gate's `plan` reads through the cache: decide at porting step 5, with the same age display. In CI it would always refresh.
+  - Moving a project from `file` to `ado` (`qam publish --to ado`): out of scope until asked. Today you'd start a new ledger.
+  - Jira stores (`xray`, `zephyr`) stay after v1, as Q23 says.
+
 ---
 
 ## Open questions

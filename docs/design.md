@@ -164,7 +164,7 @@ QAMASTER_ADO_PROJECT=Shop
 ```json
 {
   "app": { "name": "Shop", "url": "https://shop.example.test", "repo": "../shop", "channels": ["web", "api"] },
-  "publish": { "pathDepth": 3, "suiteBy": "module" },
+  "publish": { "pathDepth": 4, "suiteBy": "module" },
   "smoke": { "max": 20, "priorities": ["P1"], "categories": ["Positive", "E2E"] },
   "testgen": { "hallucination_tolerance": 0 },
   "ai": "on",

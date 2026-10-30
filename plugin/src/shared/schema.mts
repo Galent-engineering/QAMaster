@@ -4,7 +4,7 @@
  */
 
 import { BlockedError } from './errors.mts';
-import { CATEGORIES, type Category, PRIORITIES, type Priority } from './models.mts';
+import { CATEGORIES, type Category, type Ledger, type LedgerEntry, PRIORITIES, type Priority } from './models.mts';
 
 /** The QA project's config/qamaster.json (docs/design.md, Configuration), with defaults filled in. */
 export type ProjectConfig = {
@@ -17,7 +17,7 @@ export type ProjectConfig = {
 };
 
 export const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
-  publish: { pathDepth: 3, suiteBy: 'module' },
+  publish: { pathDepth: 4, suiteBy: 'module' },
   smoke: { max: 20, priorities: ['P1'], categories: ['Positive', 'E2E'] },
   ai: 'on',
   owners: {},
@@ -84,4 +84,32 @@ export function asProjectConfig(data: unknown, file: string): ProjectConfig {
   if (gate.noMatch !== undefined && gate.noMatch !== 'pass-with-warning') bad('gate.noMatch', '"pass-with-warning"');
 
   return out;
+}
+
+/** .qamaster/ledger.json (Q7, Q34). Strict: a ledger that is half understood would publish things twice. */
+export function asLedger(data: unknown, file: string): Ledger {
+  const bad = (what: string, want: string): never => {
+    throw new BlockedError(`${file}: ${what} must be ${want}. Restore the file from git; don't delete it.`);
+  };
+  if (!isObj(data)) return bad('the file', 'a JSON object');
+  if (typeof data.store !== 'string' || !data.store) bad('"store"', 'the name of the store the IDs belong to');
+  if (!Array.isArray(data.entries)) bad('"entries"', 'a list');
+  const seen = new Set<string>();
+  const entries = (data.entries as unknown[]).map((raw, i) => {
+    const e = isObj(raw) ? raw : bad(`entry ${i + 1}`, 'an object');
+    const id = typeof e.localId === 'string' && e.localId ? e.localId : bad(`entry ${i + 1}: "localId"`, 'a draft ID');
+    const field = (key: string, want: string, ok: boolean) => {
+      if (!ok) bad(`entry ${i + 1} (${id}): "${key}"`, want);
+    };
+    field('trackerId', 'a whole number', Number.isInteger(e.trackerId) && (e.trackerId as number) > 0);
+    field('hash', 'a string', typeof e.hash === 'string' && e.hash !== '');
+    field('ownedTags', 'a list of tags', isStrings(e.ownedTags));
+    field('smokeDeclined', 'true or false', typeof e.smokeDeclined === 'boolean');
+    field('publishedAt', 'a string', typeof e.publishedAt === 'string');
+    field('trackerRev', 'a whole number', Number.isInteger(e.trackerRev) && (e.trackerRev as number) >= 0);
+    if (seen.has(id)) bad(`${id}`, 'in the ledger once, not twice');
+    seen.add(id);
+    return e as unknown as LedgerEntry;
+  });
+  return { store: data.store as string, entries };
 }

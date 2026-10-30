@@ -68,6 +68,9 @@ export type LedgerEntry = {
   trackerRev: number;
 };
 
+/** .qamaster/ledger.json: the entries belong to one store, named as the store's where() says (Q34). */
+export type Ledger = { store: string; entries: LedgerEntry[] };
+
 export type PublishChange = {
   kind: 'create' | 'update' | 'unchanged' | 'retire' | 'conflict';
   localId: string;
