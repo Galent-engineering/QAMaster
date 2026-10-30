@@ -62,6 +62,7 @@ export type LoadedRun = {
   scope: { module: string; subModule: string };
   cases: PublishCase[];
   reviewedBy: string;
+  reviewedAt: string;
   ownerWarning?: string;
 };
 
@@ -106,6 +107,7 @@ export function loadRun(dir: string, o: { dsmGeneratedAt: string | null; owners:
     scope: { module, subModule: manifest.scope?.sub_module ?? '' },
     cases: readJson<PublishCase[]>(path.join(dir, 'testcases.json'), 'testcases.json'),
     reviewedBy: record.reviewedBy,
+    reviewedAt: record.reviewedAt ?? '',
     ...(owner && !same(owner, record.reviewedBy)
       ? {
           ownerWarning: `${module}'s owner is ${owner} (config/qamaster.json), and ${record.reviewedBy} reviewed this run. Publishing anyway is allowed.`,

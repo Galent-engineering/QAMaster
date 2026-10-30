@@ -15,6 +15,7 @@ import { ado } from './ado.mts';
 import { dsm } from './dsm.mts';
 import { autSkills } from './knowledge.mts';
 import { doctor, integrations, pipeline, setup } from './project.mts';
+import { publish } from './publish.mts';
 import { review, testgen } from './testgen.mts';
 
 export const PASS = 0;
@@ -36,7 +37,7 @@ export const COMMANDS: Record<string, string> = {
   requirements: 'Fetch requirements: --sprint NAME | --current-sprint | --from D --to D',
   testgen: 'Test generation: context | validate <run> | render <run>',
   review: 'Record the review of a run (only after the person says yes)',
-  publish: 'Show what a run would publish to ADO; --apply writes it',
+  publish: 'Show what a reviewed run would publish to the test case store; --apply writes it',
   app: 'Create the automation folder: create --app NAME --web-url URL',
   'check-scripts': 'Quality gate for automation scripts',
   plan: 'Propose test cases for the change; runs nothing',
@@ -61,6 +62,7 @@ const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promi
   'aut-skills': (opts, args) => autSkills(loadConfig(opts.repo), args, opts.json),
   testgen: (opts, args) => testgen(loadConfig(opts.repo), args, opts.json),
   review: (opts, args) => review(loadConfig(opts.repo), args, opts.json),
+  publish: (opts, args) => publish(loadConfig(opts.repo), args, opts.json),
   setup: (opts, args) => setup(loadConfig(opts.repo), args, opts.json),
   pipeline: (opts, args) => pipeline(loadConfig(opts.repo), args, opts.json),
   doctor: (opts, args) => doctor(loadConfig(opts.repo), args, opts.json),

@@ -51,7 +51,7 @@ qam dsm run|refresh|changes|impact <files…>
 qam requirements fetch --sprint NAME | --current-sprint | --from D --to D
 qam testgen context|validate|render <run>
 qam review <run>                              # records gate 1 with the ADO account + git email; commands call it only after the person's yes
-qam publish <run> [--apply] [--retire]
+qam publish <run> [--apply] [--retire] [--leave-out ID,…] [--skip-smoke ID,…]
 qam app create --app NAME --web-url URL [--api-url URL]
 qam check-scripts
 qam plan    [--base REF] [--tag GROUP[=WHY]]

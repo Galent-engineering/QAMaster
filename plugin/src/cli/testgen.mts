@@ -90,7 +90,7 @@ function load(cfg: Config): Project {
   return { dir, dsm, facts };
 }
 
-function runDir(project: string, arg: string | undefined): string {
+export function runDir(project: string, arg: string | undefined): string {
   if (!arg) throw new BlockedError('Name the run: a folder, or a name under testgen/output/.');
   const found = [path.resolve(arg), path.join(project, 'testgen', 'output', arg)].find((d) => fs.existsSync(d));
   if (!found) throw new BlockedError(`No run ${arg}: give its folder, or a name under testgen/output/.`);
