@@ -11,6 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
+import { buildStore } from '../adapters/registry.mts';
 import {
   add,
   type Context,
@@ -243,7 +244,7 @@ export function pipeline(cfg: Config, argv: string[], json: boolean): number {
   return 0;
 }
 
-export function doctor(cfg: Config, _argv: string[], json: boolean): number {
+export async function doctor(cfg: Config, _argv: string[], json: boolean): Promise<number> {
   const dir = project(cfg);
   const checks: { check: string; ok: boolean; detail: string }[] = [];
   const dsmFile = path.join(dir, 'config', 'dsm-config.json');
@@ -279,7 +280,17 @@ export function doctor(cfg: Config, _argv: string[], json: boolean): number {
   });
   for (const i of verify(ctx(cfg)))
     checks.push({ check: `integration ${i.id}`, ok: !i.problem, detail: i.problem ?? 'working' });
-  checks.push({ check: 'test case store', ok: true, detail: 'checked once the ADO adapter is built (step 4)' });
+  // the store, read-only: the plan and its test cases (the pipeline's store stage reads this record)
+  let store: { ok: boolean; at: string; detail: string };
+  try {
+    const s = buildStore(cfg);
+    const cases = await s.inPlan();
+    store = { ok: true, at: new Date().toISOString(), detail: `${s.where()}: ${cases.size} test case(s) in the plan` };
+  } catch (e) {
+    if (!(e instanceof BlockedError)) throw e;
+    store = { ok: false, at: new Date().toISOString(), detail: e.message.replace(/\s+/g, ' ') };
+  }
+  checks.push({ check: 'test case store', ok: store.ok, detail: store.detail });
   const ok = checks.every((c) => c.ok);
   fs.mkdirSync(path.join(dir, QAMASTER_DIR), { recursive: true });
   const record = path.join(dir, QAMASTER_DIR, 'doctor.json');
@@ -287,7 +298,7 @@ export function doctor(cfg: Config, _argv: string[], json: boolean): number {
   try {
     prev = JSON.parse(fs.readFileSync(record, 'utf8'));
   } catch {}
-  writeJson(record, { ...prev, at: new Date().toISOString(), ok, checks });
+  writeJson(record, { ...prev, at: new Date().toISOString(), ok, checks, store });
   if (json) console.log(JSON.stringify({ result: ok ? 'pass' : 'blocked', checks }));
   else {
     const w = Math.max(...checks.map((c) => c.check.length));

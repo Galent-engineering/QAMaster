@@ -76,7 +76,7 @@ Not in step 3:
 | 3 | UI crawl and DSM refresh | ✓ 2026-10-29 | ✓ | ✓ real crawl of app.mjs: 0 writes | ✓ skill, agent, `/qamaster:dsm` | ✓ build |
 | 4 | Setup and pipeline | ✓ 2026-10-29, 10 AQE problems reproduced | ✓ | ✓ 2 golden fixtures, fixes 1–10 | ✓ no skills (onboard and status are step 9) | ✓ `feature/4_setup-and-pipeline` |
 | 5 | Application knowledge | ✓ 2026-10-29, 10 AQE problems reproduced | ✓ | ✓ 3 golden fixtures + AQE agreement, fixes 1–10 | ✓ `AUT-Skill-Builder` | ✓ `feature/5_application-knowledge` |
-| — | Step 4: ADO adapter | ✓ 2026-10-29, 6 CheckMaster problems reproduced; waiting for review | | | | |
+| — | Step 4: ADO adapter | ✓ 2026-10-29, 6 CheckMaster problems reproduced | ✓ + plan and suite creation, `qam ado call` | ✓ CheckMaster's 17, both contracts, fixes 1–6; live check waits for `az login` | ✓ `ADO-API` skill (Q33) | ✓ `feature/step4_ado-adapter` |
 | 6 | Requirements | | | | | |
 | 7 | TestGen | ✓ 2026-10-29, 8 AQE validator holes reproduced | ✓ | ✓ 3 goldens, fixes 1–8, `qam review` | ✓ `TestGen`, `Domain_Test_Design_Skill` + 39 | ✓ `feature/7_testgen` |
 | 8 | Automation | | | | | |
@@ -834,7 +834,7 @@ What it found:
   The trigger check showed the router winning that prompt over TestGen.
 - **Checks:** `claude plugin validate ./plugin` passes. Under `claude --plugin-dir ./plugin` with AQE switched off, "write test cases for the checkout module of our shop app" picks `qamaster:TestGen`, and "what test strategy fits a retail web shop" picks `qamaster:Domain_Test_Design_Skill`. **With AQE's plugin also on, AQE's TestGen wins.** Teams moving to QAMaster should turn AQE off.
 
-### Step 4. ADO adapter (Learn done 2026-10-29, waiting for review)
+### Step 4. ADO adapter (Learn done 2026-10-29)
 
 Porting step 4 (tech.md), built between features 5 and 6 (decision 4). It runs the same loop, on the branch `feature/step4_ado-adapter`.
 
@@ -889,9 +889,50 @@ Porting step 4 (tech.md), built between features 5 and 6 (decision 4). It runs t
 - `qam doctor` checks the store: credentials, the plan and the scopes. It writes `.qamaster/doctor.json`, which the pipeline's store stage already reads. After that, one live `qam doctor` against your ADO project (CLAUDE.md), read-only.
 - `RequirementSource.requirements` is new, with no CheckMaster code to port. It's built and tested against recorded responses, which need a sample (a sprint's WIQL and the team's iterations call). I'd record them from your sandbox project with your OK, or hand-write them from Microsoft's examples.
 
-**Open points, for you:**
-- **May I record real responses** (read-only) from the ADO project named in `CheckMasterDemo/.env`, for the requirements calls?
-- **The ★ fixes above.**
+**Decided 2026-10-30:** all ★ fixes yes, and recording read-only responses is OK.
+- **Recording didn't happen:** the project (`sarvagyameel/CheckMasterDemo`) has no PAT in its `.env`, and the Azure CLI isn't signed in. So the requirements calls are tested against Microsoft's documented examples (Test Plans, Test Suites and Work Items - Update, 7.1, read 2026-10-30) and an in-memory ADO.
+- **The live `qam doctor` waits for `az login`.**
+
+Two more of your answers that day became decision **Q33**:
+- **Claude's own ADO work** uses the az CLI first and falls back to `qam ado call`; a call that had to be built is saved as a recipe. The engine keeps this REST adapter.
+- **The store can create the plan and per-module suites** for publish.
+
+**Built (2026-10-30):**
+
+| File | What it holds |
+|---|---|
+| `plugin/src/adapters/ado.mts` | `AdoClient`: `fetch`, the PAT or `az login` token, retries (fix 5), page tokens (fixes 3–4) and plain errors. `AdoTestCases` (`TestCaseStore`) and `AdoRequirements` (`RequirementSource`), with fixes 1, 2, 6 and the bare-name migration. `ensurePlan` and `ensureSuite` for publish |
+| `plugin/src/adapters/base.mts` | `TestCaseStore` gains `ensurePlan()` and `ensureSuite(name)` |
+| `plugin/src/adapters/registry.mts` | `QAMASTER_STORE=ado` and `QAMASTER_REQUIREMENTS=ado` are built |
+| `plugin/src/cli/ado.mts` | `qam ado call <METHOD> <path>`: one REST call for Claude's ADO work. It refuses writes without `--apply`; a WIQL POST counts as a read |
+| `plugin/src/cli/project.mts` | `qam doctor` checks the store read-only (the plan and its test cases) and records it in `.qamaster/doctor.json`, which the pipeline's store stage reads |
+| `plugin/skills/ADO-API/` | The CLI-first skill, and `references/recipes.md` with the az command and fallback for each task |
+
+`RequirementSource.requirements` uses AQE's WIQL:
+- `IterationPath UNDER` for a named sprint;
+- `@CurrentIteration('[<project>]\<team>')` for the current one;
+- created or changed dates for a date range.
+
+It uses `IN GROUP 'Microsoft.RequirementCategory'` instead of a fixed list of types. The results are normalised to AQE's requirement shape.
+
+**Tested** (`tests/ado.test.mts`, 37 tests; `tests/adapters.test.mts`):
+- **First, CheckMaster's 17 tests** ported to `node:test`. They run against its recorded responses, through a fake `fetch` that fails on any request it wasn't given, as `respx` does. All passed once a missing `rev` in a recorded item was read as 0.
+- **Both contract suites on the real adapter**, against `tests/fake-ado.mts`: an in-memory ADO with revisions, a 412 on a failed `/rev` test, WIQL, plans and suites. The fake store passes the same suites, including the new plan and suite creation contract.
+- **One test per fix**, each built from its `cm-runs.json` scenario: a stale update and a change landing mid-write; two matching plans; the second page of plans and of suites; a 429 retried after `Retry-After`, and a 503 blocked after 3 tries with no wait over 30 s; a Closed test case left out.
+- **Plan and suite creation:** `ensurePlan` creates the plan named like the repo once, and `ensureSuite` adds a static suite under its root.
+- **`qam ado call`:** a write without `--apply` is refused, and missing settings are named.
+- **`qam doctor`:** without ADO settings the store check fails and says what to set, and the pipeline's store stage shows why.
+
+**Intended differences from CheckMaster:**
+- the fixes;
+- *Automated Test Name* is written with its runner prefix (Q9), and a bare one is read as `pytest:`;
+- settings are `QAMASTER_*`;
+- deleting is `retire`;
+- requirements by sprint, current sprint or dates are new.
+
+**Not done:**
+- the live `qam doctor` and the live run of the `az devops invoke` recipes, which need `az login` or a PAT;
+- publish itself (preview, ledger, `--apply`), which is porting step 7.
 
 ## Roadmap: what comes after the v1 MVP
 

@@ -242,6 +242,15 @@ test('doctor checks config, sources, Playwright and integrations, and records th
   assert.match(r.out, /ok +integration claude-hooks:/);
   fs.mkdirSync(path.join(qa, 'node_modules/playwright'), { recursive: true });
   fs.writeFileSync(path.join(qa, 'node_modules/playwright/package.json'), '{}');
-  assert.equal(qam(qa, 'doctor').status, 0);
-  assert.equal(read(path.join(qa, '.qamaster/doctor.json')).ok, true);
+  // without ADO settings only the test case store needs attention, and the record says why (the pipeline reads it)
+  const r2 = qam(qa, 'doctor');
+  assert.equal(r2.status, 2);
+  assert.match(r2.out, /ok +Playwright/);
+  assert.match(r2.out, /FIX +test case store +Don't know which Azure DevOps project to use\. .*QAMASTER_ADO_ORG/);
+  const record = read(path.join(qa, '.qamaster/doctor.json'));
+  assert.deepEqual([record.ok, record.store.ok], [false, false]);
+  const store = JSON.parse(qam(qa, '--json', 'pipeline', 'status').out).stages.find(
+    (x: { stage: string }) => x.stage === 'store',
+  );
+  assert.match(store.evidence, /last check failed: Don't know which Azure DevOps project/);
 });

@@ -30,6 +30,10 @@ export interface TestCaseStore {
   /** The store's undoable removal; returns what was done, in plain words. */
   retire(item: Item): Promise<string[]>;
   addToSuite(caseId: number, suite: string): Promise<void>;
+  /** The plan named like the repo (or as configured), created when there is none. Publish calls it only with --apply. */
+  ensurePlan(): Promise<{ id: number; name: string; created: boolean }>;
+  /** A static suite of the plan, by name, created under the plan's root suite when missing. Publish --apply only. */
+  ensureSuite(name: string): Promise<{ id: number; name: string; created: boolean }>;
 }
 
 /** Where requirements live: QAMASTER_REQUIREMENTS; v1 has ado. */

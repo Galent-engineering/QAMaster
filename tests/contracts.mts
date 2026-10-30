@@ -72,6 +72,20 @@ export function testCaseStoreContract(name: string, f: StoreFixture): void {
     await store.addToSuite(f.notInPlan, 'Payments');
     assert.ok((await store.inPlan()).has(f.notInPlan));
   });
+
+  test(`${name}: ensurePlan finds the plan; ensureSuite creates a missing suite once, and addToSuite can use it`, async () => {
+    const store = f.make();
+    const plan = await store.ensurePlan();
+    assert.equal(plan.created, false, 'the plan exists');
+    assert.ok(plan.name);
+    const first = await store.ensureSuite('Contract suite');
+    assert.equal(first.created, true);
+    const again = await store.ensureSuite('contract suite');
+    assert.deepEqual([again.created, again.id], [false, first.id], 'found again, ignoring case');
+    await assert.rejects(store.addToSuite(f.notInPlan, 'No such suite'), blocked);
+    await store.addToSuite(f.notInPlan, 'Contract suite');
+    assert.ok((await store.inPlan()).has(f.notInPlan));
+  });
 }
 
 export type RequirementFixture = {

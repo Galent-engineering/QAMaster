@@ -29,10 +29,16 @@ test('an unknown adapter names the known ones', () => {
   assert.throws(() => buildRunner(config({ QAMASTER_RUNNER: 'toString' })), /isn't a known adapter/);
 });
 
-test('the default adapters are registered but block until their porting step lands', () => {
-  for (const build of [buildStore, buildRequirements, buildRunner]) {
-    assert.throws(() => build(config()), { name: 'BlockedError', message: /adapter isn't built yet/ });
+test('the ADO adapters say which settings they need; the runners block until their porting step lands', () => {
+  for (const build of [buildStore, buildRequirements]) {
+    assert.throws(() => build(config()), { name: 'BlockedError', message: /QAMASTER_ADO_ORG=<organization>/ });
   }
+  assert.ok(
+    buildStore(config({ QAMASTER_ADO_ORG: 'org', QAMASTER_ADO_PROJECT: 'Shop' }))
+      .where()
+      .includes('org/Shop'),
+  );
+  assert.throws(() => buildRunner(config()), { name: 'BlockedError', message: /adapter isn't built yet/ });
 });
 
 test('retag adds and removes without case and keeps order', () => {
