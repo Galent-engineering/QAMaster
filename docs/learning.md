@@ -519,6 +519,64 @@ One more turned up while building, by comparing AQE's own outputs: from the seco
 
 ---
 
+## Lesson 7: TestGen and "hallucination tolerance 0" (feature 7)
+
+### What it's for
+
+TestGen is where QAMaster earns its keep: Claude writes test cases for a part of the app, and a program checks them before anyone sees them. The model is good at writing plausible test cases, and that's the danger. A plausible case can name a button that doesn't exist, a rule nobody wrote, or a requirement nobody asked for. In a tracker the team trusts, that costs more than no case at all (Q10).
+
+### The split of work
+
+| Who | Does |
+|---|---|
+| `qam testgen context` | Prints the facts Claude may use: screens, forms, fields, buttons, how screens connect, candidate journeys, source files |
+| Claude (TestGen skill) | Writes `manifest.json` and `testcases.json`: each case has steps (screen, action, element, expected) and **evidence** for every fact |
+| `qam testgen validate` | Checks every step and every piece of evidence against the DSM, the knowledge skills, the code and the requirements, then checks coverage |
+| `qam testgen render` | Only after a pass: Markdown, Gherkin feature files tagged `@TC-…`, CSV |
+| The person | Reviews the meaning, and only then is the run "reviewed" (Q12) |
+
+Evidence looks like `dsm:element:/cart:Coupon` ("the /cart screen has a Coupon element") or `code:shop:src/Cart.tsx:42` ("line 42 of this file"). The validator can look each one up.
+
+### What we found by trying to fool it
+
+We wrote a six-case run that AQE's validator passes, then changed one thing at a time that a "zero hallucination" check should catch. It passed all of these (`tests/fixtures/testgen/aqe-runs.json`):
+- **an invented button called "Check"**, because a real form is called "checkout" and the check looked for a substring;
+- **a button named only in the step's text** ("Click the Apply voucher button"), because only the separate `element` field is checked;
+- **an invented discount rule**, citing a real file at line 9999 and a skill with no section, because only the file and the skill were checked, not the line or the heading;
+- **an invented requirement**, because the list of "known" requirements is in the manifest, which the same model writes;
+- **two invented elements with the tolerance set to 2**, while the decision says the tolerance is 0, not a setting.
+
+The deeper lesson: a validator can prove a **reference exists**. It can't prove a **claim is true**. "Line 42 of Cart.tsx says the coupon takes 10% off" is checkable only by reading line 42. So QAMaster closes every gap a program can check (exact element names, lines that exist, requirements from the fetched list, a fixed tolerance) and makes the rest easy for a person. Every rule cites a line or a heading the reviewer can open in seconds. And "validated" never counts as "reviewed".
+
+### How we built it
+
+- **Golden first.** The plain port reproduces AQE's validation, context and rendered files exactly. Every fix went in afterwards, and the good run still passes all of them.
+- **What a program can check, it checks:**
+  - element names, exactly;
+  - UI named in a step's text;
+  - a cited line, read from git at the commit the DSM scanned;
+  - a requirement ID, from the fetched file;
+  - a tolerance of 0, which no setting can raise.
+- **What it can't, it hands over.** `validation.json` records the DSM and a fingerprint of the run, so an edit afterwards or a rebuilt DSM marks it stale. `qam review` records the person's yes only on the exact files that were validated.
+- **The routing was tested too.** The domain router skill was winning "write test cases for…" over TestGen. One line in its description fixed that.
+
+### Check yourself
+
+1. Why is a substring match a hallucination risk, even though it feels forgiving?
+2. Why can't the list of known requirements live in the manifest?
+3. A case cites `code:shop:src/Cart.tsx:42` for "coupons take 10% off". What can the validator check, and what's left to the reviewer?
+4. Why does QAMaster name the file `validation.json` and keep "reviewed" for `qam review`?
+
+<details><summary>Answers</summary>
+
+1. It lets an invented name pass whenever it's part of a real one ("Check" in "checkout", "Save" in "Unsaved changes"). Exact names are the only way an invented one fails.
+2. The manifest is written by the same model whose claims are being checked, so the model would be vouching for itself. The requirements come from the fetched file instead.
+3. That the file is in the scanned code and has a line 42. Whether line 42 says "10% off" is the reviewer's check. The precise citation makes it a few seconds' work.
+4. Validation is a program's check of references; review is a person's judgement of meaning (Q12). Calling the first "review" let AQE's pipeline count unreviewed cases as reviewed.
+</details>
+
+---
+
 ## Journal
 
 | Date | Feature | What we learned |

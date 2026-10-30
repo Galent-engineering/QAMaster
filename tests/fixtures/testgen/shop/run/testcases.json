@@ -1,0 +1,406 @@
+[
+ {
+  "id": "TC-CART-001",
+  "title": "Cart screen shows the Coupon field and the checkout form",
+  "component": "Cart",
+  "type": "Functional",
+  "category": "Positive",
+  "priority": "P1",
+  "objective": "Reach /cart from the home page and see its checkout form",
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Open the shop home page",
+    "element": "Products",
+    "expected": "The home page shows the Products link",
+    "evidence": [
+     "dsm:screen:/",
+     "dsm:element:/:Products"
+    ]
+   },
+   {
+    "screen": "/",
+    "action": "Click the Products link",
+    "element": "Products",
+    "leads_to": "/products",
+    "expected": "The /products screen opens with its Cart link",
+    "evidence": [
+     "dsm:relation:/->/products"
+    ]
+   },
+   {
+    "screen": "/products",
+    "action": "Click the Cart link",
+    "element": "Cart",
+    "leads_to": "/cart",
+    "expected": "The /cart screen opens with the Coupon field",
+    "evidence": [
+     "dsm:relation:/products->/cart",
+     "dsm:element:/products:Cart"
+    ]
+   },
+   {
+    "screen": "/cart",
+    "action": "Look at the checkout form",
+    "element": "Coupon",
+    "expected": "The Coupon text field and the checkout form are shown",
+    "evidence": [
+     "dsm:element:/cart:Coupon"
+    ]
+   }
+  ],
+  "expected_result": "The /cart screen shows the Coupon text field inside the checkout form",
+  "evidence": [
+   "aut:AUT_Shop-Cart#Screen details",
+   "code:shop:src/Cart.tsx"
+  ],
+  "severity": "High",
+  "sub_module": "AUT_Shop-Cart",
+  "feature": "Cart",
+  "channel": "Web",
+  "coverage": [
+   "Functional",
+   "Navigation"
+  ],
+  "test_data": {}
+ },
+ {
+  "id": "TC-CART-002",
+  "title": "Checkout form posts with coupon SAVE10 to /checkout",
+  "component": "Cart",
+  "type": "Functional",
+  "category": "E2E",
+  "priority": "P1",
+  "objective": "Walk journey 1 from home to checkout through the cart",
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Open the shop home page",
+    "element": "Products",
+    "expected": "The home page shows the Products link",
+    "evidence": [
+     "dsm:screen:/",
+     "dsm:element:/:Products"
+    ]
+   },
+   {
+    "screen": "/",
+    "action": "Click the Products link",
+    "element": "Products",
+    "leads_to": "/products",
+    "expected": "The /products screen opens with its Cart link",
+    "evidence": [
+     "dsm:relation:/->/products"
+    ]
+   },
+   {
+    "screen": "/products",
+    "action": "Click the Cart link",
+    "element": "Cart",
+    "leads_to": "/cart",
+    "expected": "The /cart screen opens with the Coupon field",
+    "evidence": [
+     "dsm:relation:/products->/cart",
+     "dsm:element:/products:Cart"
+    ]
+   },
+   {
+    "screen": "/cart",
+    "action": "Type SAVE10 in the Coupon field and submit the checkout form",
+    "element": "Coupon",
+    "data": "SAVE10",
+    "leads_to": "/checkout",
+    "expected": "The /checkout screen opens after the checkout form is posted",
+    "evidence": [
+     "dsm:relation:/cart->/checkout",
+     "dsm:journey:1"
+    ]
+   }
+  ],
+  "expected_result": "The checkout form posts to /checkout and the /checkout screen opens",
+  "evidence": [
+   "aut:AUT_Shop-Cart#Screen details",
+   "code:shop:src/Cart.tsx"
+  ],
+  "severity": "High",
+  "sub_module": "AUT_Shop-Cart",
+  "feature": "Checkout",
+  "channel": "Web",
+  "coverage": [
+   "Functional",
+   "Navigation",
+   "Journey"
+  ],
+  "test_data": {
+   "coupon": "SAVE10"
+  },
+  "business_scenario": "A shopper goes from the home page to checkout with a coupon"
+ },
+ {
+  "id": "TC-CART-003",
+  "title": "Shopper checks out from the cart without a coupon",
+  "component": "Cart",
+  "type": "Functional",
+  "category": "Business",
+  "priority": "P2",
+  "objective": "Check out from /cart leaving the Coupon field empty",
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Open the shop home page",
+    "element": "Products",
+    "expected": "The home page shows the Products link",
+    "evidence": [
+     "dsm:screen:/",
+     "dsm:element:/:Products"
+    ]
+   },
+   {
+    "screen": "/",
+    "action": "Click the Products link",
+    "element": "Products",
+    "leads_to": "/products",
+    "expected": "The /products screen opens with its Cart link",
+    "evidence": [
+     "dsm:relation:/->/products"
+    ]
+   },
+   {
+    "screen": "/products",
+    "action": "Click the Cart link",
+    "element": "Cart",
+    "leads_to": "/cart",
+    "expected": "The /cart screen opens with the Coupon field",
+    "evidence": [
+     "dsm:relation:/products->/cart",
+     "dsm:element:/products:Cart"
+    ]
+   },
+   {
+    "screen": "/cart",
+    "action": "Leave the Coupon field empty and submit the checkout form",
+    "element": "Coupon",
+    "leads_to": "/checkout",
+    "expected": "The /checkout screen opens without a coupon applied",
+    "evidence": [
+     "dsm:relation:/cart->/checkout"
+    ]
+   }
+  ],
+  "expected_result": "The /checkout screen opens from the cart when no coupon is typed",
+  "evidence": [
+   "aut:AUT_Shop-Cart#Screen details",
+   "code:shop:src/Cart.tsx"
+  ],
+  "severity": "High",
+  "sub_module": "AUT_Shop-Cart",
+  "feature": "Checkout",
+  "channel": "Web",
+  "coverage": [
+   "Business Rule",
+   "Navigation"
+  ],
+  "test_data": {},
+  "business_scenario": "A shopper without a coupon checks out"
+ },
+ {
+  "id": "TC-CART-004",
+  "title": "Coupon field rejects the code EXPIRED-2020",
+  "component": "Cart",
+  "type": "Functional",
+  "category": "Negative",
+  "priority": "P2",
+  "objective": "Submit the checkout form with the code EXPIRED-2020 in the Coupon field",
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Open the shop home page",
+    "element": "Products",
+    "expected": "The home page shows the Products link",
+    "evidence": [
+     "dsm:screen:/",
+     "dsm:element:/:Products"
+    ]
+   },
+   {
+    "screen": "/",
+    "action": "Click the Products link",
+    "element": "Products",
+    "leads_to": "/products",
+    "expected": "The /products screen opens with its Cart link",
+    "evidence": [
+     "dsm:relation:/->/products"
+    ]
+   },
+   {
+    "screen": "/products",
+    "action": "Click the Cart link",
+    "element": "Cart",
+    "leads_to": "/cart",
+    "expected": "The /cart screen opens with the Coupon field",
+    "evidence": [
+     "dsm:relation:/products->/cart",
+     "dsm:element:/products:Cart"
+    ]
+   },
+   {
+    "screen": "/cart",
+    "action": "Type EXPIRED-2020 in the Coupon field and submit the checkout form",
+    "element": "Coupon",
+    "data": "EXPIRED-2020",
+    "expected": "The /cart screen stays open with the Coupon field still showing EXPIRED-2020",
+    "evidence": [
+     "dsm:element:/cart:Coupon"
+    ]
+   }
+  ],
+  "expected_result": "The /cart screen stays open with EXPIRED-2020 still in the Coupon field",
+  "evidence": [
+   "aut:AUT_Shop-Cart#Screen details",
+   "code:shop:src/Cart.tsx"
+  ],
+  "severity": "High",
+  "sub_module": "AUT_Shop-Cart",
+  "feature": "Coupon",
+  "channel": "Web",
+  "coverage": [
+   "Negative"
+  ],
+  "test_data": {
+   "coupon": "EXPIRED-2020"
+  }
+ },
+ {
+  "id": "TC-CART-005",
+  "title": "Coupon field accepts a 20-character code",
+  "component": "Cart",
+  "type": "Functional",
+  "category": "Boundary",
+  "priority": "P3",
+  "objective": "Submit the checkout form with a 20-character code in the Coupon field",
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Open the shop home page",
+    "element": "Products",
+    "expected": "The home page shows the Products link",
+    "evidence": [
+     "dsm:screen:/",
+     "dsm:element:/:Products"
+    ]
+   },
+   {
+    "screen": "/",
+    "action": "Click the Products link",
+    "element": "Products",
+    "leads_to": "/products",
+    "expected": "The /products screen opens with its Cart link",
+    "evidence": [
+     "dsm:relation:/->/products"
+    ]
+   },
+   {
+    "screen": "/products",
+    "action": "Click the Cart link",
+    "element": "Cart",
+    "leads_to": "/cart",
+    "expected": "The /cart screen opens with the Coupon field",
+    "evidence": [
+     "dsm:relation:/products->/cart",
+     "dsm:element:/products:Cart"
+    ]
+   },
+   {
+    "screen": "/cart",
+    "action": "Type ABCDEFGHIJ0123456789 in the Coupon field and submit the checkout form",
+    "element": "Coupon",
+    "data": "ABCDEFGHIJ0123456789",
+    "leads_to": "/checkout",
+    "expected": "The /checkout screen opens after the 20-character code is posted",
+    "evidence": [
+     "dsm:relation:/cart->/checkout"
+    ]
+   }
+  ],
+  "expected_result": "The 20-character code ABCDEFGHIJ0123456789 is posted and /checkout opens",
+  "evidence": [
+   "aut:AUT_Shop-Cart#Screen details",
+   "code:shop:src/Cart.tsx"
+  ],
+  "severity": "High",
+  "sub_module": "AUT_Shop-Cart",
+  "feature": "Coupon",
+  "channel": "Web",
+  "coverage": [
+   "Boundary"
+  ],
+  "test_data": {
+   "coupon": "ABCDEFGHIJ0123456789"
+  }
+ },
+ {
+  "id": "TC-CART-006",
+  "title": "Keep shopping link returns from the cart to /products",
+  "component": "Cart",
+  "type": "Functional",
+  "category": "Edge",
+  "priority": "P3",
+  "objective": "Leave /cart through the Keep shopping link",
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Open the shop home page",
+    "element": "Products",
+    "expected": "The home page shows the Products link",
+    "evidence": [
+     "dsm:screen:/",
+     "dsm:element:/:Products"
+    ]
+   },
+   {
+    "screen": "/",
+    "action": "Click the Products link",
+    "element": "Products",
+    "leads_to": "/products",
+    "expected": "The /products screen opens with its Cart link",
+    "evidence": [
+     "dsm:relation:/->/products"
+    ]
+   },
+   {
+    "screen": "/products",
+    "action": "Click the Cart link",
+    "element": "Cart",
+    "leads_to": "/cart",
+    "expected": "The /cart screen opens with the Coupon field",
+    "evidence": [
+     "dsm:relation:/products->/cart",
+     "dsm:element:/products:Cart"
+    ]
+   },
+   {
+    "screen": "/cart",
+    "action": "Click the Keep shopping link",
+    "element": "Keep shopping",
+    "leads_to": "/products",
+    "expected": "The /products screen opens again from the cart",
+    "evidence": [
+     "dsm:relation:/cart->/products"
+    ]
+   }
+  ],
+  "expected_result": "The /products screen opens from the cart through Keep shopping",
+  "evidence": [
+   "aut:AUT_Shop-Cart#Screen details",
+   "code:shop:src/Cart.tsx"
+  ],
+  "severity": "High",
+  "sub_module": "AUT_Shop-Cart",
+  "feature": "Navigation",
+  "channel": "Web",
+  "coverage": [
+   "Navigation"
+  ],
+  "test_data": {}
+ }
+]

@@ -1,0 +1,30 @@
+{
+ "app": "Shop",
+ "scope": {
+  "module": "Cart",
+  "sub_module": ""
+ },
+ "components": [
+  "Cart"
+ ],
+ "test_types": [
+  "Functional"
+ ],
+ "required_types": [
+  "Functional"
+ ],
+ "channels": [
+  "Web"
+ ],
+ "domain": "Retail",
+ "domain_evidence": [
+  "domain:Domain_Test_Design_Skill-Domain-Retail#Detection signals",
+  "aut:AUT_Shop"
+ ],
+ "techniques": [
+  "Equivalence partitioning",
+  "Boundary value analysis"
+ ],
+ "requirements": {},
+ "generated_at": "2026-10-29T12:00:00Z"
+}

@@ -40,8 +40,8 @@ export type KnowledgeSettings = {
   max_journey_steps?: number;
 };
 
-type Relation = { from: string; to: string; types: string[]; label: string; ref: string | null };
-type Journey = { start: string; steps: Relation[]; screens: string[]; components: string[] };
+export type Relation = { from: string; to: string; types: string[]; label: string; ref: string | null };
+export type Journey = { start: string; steps: Relation[]; screens: string[]; components: string[] };
 type ElementLike = { kind: string; label?: string | null; page?: string | null };
 
 /** 'order management' -> 'OrderManagement'; '' -> 'Home'. Also turns the app name into the skill name. */
@@ -64,7 +64,7 @@ const sorted = (xs: Iterable<string>) => [...xs].sort((a, b) => compare(a, b));
 const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
 
 /** Text safe inside a Markdown table cell. */
-function md(text: unknown): string {
+export function md(text: unknown): string {
   return str(text ?? '')
     .replaceAll('|', '\\|')
     .replaceAll('\n', ' ')
@@ -80,9 +80,9 @@ const mermaidLabel = (text: unknown) =>
 const q = (text: unknown) => `\`${str(text).replaceAll('`', "'").replace(/\s+/g, ' ').trim()}\``;
 const relHow = (types: string[]) => types.map((t) => REL_NAME[t] ?? t).join('/');
 const more = (n: number, limit: number) => (n > limit ? ' …' : '');
-const isGap = (n: PageNode) => n.flags.includes('unresolved') || n.flags.includes('broken');
+export const isGap = (n: PageNode) => n.flags.includes('unresolved') || n.flags.includes('broken');
 
-class Model {
+export class Model {
   readonly nodes: PageNode[];
   readonly byId = new Map<string, PageNode>();
   readonly comp = new Map<string, string>();

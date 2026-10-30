@@ -1,0 +1,500 @@
+{
+ "app": "Shop",
+ "dsm_generated_at": "2026-10-29T07:21:47+00:00",
+ "base_url": "http://shop.test/",
+ "entry_screens": [
+  "/"
+ ],
+ "components": {
+  "Admin": {
+   "aut_skill": "AUT_Shop-Admin",
+   "screens": [
+    {
+     "route": "/admin",
+     "title": "",
+     "url": null,
+     "flags": [
+      "orphan",
+      "code-only"
+     ],
+     "forms": [],
+     "elements": [],
+     "navigates_to": [
+      {
+       "to": "/admin/reports",
+       "via": "code"
+      },
+      {
+       "to": "/admin/audit",
+       "via": "code"
+      }
+     ],
+     "reached_from": [],
+     "source_files": [
+      "shop:src/admin/Admin.tsx",
+      "shop:src/App.tsx:14"
+     ]
+    },
+    {
+     "route": "/admin/audit",
+     "title": "",
+     "url": null,
+     "flags": [
+      "unresolved"
+     ],
+     "forms": [],
+     "elements": [],
+     "navigates_to": [],
+     "reached_from": [
+      {
+       "from": "/admin",
+       "via": "code"
+      }
+     ],
+     "source_files": []
+    },
+    {
+     "route": "/admin/reports",
+     "title": "",
+     "url": null,
+     "flags": [
+      "code-only"
+     ],
+     "forms": [],
+     "elements": [],
+     "navigates_to": [],
+     "reached_from": [
+      {
+       "from": "/admin",
+       "via": "code"
+      }
+     ],
+     "source_files": [
+      "shop:src/admin/Routes.tsx:3"
+     ]
+    }
+   ]
+  },
+  "Cart": {
+   "aut_skill": "AUT_Shop-Cart",
+   "screens": [
+    {
+     "route": "/cart",
+     "title": "/cart",
+     "url": "http://shop.test/cart",
+     "flags": [],
+     "forms": [
+      {
+       "name": "checkout",
+       "method": "post",
+       "target": "/checkout",
+       "fields": [
+        {
+         "label": "Coupon",
+         "name": "coupon",
+         "type": "text",
+         "required": false
+        }
+       ],
+       "buttons": [
+        "Checkout"
+       ]
+      }
+     ],
+     "elements": [
+      "field: Coupon",
+      "form: form checkout",
+      "link: Keep shopping"
+     ],
+     "navigates_to": [
+      {
+       "to": "/products",
+       "via": "Keep shopping"
+      },
+      {
+       "to": "/checkout",
+       "via": "POST checkout"
+      }
+     ],
+     "reached_from": [
+      {
+       "from": "/products",
+       "via": "Cart"
+      },
+      {
+       "from": "/products/:id",
+       "via": "Add to cart"
+      }
+     ],
+     "source_files": [
+      "shop:src/Cart.tsx",
+      "shop:src/App.tsx:13"
+     ]
+    }
+   ]
+  },
+  "Checkout": {
+   "aut_skill": "AUT_Shop-Checkout",
+   "screens": [
+    {
+     "route": "/checkout",
+     "title": "/checkout",
+     "url": "http://shop.test/checkout",
+     "flags": [
+      "ui-only"
+     ],
+     "forms": [
+      {
+       "name": "pay",
+       "method": "post",
+       "target": null,
+       "fields": [
+        {
+         "label": null,
+         "name": "card",
+         "type": "text",
+         "required": true
+        },
+        {
+         "label": null,
+         "name": null,
+         "type": "password",
+         "required": true
+        }
+       ],
+       "buttons": []
+      }
+     ],
+     "elements": [
+      "field: card",
+      "field: cvv",
+      "form: form pay",
+      "link: Review"
+     ],
+     "navigates_to": [
+      {
+       "to": "/checkout/review",
+       "via": "Review"
+      },
+      {
+       "to": "/faq",
+       "via": "FAQ"
+      }
+     ],
+     "reached_from": [
+      {
+       "from": "/cart",
+       "via": "POST checkout"
+      }
+     ],
+     "source_files": [
+      "shop:src/Checkout.tsx"
+     ]
+    },
+    {
+     "route": "/checkout/review",
+     "title": "/checkout/review",
+     "url": "http://shop.test/checkout/review",
+     "flags": [
+      "dead-end",
+      "ui-only",
+      "broken"
+     ],
+     "forms": [],
+     "elements": [],
+     "navigates_to": [],
+     "reached_from": [
+      {
+       "from": "/checkout",
+       "via": "Review"
+      }
+     ],
+     "source_files": []
+    }
+   ]
+  },
+  "Help": {
+   "aut_skill": "AUT_Shop-Help",
+   "screens": [
+    {
+     "route": "/help",
+     "title": "Help",
+     "url": "http://shop.test/#/help",
+     "flags": [
+      "dead-end",
+      "ui-only"
+     ],
+     "forms": [],
+     "elements": [],
+     "navigates_to": [],
+     "reached_from": [
+      {
+       "from": "/",
+       "via": "Help"
+      }
+     ],
+     "source_files": []
+    }
+   ]
+  },
+  "Home": {
+   "aut_skill": "AUT_Shop-Home",
+   "screens": [
+    {
+     "route": "/",
+     "title": "Shop",
+     "url": "http://shop.test/",
+     "flags": [],
+     "forms": [],
+     "elements": [
+      "link: Products",
+      "menuitem: Account",
+      "tab: Deals"
+     ],
+     "navigates_to": [
+      {
+       "to": "/products",
+       "via": "Products"
+      },
+      {
+       "to": "/login",
+       "via": "Sign in"
+      },
+      {
+       "to": "/help",
+       "via": "Help"
+      }
+     ],
+     "reached_from": [
+      {
+       "from": "/login",
+       "via": "redirect"
+      }
+     ],
+     "source_files": [
+      "shop:src/App.tsx:10"
+     ]
+    }
+   ]
+  },
+  "Login": {
+   "aut_skill": "AUT_Shop-Login",
+   "screens": [
+    {
+     "route": "/login",
+     "title": "/login",
+     "url": "http://shop.test/login",
+     "flags": [
+      "ui-only",
+      "redirect"
+     ],
+     "forms": [],
+     "elements": [],
+     "navigates_to": [
+      {
+       "to": "/",
+       "via": "redirect"
+      }
+     ],
+     "reached_from": [
+      {
+       "from": "/",
+       "via": "Sign in"
+      }
+     ],
+     "source_files": []
+    }
+   ]
+  },
+  "Products": {
+   "aut_skill": "AUT_Shop-Products",
+   "screens": [
+    {
+     "route": "/products",
+     "title": "/products",
+     "url": "http://shop.test/products",
+     "flags": [],
+     "forms": [],
+     "elements": [
+      "button: Cart",
+      "dialog: dialog Filters",
+      "link: Item 1"
+     ],
+     "navigates_to": [
+      {
+       "to": "/products/:id",
+       "via": "Item 1"
+      },
+      {
+       "to": "/cart",
+       "via": "Cart"
+      }
+     ],
+     "reached_from": [
+      {
+       "from": "/",
+       "via": "Products"
+      },
+      {
+       "from": "/cart",
+       "via": "Keep shopping"
+      }
+     ],
+     "source_files": [
+      "shop:src/Products.tsx",
+      "shop:src/App.tsx:11"
+     ]
+    },
+    {
+     "route": "/products/:id",
+     "title": "/products/:id",
+     "url": "http://shop.test/products/:id",
+     "flags": [],
+     "forms": [],
+     "elements": [
+      "button: Add to cart"
+     ],
+     "navigates_to": [
+      {
+       "to": "/cart",
+       "via": "Add to cart"
+      }
+     ],
+     "reached_from": [
+      {
+       "from": "/products",
+       "via": "Item 1"
+      }
+     ],
+     "source_files": [
+      "shop:src/Products.tsx",
+      "shop:src/App.tsx:12"
+     ]
+    }
+   ]
+  }
+ },
+ "journeys": [
+  {
+   "n": 1,
+   "components": [
+    "Home",
+    "Products",
+    "Cart",
+    "Checkout"
+   ],
+   "path": "`/` \u2192 (\"Products\") `/products` \u2192 (\"Cart\") `/cart` \u2192 (\"POST checkout\") `/checkout`",
+   "screens": [
+    "/",
+    "/products",
+    "/cart",
+    "/checkout"
+   ]
+  },
+  {
+   "n": 2,
+   "components": [
+    "Home",
+    "Help"
+   ],
+   "path": "`/` \u2192 (\"Help\") `/#/help`",
+   "screens": [
+    "/",
+    "/help"
+   ]
+  },
+  {
+   "n": 3,
+   "components": [
+    "Home",
+    "Login"
+   ],
+   "path": "`/` \u2192 (\"Sign in\") `/login`",
+   "screens": [
+    "/",
+    "/login"
+   ]
+  },
+  {
+   "n": 4,
+   "components": [
+    "Home",
+    "Products"
+   ],
+   "path": "`/` \u2192 (\"Products\") `/products` \u2192 (\"Item 1\") `/products/:id`",
+   "screens": [
+    "/",
+    "/products",
+    "/products/:id"
+   ]
+  }
+ ],
+ "evidence_formats": [
+  "dsm:screen:<route>",
+  "dsm:element:<route>:<label>",
+  "dsm:relation:<from>-><to>",
+  "dsm:journey:<n>",
+  "code:<repo>:<path>[:<line>]",
+  "aut:<Skill>[#<heading>]",
+  "domain:<SubSkill>[#<heading>]",
+  "req:<id>",
+  "locator:<Export>.<key>",
+  "tc:<suite>:<id>",
+  "api:<METHOD> <path>"
+ ],
+ "api_endpoints": 0,
+ "api_context": "no API model (aqe api discover)",
+ "domain_skills": [
+  "Domain_Test_Design_Skill",
+  "Domain_Test_Design_Skill-App-AIML",
+  "Domain_Test_Design_Skill-App-API",
+  "Domain_Test_Design_Skill-App-CloudSaaS",
+  "Domain_Test_Design_Skill-App-DataPlatform",
+  "Domain_Test_Design_Skill-App-Desktop",
+  "Domain_Test_Design_Skill-App-ImageBased",
+  "Domain_Test_Design_Skill-App-Mobile",
+  "Domain_Test_Design_Skill-App-Web",
+  "Domain_Test_Design_Skill-Core-OutputAndQuality",
+  "Domain_Test_Design_Skill-Core-RiskAndData",
+  "Domain_Test_Design_Skill-Core-Techniques",
+  "Domain_Test_Design_Skill-Domain-Banking",
+  "Domain_Test_Design_Skill-Domain-CRM",
+  "Domain_Test_Design_Skill-Domain-Education",
+  "Domain_Test_Design_Skill-Domain-EnergyUtilities",
+  "Domain_Test_Design_Skill-Domain-FinancialServices",
+  "Domain_Test_Design_Skill-Domain-HRM",
+  "Domain_Test_Design_Skill-Domain-Healthcare",
+  "Domain_Test_Design_Skill-Domain-Insurance",
+  "Domain_Test_Design_Skill-Domain-LifeSciences",
+  "Domain_Test_Design_Skill-Domain-Logistics",
+  "Domain_Test_Design_Skill-Domain-Manufacturing",
+  "Domain_Test_Design_Skill-Domain-PublicSector",
+  "Domain_Test_Design_Skill-Domain-Retail",
+  "Domain_Test_Design_Skill-Domain-Salesforce",
+  "Domain_Test_Design_Skill-Domain-Telecom",
+  "Domain_Test_Design_Skill-Domain-Travel",
+  "Domain_Test_Design_Skill-Test-API",
+  "Domain_Test_Design_Skill-Test-Accessibility",
+  "Domain_Test_Design_Skill-Test-Compatibility",
+  "Domain_Test_Design_Skill-Test-DataMigration",
+  "Domain_Test_Design_Skill-Test-Functional",
+  "Domain_Test_Design_Skill-Test-Integration",
+  "Domain_Test_Design_Skill-Test-Localisation",
+  "Domain_Test_Design_Skill-Test-Performance",
+  "Domain_Test_Design_Skill-Test-Regression",
+  "Domain_Test_Design_Skill-Test-Resilience",
+  "Domain_Test_Design_Skill-Test-Security",
+  "Domain_Test_Design_Skill-Test-UIUX"
+ ],
+ "aut_skills": [
+  "AUT_Shop",
+  "AUT_Shop-Admin",
+  "AUT_Shop-Cart",
+  "AUT_Shop-Checkout",
+  "AUT_Shop-Help",
+  "AUT_Shop-Home",
+  "AUT_Shop-Login",
+  "AUT_Shop-Products"
+ ],
+ "locator_files": []
+}

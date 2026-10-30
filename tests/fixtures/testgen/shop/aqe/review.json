@@ -1,0 +1,18 @@
+{
+ "status": "pass",
+ "hallucination_tolerance": 0,
+ "cases": 6,
+ "errors": [],
+ "gaps": [],
+ "by_category": {
+  "Positive": 1,
+  "Negative": 1,
+  "Boundary": 1,
+  "E2E": 1,
+  "Business": 1,
+  "Edge": 1
+ },
+ "by_type": {
+  "Functional": 6
+ }
+}
