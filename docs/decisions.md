@@ -553,7 +553,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 
 **Q35. Publish can create a missing ADO project, only with `--apply`** (2026-10-30, accepted 2026-10-30, New; extends Q33, keeps Q7)
 - **Decision:**
-  - **When the configured project doesn't exist** (TF200016), `qam publish` doesn't block. Its preview says so first: "The ADO project 'X' doesn't exist; --apply will create it (process P, private)." The plan line follows, since a new project has no plan.
+  - **When the configured project doesn't exist** (TF200016), `qam publish` doesn't block. Its preview says so first: "The ADO project 'X' doesn't exist (or this token can't see it); --apply will create it (process P, private)." ADO answers TF200016 for a project the token has no access to as well, so the messages say both; if the name turns out to be taken (TF200019), `--apply` blocks with "ask for access, or pick another name". The plan line follows, since a new project has no plan.
   - **Only `--apply` creates it**, after the person's yes to that preview (Q7). A dry run sends no write. Nothing else creates a project: doctor and the gate only report it missing (with the organization's projects, closest first).
   - **The new project is private, uses Git, and gets the organization's default process** (`GET process/processes`, the one with `isDefault`). QAMaster asks no questions about it. A team that wants another process or public visibility creates the project in Azure DevOps first.
   - **Creation is asynchronous in ADO.** `POST projects` returns an operation, which the store polls (`GET operations/{id}`) for at most two minutes. A failure or a timeout blocks (exit 2) with the reason and where to look; running publish again doesn't create the project twice.
@@ -566,6 +566,14 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Gave up:**
   - No choice of process, visibility or version control from QAMaster. The defaults fit a new QA project; anything else is made in ADO.
   - A token that can create projects is broader than publishing needs. Teams that don't want that create the project by hand, and publish then never asks.
+
+**Q36. The `file` store also reads and writes a JSON form** (2026-10-30, proposed; amends Q34)
+- **Decision (proposed, for the person to accept):**
+  - **`testcases/testcases.json` is the `file` store's second form:** a JSON array with one record per case (the CSV's columns, steps inside) and `{"suite": "…"}` records for empty suites. IDs, revisions, signatures and hand-edit detection work as for the CSV. `shared/schema.mts` (`asFileStoreRecords`) checks it; suites and tags are trimmed and blanks dropped, as in the CSV.
+  - **Which form:** the CSV, `testcases/testcases.csv`, unless it is missing and `testcases.json` is there. No setting picks it.
+- **Why:** a JSON file is easier for scripts and other tools to read and write than one row per step.
+- **Gave up / open:**
+  - A CSV that appears later (a pull, an export) silently wins: the store's `where()` changes, so publish blocks on the ledger's store mismatch, and the JSON cases are no longer read. Whether to block when both files exist is not decided.
 
 ---
 

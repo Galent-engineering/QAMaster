@@ -59,6 +59,8 @@ export class FakeAdo {
     { id: 'adcc42ab-9882-485e-a3ed-7678f01f66bc', name: 'Agile', type: 'system', isDefault: true },
     { id: '6b724908-ef14-45cf-84f8-768b5384da45', name: 'Scrum', type: 'system', isDefault: false },
   ];
+  /** Set: process/processes answers with this status instead (403, as for a token that can't read them). */
+  processesStatus: number | null = null;
   /** The body of every POST projects: the projects created. */
   createdProjects: Json[] = [];
   /** Set: POST projects answers with this status instead (403, as without "Create new projects"). */
@@ -142,6 +144,8 @@ export class FakeAdo {
     let m: RegExpMatchArray | null;
     if (method === 'GET' && p === `projects/${this.project}`)
       return this.missingProject ? noProject() : ok({ id: 'p-1', name: this.project, state: 'wellFormed' });
+    if (method === 'GET' && p === 'process/processes' && this.processesStatus)
+      return ok({ message: 'processes refused' }, this.processesStatus);
     if (method === 'GET' && p === 'process/processes')
       return ok({ count: this.processes.length, value: this.processes });
     if (method === 'POST' && p === 'projects') {

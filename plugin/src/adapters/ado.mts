@@ -361,23 +361,24 @@ export class AdoClient {
 
   /** The error for a missing project: the organization's projects, closest to the configured name first, and the fixes. */
   private async noProject(): Promise<NoProjectError> {
-    const head = `Azure DevOps project '${this.project}' doesn't exist in ${this.organization}.`;
+    // ADO answers TF200016 for a project the token can't see as well as for a missing one
+    const head = `Azure DevOps project '${this.project}' doesn't exist in ${this.organization}, or this token has no access to it.`;
     const fixes = (which: string) =>
       [
         `  - set QAMASTER_ADO_PROJECT=<${which}, or a new name> in the repo's .env;`,
         "  - or set QAMASTER_STORE=file in the repo's .env to keep test cases in a local file, with no Azure DevOps (Q34);",
-        '  - or, with a new name, `qam publish --apply` creates the project.',
+        '  - or, to create a project with this name, run `qam publish <run>`: its preview shows what --apply would create.',
       ].join('\n');
     let projects: string[];
     try {
       projects = (await this.listProjects()).map((p) => String(p.name));
     } catch (e) {
       if (!(e instanceof BlockedError)) throw e;
-      return new NoProjectError(
-        `${head} Listing the organization's projects needs a token with Project and Team (Read). Either:\n${fixes('an existing project')}`,
-        [],
-        [],
-      );
+      const scope = e instanceof AdoStatusError && (e.status === 401 || e.status === 403);
+      const why = scope
+        ? "Listing the organization's projects needs a token with Project and Team (Read)."
+        : `Couldn't list the organization's projects: ${e.message}`;
+      return new NoProjectError(`${head} ${why} Either:\n${fixes('an existing project')}`, [], []);
     }
     // a name containing the configured one first, then by edit distance
     const wanted = this.project.toLowerCase();
@@ -436,9 +437,19 @@ export class AdoClient {
         },
       })) as Json;
     } catch (e) {
-      if (e instanceof AdoStatusError && e.status === 403)
+      // a token without the manage scope may get a 401, though the reads before this call worked with it
+      if (e instanceof AdoStatusError && (e.status === 403 || e.status === 401))
         throw new BlockedError(
-          `Azure DevOps refused to create the project '${name}' (403). It needs the organization permission "Create new projects" (Project Collection Administrators have it) and a token with Project and Team (Read, write, & manage). Ask an organization admin for it, or to create the project, then publish again.`,
+          `Azure DevOps refused to create the project '${name}' (${e.status}). It needs the organization permission "Create new projects" (Project Collection Administrators have it) and a token with Project and Team (Read, write, & manage). Ask an organization admin for it, or to create the project, then publish again.`,
+        );
+      // TF200019: the name is taken by a project this token can't see (projectExists got a 404 for it)
+      if (
+        e instanceof AdoStatusError &&
+        (e.status === 400 || e.status === 409) &&
+        /TF200019|already exists/i.test(e.message)
+      )
+        throw new BlockedError(
+          `A project named '${name}' already exists in ${this.organization}, but this token has no access to it. Ask a project administrator to add you to it, or set QAMASTER_ADO_PROJECT to another name in the repo's .env.`,
         );
       throw e;
     }

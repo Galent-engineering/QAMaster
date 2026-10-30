@@ -205,11 +205,15 @@ test('missing project: TF200016 lists the projects, closest first, and the ways 
     assert.deepEqual(e.projects, ['Fabrikam-Fiber', 'ShopWeb', 'Shap']);
     // a name containing 'Shop' first, then by edit distance
     assert.deepEqual(e.suggestions, ['ShopWeb', 'Shap', 'Fabrikam-Fiber']);
-    assert.match(e.message, /^Azure DevOps project 'Shop' doesn't exist in org\. Existing projects, closest first:\n/);
+    assert.match(
+      e.message,
+      /^Azure DevOps project 'Shop' doesn't exist in org, or this token has no access to it\. Existing projects, closest first:\n/,
+    );
     assert.match(e.message, /\n {2}ShopWeb\n {2}Shap\n {2}Fabrikam-Fiber\n/);
     assert.match(e.message, /QAMASTER_ADO_PROJECT=<one of them, or a new name>/);
     assert.match(e.message, /QAMASTER_STORE=file/);
-    assert.match(e.message, /qam publish --apply/);
+    assert.match(e.message, /run `qam publish <run>`: its preview shows what --apply would create/);
+    assert.doesNotMatch(e.message, /qam publish --apply/);
     return true;
   });
   assert.equal(m.to('GET', `${ORG}/projects`).length, 1);
@@ -235,6 +239,16 @@ test('missing project: listing paged by continuation token; a refused listing fa
     assert.match(e.message, /^Azure DevOps project 'Shop' doesn't exist in org/);
     assert.match(e.message, /Listing the organization's projects needs a token with Project and Team \(Read\)/);
     assert.match(e.message, /QAMASTER_STORE=file/);
+    return true;
+  });
+  // a listing that fails for another reason says why, not that the token lacks a scope
+  const broken = new Mock()
+    .on('GET', `${BASE}/testplan/plans`, NO_PROJECT, { status: 404 })
+    .on('GET', `${ORG}/projects`, { message: 'no list' });
+  await assert.rejects(store(broken).plan(), (e) => {
+    assert.ok(e instanceof NoProjectError);
+    assert.match(e.message, /Couldn't list the organization's projects: Azure DevOps projects isn't a list/);
+    assert.doesNotMatch(e.message, /Project and Team/);
     return true;
   });
   // an ordinary 404 (no TF200016) keeps its plain message and lists nothing
@@ -306,6 +320,25 @@ test('ensureProject: a failed or endless creation, and a refused one (403), bloc
   );
   const refused = mockNewProject([]).on('POST', `${ORG}/projects`, { message: 'denied' }, { status: 403 });
   await assert.rejects(store(refused).ensureProject(), blocked(/Create new projects/));
+  // a token without the manage scope can get a 401, though the reads before it worked: not a login problem
+  const unscoped = mockNewProject([]).on('POST', `${ORG}/projects`, { message: 'TF400813' }, { status: 401 });
+  await assert.rejects(
+    store(unscoped).ensureProject(),
+    (e) => blocked(/Create new projects.*Read, write, & manage/)(e) && !/az login/.test((e as Error).message),
+  );
+});
+
+test("ensureProject: a project that exists but this token can't see is named as such, not as a failed create", async () => {
+  const taken = mockNewProject([]).on(
+    'POST',
+    `${ORG}/projects`,
+    { message: 'TF200019: The following project already exists on the Azure DevOps Server: Shop.' },
+    { status: 409 },
+  );
+  await assert.rejects(
+    store(taken).ensureProject(),
+    blocked(/'Shop' already exists in org.*no access.*QAMASTER_ADO_PROJECT/),
+  );
 });
 
 test('cm: test cases read tags and the automation link, and skip missing items', async () => {

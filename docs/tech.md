@@ -166,6 +166,8 @@ Three more choices are swappable:
 
 The ADO adapter implements both `TestCaseStore` and `RequirementSource` and shares one HTTP client.
 
+The `file` store (Q34) keeps its cases in `testcases/testcases.csv`, or in `testcases/testcases.json` when that file exists and no CSV does (Q36, proposed).
+
 Each factory reads only its own `QAMASTER_<NAME>_*` settings. When one is missing, it throws `BlockedError` naming the `.env` line to add.
 
 Adding a provider follows CheckMaster's recipe:

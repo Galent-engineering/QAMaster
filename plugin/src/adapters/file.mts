@@ -8,7 +8,7 @@
  * whole, through a temporary file, so a failed write leaves the file as it was.
  *
  * A path ending in .json holds the same cases as a JSON array of records instead, one per case with its steps inside
- * (schema.mts, asFileStoreRecords). Everything else, from IDs to revisions and hand edits, works as for the CSV.
+ * (Q36; schema.mts, asFileStoreRecords). Everything else, from IDs to revisions and hand edits, works as for the CSV.
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';

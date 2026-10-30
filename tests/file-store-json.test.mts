@@ -152,6 +152,18 @@ test('json file store: a problem in the file says which record and what to fix',
   }
 });
 
+test('json file store: suites and tags are trimmed and blanks dropped, as in the CSV, so a write reads back', async () => {
+  const f = folder([{ id: 1000, title: 'A', suites: ['', ' Checkout '], tags: [' smoke ', ''] }]);
+  assert.deepEqual(
+    (await f.store().find({ kind: 'test_case', tag: 'smoke' })).map((c) => c.id),
+    [1000],
+  );
+  await f.store().create({ title: 'B' });
+  const read = await f.store().show(1000);
+  assert.deepEqual([read.tags, (await f.store().inPlan()).has(1000)], [['smoke'], true]);
+  assert.ok(!JSON.parse(fs.readFileSync(f.file, 'utf8')).some((r: { suite?: string }) => r.suite === ''));
+});
+
 test('json file store: QAMASTER_STORE=file uses testcases/testcases.json when that file is there and no CSV is', async () => {
   const dir = tmpDir('qam-json-cfg-');
   fs.mkdirSync(path.join(dir, 'config'));

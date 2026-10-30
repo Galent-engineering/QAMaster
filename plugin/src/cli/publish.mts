@@ -102,7 +102,17 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     await store.inPlan();
   } catch (e) {
     if (e instanceof NoProjectError && store.ensureProject) {
-      projectToCreate = await store.ensureProject(true);
+      try {
+        projectToCreate = await store.ensureProject(true);
+      } catch (probe) {
+        // the missing project is the news; a failed check of whether it can be created only adds to it
+        if (!(probe instanceof BlockedError)) throw probe;
+        throw new NoProjectError(
+          `${e.message}\nCouldn't check whether publish can create it: ${probe.message}`,
+          e.projects,
+          e.suggestions,
+        );
+      }
       if (!projectToCreate) throw e;
       planToCreate = projectToCreate.plan;
     } else if (e instanceof NoPlanError && e.plans.length === 0) planToCreate = e.createName;
@@ -140,7 +150,7 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     ...(run.ownerWarning ? [`Warning: ${run.ownerWarning}`] : []),
     ...(projectToCreate
       ? [
-          `The ADO project '${projectToCreate.name}' doesn't exist; --apply will create it (process ${projectToCreate.process}, private).`,
+          `The ADO project '${projectToCreate.name}' doesn't exist (or this token can't see it); --apply will create it (process ${projectToCreate.process}, private).`,
         ]
       : []),
     ...(planToCreate ? [`The test plan '${planToCreate}' doesn't exist yet; --apply will create it.`] : []),

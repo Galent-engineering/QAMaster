@@ -92,7 +92,7 @@ test('doctor: a project that does not exist lists the projects, closest first, a
   assert.equal(r.code, 2);
   assert.match(
     r.out,
-    /FIX +test case store +Azure DevOps project 'Shop' doesn't exist in org\. Existing projects, closest first:/,
+    /FIX +test case store +Azure DevOps project 'Shop' doesn't exist in org, or this token has no access to it\. Existing projects, closest first:/,
   );
   // continuation lines stay under the detail column
   assert.match(r.out, /\n {8,}Shop Web\n {8,}Billing\n/);

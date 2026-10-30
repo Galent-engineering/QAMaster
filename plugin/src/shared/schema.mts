@@ -122,7 +122,7 @@ export function asLedger(data: unknown, file: string): Ledger {
   return { store: data.store as string, entries };
 }
 
-/** One test case in the `file` store's JSON form (Q34): the CSV's columns, under these keys. */
+/** One test case in the `file` store's JSON form (Q36): the CSV's columns, under these keys. */
 export type FileCaseRecord = {
   id: number;
   title: string;
@@ -155,7 +155,7 @@ const CASE_KEYS = [
   'steps',
 ] as const;
 
-/** testcases/testcases.json, read by the `file` store (Q34). Optional keys get the CSV's defaults. */
+/** testcases/testcases.json, read by the `file` store (Q36). Optional keys get the CSV's defaults. */
 export function asFileStoreRecords(data: unknown, file: string): FileStoreRecord[] {
   const bad = (what: string, want: string): never => {
     throw new BlockedError(`${file}: ${what} must be ${want}. Fix it by hand or restore the file from git.`);
@@ -185,13 +185,15 @@ export function asFileStoreRecords(data: unknown, file: string): FileStoreRecord
       return ok(r[key]) ? (r[key] as T) : bad(`${at}: "${key}"`, want);
     };
     const text = (v: unknown) => typeof v === 'string';
+    // trimmed and blanks dropped, as the CSV's list() does: a blank suite would be written back as a bad record
+    const names = (v: string[]) => v.map((n) => n.trim()).filter(Boolean);
     if (typeof r.title !== 'string' || !r.title) bad(`${at}: "title"`, 'a non-empty string');
     return {
       id,
       title: r.title as string,
       description: field('description', 'a string', text, ''),
       state: field('state', 'a string', text, '') || 'Design',
-      suites: field('suites', 'a list of suite names', isStrings, [] as string[]),
+      suites: names(field('suites', 'a list of suite names', isStrings, [] as string[])),
       requirements: field(
         'requirements',
         'a list of work item numbers',
@@ -200,7 +202,7 @@ export function asFileStoreRecords(data: unknown, file: string): FileStoreRecord
       ),
       automatedTest:
         field<string | null>('automatedTest', 'a string or null', (v) => v === null || text(v), null) || null,
-      tags: field('tags', 'a list of tags', isStrings, [] as string[]),
+      tags: names(field('tags', 'a list of tags', isStrings, [] as string[])),
       rev: field('rev', 'a whole number of 1 or more', (v) => Number.isInteger(v) && (v as number) >= 1, 1),
       signature: field('signature', 'a string', text, ''),
       fields: field(
