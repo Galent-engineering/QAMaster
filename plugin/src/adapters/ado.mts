@@ -129,14 +129,20 @@ const unescapeXml = (s: string) =>
     .replace(/&apos;/g, "'")
     .replace(/&amp;/g, '&');
 
-/** Azure DevOps' Microsoft.VSTS.TCM.Steps format. Step IDs start at 2. */
+const escapeXml = (s: string) =>
+  s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+
+/**
+ * Azure DevOps' Microsoft.VSTS.TCM.Steps format. Step IDs start at 2. Each step holds HTML (isformatted="true") inside
+ * XML, so text is escaped twice, as ADO's editor writes it; once (as CheckMaster did) loses "Enter <username>".
+ */
 export function stepsXml(steps: ItemStep[]): string {
   const body = steps
     .map(
       (st, i) =>
         `<step id="${i + 2}" type="ActionStep">` +
-        `<parameterizedString isformatted="true">${escapeHtml(st.action)}</parameterizedString>` +
-        `<parameterizedString isformatted="true">${escapeHtml(st.expected)}</parameterizedString>` +
+        `<parameterizedString isformatted="true">${escapeXml(escapeHtml(st.action))}</parameterizedString>` +
+        `<parameterizedString isformatted="true">${escapeXml(escapeHtml(st.expected))}</parameterizedString>` +
         '<description/></step>',
     )
     .join('');
@@ -205,7 +211,7 @@ export class AdoClient {
   }
 
   itemUrl(id: number): string {
-    return `https://dev.azure.com/${this.organization}/${this.project}/_workitems/edit/${id}`;
+    return `https://dev.azure.com/${encodeURIComponent(this.organization)}/${encodeURIComponent(this.project)}/_workitems/edit/${id}`;
   }
   /** The URL a work item link points at. */
   apiUrl(id: number): string {
@@ -232,12 +238,18 @@ export class AdoClient {
       } catch (e) {
         throw new BlockedError(`Couldn't reach Azure DevOps: ${(e as Error).message}`);
       }
-      // fix 5: ADO asks busy clients to slow down; a passing hiccup shouldn't block a push (CheckMaster blocked at once)
-      if ((resp.status === 429 || resp.status === 503) && attempt < MAX_TRIES) {
+      // fix 5: ADO asks busy clients to slow down; a passing hiccup shouldn't block a push (CheckMaster blocked at once).
+      // A 429 wasn't processed, so any call is retried; after a 503 a write may have landed, so only reads are
+      const read = method === 'GET' || path === 'wit/wiql';
+      if ((resp.status === 429 || (resp.status === 503 && read)) && attempt < MAX_TRIES) {
         const after = Number(resp.headers.get('retry-after'));
         await this.wait(Math.min(Number.isFinite(after) && after > 0 ? after : 2 ** attempt, MAX_WAIT_S) * 1000);
         continue;
       }
+      if (resp.status === 503 && !read)
+        throw new BlockedError(
+          `Azure DevOps was unavailable (503) for ${method} ${path}; it may or may not have been applied. Check in Azure DevOps before trying again.`,
+        );
       if (resp.status === 429 || resp.status === 503)
         throw new BlockedError(
           `Azure DevOps is throttling (${resp.status}) after ${MAX_TRIES} tries. Wait a minute and try again.`,
@@ -264,14 +276,17 @@ export class AdoClient {
   get = (path: string, params?: Record<string, string>) => this.send('GET', path, { params }) as Promise<Json>;
 
   /** Every page of a list: ADO returns the next page's token in x-ms-continuationtoken (fixes 3 and 4). */
-  async pages(path: string, params: Record<string, string> = {}): Promise<Json[]> {
+  async pages(path: string, params: Record<string, string> = {}, orgLevel = false): Promise<Json[]> {
     const all: Json[] = [];
     let token: string | null = null;
     do {
       const resp = await this.request('GET', path, {
+        orgLevel,
         params: token ? { ...params, continuationToken: token } : params,
       });
-      all.push(...((await resp.json()) as Json).value);
+      const page = (await resp.json()) as Json;
+      if (!Array.isArray(page.value)) throw new BlockedError(`Azure DevOps ${path} isn't a list (no "value" array).`);
+      all.push(...page.value);
       token = resp.headers.get('x-ms-continuationtoken');
     } while (token);
     return all;
@@ -380,10 +395,12 @@ class AdoItems {
 
   protected async createKind(kind: ItemKind, change: ItemChange): Promise<Item> {
     const type = change.type ?? (kind === 'test_case' ? TEST_CASE : await this.defaultRequirementType());
+    // the suite is found first: a missing one used to leave an orphan test case that a retry then duplicated
+    const suite = change.suite ? await this.suiteMembers(change.suite) : null;
     const created = (await this.client.send('POST', `wit/workitems/$${encodeURIComponent(type)}`, {
       patch: await this.ops(null, change, []),
     })) as Json;
-    if (change.suite) await this.addToSuite(created.id, change.suite);
+    if (suite) await this.client.send('POST', suite, { json: [{ workItem: { id: created.id } }] });
     return this.show(created.id);
   }
 
@@ -431,6 +448,12 @@ class AdoItems {
       done.push(`set State: ${read.state} -> ${RETIRED}`);
     }
     for (const s of await this.client.suitesOf(read.id)) {
+      if (s.suiteType === 'dynamicTestSuite') {
+        done.push(
+          `left in query-based suite ${s.plan.name} / ${s.name}: its query decides (it leaves when the query excludes Closed)`,
+        );
+        continue;
+      }
       await this.client.send('DELETE', `testplan/Plans/${s.plan.id}/Suites/${s.id}/TestCase`, {
         params: { testIds: String(read.id) },
       });
@@ -441,6 +464,13 @@ class AdoItems {
 
   /** Adds a test case to a static suite of the plan, by name or path. */
   async addToSuite(caseId: number, suite: string): Promise<void> {
+    const base = await this.suiteMembers(suite);
+    const members = new Set((await this.client.pages(base)).map((c) => c.workItem.id));
+    if (!members.has(caseId)) await this.client.send('POST', base, { json: [{ workItem: { id: caseId } }] });
+  }
+
+  /** The test-case route of one static suite, by its path or (when unique) its name. */
+  private async suiteMembers(suite: string): Promise<string> {
     const plan = await this.plan();
     const suites = await this.client.pages(`testplan/Plans/${plan.id}/suites`);
     const byId = new Map(suites.map((s) => [s.id, s]));
@@ -456,9 +486,13 @@ class AdoItems {
       .filter(Boolean)
       .join('/')
       .toLowerCase();
-    const found = suites.filter(
-      (s) => s.suiteType === 'staticTestSuite' && [pathOf(s).toLowerCase(), s.name.toLowerCase()].includes(wanted),
-    );
+    const statics = suites.filter((s) => s.suiteType === 'staticTestSuite');
+    const byPath = statics.filter((s) => pathOf(s).toLowerCase() === wanted);
+    const found = byPath.length ? byPath : statics.filter((s) => s.name.toLowerCase() === wanted);
+    if (found.length > 1)
+      throw new BlockedError(
+        `${found.length} static suites in test plan '${plan.name}' are named '${suite}' (${found.map((s) => `'${pathOf(s)}'`).join(', ')}). Give the suite's path.`,
+      );
     if (!found.length) {
       const names = suites
         .map(pathOf)
@@ -468,9 +502,7 @@ class AdoItems {
         `No static suite '${suite}' in test plan '${plan.name}' (suites: ${names.join(', ') || 'none'}).`,
       );
     }
-    const base = `testplan/Plans/${plan.id}/Suites/${found[0].id}/TestCase`;
-    const members = new Set((await this.client.pages(base)).map((c) => c.workItem.id));
-    if (!members.has(caseId)) await this.client.send('POST', base, { json: [{ workItem: { id: caseId } }] });
+    return `testplan/Plans/${plan.id}/Suites/${found[0].id}/TestCase`;
   }
 
   /** The test plan named like the repo (case, spaces and punctuation ignored), or QAMASTER_ADO_PLAN. */
@@ -683,7 +715,7 @@ export class AdoRequirements extends AdoItems implements RequirementSource {
           .split('\n')
           .map((l) => l.replace(/^[-*•]\s*/, '').trim())
           .filter(Boolean),
-        sprint: iteration.slice(iteration.lastIndexOf('\\') + 1) || undefined,
+        sprint: iteration.includes('\\') ? iteration.slice(iteration.lastIndexOf('\\') + 1) : undefined, // the root is no sprint
         priority:
           f['Microsoft.VSTS.Common.Priority'] !== undefined ? String(f['Microsoft.VSTS.Common.Priority']) : undefined,
         module: area.includes('\\') ? area.slice(area.lastIndexOf('\\') + 1) : undefined,

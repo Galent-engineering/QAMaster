@@ -107,6 +107,9 @@ export class FakeAdo {
       if (!suite) return ok({ message: 'no suite' }, 404);
       if (method === 'GET') return ok({ value: [...suite.members].map((id) => ({ workItem: { id } })) });
       if (method === 'POST') for (const w of body as { workItem: { id: number } }[]) suite.members.add(w.workItem.id);
+      // a query-based suite's members come from its query: ADO refuses to remove one
+      if (method === 'DELETE' && suite.suiteType === 'dynamicTestSuite')
+        return ok({ message: 'Test cases cannot be removed from a query-based suite.' }, 400);
       if (method === 'DELETE')
         for (const id of (url.searchParams.get('testIds') ?? '').split(',')) suite.members.delete(Number(id));
       return ok({ value: [] });
@@ -119,6 +122,7 @@ export class FakeAdo {
           .map((x) => ({
             id: x.st.id,
             name: x.st.name,
+            suiteType: x.st.suiteType,
             plan: { id: x.pl.id, name: x.pl.name },
             project: { name: this.project },
           })),

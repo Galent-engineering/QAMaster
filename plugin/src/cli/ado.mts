@@ -24,12 +24,13 @@ export async function ado(cfg: Config, argv: string[], json: boolean): Promise<n
     throw new BlockedError(`qam ado: ${(e as Error).message}. ${USAGE}`);
   }
   const { values: v, positionals } = parsed;
-  const [cmd, rawMethod, route] = positionals;
+  const [cmd, rawMethod, rawRoute] = positionals;
+  const route = rawRoute?.replace(/^\/+/, ''); // relative to _apis/: a leading slash would make a // URL
   const method = rawMethod?.toUpperCase();
   if (cmd !== 'call' || !method || !route || !['GET', 'POST', 'PATCH', 'DELETE'].includes(method))
     throw new BlockedError(USAGE);
   // a WIQL query is a POST that only reads
-  const reads = method === 'GET' || (method === 'POST' && route.replace(/^\//, '') === 'wit/wiql');
+  const reads = method === 'GET' || (method === 'POST' && route === 'wit/wiql');
   if (!reads && !v.apply)
     throw new BlockedError(
       `${method} ${route} changes Azure DevOps. Show the person what it will change, and add --apply only after their yes.`,
@@ -52,7 +53,7 @@ export async function ado(cfg: Config, argv: string[], json: boolean): Promise<n
   const client = new AdoClient(s.organization, s.project, () => authHeader(cfg.env));
   const result =
     v['all-pages'] && method === 'GET'
-      ? { value: await client.pages(route, params) }
+      ? { value: await client.pages(route, params, v['org-level']) }
       : await client.send(method, route, {
           orgLevel: v['org-level'],
           params,

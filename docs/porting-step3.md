@@ -915,13 +915,25 @@ Two more of your answers that day became decision **Q33**:
 
 It uses `IN GROUP 'Microsoft.RequirementCategory'` instead of a fixed list of types. The results are normalised to AQE's requirement shape.
 
-**Tested** (`tests/ado.test.mts`, 37 tests; `tests/adapters.test.mts`):
+**Tested** (`tests/ado.test.mts`, 45 tests; `tests/adapters.test.mts`):
 - **First, CheckMaster's 17 tests** ported to `node:test`. They run against its recorded responses, through a fake `fetch` that fails on any request it wasn't given, as `respx` does. All passed once a missing `rev` in a recorded item was read as 0.
 - **Both contract suites on the real adapter**, against `tests/fake-ado.mts`: an in-memory ADO with revisions, a 412 on a failed `/rev` test, WIQL, plans and suites. The fake store passes the same suites, including the new plan and suite creation contract.
 - **One test per fix**, each built from its `cm-runs.json` scenario: a stale update and a change landing mid-write; two matching plans; the second page of plans and of suites; a 429 retried after `Retry-After`, and a 503 blocked after 3 tries with no wait over 30 s; a Closed test case left out.
 - **Plan and suite creation:** `ensurePlan` creates the plan named like the repo once, and `ensureSuite` adds a static suite under its root.
 - **`qam ado call`:** a write without `--apply` is refused, and missing settings are named.
 - **`qam doctor`:** without ADO settings the store check fails and says what to set, and the pipeline's store stage shows why.
+
+**Independent review (2026-10-30).** 18 agents, with every finding checked by a skeptic:
+- **Toggles:** two agents, each in a throwaway worktree, switched each fix off in turn. Every fix's test failed, and CheckMaster's 17 still passed; one was changed on purpose to expect the rev guard.
+- **Findings:** reviewers in three areas (API semantics, safety, the fake's fidelity) reported 13. Ten held up, 3 were refuted. All ten are corrected, each with a test that fails on the reviewed commit `8fd801a`:
+  - **A:** a write that gets a 503 isn't retried, since it may have landed; a 429 still is, since ADO didn't process it;
+  - **B:** a suite name shared by two static suites blocks, naming their paths, and a path picks one;
+  - **C:** `qam ado call --all-pages` keeps `--org-level`, a leading `/` is dropped, and a response that isn't a list blocks;
+  - **D:** step text is escaped twice, as ADO's own editor writes it, so "Enter `<username>`" survives. CheckMaster lost it too;
+  - **E:** `create` finds the suite before creating, so a missing suite leaves no orphan test case;
+  - **F:** a requirement at the root iteration has no sprint;
+  - **G:** work-item links encode the organization and project;
+  - **H:** `retire` leaves a query-based suite to its query and says so. The fake ADO now has suite types, which it lacked.
 
 **Intended differences from CheckMaster:**
 - the fixes;

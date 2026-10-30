@@ -9,7 +9,15 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
-import { AdoClient, AdoRequirements, type AdoSettings, AdoTestCases, authHeader } from '../plugin/src/adapters/ado.mts';
+import {
+  AdoClient,
+  AdoRequirements,
+  type AdoSettings,
+  AdoTestCases,
+  authHeader,
+  parseSteps,
+  stepsXml,
+} from '../plugin/src/adapters/ado.mts';
 import { BlockedError } from '../plugin/src/shared/errors.mts';
 import { requirementSourceContract, testCaseStoreContract } from './contracts.mts';
 import { FakeAdo } from './fake-ado.mts';
@@ -525,4 +533,116 @@ test('qam ado call: a write needs --apply, and missing settings are named', () =
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+});
+
+// ---- found by the multi-agent review of this adapter (docs/porting-step3.md, step 4)
+
+const suiteOf = (ado: FakeAdo, name: string, parent: number, suiteType = 'staticTestSuite') => {
+  const st = {
+    id: 900 + ado.plans[0].suites.length,
+    name,
+    suiteType,
+    parentSuite: { id: parent },
+    members: new Set<number>(),
+  };
+  ado.plans[0].suites.push(st);
+  return st;
+};
+
+test('review A: a write that gets a 503 is not retried, since it may have landed; a read is', async () => {
+  const m = new Mock();
+  m.seq('POST', `${BASE}/wit/workitems/$Test Case`, [{ status: 503 }, { status: 200, body: { id: 26 } }]);
+  await assert.rejects(
+    store(m).create({ title: 'Cart total' }),
+    blocked(/unavailable \(503\).*may or may not have been applied/),
+  );
+  assert.equal(m.to('POST', `${BASE}/wit/workitems/$Test Case`).length, 1, 'sent once: no duplicate test case');
+  const r = new Mock();
+  r.seq('GET', `${BASE}/testplan/plans`, [{ status: 503 }, { status: 200, body: fixture('plans.json') }]);
+  assert.equal((await store(r).plan()).id, 1);
+});
+
+test('review B: a suite name shared by two static suites blocks, naming their paths; a path picks one', async () => {
+  const ado = new FakeAdo();
+  const checkout = suiteOf(ado, 'Checkout', 10);
+  const cart = suiteOf(ado, 'Cart', 10);
+  suiteOf(ado, 'Smoke', checkout.id);
+  const cartSmoke = suiteOf(ado, 'Smoke', cart.id);
+  const s = new AdoTestCases(...onFake(ado));
+  await assert.rejects(
+    s.addToSuite(504, 'Smoke'),
+    blocked(/2 static suites .* named 'Smoke' \('Checkout\/Smoke', 'Cart\/Smoke'\)/),
+  );
+  await s.addToSuite(504, 'Cart/Smoke');
+  assert.ok(cartSmoke.members.has(504));
+});
+
+test('review C: pages() can read org-level lists, and a response that is no list blocks', async () => {
+  const m = new Mock();
+  m.on('GET', `${ORG}/testplan/suites`, fixture('suites_of_26.json'), { params: { testCaseId: '26' } });
+  assert.equal((await client(m).pages('testplan/suites', { testCaseId: '26' }, true)).length, 2);
+  m.on('GET', `${BASE}/wit/workitems/26`, fixture('testcase_26.json'));
+  await assert.rejects(client(m).pages('wit/workitems/26'), blocked(/isn't a list/));
+});
+
+test('review C: qam ado call drops a leading slash from the route', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-ado-'));
+  try {
+    const r = spawnSync(
+      path.join(import.meta.dirname, '../plugin/bin/qam'),
+      ['--repo', dir, 'ado', 'call', 'POST', '/testplan/plans'],
+      {
+        encoding: 'utf8',
+      },
+    );
+    assert.match(r.stderr, /POST testplan\/plans changes Azure DevOps/);
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+});
+
+test('review D: step text with <placeholders> survives the round trip, escaped twice as ADO writes it', () => {
+  const steps = [{ action: 'Enter <username> and <password>', expected: 'Total is < $20 & tax' }];
+  const xml = stepsXml(steps);
+  assert.match(xml, /Enter &amp;lt;username&amp;gt;/);
+  assert.deepEqual(parseSteps(xml), steps);
+});
+
+test('review E: creating a test case in a missing suite blocks before anything is created', async () => {
+  const ado = new FakeAdo();
+  const before = ado.items.size;
+  const s = new AdoTestCases(...onFake(ado));
+  await assert.rejects(
+    s.create({ title: 'Orphan?', suite: 'No such suite' }),
+    blocked(/No static suite 'No such suite'/),
+  );
+  assert.equal(ado.items.size, before, 'no orphan test case');
+  const made = await s.create({ title: 'In payments', suite: 'Payments' });
+  assert.ok(ado.plans[0].suites[1].members.has(made.id));
+});
+
+test('review F: a requirement at the root iteration has no sprint', async () => {
+  const ado = new FakeAdo();
+  ado.add(7, 'User Story', 'Backlog item', { iteration: 'Shop' });
+  const found = await new AdoRequirements(...onFake(ado)).requirements({ from: '2026-10-01', to: '2026-10-30' });
+  assert.equal(found.find((x) => x.id === '7')?.sprint, undefined);
+  assert.equal(found.find((x) => x.id === '3')?.sprint, 'Sprint 24');
+});
+
+test('review G: work item links encode the organization and project', () => {
+  const c = new AdoClient('my org', 'My Project', () => 'Basic test', new Mock().fetch);
+  assert.equal(c.itemUrl(5), 'https://dev.azure.com/my%20org/My%20Project/_workitems/edit/5');
+});
+
+test('review H: retiring leaves a query-based suite to its query, and says so', async () => {
+  const ado = new FakeAdo();
+  const query = suiteOf(ado, 'Open checkout cases', 10, 'dynamicTestSuite');
+  query.members.add(501);
+  const s = new AdoTestCases(...onFake(ado));
+  const done = await s.retire(await s.show(501));
+  assert.deepEqual(done, [
+    'set State: Design -> Closed',
+    'removed TC501 from suite Shop Web / Payments',
+    'left in query-based suite Shop Web / Open checkout cases: its query decides (it leaves when the query excludes Closed)',
+  ]);
 });
