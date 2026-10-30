@@ -644,3 +644,4 @@ Publish is the link between the two halves. TestGen writes draft cases into `tes
 | 2026-10-29 | 4 Setup and pipeline | Setup only adds what's missing; pipeline stages decide "done" from evidence in the project, so they resume and show staleness |
 | 2026-10-30 | Publish (steps 1-6) | The file store (CSV, hand edits count as changes), the publish engine and ledger, and `qam publish`. Path depth 3 selected a whole Angular app, so the default is 4 |
 | 2026-10-30 | Publish (steps 7-8) | A cache that never decides: reads may be stale, writes check the live store. Running publish on an ADO with no plan found a check that blocked `--apply` from creating it |
+| 2026-10-30 | 0.2.0 fixes | An error is a menu, not a dead end: a missing project lists the real ones and the ways forward. An org-level write (creating a project) goes through the same preview and yes as any other write; reviewers caught a fix text that skipped the preview |

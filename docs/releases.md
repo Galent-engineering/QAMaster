@@ -18,7 +18,7 @@ Publish (Q33, Q34), plus the fixes the 0.1.0 walkthrough turned up (WALKTHROUGH-
 | A stage marked skipped shows its note, not the last failed check | `pipeline/pipeline.mts` | |
 | ADO-API recipe: list the organization's projects | `skills/ADO-API/references/recipes.md` | |
 | Doctor warns when an existing config misses a newer default (`pathDepth`, scan excludes) | `cli/project.mts` | |
-| The `file` store also reads and writes `.json` | `adapters/file.mts` | Q34 |
+| The `file` store also reads and writes `testcases/testcases.json`, used when there is no CSV | `adapters/file.mts`, `shared/schema.mts` | Q36 (proposed) |
 
 ## 0.2.1: planned
 
@@ -27,6 +27,7 @@ Publish (Q33, Q34), plus the fixes the 0.1.0 walkthrough turned up (WALKTHROUGH-
 | Accept the store's version of a conflicted case (today the message only says to look in the store) | M | Med: only on conflicts | A flag or command name, approved |
 | xlsx `file` store. No runtime dependencies, so a minimal reader and writer on `node:zlib` (xlsx is zipped XML) | M | Med for teams with no tracker | Hand-written vs a dependency exception (Q34) |
 | Upgrade an old config on request, beyond the 0.2.0 doctor warning | S | Low-med | A flag name, e.g. on `setup`, approved |
+| Accept or drop Q36 (JSON form of the `file` store); decide whether both files present should block | XS | Low | Your call |
 | Findings from the publish walkthrough (WALKTHROUGH-publish) | ? | ? | The filled-in feedback, triaged like this table |
 | Findings from the first live ADO publish, project creation included | ? | ? | The live run |
 
