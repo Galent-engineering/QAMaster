@@ -25,7 +25,7 @@ import {
   suggestSmoke,
 } from '../publish/publish.mts';
 import type { Config } from '../shared/config.mts';
-import { BlockedError } from '../shared/errors.mts';
+import { BlockedError, NoPlanError } from '../shared/errors.mts';
 import type { Item, Ledger } from '../shared/models.mts';
 import { runDir } from './testgen.mts';
 
@@ -92,8 +92,15 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   };
   const derived: Derived[] = run.cases.filter((c) => !leftOut.has(c.id)).map((c) => derive(c, ctx));
 
-  // inPlan first: it fails loudly when the store can't be reached, so an ID missing below really is gone
-  await store.inPlan();
+  // inPlan first: it fails loudly when the store can't be reached, so an ID missing below really is gone. A store with
+  // no plan at all gets one on --apply (Q33); one with other plans is the person's choice, which doctor lists.
+  let planToCreate: string | null = null;
+  try {
+    await store.inPlan();
+  } catch (e) {
+    if (!(e instanceof NoPlanError && e.plans.length === 0)) throw e;
+    planToCreate = e.createName;
+  }
   const items = new Map<number, Item>();
   for (const e of ledger?.entries ?? []) {
     try {
@@ -121,6 +128,7 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     `QAMaster publish ${run.name} → ${where} (${v.apply ? 'applying' : 'dry run'})`,
     `Reviewed by ${run.reviewedBy}${run.reviewedAt ? ` on ${run.reviewedAt.slice(0, 10)}` : ''}`,
     ...(run.ownerWarning ? [`Warning: ${run.ownerWarning}`] : []),
+    ...(planToCreate ? [`The test plan '${planToCreate}' doesn't exist yet; --apply will create it.`] : []),
     ...(cached.age() ? [`Store as of ${cached.age()} (from the cache). Run with --refresh to read it again.`] : []),
   ];
   const section = (head: string, rows: string[]) => rows.length && lines.push('', head, ...rows.map((r) => `  ${r}`));
