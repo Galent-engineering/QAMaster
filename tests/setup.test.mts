@@ -5,14 +5,14 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
+import { tmpDir } from './tmp.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const QAM = path.join(ROOT, 'plugin/bin/qam');
 const FIX = path.join(ROOT, 'tests/fixtures/setup');
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'qam-setup-'));
+const tmp = () => tmpDir('qam-setup-');
 const HOME = tmp();
 const read = (file: string) => JSON.parse(fs.readFileSync(file, 'utf8'));
 

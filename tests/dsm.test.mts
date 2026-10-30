@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import {
@@ -15,6 +14,7 @@ import {
   tarjan,
 } from '../plugin/src/dsm/build.mts';
 import { renderPage } from '../plugin/src/dsm/render.mts';
+import { tmpDir } from './tmp.mts';
 
 const FIXTURES = path.resolve(import.meta.dirname, 'fixtures/dsm');
 
@@ -132,7 +132,7 @@ const QAM = path.resolve(import.meta.dirname, '../plugin/bin/qam');
 const qam = (...args: string[]) => spawnSync(QAM, args, { encoding: 'utf8' });
 
 test('qam dsm build, then render, in a QA project', () => {
-  const qa = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-dsm-'));
+  const qa = tmpDir('qam-dsm-');
   fs.mkdirSync(path.join(qa, 'config'));
   fs.mkdirSync(path.join(qa, 'dsm'));
   fs.writeFileSync(path.join(qa, 'config/qamaster.json'), '{}');
@@ -154,7 +154,7 @@ test('qam dsm build, then render, in a QA project', () => {
 });
 
 test('qam dsm blocks with the step to take', () => {
-  const empty = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-dsm-'));
+  const empty = tmpDir('qam-dsm-');
   const cases: [string[], RegExp][] = [
     [['dsm', 'build'], /No DSM settings at .*dsm-config\.json\. Run qam setup/],
     [['dsm', 'refresh'], /No DSM settings at .*dsm-config\.json\. Run qam setup/],

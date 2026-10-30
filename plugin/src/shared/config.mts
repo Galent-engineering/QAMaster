@@ -53,8 +53,11 @@ export function loadConfig(root: string, env: Env = process.env): Config {
   loadEnv(path.join(root, ENV_FILE), env);
   const testRoot = path.resolve(root, env.QAMASTER_TEST_ROOT || '.');
   if (!fs.existsSync(testRoot)) {
+    // say which setting is wrong: the repo folder itself (a mistyped --repo), or QAMASTER_TEST_ROOT in .env
     throw new BlockedError(
-      `QAMASTER_TEST_ROOT points to ${testRoot}, which doesn't exist. Fix the line in ${ENV_FILE}.`,
+      env.QAMASTER_TEST_ROOT
+        ? `QAMASTER_TEST_ROOT points to ${testRoot}, which doesn't exist. Fix the line in ${ENV_FILE}.`
+        : `${root} doesn't exist. Check --repo; to start a QA project there, create the folder first.`,
     );
   }
   const qaProject = findQaProject(testRoot) ?? findQaProject(root);

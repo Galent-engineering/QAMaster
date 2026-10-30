@@ -1,15 +1,15 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { loadConfig } from '../plugin/src/shared/config.mts';
 import { type Env, loadEnv } from '../plugin/src/shared/env.mts';
 import { BlockedError } from '../plugin/src/shared/errors.mts';
 import { asProjectConfig, DEFAULT_PROJECT_CONFIG } from '../plugin/src/shared/schema.mts';
+import { tmpDir } from './tmp.mts';
 
 function tmp(): string {
-  return fs.mkdtempSync(path.join(os.tmpdir(), 'qam-config-'));
+  return tmpDir('qam-config-');
 }
 
 function write(file: string, text: string): void {

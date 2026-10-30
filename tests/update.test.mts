@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { impact, planCrawl, type State, type UpdateConfig, update } from '../plugin/src/dsm/update.mts';
 import type { CodeModel, UiModel } from '../plugin/src/shared/models.mts';
 import { FakeCrawler } from './fakes.mts';
+import { tmpDir } from './tmp.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const QAM = path.join(ROOT, 'plugin/bin/qam');
@@ -21,7 +21,7 @@ function gitIn(dir: string, ...args: string[]) {
 
 /** A QA project whose DSM config points at a git copy of the polyglot fixture in ./app. */
 function project(baseUrl = 'http://app.test/'): { qa: string; config: UpdateConfig; dir: string } {
-  const qa = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-update-'));
+  const qa = tmpDir('qam-update-');
   fs.cpSync(path.join(POLYGLOT, 'repo'), path.join(qa, 'app'), { recursive: true });
   gitIn(path.join(qa, 'app'), 'init', '-q', '-b', 'main');
   gitIn(path.join(qa, 'app'), 'add', '-A');

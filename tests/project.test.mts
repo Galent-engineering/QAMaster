@@ -1,14 +1,14 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { sameRemote } from '../plugin/src/pipeline/sources.mts';
+import { tmpDir } from './tmp.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const QAM = path.join(ROOT, 'plugin/bin/qam');
-const tmp = (p = 'qam-project-') => fs.mkdtempSync(path.join(os.tmpdir(), p));
+const tmp = (p = 'qam-project-') => tmpDir(p);
 const HOME = tmp('qam-home-');
 
 function qam(dir: string, ...args: string[]) {
@@ -244,4 +244,75 @@ test('doctor checks config, sources, Playwright and integrations, and records th
   fs.writeFileSync(path.join(qa, 'node_modules/playwright/package.json'), '{}');
   assert.equal(qam(qa, 'doctor').status, 0);
   assert.equal(read(path.join(qa, '.qamaster/doctor.json')).ok, true);
+});
+
+// Found in the Real World App demo dry run (docs/porting-step3.md, feature 7).
+
+test('dry run: a setup blocked by its code source writes nothing', () => {
+  const qa = tmp();
+  const r = qam(qa, 'setup', '--no-install', '--source', 'nowhere');
+  assert.equal(r.status, 2);
+  assert.deepEqual(fs.readdirSync(qa), [], 'no config, launcher or package.json');
+});
+
+test('review: a sibling source stays a relative path, so the committed config works for teammates', () => {
+  const parent = tmp();
+  gitRepo(path.join(parent, 'app'));
+  const qa = path.join(parent, 'qa');
+  fs.mkdirSync(qa);
+  qam(qa, 'setup', '--no-install', '--source', '../app');
+  assert.equal(read(path.join(qa, 'config/dsm-config.json')).repositories[0].path, '../app');
+});
+
+test('review: a broken config stops setup before it clones, so the same command works once it is fixed', () => {
+  const origin = tmp('qam-origin-');
+  gitRepo(origin);
+  const qa = tmp();
+  qam(qa, 'setup', '--no-install');
+  const cfg = path.join(qa, 'config/dsm-config.json');
+  const good = fs.readFileSync(cfg, 'utf8');
+  fs.writeFileSync(cfg, '{bad');
+  assert.equal(qam(qa, 'setup', '--no-install', '--source', `file://${origin}`, '--clone-to', 'code').status, 2);
+  assert.ok(!fs.existsSync(path.join(qa, 'code')), 'nothing cloned');
+  fs.writeFileSync(cfg, good);
+  const r = qam(qa, 'setup', '--no-install', '--source', `file://${origin}`, '--clone-to', 'code');
+  assert.equal(r.status, 0, r.err);
+});
+
+test('dry run and review: a missing --repo blocks every command, names --repo, and creates nothing', () => {
+  const qa = tmp();
+  qam(qa, 'setup', '--no-install');
+  // a typo inside an existing QA project must not fall through to the parent project
+  for (const typo of [path.join(tmp(), 'typo'), path.join(qa, 'confg')]) {
+    for (const args of [
+      ['setup', '--no-install', '--url', 'https://shop.example.test/'],
+      ['setup', '--check'],
+      ['doctor'],
+      ['integrations', 'add', 'claude-code'],
+      ['pipeline', 'status'],
+    ]) {
+      const r = qam(typo, ...args);
+      assert.equal(r.status, 2, args.join(' '));
+      assert.match(r.err, /doesn't exist\. Check --repo; to start a QA project there, create the folder first/);
+      assert.doesNotMatch(r.err, /QAMASTER_TEST_ROOT/);
+    }
+    assert.ok(!fs.existsSync(typo), typo);
+  }
+  assert.equal(read(path.join(qa, 'config/dsm-config.json')).application.base_url, '', 'the parent is untouched');
+});
+
+test('dry run: test folders are left out of the scan, so a Cypress harness page is no screen', () => {
+  const qa = tmp();
+  gitRepo(path.join(qa, 'app'), {
+    'src/App.jsx': '<Route path="/home" component={Home} />\n',
+    'cypress/support/component-index.html': '<!DOCTYPE html><html><body><div data-cy-root></div></body></html>\n',
+    // review: an app's own screens in folders named tests, and Welsh pages (.cy.html), are kept
+    'src/tests/Tests.jsx': '<Route path="/tests" component={TestList} />\n',
+    'site/about.cy.html': '<!DOCTYPE html><html><body><h1>Amdanom ni</h1></body></html>\n',
+    'cypress/e2e/home.cy.ts': "cy.visit('/home')\n",
+  });
+  qam(qa, 'setup', '--no-install', '--source', 'app');
+  qam(qa, 'dsm', 'scan');
+  const routes = read(path.join(qa, 'dsm/code-model.json')).routes.map((r: { route: string }) => r.route);
+  assert.deepEqual(routes.sort(), ['/home', '/site/about.cy.html', '/tests']);
 });

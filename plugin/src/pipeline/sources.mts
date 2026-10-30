@@ -27,6 +27,13 @@ export const DEFAULT_EXCLUDE = [
   '*.min.js',
   '*.spec.ts',
   '*.test.*',
+  // test code and its harness pages never define the app's screens (a Cypress harness page became a screen). Not
+  // tests/ or test/: apps have real screens there (an exam's app/tests/page.tsx), nor *.cy.*: cy is also Welsh
+  'cypress/',
+  'e2e/',
+  '__tests__/',
+  '*.cy.[jt]s',
+  '*.cy.[jt]sx',
 ];
 
 export type SourceSpec = {

@@ -819,11 +819,21 @@ Fix 3 covers business and E2E cases. An expected result in another category that
 What it found:
 - **Fix 2 was too strict about quoted values:** `Type "Chase Bank" in the Bank Name field` was read as an element named "Chase Bank" (15 false findings). Now a quoted value equal to the step's `data` or a `test_data` value is data, not an element. That's tested.
 - **Setup caught a shallow clone of the app,** the Q26 check working as meant. `git fetch --unshallow`, a read-only fetch, fixed it.
-- **Small things for earlier features**, not fixed here:
-  - feature 4: a blocked setup has already written its config files before the source check stops it, and a source outside the QA project is stored as a long `../../..` path;
-  - feature 3: the crawl took in `/cypress/support/component-index.html`, a test harness the Vite dev server serves, which became a "Cypress" component;
-  - feature 5: one candidate journey follows the "in code" sign-out redirects (`/bankaccounts → /signin → /signup`), which no user walks; the run excludes it with a reason;
-  - the pipeline: without ADO (step 4), `next` stops at the test case store; for the demo, mark it skipped with a note.
+- **Small things for earlier features.** These were fixed on 2026-10-30 (branch `fix/dry-run-findings`), each with a test that fails on `main`. Then two independent multi-agent reviews of the fixes confirmed 9 problems in them (7, then 2 in the corrections), all corrected:
+  - **feature 4, setup:**
+    - a blocked setup had already written its config files before the source check stopped it. A local folder or existing clone is now checked first, so a blocked setup writes nothing. A `--clone-to` clone still waits until the setup steps pass. The review caught that cloning first left an unrecorded clone when the config was broken.
+    - a missing `--repo` folder blocked with a wrong message about `QAMASTER_TEST_ROOT`, a setting that wasn't set. Now it blocks with "`<folder>` doesn't exist. Check --repo; to start a QA project there, create the folder first", for every command including setup. Two reviews ruled out the alternatives:
+      - letting setup create the folder made a typo inside a QA project (`--repo qa/confg`) run setup on the parent project, and `setup --check` create a folder;
+      - letting every command through made `doctor` and `integrations` write into a mistyped folder.
+    - **not changed:** a source outside the QA project stays a relative path (`../app`). I had made it absolute, but the review showed that breaks the committed config for teammates with the usual sibling layout.
+  - **the scan (feature 2's defaults, written by setup):** the Cypress harness page `/cypress/support/component-index.html` became a "Cypress" component. It was the scan that took it in, not the crawl: it's a static HTML page in the repo.
+    - Setup's default excludes now leave out test code: `cypress/`, `e2e/`, `__tests__/`, `*.cy.[jt]s` and `*.cy.[jt]sx`.
+    - **Not `tests/` or `test/`:** the review showed real screens live there, such as an exam app's `app/tests/page.tsx`.
+    - **Not `*.cy.*`:** `cy` is also the Welsh locale.
+    - QA projects set up before this keep their old list; add the lines there by hand.
+  - **feature 5, journeys: not changed.** I first made journeys skip hops seen only in code, like the sign-out redirect. The review showed that leaves a code-only DSM (`qam dsm run --no-crawl`) with no journeys and no entry screens, and drops real links found only in code. So it's reverted. A coverage exclusion with a reason handles a redirect journey, as the dry run did.
+  - **not changed:** without ADO (step 4), the pipeline's `next` stops at the test case store. For the demo, mark it skipped with a note.
+- **Tests now delete their temp folders** (`tests/tmp.mts`). They had left about 1,800 behind; a full run now leaves none.
 
 **Moved (2026-10-29):**
 - **`plugin/skills/TestGen/SKILL.md`**, with the run format in `references/cases.md`. It's rewritten for `qam`: no MCP step, requirements from `qam requirements fetch`, code from the local clones, the strict element and citation rules, and "validation isn't review".

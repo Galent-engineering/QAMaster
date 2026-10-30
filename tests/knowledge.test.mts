@@ -6,11 +6,11 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import type { Dsm } from '../plugin/src/dsm/build.mts';
 import { buildSkills, CURATED_END } from '../plugin/src/knowledge/build.mts';
+import { tmpDir } from './tmp.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const QAM = path.join(ROOT, 'plugin/bin/qam');
@@ -160,7 +160,7 @@ test('fix 10: the template placeholder never reaches a description', () => {
 
 // ---- the command
 
-const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-home-'));
+const HOME = tmpDir('qam-home-');
 function qam(dir: string, ...args: string[]) {
   const r = spawnSync(QAM, ['--repo', dir, ...args], {
     encoding: 'utf8',
@@ -169,7 +169,7 @@ function qam(dir: string, ...args: string[]) {
   return { status: r.status, out: r.stdout, err: r.stderr };
 }
 function project(app: string | null) {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-knowledge-'));
+  const dir = tmpDir('qam-knowledge-');
   qam(dir, 'setup', '--no-install', ...(app ? ['--app', app] : []));
   return dir;
 }

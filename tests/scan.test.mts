@@ -1,7 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import {
@@ -14,6 +13,7 @@ import {
   scanJsxRoutes,
   wanted,
 } from '../plugin/src/dsm/scan.mts';
+import { tmpDir } from './tmp.mts';
 
 const FIXTURES = path.resolve(import.meta.dirname, 'fixtures/scan');
 
@@ -170,7 +170,7 @@ test('fix 5: a route component is found through the router file imports, whateve
 // ---- through git and the CLI
 
 const QAM = path.resolve(import.meta.dirname, '../plugin/bin/qam');
-const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'qam-scan-'));
+const tmp = () => tmpDir('qam-scan-');
 const DATE = { GIT_AUTHOR_DATE: '2026-10-29T00:00:00Z', GIT_COMMITTER_DATE: '2026-10-29T00:00:00Z' };
 
 function gitIn(dir: string, ...args: string[]) {

@@ -23,7 +23,7 @@ import {
 } from '../integrations/integrations.mts';
 import { mark, reset, start, status, table } from '../pipeline/pipeline.mts';
 import { pluginVersion, type SetupOptions, type Step, setupProject } from '../pipeline/setup.mts';
-import { checkSource, isGitUrl } from '../pipeline/sources.mts';
+import { checkSource } from '../pipeline/sources.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 
@@ -108,6 +108,16 @@ export function setup(cfg: Config, argv: string[], json: boolean): number {
     install: !v['no-install'],
     browsers: browsers as SetupOptions['browsers'],
   };
+  // a source to read is checked before anything is written, so a blocked setup leaves the folder as it was. A clone is
+  // a write, so it waits until the setup steps have passed (otherwise a broken config leaves an unrecorded clone)
+  const source = {
+    source: v.source ?? '',
+    branch: v.branch,
+    name: v.name,
+    cloneTo: v['clone-to'],
+    useClone: v['use-clone'],
+  };
+  const early = v.source && !v['clone-to'] ? checkSource(source, dir) : null;
   const steps = setupProject(dir, opts);
   // a config that isn't valid JSON blocks setup before anything writes to it
   const broken = steps.some((s) => s.status === 'failed');
@@ -140,13 +150,10 @@ export function setup(cfg: Config, argv: string[], json: boolean): number {
     steps.push({ step: 'app URL', status: 'updated', detail: `application.base_url ${v.url}` });
   }
   if (!broken && v.source) {
-    if (opts.check && isGitUrl(v.source) && v['clone-to']) {
+    const checked = early ?? (opts.check ? null : checkSource(source, dir));
+    if (!checked) {
       steps.push({ step: 'code source', status: 'skipped', detail: `--check doesn't clone ${v.source}` });
     } else {
-      const checked = checkSource(
-        { source: v.source, branch: v.branch, name: v.name, cloneTo: v['clone-to'], useClone: v['use-clone'] },
-        dir,
-      );
       notes.push(...checked.notes);
       warnings.push(...checked.warnings);
       if (opts.check) steps.push({ step: 'code source', status: 'ok', detail: `${checked.repo.name}: checked` });

@@ -1,13 +1,11 @@
 import assert from 'node:assert/strict';
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
 import { test } from 'node:test';
 import { buildRequirements, buildRunner, buildStore } from '../plugin/src/adapters/registry.mts';
 import { loadConfig } from '../plugin/src/shared/config.mts';
 import { retag } from '../plugin/src/shared/models.mts';
 import { requirementSourceContract, testCaseStoreContract } from './contracts.mts';
 import { CHANGE, FakeCrawler, FakeRepoReader, FakeRequirements, FakeRunner, FakeStore, UI_MODEL } from './fakes.mts';
+import { tmpDir } from './tmp.mts';
 
 testCaseStoreContract('fake store', { make: () => new FakeStore(), inPlan: 501, notInPlan: 504, missing: 999 });
 requirementSourceContract('fake requirements', {
@@ -17,8 +15,7 @@ requirementSourceContract('fake requirements', {
   missing: 999,
 });
 
-const config = (env: Record<string, string> = {}) =>
-  loadConfig(fs.mkdtempSync(path.join(os.tmpdir(), 'qam-adapters-')), env);
+const config = (env: Record<string, string> = {}) => loadConfig(tmpDir('qam-adapters-'), env);
 
 test('an unknown adapter names the known ones', () => {
   assert.throws(() => buildStore(config({ QAMASTER_STORE: 'jira' })), {

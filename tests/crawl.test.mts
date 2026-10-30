@@ -1,12 +1,12 @@
 import assert from 'node:assert/strict';
 import { type ChildProcess, spawn } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { after, before, test } from 'node:test';
 import { PlaywrightCrawler } from '../plugin/src/adapters/crawler-playwright.mts';
 import { blocks, type CrawlApp, isSignInPage, mergeIncremental, Routes } from '../plugin/src/dsm/crawl-rules.mts';
 import type { UiModel } from '../plugin/src/shared/models.mts';
+import { tmpDir } from './tmp.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const NORMALISE = [{ pattern: '/\\d+(?=/|$)', replace: '/:id' }];
@@ -113,7 +113,7 @@ function crawler(app: CrawlApp, authDir: string | null = null) {
 }
 
 test('the crawl signs in, maps the app, and changes nothing', { timeout: 120_000 }, async () => {
-  const authDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-auth-'));
+  const authDir = tmpDir('qam-auth-');
   const model = await crawler({}, authDir).crawl({ baseUrl: urls.ui });
 
   assert.deepEqual(await writes(), [], 'the API received no write');
@@ -143,7 +143,7 @@ test('the crawl signs in, maps the app, and changes nothing', { timeout: 120_000
 });
 
 test('with save_session false nothing is written to disk', { timeout: 60_000 }, async () => {
-  const authDir = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-auth-'));
+  const authDir = tmpDir('qam-auth-');
   const model = await crawler({ max_pages: 2, login: { mode: 'auto', save_session: false } }, authDir).crawl({
     baseUrl: urls.ui,
   });

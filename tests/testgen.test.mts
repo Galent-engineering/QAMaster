@@ -6,13 +6,13 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
-import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import type { Dsm } from '../plugin/src/dsm/build.mts';
 import { DOMAIN_SKILL, Facts } from '../plugin/src/testgen/facts.mts';
 import { render } from '../plugin/src/testgen/render.mts';
 import { type Manifest, type TestCase, type TestGenSettings, validate } from '../plugin/src/testgen/validate.mts';
+import { tmpDir } from './tmp.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const FIX = path.join(ROOT, 'tests/fixtures/testgen');
@@ -165,7 +165,7 @@ test('fix 6: a CSV cell that would run as a formula is neutralised', () => {
 // ---- the commands, on a QA project set up as qam setup leaves it
 
 const QAM = path.join(ROOT, 'plugin/bin/qam');
-const HOME = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-home-'));
+const HOME = tmpDir('qam-home-');
 function qam(dir: string, ...args: string[]) {
   const r = spawnSync(QAM, ['--repo', dir, ...args], {
     encoding: 'utf8',
@@ -178,7 +178,7 @@ const git = (dir: string, ...a: string[]) =>
 
 /** A QA project with the shop DSM, its knowledge skills, a git clone holding src/Cart.tsx, and the golden run. */
 function project(): { dir: string; run: string } {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-testgen-'));
+  const dir = tmpDir('qam-testgen-');
   qam(dir, 'setup', '--no-install', '--app', 'Shop');
   const repo = path.join(dir, 'shop');
   fs.mkdirSync(path.join(repo, 'src'), { recursive: true });
