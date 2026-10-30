@@ -4,7 +4,15 @@
  */
 
 import { BlockedError } from './errors.mts';
-import { CATEGORIES, type Category, type Ledger, type LedgerEntry, PRIORITIES, type Priority } from './models.mts';
+import {
+  CATEGORIES,
+  type Category,
+  type ItemStep,
+  type Ledger,
+  type LedgerEntry,
+  PRIORITIES,
+  type Priority,
+} from './models.mts';
 
 /** The QA project's config/qamaster.json (docs/design.md, Configuration), with defaults filled in. */
 export type ProjectConfig = {
@@ -112,4 +120,103 @@ export function asLedger(data: unknown, file: string): Ledger {
     return e as unknown as LedgerEntry;
   });
   return { store: data.store as string, entries };
+}
+
+/** One test case in the `file` store's JSON form (Q34): the CSV's columns, under these keys. */
+export type FileCaseRecord = {
+  id: number;
+  title: string;
+  description: string;
+  state: string;
+  suites: string[];
+  requirements: number[];
+  automatedTest: string | null;
+  tags: string[];
+  rev: number;
+  signature: string; // '' when nobody has written one: the case then counts as unedited
+  fields: Record<string, string>;
+  steps: ItemStep[];
+};
+/** A record with only a suite declares that suite, so an empty suite survives, as a Suite-only row does in the CSV. */
+export type FileStoreRecord = FileCaseRecord | { suite: string };
+
+const CASE_KEYS = [
+  'id',
+  'title',
+  'description',
+  'state',
+  'suites',
+  'requirements',
+  'automatedTest',
+  'tags',
+  'rev',
+  'signature',
+  'fields',
+  'steps',
+] as const;
+
+/** testcases/testcases.json, read by the `file` store (Q34). Optional keys get the CSV's defaults. */
+export function asFileStoreRecords(data: unknown, file: string): FileStoreRecord[] {
+  const bad = (what: string, want: string): never => {
+    throw new BlockedError(`${file}: ${what} must be ${want}. Fix it by hand or restore the file from git.`);
+  };
+  if (!Array.isArray(data)) return bad('the file', 'a list of test case records, like [{"id": 1000, "title": "…"}]');
+  const seen = new Set<number>();
+  return data.map((raw, i): FileStoreRecord => {
+    const r = isObj(raw) ? raw : bad(`record ${i + 1}`, 'an object');
+    if (r.id === undefined && 'suite' in r && Object.keys(r).length === 1) {
+      return typeof r.suite === 'string' && r.suite.trim()
+        ? { suite: r.suite.trim() }
+        : bad(`record ${i + 1}: "suite"`, 'a suite name');
+    }
+    if (!Number.isInteger(r.id) || (r.id as number) < 1) bad(`record ${i + 1}: "id"`, 'a whole number');
+    const id = r.id as number;
+    const at = `record ${i + 1} (${id})`;
+    const odd = Object.keys(r).find((k) => !(CASE_KEYS as readonly string[]).includes(k));
+    if (odd !== undefined) {
+      throw new BlockedError(
+        `${file}: ${at} has a key "${odd}" that QAMaster doesn't use and would lose on its next write. Remove it.`,
+      );
+    }
+    if (seen.has(id)) bad(`${at}: test case ${id}`, 'in the file once, not twice');
+    seen.add(id);
+    const field = <T,>(key: (typeof CASE_KEYS)[number], want: string, ok: (v: unknown) => boolean, empty: T): T => {
+      if (r[key] === undefined) return empty;
+      return ok(r[key]) ? (r[key] as T) : bad(`${at}: "${key}"`, want);
+    };
+    const text = (v: unknown) => typeof v === 'string';
+    if (typeof r.title !== 'string' || !r.title) bad(`${at}: "title"`, 'a non-empty string');
+    return {
+      id,
+      title: r.title as string,
+      description: field('description', 'a string', text, ''),
+      state: field('state', 'a string', text, '') || 'Design',
+      suites: field('suites', 'a list of suite names', isStrings, [] as string[]),
+      requirements: field(
+        'requirements',
+        'a list of work item numbers',
+        (v) => Array.isArray(v) && v.every((n) => Number.isInteger(n) && n > 0),
+        [] as number[],
+      ),
+      automatedTest:
+        field<string | null>('automatedTest', 'a string or null', (v) => v === null || text(v), null) || null,
+      tags: field('tags', 'a list of tags', isStrings, [] as string[]),
+      rev: field('rev', 'a whole number of 1 or more', (v) => Number.isInteger(v) && (v as number) >= 1, 1),
+      signature: field('signature', 'a string', text, ''),
+      fields: field(
+        'fields',
+        'an object of strings, like {"Priority": "2"}',
+        (v) => isObj(v) && Object.values(v).every(text),
+        {} as Record<string, string>,
+      ),
+      steps: field(
+        'steps',
+        'a list of {"action": "…", "expected": "…"}',
+        (v) =>
+          Array.isArray(v) &&
+          v.every((s) => isObj(s) && text(s.action) && text(s.expected) && Object.keys(s).length === 2),
+        [] as ItemStep[],
+      ),
+    };
+  });
 }

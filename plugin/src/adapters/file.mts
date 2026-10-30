@@ -6,6 +6,9 @@
  * A row with an ID starts a test case; the rows below it with no ID and no title are its further steps. A row with
  * only a Suite declares that suite, so an empty suite survives. Every operation reads the file afresh and writes it
  * whole, through a temporary file, so a failed write leaves the file as it was.
+ *
+ * A path ending in .json holds the same cases as a JSON array of records instead, one per case with its steps inside
+ * (schema.mts, asFileStoreRecords). Everything else, from IDs to revisions and hand edits, works as for the CSV.
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -14,9 +17,12 @@ import { pathToFileURL } from 'node:url';
 import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import { type Filter, type Item, type ItemChange, type ItemStep, retag, type TestCase } from '../shared/models.mts';
+import { asFileStoreRecords, type FileCaseRecord, type FileStoreRecord } from '../shared/schema.mts';
 import type { TestCaseStore, WriteCheck } from './base.mts';
 
 export const FILE_STORE_PATH = path.join('testcases', 'testcases.csv');
+/** Used instead when it is there and the CSV is not. */
+const JSON_STORE_PATH = path.join('testcases', 'testcases.json');
 /** Above ADO's usual IDs for a young project, so the two don't look alike in reports. */
 const FIRST_ID = 1000;
 
@@ -52,6 +58,8 @@ type Case = {
   steps: ItemStep[];
 };
 type Data = { cases: Map<number, Case>; suites: string[] };
+/** What a file says before suites are merged and signatures checked: the suites it declares and each case's Signature. */
+type Read = { cases: Map<number, Case>; declared: string[]; signatures: Map<number, string> };
 
 const list = (s: string) =>
   s
@@ -129,12 +137,15 @@ export class FileStore implements TestCaseStore {
   file: string;
   plan: string;
   shown: string;
+  /** Chosen by the file's extension: .json, or the CSV for any other. */
+  private json: boolean;
 
   /** `shown` is the file's path as a person and a ledger should see it: relative, with forward slashes. */
   constructor(file: string, plan: string, shown: string = file) {
     this.file = file;
     this.plan = plan;
     this.shown = shown;
+    this.json = path.extname(file).toLowerCase() === '.json';
   }
 
   where(): string {
@@ -320,9 +331,44 @@ export class FileStore implements TestCaseStore {
         throw new BlockedError(`Can't read ${this.shown}: ${(e as Error).message}.`);
       }
     }
+    const { cases, declared, signatures } = this.json ? this.readJson(text) : this.readCsv(text);
+    const data: Data = { cases, suites: [] };
+    for (const s of [...declared, ...[...data.cases.values()].flatMap((c) => c.suites)]) {
+      if (!data.suites.some((k) => same(k, s))) data.suites.push(s);
+    }
+    for (const c of data.cases.values()) {
+      c.suites = c.suites.map((s) => data.suites.find((k) => same(k, s)) ?? s);
+      const sig = signatures.get(c.id);
+      c.edited = !!sig && sig !== signature(c);
+    }
+    return data;
+  }
+
+  private readJson(text: string): Read {
+    const read: Read = { cases: new Map(), declared: [], signatures: new Map() };
+    if (!text.trim()) return read;
+    let data: unknown;
+    try {
+      data = JSON.parse(text);
+    } catch (e) {
+      throw new BlockedError(`${this.shown} isn't valid JSON: ${(e as Error).message}. Fix it or restore it from git.`);
+    }
+    for (const r of asFileStoreRecords(data, this.shown)) {
+      if (!('id' in r)) {
+        read.declared.push(r.suite);
+        continue;
+      }
+      const { signature: sig, ...c } = r;
+      read.cases.set(r.id, { ...c, edited: false });
+      read.signatures.set(r.id, sig);
+    }
+    return read;
+  }
+
+  private readCsv(text: string): Read {
     const records = parseCsv(text, this.shown);
-    const data: Data = { cases: new Map(), suites: [] };
-    if (!records.length) return data;
+    const data = { cases: new Map<number, Case>() };
+    if (!records.length) return { ...data, declared: [], signatures: new Map() };
 
     const head = records[0].cells.map((h) => h.trim());
     const missing = COLUMNS.filter((c) => !head.includes(c));
@@ -392,16 +438,7 @@ export class FileStore implements TestCaseStore {
       signatures.set(n, cell('Signature'));
       data.cases.set(n, last);
     }
-
-    for (const s of [...declared, ...[...data.cases.values()].flatMap((c) => c.suites)]) {
-      if (!data.suites.some((k) => same(k, s))) data.suites.push(s);
-    }
-    for (const c of data.cases.values()) {
-      c.suites = c.suites.map((s) => data.suites.find((k) => same(k, s)) ?? s);
-      const sig = signatures.get(c.id);
-      c.edited = !!sig && sig !== signature(c);
-    }
-    return data;
+    return { cases: data.cases, declared, signatures };
   }
 
   private fields(cell: string, line: number): Record<string, string> {
@@ -419,6 +456,36 @@ export class FileStore implements TestCaseStore {
   }
 
   private save(data: Data): void {
+    const text = this.json ? this.jsonText(data) : this.csvText(data);
+    fs.mkdirSync(path.dirname(this.file), { recursive: true });
+    const tmp = `${this.file}.${process.pid}.tmp`;
+    fs.writeFileSync(tmp, text);
+    fs.renameSync(tmp, this.file);
+  }
+
+  private jsonText(data: Data): string {
+    const records: FileStoreRecord[] = data.suites.map((suite) => ({ suite }));
+    for (const c of [...data.cases.values()].sort((a, b) => a.id - b.id)) {
+      const record: FileCaseRecord = {
+        id: c.id,
+        title: c.title,
+        description: c.description,
+        state: c.state,
+        suites: c.suites,
+        requirements: c.requirements,
+        automatedTest: c.automatedTest,
+        tags: c.tags,
+        rev: revOf(c),
+        signature: signature(c),
+        fields: c.fields,
+        steps: c.steps,
+      };
+      records.push(record);
+    }
+    return `${JSON.stringify(records, null, 2)}\n`;
+  }
+
+  private csvText(data: Data): string {
     const rows: string[][] = [[...COLUMNS]];
     for (const s of data.suites) rows.push(COLUMNS.map((c) => (c === 'Suite' ? s : '')));
     for (const c of [...data.cases.values()].sort((a, b) => a.id - b.id)) {
@@ -443,16 +510,15 @@ export class FileStore implements TestCaseStore {
         rows.push(COLUMNS.map((col) => (col === 'Step Action' ? s.action : col === 'Step Expected' ? s.expected : '')));
       }
     }
-    const text = `${rows.map((r) => r.map(csvCell).join(',')).join('\n')}\n`;
-    fs.mkdirSync(path.dirname(this.file), { recursive: true });
-    const tmp = `${this.file}.${process.pid}.tmp`;
-    fs.writeFileSync(tmp, text);
-    fs.renameSync(tmp, this.file);
+    return `${rows.map((r) => r.map(csvCell).join(',')).join('\n')}\n`;
   }
 }
 
 export function makeFileStore(config: Config): TestCaseStore {
   const base = config.qaProject ?? config.root;
   const plan = config.project.app?.name ?? path.basename(config.root);
-  return new FileStore(path.join(base, FILE_STORE_PATH), plan, FILE_STORE_PATH.split(path.sep).join('/'));
+  const csv = path.join(base, FILE_STORE_PATH);
+  const json = path.join(base, JSON_STORE_PATH);
+  const rel = !fs.existsSync(csv) && fs.existsSync(json) ? JSON_STORE_PATH : FILE_STORE_PATH;
+  return new FileStore(path.join(base, rel), plan, rel.split(path.sep).join('/'));
 }
