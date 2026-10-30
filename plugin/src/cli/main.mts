@@ -28,7 +28,8 @@ const PLUGIN_ROOT = path.resolve(import.meta.dirname, '../..');
 export const COMMANDS: Record<string, string> = {
   setup: 'Config, app URL and code sources, packages, browsers, launcher, entry points. Safe to re-run',
   pipeline: 'Onboarding pipeline: start | status | next | mark',
-  doctor: 'Check settings, credentials, the test plan and the runner',
+  doctor:
+    'Check settings, credentials, the test plan and the runner; --check-write asks whether the user may write (reads only)',
   integrations: 'Where QAMaster is plugged in: list [--all] | add <entry…> | remove <id> | verify',
   dsm: 'Design Structure Matrix: run | refresh | changes | impact <files…> | scan | build | render',
   'aut-skills': 'Application knowledge skills (AUT_<App>) from the DSM; --check says whether they are current',

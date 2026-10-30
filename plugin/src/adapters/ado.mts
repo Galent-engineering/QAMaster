@@ -16,7 +16,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import type { Config } from '../shared/config.mts';
-import { BlockedError } from '../shared/errors.mts';
+import { BlockedError, NoPlanError } from '../shared/errors.mts';
 import {
   type Filter,
   type Item,
@@ -28,11 +28,21 @@ import {
   retag,
   type TestCase,
 } from '../shared/models.mts';
-import type { RequirementSource, TestCaseStore } from './base.mts';
+import type { RequirementSource, TestCaseStore, WriteCheck } from './base.mts';
 
 export const API_VERSION = '7.1';
 /** Microsoft Entra resource ID for Azure DevOps, for a token from `az login`. */
 export const ADO_RESOURCE = '499b84ac-1321-427f-aa17-267ca6975798';
+/** The CSS (area path) security namespace: Azure DevOps keeps plan, suite and work item rights per area here. */
+export const CSS_NAMESPACE = '83e28ad4-2d72-4ceb-97b0-c7726d5502c3';
+/** What creating a plan, its suites and test cases takes, as bits of that namespace (live: securitynamespaces). */
+export const WRITE_BITS = [
+  { bit: 64, name: 'Manage test plans' },
+  { bit: 128, name: 'Manage test suites' },
+  { bit: 32, name: 'Edit work items in this node' },
+];
+/** The Edit work items bit: the one that applies where test cases are created, not on the plan's area. */
+const EDIT_WORK_ITEMS = 32;
 const BATCH = 200;
 const TCM = 'Microsoft.VSTS.TCM.';
 const TEST_CASE = 'Test Case';
@@ -68,6 +78,17 @@ const MAX_WAIT_S = 30;
 
 // biome-ignore lint/suspicious/noExplicitAny: ADO's JSON is read field by field, as CheckMaster's dicts were
 type Json = Record<string, any>;
+/** A refusal ADO sent, with its status, so a caller can tell 'try another source' (403, 404) from a fix for the user. */
+class AdoStatusError extends BlockedError {
+  readonly status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+const skippable = (e: unknown): e is AdoStatusError =>
+  e instanceof AdoStatusError && (e.status === 403 || e.status === 404);
+
 export type Fetch = (url: string, init: RequestInit) => Promise<Response>;
 export type AdoSettings = { organization: string; project: string; plan?: string; team?: string; repoName: string };
 
@@ -95,7 +116,11 @@ const sleep = (ms: number) => new Promise<void>((ok) => setTimeout(ok, ms));
 /** A WIQL string literal. */
 export const q = (value: string) => `'${value.replace(/'/g, "''")}'`;
 /** Ignore case, spaces and punctuation, so "ShopWeb" matches "Shop Web". */
-const key = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, '');
+const key = (name: string) =>
+  name
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, '');
 export const splitTags = (value: unknown) =>
   String(value ?? '')
     .split(';')
@@ -183,6 +208,17 @@ export function automationFields(link: string): Record<string, string> {
 
 // ---- HTTP
 
+/** ADO's error body is JSON with the sentence in "message"; show that, not the blob. */
+function errorText(body: string): string {
+  try {
+    const message = (JSON.parse(body) as Json).message;
+    if (typeof message === 'string' && message) return message.slice(0, 300);
+  } catch {
+    // not JSON: show it as it is
+  }
+  return body.slice(0, 300);
+}
+
 type RequestOpts = { orgLevel?: boolean; params?: Record<string, string>; json?: unknown; patch?: unknown };
 
 export class AdoClient {
@@ -257,15 +293,22 @@ export class AdoClient {
           `Azure DevOps is throttling (${resp.status}) after ${MAX_TRIES} tries. Wait a minute and try again.`,
         );
       if (resp.status === 401 || resp.status === 203 || (resp.status >= 300 && resp.status < 400))
-        throw new BlockedError(
+        throw new AdoStatusError(
           'Azure DevOps rejected the credentials (401). Check QAMASTER_ADO_TOKEN or run `az login`, then `qam doctor`.',
+          401,
         );
       if (resp.status === 403)
-        throw new BlockedError(
-          `Azure DevOps refused ${method} ${path} (403). Changes need a token with ${WRITE_SCOPES}, and permission for this change in the project.`,
+        throw new AdoStatusError(
+          read
+            ? `Azure DevOps refused ${method} ${path} (403). Reading needs a token with Work Items (Read) and Test Management (Read), and access to the project.`
+            : `Azure DevOps refused ${method} ${path} (403). Changes need a token with ${WRITE_SCOPES}, and permission for this change in the project.`,
+          403,
         );
       if (resp.status >= 400)
-        throw new BlockedError(`Azure DevOps ${path} returned ${resp.status}: ${(await resp.text()).slice(0, 300)}`);
+        throw new AdoStatusError(
+          `Azure DevOps ${path} returned ${resp.status}: ${errorText(await resp.text())}`,
+          resp.status,
+        );
       return resp;
     }
   }
@@ -353,9 +396,28 @@ const revOf = (w: Json): number => w.rev ?? 0;
 const kindOf = (type: string): ItemKind =>
   type === TEST_CASE ? 'test_case' : TEST_ARTIFACTS.has(type) ? 'other' : 'requirement';
 
+/** An iteration or area tree as the paths System.IterationPath and System.AreaPath use: the root's name, then each child's. */
+function treePaths(node: Json, prefix = ''): string[] {
+  const here = prefix ? `${prefix}\\${node.name}` : String(node.name);
+  return [here, ...((node.children ?? []) as Json[]).flatMap((c) => treePaths(c, here))];
+}
+const unknownLine = (why: string, hasPlan: boolean) =>
+  `unknown: ${why}. The first write that would tell is ${hasPlan ? 'creating a suite or test case' : 'POST testplan/plans (creating the plan)'}. Give the token Test Management (Read & Write) and Work Items (Read & Write).`;
+/** The plan choices list this many plans; the rest are counted. */
+const MAX_PLAN_CHOICES = 20;
+const typeNames = (list: unknown): string[] => ((list ?? []) as Json[]).map((t) => String(t.name));
+
 class AdoItems {
   protected readonly client: AdoClient;
   protected readonly settings: AdoSettings;
+  /**
+   * Set when requirements fall back to every non-test work item. Nothing in the CLI reads it yet: a front end that
+   * fetches requirements must show it after the call.
+   */
+  notice: string | undefined;
+  private categories: Promise<Json[]> | undefined;
+  private requirementTypes: Promise<string[]> | undefined;
+  private typeClause: Promise<string> | undefined;
   constructor(client: AdoClient, settings: AdoSettings) {
     this.client = client;
     this.settings = settings;
@@ -373,11 +435,7 @@ class AdoItems {
     const where = [`[System.TeamProject] = ${q(this.client.project)}`];
     if (filter.type) where.push(`[System.WorkItemType] = ${q(filter.type)}`);
     else if (kind === 'test_case') where.push("[System.WorkItemType] IN GROUP 'Microsoft.TestCaseCategory'");
-    else {
-      // any work item that isn't a test artifact: processes differ in which types hold requirements
-      const tests = [TEST_CASE, ...TEST_ARTIFACTS].sort().map(q).join(', ');
-      where.push(`[System.WorkItemType] NOT IN (${tests})`);
-    }
+    else where.push(await this.requirementClause());
     if (filter.state) where.push(`[System.State] = ${q(filter.state)}`);
     if (filter.tag) where.push(`[System.Tags] CONTAINS ${q(filter.tag)}`);
     if (filter.text) where.push(`[System.Title] CONTAINS ${q(filter.text)}`);
@@ -386,6 +444,92 @@ class AdoItems {
       filter.limit ?? 50,
     );
     return ids.length ? (await this.client.workItems(ids, ITEM_FIELDS)).map((w) => this.toItem(w)) : [];
+  }
+
+  private allCategories(): Promise<Json[]> {
+    if (!this.categories) {
+      const fetched = this.client.get('wit/workitemtypecategories').then((r) => r.value as Json[]);
+      fetched.catch(() => {
+        this.categories = undefined; // a failed fetch isn't remembered: the next call tries again
+      });
+      this.categories = fetched;
+    }
+    return this.categories;
+  }
+
+  /**
+   * The work item types that are requirements in this project, resolved once: the process configuration's requirement
+   * backlog (Agile User Story, Scrum Product Backlog Item, CMMI Requirement, Basic Issue), else the requirement category.
+   */
+  private resolveRequirementTypes(): Promise<string[]> {
+    this.requirementTypes ??= (async () => {
+      const why: string[] = [];
+      const attempt = async (what: string, read: () => Promise<string[]>): Promise<string[]> => {
+        try {
+          return await read();
+        } catch (e) {
+          if (!skippable(e)) throw e; // a bad login, throttling or no network has its own fix: show that
+          why.push(`${what}: ${e.message}`);
+          return [];
+        }
+      };
+      let types = await attempt('work/processconfiguration', async () =>
+        typeNames((await this.client.get('work/processconfiguration')).requirementBacklog?.workItemTypes),
+      );
+      if (!types.length)
+        types = await attempt('wit/workitemtypecategories', async () =>
+          typeNames(
+            (await this.allCategories()).find((c) => c.referenceName === 'Microsoft.RequirementCategory')
+              ?.workItemTypes,
+          ),
+        );
+      if (!types.length)
+        throw new BlockedError(
+          `Couldn't resolve the requirement types of ${this.client.project} (${why.join('; ') || 'the process lists none'}). Give the token Work Items (Read), then run \`qam doctor\`.`,
+        );
+      return types;
+    })();
+    this.requirementTypes.catch(() => {
+      this.requirementTypes = undefined; // a failure isn't remembered: the next call tries again
+    });
+    return this.requirementTypes;
+  }
+
+  /**
+   * The WIQL type clause for requirements, the same for find and requirements(). If the project has no item of the
+   * process's requirement types (an Agile project of Issues: Issue is an impediment, in no category), it takes every
+   * work item that is not a test artifact, task, bug or portfolio item, and sets \`notice\`.
+   */
+  protected requirementClause(): Promise<string> {
+    this.typeClause ??= (async () => {
+      const types = await this.resolveRequirementTypes();
+      const project = `[System.TeamProject] = ${q(this.client.project)}`;
+      const own = `[System.WorkItemType] IN (${types.map(q).join(', ')})`;
+      // a Removed item is not a requirement: one left behind must not hide the project's other items
+      const live = "[System.State] <> 'Removed'";
+      if (
+        (await this.client.wiql(`SELECT [System.Id] FROM workitems WHERE ${project} AND ${own} AND ${live}`, 1)).length
+      )
+        return own;
+      const others = new Set([TEST_CASE, ...TEST_ARTIFACTS]);
+      try {
+        for (const c of await this.allCategories())
+          if (c.referenceName !== 'Microsoft.RequirementCategory')
+            for (const n of typeNames(c.workItemTypes)) others.add(n);
+      } catch (e) {
+        if (!skippable(e)) throw e; // a category list this token can't read: the test artifacts alone
+      }
+      for (const t of types) others.delete(t);
+      const broad = `[System.WorkItemType] NOT IN (${[...others].sort().map(q).join(', ')}) AND ${live}`;
+      if (!(await this.client.wiql(`SELECT [System.Id] FROM workitems WHERE ${project} AND ${broad}`, 1)).length)
+        return own;
+      this.notice = `No ${types.join(' / ')} work items in ${this.client.project}; showing the other work items that aren't test artifacts, tasks, bugs or portfolio items. Set the process's requirement type if that's wrong.`;
+      return broad;
+    })();
+    this.typeClause.catch(() => {
+      this.typeClause = undefined;
+    });
+    return this.typeClause;
   }
 
   async show(id: number): Promise<Item> {
@@ -403,6 +547,11 @@ class AdoItems {
       patch: await this.ops(null, change, []),
     })) as Json;
     if (suite) await this.client.send('POST', suite, { json: [{ workItem: { id: created.id } }] });
+    if (kind === 'requirement') {
+      // the project may now have an item of the process's type: the next run would pick it up, so this one does too
+      this.typeClause = undefined;
+      this.notice = undefined;
+    }
     return this.show(created.id);
   }
 
@@ -512,20 +661,35 @@ class AdoItems {
     const [found, plans] = await this.findPlan();
     if (found) return found;
     const where = `${this.client.organization}/${this.client.project}`;
-    const names = plans.map((p) => `'${p.name}'`).join(', ') || 'none';
     const how = this.settings.plan
       ? `QAMASTER_ADO_PLAN='${this.settings.plan}' matches no test plan`
       : `No test plan is named like this repo ('${this.settings.repoName}')`;
-    throw new BlockedError(
-      `${how} in ${where} (plans: ${names}). Rename the plan, or set QAMASTER_ADO_PLAN=<plan name> in the repo's .env.`,
-    );
+    // ensurePlan would create this name, so it is the default of the last choice
+    const createName = this.settings.plan || this.settings.repoName;
+    const listed = plans.map((p) => ({ id: Number(p.id), name: String(p.name) }));
+    const shown = listed.slice(0, MAX_PLAN_CHOICES);
+    const choices = [
+      ...shown.map((p) => `Use the plan '${p.name}': set QAMASTER_ADO_PLAN=${p.name} in the repo's .env.`),
+      `Create a new plan, named '${createName}' by default or any name you type (if it differs from the repo name, then set QAMASTER_ADO_PLAN=<that name> in the repo's .env). A plan in another project needs QAMASTER_ADO_PROJECT changed first.`,
+    ];
+    const more = listed.length - shown.length;
+    const numbered = choices.map((c, i) => `  ${i + 1}. ${c}`);
+    if (more > 0)
+      numbered.splice(
+        shown.length,
+        0,
+        `  ... and ${more} more plan${more > 1 ? 's' : ''}: set QAMASTER_ADO_PLAN=<exact plan name> in the repo's .env to use one.`,
+      );
+    throw new NoPlanError(`${how} in ${where}. Choose one:\n${numbered.join('\n')}`, listed, createName);
   }
 
   /** The one plan matching the name, or null, and every plan seen. Two matches block. */
-  private async findPlan(): Promise<[Json | null, Json[]]> {
+  protected async findPlan(): Promise<[Json | null, Json[]]> {
     const plans = await this.client.pages('testplan/plans');
     const wanted = this.settings.plan || this.settings.repoName;
-    const found = plans.filter((p) => key(p.name) === key(wanted));
+    // an exact name wins; a name with no letters or digits has an empty key, which must not match every such plan
+    const exact = plans.filter((p) => String(p.name).toLowerCase() === wanted.toLowerCase());
+    const found = exact.length || !key(wanted) ? exact : plans.filter((p) => key(p.name) === key(wanted));
     // fix 2: CheckMaster silently took the first of two matching plans, so the gate could read the wrong one
     if (found.length > 1)
       throw new BlockedError(
@@ -641,6 +805,161 @@ export class AdoTestCases extends AdoItems implements TestCaseStore {
   create(change: ItemChange): Promise<Item> {
     return this.createKind('test_case', change);
   }
+  /**
+   * Whether the credential's user may create plans, suites and test cases, with reads only (`qam doctor --check-write`).
+   * Azure DevOps is asked "does this user hold these permissions on this area?" (one combined query per area, then the
+   * single bits only to name what is missing). Manage test plans and suites are asked on the area of the plan (the
+   * project's root when there is no plan yet); Edit work items on the project's root area, where test cases are created.
+   * A "yes" proves the call works, not the token's scopes: only the first write proves those. The licence is not asked.
+   */
+  async checkWrite(): Promise<WriteCheck> {
+    const where = `${this.client.organization}/${this.client.project}`;
+    const [plan] = await this.findPlan(); // two matching plans throw, with their own message
+    const area = plan ? String(plan.areaPath ?? '') : this.client.project;
+    const note = plan ? '' : " (there is no plan yet, so this is the project's root area)";
+    const root = this.client.project;
+    const hasPlan = !!plan;
+    const names = (bits: typeof WRITE_BITS) => bits.map((b) => b.name);
+    const list = (n: string[]) => (n.length > 1 ? `${n.slice(0, -1).join(', ')} and ${n.at(-1)}` : n[0]);
+    const planRights = WRITE_BITS.filter((b) => b.bit !== EDIT_WORK_ITEMS);
+    const itemRights = WRITE_BITS.filter((b) => b.bit === EDIT_WORK_ITEMS);
+    // Plans and suites are managed on the plan's area. Test cases are created with no area, so they land in the
+    // project's root area (or the team's default): the work-item right is read there. One group when both are the root.
+    const same = area.toLowerCase() === root.toLowerCase();
+    const groups = same
+      ? [{ area, rights: WRITE_BITS }]
+      : [
+          { area, rights: planRights },
+          { area: root, rights: itemRights },
+        ];
+    const clauses: string[] = [];
+    const missing: string[] = [];
+    let state: 'allowed' | 'blocked' | 'unknown' = 'allowed';
+    let unknown: string | undefined;
+    let shownArea: string | null = null;
+    for (const g of groups) {
+      const asked = await this.areaToken(g.area, plan ? `plan '${plan.name}'` : null);
+      if ('why' in asked) {
+        unknown ??= asked.why;
+        continue;
+      }
+      if (g === groups[0]) shownArea = asked.area;
+      let outcome: boolean | null | 'disagree';
+      const lacking: typeof WRITE_BITS = [];
+      try {
+        outcome = await this.holds(
+          asked.token,
+          g.rights.reduce((m, b) => m + b.bit, 0),
+        );
+        if (outcome === false) {
+          // ask bit by bit only to name what is missing; only an explicit "no" counts as lacking
+          for (const b of g.rights) if ((await this.holds(asked.token, b.bit)) === false) lacking.push(b);
+          if (!lacking.length) outcome = 'disagree'; // all yes, or no answer: the combined "no" can't be explained
+        }
+      } catch (e) {
+        // a 401 is a rejected credential (the client's own message says what to do), not a refused question
+        if (!(e instanceof AdoStatusError && [403, 404].includes(e.status))) throw e;
+        unknown ??= `the permissions call answered ${e.status}, so this token may not be allowed to ask`;
+        continue;
+      }
+      const at = `on area '${asked.area}'${g.rights === itemRights ? ' (where new test cases land)' : ''}`;
+      if (outcome === true) clauses.push(`holds ${list(names(g.rights))} ${at}`);
+      else if (outcome === null) unknown ??= "Azure DevOps's answer wasn't yes or no";
+      else if (outcome === 'disagree') unknown ??= "Azure DevOps's answers disagreed";
+      else {
+        state = 'blocked';
+        clauses.push(`lacks ${list(names(lacking))} ${at}`);
+        missing.push(...names(lacking));
+      }
+    }
+    if (state !== 'blocked' && unknown) state = 'unknown';
+    const sentence = `Azure DevOps says your user ${clauses.join(', and ')} in ${where}${note}.`;
+    const perm: { state: typeof state; line: string; missing: string[] } = {
+      state,
+      line:
+        state === 'blocked'
+          ? `${sentence} Ask a project administrator to grant it (Project Settings > Permissions, or the area's Security), or choose another project with QAMASTER_ADO_PROJECT.${unknown ? ` Not checked: ${unknown}.` : ''}`
+          : state === 'unknown'
+            ? unknownLine(unknown ?? '', hasPlan)
+            : sentence,
+      missing,
+    };
+    let testCaseType: WriteCheck['testCaseType'] = 'present';
+    let status = 0;
+    try {
+      await this.client.get(`wit/workitemtypes/${encodeURIComponent(TEST_CASE)}`);
+    } catch (e) {
+      if (!(e instanceof AdoStatusError)) throw e;
+      status = e.status;
+      testCaseType = e.status === 404 ? 'missing' : 'unknown';
+    }
+    const typeLine = {
+      present: 'The project has a Test Case work item type.',
+      missing: `This project's process has no Test Case work item type (or your user can't see it), so test cases can't be created in ${where}. Use a project whose process has one (Agile, Scrum or CMMI) with QAMASTER_ADO_PROJECT.`,
+      unknown: `Note: couldn't check whether the project has a Test Case work item type (status ${status}).`,
+    }[testCaseType];
+    const overall = perm.state === 'blocked' || testCaseType === 'missing' ? 'blocked' : perm.state;
+    const lines = [perm.line, typeLine];
+    if (perm.state === 'unknown' && overall === 'blocked') lines.reverse(); // a certain answer leads
+    lines.push('The licence is not checked (creating a plan needs Basic + Test Plans).');
+    if (perm.state !== 'unknown')
+      lines.push(
+        "The token's Test Management (Read & Write) and Work Items (Read & Write) scopes can only be proven by the first write.",
+      );
+    return {
+      state: overall,
+      detail: lines.join('\n'),
+      area: shownArea,
+      missing: perm.missing,
+      testCaseType,
+    };
+  }
+
+  /** Azure DevOps's yes or no for "does the user hold these bits of the area namespace on this token": null if neither. */
+  private async holds(token: string, bits: number): Promise<boolean | null> {
+    const r = (await this.client.send('GET', `permissions/${CSS_NAMESPACE}/${bits}`, {
+      orgLevel: true,
+      params: { tokens: token },
+    })) as Json | null;
+    return Array.isArray(r?.value) && typeof r.value[0] === 'boolean' ? r.value[0] : null;
+  }
+
+  /**
+   * The security token of an area: the node identifiers from the root down, each as vstfs:///Classification/Node/<id>
+   * and joined with ':' (a child's own id alone would silently inherit the root's answer). Never the root for another
+   * area: a node that can't be found, or a tree this token can't read, says why instead.
+   */
+  private async areaToken(
+    areaPath: string,
+    plan: string | null,
+  ): Promise<{ token: string; area: string } | { why: string }> {
+    const project = this.client.project;
+    if (!areaPath)
+      return { why: `${plan} has no area path in Azure DevOps's answer, so there is no area to ask about` };
+    const missing = (area: string) => ({
+      why: `can't find the area '${area}' in the area tree of ${this.client.organization}/${project}, so the permissions can't be asked about it`,
+    });
+    let node: Json;
+    try {
+      node = await this.client.get('wit/classificationnodes/areas', { $depth: '10' });
+    } catch (e) {
+      if (e instanceof AdoStatusError && [403, 404].includes(e.status))
+        return { why: `the area tree answered ${e.status}, so the area's identifier can't be read` };
+      throw e;
+    }
+    const [first, ...rest] = areaPath.split('\\');
+    if (first.toLowerCase() !== project.toLowerCase()) return missing(areaPath);
+    const ids = [node.identifier];
+    for (const name of rest) {
+      const child = ((node.children ?? []) as Json[]).find((c) => String(c.name).toLowerCase() === name.toLowerCase());
+      if (!child) return missing(areaPath);
+      node = child;
+      ids.push(node.identifier);
+    }
+    if (ids.some((id) => typeof id !== 'string' || !id)) return missing(areaPath);
+    return { token: ids.map((id) => `vstfs:///Classification/Node/${id}`).join(':'), area: areaPath };
+  }
+
   async inPlan(): Promise<Map<number, TestCase>> {
     const plan = await this.plan();
     const ids = new Set<number>();
@@ -665,7 +984,7 @@ export class AdoTestCases extends AdoItems implements TestCaseStore {
   }
 }
 
-/** Requirements: Azure Boards work items that aren't test artifacts, and a sprint's in AQE's shape (feature 6). */
+/** Requirements: the process's requirement work items, and a sprint's in AQE's shape (feature 6). */
 export class AdoRequirements extends AdoItems implements RequirementSource {
   find(filter: Filter): Promise<Item[]> {
     return this.findKind('requirement', filter);
@@ -674,15 +993,35 @@ export class AdoRequirements extends AdoItems implements RequirementSource {
     return this.createKind('requirement', change);
   }
 
+  /** Turn the two WIQL failures a person can fix into what to do: an unknown sprint or area, and an unknown team. */
+  private async explain(e: unknown, query: RequirementQuery): Promise<unknown> {
+    if (!(e instanceof BlockedError)) return e;
+    const project = this.client.project;
+    if (/TF51011/.test(e.message)) {
+      const area = /area path/i.test(e.message);
+      const given = area ? query.module : 'sprint' in query ? query.sprint : undefined;
+      try {
+        const root = await this.client.get(`wit/classificationnodes/${area ? 'areas' : 'iterations'}`, { $depth: '4' });
+        return new BlockedError(
+          `'${given ?? '?'}' isn't ${area ? 'an area' : 'an iteration'} of ${project} (known: ${treePaths(root).join(', ')}). Use one of these, with or without the project in front.`,
+        );
+      } catch {
+        return e; // the list needs more access than the query did: keep ADO's own message
+      }
+    }
+    if (/VS402612/.test(e.message))
+      return new BlockedError(
+        `Azure DevOps has no team '${this.settings.team || `${project} Team`}' in ${project}, which the current sprint needs. Set QAMASTER_ADO_TEAM=<team> in .env.`,
+      );
+    return e;
+  }
+
   async requirements(query: RequirementQuery): Promise<Requirement[]> {
     const project = this.client.project;
-    const where = [
-      `[System.TeamProject] = ${q(project)}`,
-      "[System.WorkItemType] IN GROUP 'Microsoft.RequirementCategory'",
-    ];
+    const where = [`[System.TeamProject] = ${q(project)}`, await this.requirementClause()];
     if ('sprint' in query) {
       where.push(
-        `[System.IterationPath] UNDER ${q(query.sprint.includes('\\') ? query.sprint : `${project}\\${query.sprint}`)}`,
+        `[System.IterationPath] UNDER ${q(query.sprint === project || query.sprint.includes('\\') ? query.sprint : `${project}\\${query.sprint}`)}`,
       );
     } else if ('currentSprint' in query) {
       const team = this.settings.team || `${project} Team`;
@@ -696,11 +1035,20 @@ export class AdoRequirements extends AdoItems implements RequirementSource {
         `(([System.CreatedDate] >= ${q(query.from)} AND [System.CreatedDate] < ${q(next)}) OR ([System.ChangedDate] >= ${q(query.from)} AND [System.ChangedDate] < ${q(next)}))`,
       );
     }
-    if (query.module) where.push(`[System.AreaPath] UNDER ${q(`${project}\\${query.module}`)}`);
-    const ids = await this.client.wiql(
-      `SELECT [System.Id] FROM workitems WHERE ${where.join(' AND ')} ORDER BY [System.Id]`,
-      1000,
-    );
+    // a module is an area under the project, or an area path as the hint lists it, with the project in front
+    if (query.module)
+      where.push(
+        `[System.AreaPath] UNDER ${q(query.module === project || query.module.startsWith(`${project}\\`) ? query.module : `${project}\\${query.module}`)}`,
+      );
+    let ids: number[];
+    try {
+      ids = await this.client.wiql(
+        `SELECT [System.Id] FROM workitems WHERE ${where.join(' AND ')} ORDER BY [System.Id]`,
+        1000,
+      );
+    } catch (e) {
+      throw await this.explain(e, query);
+    }
     if (!ids.length) return [];
     return (await this.client.workItems(ids, REQ_FIELDS)).map((w): Requirement => {
       const f = w.fields as Json;

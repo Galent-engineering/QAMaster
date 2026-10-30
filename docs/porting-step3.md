@@ -76,7 +76,7 @@ Not in step 3:
 | 3 | UI crawl and DSM refresh | ✓ 2026-10-29 | ✓ | ✓ real crawl of app.mjs: 0 writes | ✓ skill, agent, `/qamaster:dsm` | ✓ build |
 | 4 | Setup and pipeline | ✓ 2026-10-29, 10 AQE problems reproduced | ✓ | ✓ 2 golden fixtures, fixes 1–10 | ✓ no skills (onboard and status are step 9) | ✓ `feature/4_setup-and-pipeline` |
 | 5 | Application knowledge | ✓ 2026-10-29, 10 AQE problems reproduced | ✓ | ✓ 3 golden fixtures + AQE agreement, fixes 1–10 | ✓ `AUT-Skill-Builder` | ✓ `feature/5_application-knowledge` |
-| — | Step 4: ADO adapter | ✓ 2026-10-29, 6 CheckMaster problems reproduced | ✓ + plan and suite creation, `qam ado call` | ✓ CheckMaster's 17, both contracts, fixes 1–6; live check waits for `az login` | ✓ `ADO-API` skill (Q33) | ✓ `feature/step4_ado-adapter` |
+| — | Step 4: ADO adapter | ✓ 2026-10-29, 6 CheckMaster problems reproduced | ✓ + plan and suite creation, `qam ado call` | ✓ CheckMaster's 17, both contracts, fixes 1–6; live read-only check 2026-10-30 | ✓ `ADO-API` skill (Q33) | ✓ `feature/step4_ado-adapter` |
 | 6 | Requirements | | | | | |
 | 7 | TestGen | ✓ 2026-10-29, 8 AQE validator holes reproduced | ✓ | ✓ 3 goldens, fixes 1–8, `qam review` | ✓ `TestGen`, `Domain_Test_Design_Skill` + 39 | ✓ `feature/7_testgen` |
 | 8 | Automation | | | | | |
@@ -945,9 +945,20 @@ It uses `IN GROUP 'Microsoft.RequirementCategory'` instead of a fixed list of ty
 - deleting is `retire`;
 - requirements by sprint, current sprint or dates are new.
 
+**Live check (2026-10-30, read-only).** A QA project `qamaster-ado-live` with a PAT in its `.env` (Q16), against the person's sandbox project (Agile process, one plan "CheckMaster Demo", 11 test cases, 8 Issues, no User Stories). No write was sent.
+- **Matched the tests:** plans (one page, no continuation token), suites, a suite's test cases, batch work-item reads, `show` with steps and links, the suites of a test case, WIQL. The `az devops invoke` plans and suites recipes, `az boards query` and `az boards work-item show` work with `AZURE_DEVOPS_EXT_PAT` and no `az login`.
+- **Differed: `requirements()` returned nothing.** It asked for `IN GROUP 'Microsoft.RequirementCategory'`, which on Agile is User Story only. The project's requirements are Issues, which Agile files under no category, while `find()` returned them. Now one rule serves both: the project's requirement backlog types (`work/processconfiguration`), else the category. When the project has none of those, the other non-test items that no category claims are used, with a notice. Live: the date query returns the 8 Issues.
+- **Differed: ADO errors came back as raw JSON.** The message is now shown. An unknown sprint or area (TF51011) lists the real ones, and an unknown team (VS402612) names `QAMASTER_ADO_TEAM`.
+- **The person's decisions (2026-10-30):**
+  - When no plan matches, `qam doctor` numbers the existing plans and offers "create a new plan" last, with a name the person can type (`NoPlanError`, also in `--json`).
+  - Before creating one, `qam doctor --check-write` asks Azure DevOps, with reads only, whether the user holds Manage test plans and suites on the plan's area and Edit work items on the root area, and whether the process has a Test Case type. The answer is allowed, blocked or unknown. It says the token's scopes and the licence are not proven. A live "yes" came back even for a malformed token, so a yes is worded as what ADO says, never as proof.
+  - The `ADO-API` skill has the playbook, in `references/plan-choices.md`. The person also asked that live problems be fixed proactively, and that what worked be saved as recipes. The new read-only calls are in `references/recipes.md`, dated.
+- **Reviews:** two workflows, each with researchers, a skeptic per claim, reviewers in three areas with a skeptic per finding, a fix round, and a second review. 29 findings were confirmed in total (13 and 2 in the first, 11 and 3 in the second); all are fixed test-first. The last three (a 401 read as "unknown", the create flow keyed off an exit code that is always 2 there, and plan names with no ASCII letters all matching) were fixed by the main session. 224 tests pass.
+
 **Not done:**
-- the live `qam doctor` and the live run of the `az devops invoke` recipes, which need `az login` or a PAT;
-- publish itself (preview, ledger, `--apply`), which is porting step 7.
+- writes against the live project (creating a plan or suite, publishing), which wait for the person's yes;
+- publish itself (preview, ledger, `--apply`), which is porting step 7;
+- surfacing the requirements fallback notice in a front end (feature 6), and whether a team's "bugs as requirements" setting counts.
 
 ## Roadmap: what comes after the v1 MVP
 

@@ -15,10 +15,12 @@ import {
   type AdoSettings,
   AdoTestCases,
   authHeader,
+  CSS_NAMESPACE,
   parseSteps,
   stepsXml,
+  WRITE_BITS,
 } from '../plugin/src/adapters/ado.mts';
-import { BlockedError } from '../plugin/src/shared/errors.mts';
+import { BlockedError, NoPlanError } from '../plugin/src/shared/errors.mts';
 import { requirementSourceContract, testCaseStoreContract } from './contracts.mts';
 import { FakeAdo } from './fake-ado.mts';
 
@@ -143,8 +145,42 @@ test('cm: no matching plan is blocked, listing the plans seen', async () => {
   mockPlan(m);
   await assert.rejects(
     store(m, { repoName: 'billing' }).plan(),
-    blocked(/plans: 'Shop Web', 'Regression'.*QAMASTER_ADO_PLAN/),
+    blocked(
+      /^No test plan is named like this repo \('billing'\) in org\/Shop\. Choose one:\n {2}1\. .*'Shop Web'.*QAMASTER_ADO_PLAN=Shop Web.*\n {2}2\. .*'Regression'.*QAMASTER_ADO_PLAN=Regression.*\n {2}3\. Create a new plan.*'billing'/,
+    ),
   );
+});
+
+test('plan choices: the existing plans are numbered, a new plan is the last choice, and the error carries both', async () => {
+  const m = new Mock();
+  mockPlan(m);
+  await assert.rejects(store(m, { repoName: 'billing' }).plan(), (e) => {
+    assert.ok(e instanceof NoPlanError);
+    assert.deepEqual(e.plans, [
+      { id: 1, name: 'Shop Web' },
+      { id: 3, name: 'Regression' },
+    ]);
+    assert.equal(e.createName, 'billing');
+    assert.match(e.message, /any name you type.*then set QAMASTER_ADO_PLAN=<that name>/s);
+    assert.match(e.message, /another project needs QAMASTER_ADO_PROJECT changed first/);
+    return true;
+  });
+  // a configured name that matches nothing: ensurePlan would create that name, so it is the default
+  await assert.rejects(store(m, { repoName: 'billing', plan: 'Nope' }).plan(), (e) => {
+    assert.ok(e instanceof NoPlanError);
+    assert.equal(e.createName, 'Nope');
+    assert.match(e.message, /^QAMASTER_ADO_PLAN='Nope' matches no test plan in org\/Shop\. Choose one:\n {2}1\. /);
+    assert.match(e.message, /\n {2}3\. Create a new plan.*'Nope'/);
+    return true;
+  });
+  // no plans at all: creating is the only choice
+  const none = new Mock().on('GET', `${BASE}/testplan/plans`, { value: [] });
+  await assert.rejects(store(none, { repoName: 'billing' }).plan(), (e) => {
+    assert.ok(e instanceof NoPlanError);
+    assert.deepEqual(e.plans, []);
+    assert.match(e.message, /Choose one:\n {2}1\. Create a new plan/);
+    return true;
+  });
 });
 
 test('cm: test cases read tags and the automation link, and skip missing items', async () => {
@@ -195,8 +231,12 @@ test('cm: no PAT and no az login is blocked', () => {
   assert.throws(() => authHeader({}, () => null), blocked(/az login/));
 });
 
-test('cm: find queries the whole project by category and filters', async () => {
+test('cm: find queries the whole project by the requirement types and filters', async () => {
   const m = new Mock();
+  m.on('GET', `${BASE}/work/processconfiguration`, {
+    requirementBacklog: { workItemTypes: [{ name: 'Issue' }] },
+  });
+  m.on('POST', `${BASE}/wit/wiql`, { workItems: [{ id: 3 }] }, { params: { $top: '1' } });
   m.on('POST', `${BASE}/wit/wiql`, { workItems: [{ id: 3 }] });
   m.on('GET', `${BASE}/wit/workitems`, { value: [requirement(3)] });
   const found = await requirements(m).find({ kind: 'requirement', tag: "cou'pon", text: 'SAVE', limit: 10 });
@@ -207,7 +247,7 @@ test('cm: find queries the whole project by category and filters', async () => {
   const wiql = m.to('POST', `${BASE}/wit/wiql`).at(-1);
   const query = sent(wiql).query;
   assert.match(query, /\[System\.TeamProject\] = 'Shop'/);
-  assert.match(query, /\[System\.WorkItemType\] NOT IN \('Shared Parameter', 'Shared Steps', 'Test Case'/);
+  assert.match(query, /\[System\.WorkItemType\] IN \('Issue'\)/);
   assert.match(query, /\[System\.Tags\] CONTAINS 'cou''pon'/);
   assert.match(query, /\[System\.Title\] CONTAINS 'SAVE'/);
   assert.equal(wiql?.url.searchParams.get('$top'), '10');
@@ -646,4 +686,751 @@ test('review H: retiring leaves a query-based suite to its query, and says so', 
     'removed TC501 from suite Shop Web / Payments',
     'left in query-based suite Shop Web / Open checkout cases: its query decides (it leaves when the query excludes Closed)',
   ]);
+});
+
+// ---- the read path on a live Agile project (CheckMasterDemo): its requirements are Issues, which no category holds
+
+const period = { from: '2026-10-01', to: '2026-10-30' };
+const calls = (ado: FakeAdo) => (path: string) => ado.log.filter((l) => l === path).length;
+
+test('read A: requirements and find use the process requirement types, resolved once', async () => {
+  const ado = new FakeAdo();
+  ado.add(15, 'Issue', 'An impediment');
+  ado.add(16, 'Task', 'A task');
+  const r = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await r.requirements(period)).map((x) => x.id),
+    ['3'],
+  );
+  assert.deepEqual(
+    (await r.find({ kind: 'requirement' })).map((x) => x.id),
+    [3],
+  );
+  assert.equal(calls(ado)('GET work/processconfiguration'), 1, 'types are cached per adapter');
+});
+
+test('read B: without process configuration the requirement category gives the types', async () => {
+  const ado = new FakeAdo();
+  ado.processConfig = false;
+  ado.requirementTypes = ['Product Backlog Item'];
+  ado.add(20, 'Product Backlog Item', 'PBI', { iteration: 'Shop\\Sprint 24' });
+  const r = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await r.requirements({ sprint: 'Sprint 24' })).map((x) => x.id),
+    ['20'],
+  );
+});
+
+test('read C: a project with none of those types shows the other non-test items, and says so', async () => {
+  const ado = new FakeAdo();
+  ado.items.delete(3);
+  ado.add(15, 'Issue', 'An impediment');
+  ado.add(16, 'Task', 'A task');
+  ado.add(17, 'Bug', 'A bug');
+  const r = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await r.requirements(period)).map((x) => [x.id, x.type]),
+    [['15', 'Issue']],
+    'Task and Bug belong to other categories, so they are not requirements',
+  );
+  assert.deepEqual(
+    (await r.find({ kind: 'requirement' })).map((x) => x.id),
+    [15],
+  );
+  assert.match(r.notice ?? '', /No User Story .*other work items/);
+});
+
+test('read D: when no requirement type can be resolved it blocks, saying what to do', async () => {
+  const m = new Mock();
+  m.on('GET', `${BASE}/work/processconfiguration`, { message: 'gone' }, { status: 404 });
+  m.on('GET', `${BASE}/wit/workitemtypecategories`, { value: [] });
+  await assert.rejects(requirements(m).requirements(period), blocked(/requirement types .*Work Items \(Read\)/));
+});
+
+test('read E: an unknown sprint or module names the ones that exist, not the raw error', async () => {
+  const ado = new FakeAdo();
+  const r = new AdoRequirements(...onFake(ado));
+  await assert.rejects(r.requirements({ sprint: 'Nope' }), (e) => {
+    assert.ok(e instanceof BlockedError);
+    assert.match(e.message, /'Nope'.*isn't an iteration/);
+    assert.match(e.message, /Shop\\Sprint 24/);
+    assert.doesNotMatch(e.message, /\$id|typeName/);
+    return true;
+  });
+  await assert.rejects(r.requirements({ ...period, module: 'Nope' }), blocked(/'Nope'.*isn't an area.*known: Shop/s));
+});
+
+test('read E2: if the list of sprints cannot be read, the parsed message still shows', async () => {
+  const m = new Mock();
+  m.on('GET', `${BASE}/work/processconfiguration`, { requirementBacklog: { workItemTypes: [{ name: 'Issue' }] } });
+  m.on(
+    'POST',
+    `${BASE}/wit/wiql`,
+    { message: 'TF51011: The specified iteration path does not exist.' },
+    { status: 400 },
+  );
+  m.on('GET', `${BASE}/wit/classificationnodes/iterations`, {}, { status: 403 });
+  await assert.rejects(
+    requirements(m).requirements({ sprint: 'Nope' }),
+    blocked(/^Azure DevOps .*TF51011: The specified/),
+  );
+});
+
+test('read F: the current sprint needs a real team, and the error says how to set it', async () => {
+  const ado = new FakeAdo();
+  const ok = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await ok.requirements({ currentSprint: true })).map((x) => x.id),
+    ['3'],
+  );
+  ado.team = 'Other Team';
+  await assert.rejects(
+    new AdoRequirements(...onFake(ado)).requirements({ currentSprint: true }),
+    blocked(/QAMASTER_ADO_TEAM/),
+  );
+  assert.equal(
+    (await new AdoRequirements(...onFake(ado, { team: 'Other Team' })).requirements({ currentSprint: true })).length,
+    1,
+  );
+});
+
+test('read G: a tag filter matches a whole tag, as WIQL CONTAINS does', async () => {
+  const s = new AdoTestCases(...onFake(new FakeAdo()));
+  assert.equal((await s.find({ kind: 'test_case', tag: 'coup' })).length, 0);
+  assert.equal((await s.find({ kind: 'test_case', tag: 'COUPON' })).length, 1);
+});
+
+// ---- review round: failures on the resolution calls, the caches, and the fallback clause
+
+const PC = `${BASE}/work/processconfiguration`;
+const CATS = `${BASE}/wit/workitemtypecategories`;
+const WIQL = `${BASE}/wit/wiql`;
+
+test('review R1: a 401 or a missing login on the resolution calls reaches the user, not a scope hint', async () => {
+  const m = new Mock();
+  m.on('GET', PC, { message: 'no' }, { status: 401 });
+  m.on('GET', CATS, { message: 'no' }, { status: 401 });
+  await assert.rejects(requirements(m).requirements(period), (e) => {
+    assert.ok(e instanceof BlockedError);
+    assert.match(e.message, /rejected the credentials/);
+    assert.doesNotMatch(e.message, /Work Items \(Read\)/);
+    return true;
+  });
+  const none = new AdoRequirements(
+    new AdoClient(
+      'org',
+      'Shop',
+      () => {
+        throw new BlockedError('No Azure DevOps credentials. Run `az login`.');
+      },
+      new Mock().fetch,
+      async () => {},
+    ),
+    settings(),
+  );
+  await assert.rejects(none.requirements(period), blocked(/^No Azure DevOps credentials/));
+});
+
+test('review R2: throttling and a dropped network on the resolution calls are not reported as a scope problem', async () => {
+  const m = new Mock();
+  m.on('GET', PC, null, { status: 429, headers: { 'retry-after': '0' } });
+  await assert.rejects(requirements(m).requirements(period), blocked(/throttling/));
+  const down = new AdoRequirements(
+    new AdoClient(
+      'org',
+      'Shop',
+      () => 'Basic test',
+      async () => {
+        throw new TypeError('fetch failed');
+      },
+      async () => {},
+    ),
+    settings(),
+  );
+  await assert.rejects(down.requirements(period), blocked(/Couldn't reach Azure DevOps/));
+});
+
+test('review R3: a 403 on a read says Read, and a 401 on processconfiguration is not skipped to the category list', async () => {
+  const m = new Mock();
+  m.on('GET', PC, { message: 'no' }, { status: 403 });
+  m.on('GET', CATS, { message: 'no' }, { status: 403 });
+  await assert.rejects(requirements(m).requirements(period), (e) => {
+    assert.ok(e instanceof BlockedError);
+    assert.match(e.message, /work\/processconfiguration.*Work Items \(Read\)/s);
+    assert.doesNotMatch(e.message, /Read & Write/);
+    return true;
+  });
+  const m2 = new Mock();
+  m2.on('GET', PC, { message: 'no' }, { status: 401 });
+  await assert.rejects(requirements(m2).requirements(period), blocked(/rejected the credentials/));
+  assert.equal(m2.to('GET', CATS).length, 0, 'a 401 is not a reason to try the next source');
+});
+
+test('review R4: a 403 on processconfiguration falls through to the category list', async () => {
+  const ado = new FakeAdo();
+  ado.processConfig = false;
+  const r = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await r.requirements(period)).map((x) => x.id),
+    ['3'],
+  );
+  const m = new Mock();
+  m.on('GET', PC, { message: 'no' }, { status: 403 });
+  m.on('GET', CATS, {
+    value: [{ referenceName: 'Microsoft.RequirementCategory', workItemTypes: [{ name: 'Issue' }] }],
+  });
+  m.on('POST', WIQL, { workItems: [] });
+  assert.deepEqual(await requirements(m).requirements(period), []);
+});
+
+test('review R5: a 403 on the category list in the fallback keeps the test artifacts exclusion; any other failure propagates', async () => {
+  const mk = (status: number) => {
+    const m = new Mock();
+    m.on('GET', PC, { requirementBacklog: { workItemTypes: [{ name: 'User Story' }] } });
+    m.on('GET', CATS, { message: 'x' }, { status });
+    m.seq('POST', WIQL, [
+      { status: 200, body: { workItems: [] } },
+      { status: 200, body: { workItems: [{ id: 9 }] } },
+      { status: 200, body: { workItems: [] } },
+    ]);
+    return m;
+  };
+  const m = mk(403);
+  await requirements(m).requirements(period);
+  const queries = m.to('POST', WIQL).map((c) => JSON.parse(c.body ?? '{}').query as string);
+  assert.match(queries[1], /NOT IN \('Shared Parameter', 'Shared Steps', 'Test Case', 'Test Plan', 'Test Suite'\)/);
+  await assert.rejects(requirements(mk(429)).requirements(period), blocked(/throttling/));
+});
+
+test('review R6: a failed category fetch is not cached, and a retry fetches again', async () => {
+  const m = new Mock();
+  m.on('GET', PC, { requirementBacklog: { workItemTypes: [{ name: 'User Story' }] } });
+  m.seq('GET', CATS, [
+    { status: 503 },
+    { status: 503 },
+    { status: 503 },
+    { status: 200, body: { value: [{ referenceName: 'Microsoft.BugCategory', workItemTypes: [{ name: 'Bug' }] }] } },
+  ]);
+  m.seq('POST', WIQL, [
+    { status: 200, body: { workItems: [] } },
+    { status: 200, body: { workItems: [] } },
+    { status: 200, body: { workItems: [{ id: 9 }] } },
+    { status: 200, body: { workItems: [] } },
+  ]);
+  const r = requirements(m);
+  await assert.rejects(r.requirements(period), blocked(/unavailable|throttling/));
+  await r.requirements(period);
+  assert.ok(m.to('GET', CATS).length >= 4, 'fetched again after the failure');
+  const last = m.to('POST', WIQL).map((c) => JSON.parse(c.body ?? '{}').query as string);
+  assert.ok(
+    last.some((qy) => /NOT IN \(.*'Bug'.*\)/.test(qy)),
+    'the retry knew the Bug category',
+  );
+});
+
+test('review R7: a failure on processconfiguration or on the probe is not remembered', async () => {
+  const m = new Mock();
+  m.seq('GET', PC, [
+    { status: 429, headers: { 'retry-after': '0' } },
+    { status: 429, headers: { 'retry-after': '0' } },
+    { status: 429, headers: { 'retry-after': '0' } },
+    { status: 200, body: { requirementBacklog: { workItemTypes: [{ name: 'Issue' }] } } },
+  ]);
+  m.seq('POST', WIQL, [{ status: 200, body: { workItems: [{ id: 5 }] } }]);
+  m.on('GET', `${BASE}/wit/workitems`, {
+    value: [
+      { id: 5, rev: 1, fields: { 'System.WorkItemType': 'Issue', 'System.Title': 't', 'System.State': 'Active' } },
+    ],
+  });
+  const r = requirements(m);
+  await assert.rejects(r.requirements(period), blocked(/throttling/));
+  assert.equal((await r.requirements(period)).length, 1, 'the second call on the same adapter succeeds');
+  const p = new Mock();
+  p.on('GET', PC, { requirementBacklog: { workItemTypes: [{ name: 'Issue' }] } });
+  p.on('GET', CATS, { value: [] });
+  p.seq('POST', WIQL, [
+    { status: 400, body: { message: 'boom' } },
+    { status: 200, body: { workItems: [] } },
+  ]);
+  const r2 = requirements(p);
+  await assert.rejects(r2.requirements(period), blocked(/boom/));
+  await r2.requirements(period);
+  assert.equal(
+    p.to('POST', WIQL).filter((c) => c.url.searchParams.get('$top') === '1').length,
+    3,
+    'the probe ran again',
+  );
+});
+
+test('read A2: each cache is hit once, the probe and the category list too', async () => {
+  const ado = new FakeAdo();
+  ado.items.delete(3);
+  ado.add(15, 'Issue', 'An impediment');
+  const r = new AdoRequirements(...onFake(ado));
+  await r.requirements(period);
+  await r.find({ kind: 'requirement' });
+  await r.requirements(period);
+  assert.equal(calls(ado)('GET work/processconfiguration'), 1);
+  assert.equal(calls(ado)('GET wit/workitemtypecategories'), 1);
+  assert.equal(calls(ado)('POST wit/wiql'), 2 + 3, 'two probes, then one list per call');
+});
+
+test('read C2: a project with no work items at all stays on the process types, with no notice', async () => {
+  const ado = new FakeAdo();
+  ado.items.delete(3);
+  const r = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(await r.requirements(period), []);
+  assert.equal(r.notice, undefined);
+  ado.add(17, 'Bug', 'A bug');
+  assert.deepEqual(await new AdoRequirements(...onFake(ado)).find({ kind: 'requirement' }), []);
+});
+
+test('read C3: a type on the requirement backlog that another category also lists is not excluded', async () => {
+  const m = new Mock();
+  m.on('GET', PC, { requirementBacklog: { workItemTypes: [{ name: 'User Story' }, { name: 'Bug' }] } });
+  const cat = (referenceName: string, ...names: string[]) => ({
+    referenceName,
+    workItemTypes: names.map((name) => ({ name })),
+  });
+  m.on('GET', CATS, {
+    value: [
+      cat('Microsoft.RequirementCategory', 'User Story', 'Bug'),
+      cat('Microsoft.BugCategory', 'Bug'),
+      cat('Microsoft.TaskCategory', 'Task'),
+    ],
+  });
+  m.seq('POST', WIQL, [
+    { status: 200, body: { workItems: [] } },
+    { status: 200, body: { workItems: [{ id: 9 }] } },
+    { status: 200, body: { workItems: [] } },
+  ]);
+  await requirements(m).requirements(period);
+  const notIn =
+    m
+      .to('POST', WIQL)
+      .map((c) => JSON.parse(c.body ?? '{}').query as string)
+      .find((qy) => /NOT IN/.test(qy)) ?? '';
+  assert.match(notIn, /'Task'/);
+  assert.doesNotMatch(notIn, /'Bug'/, 'Bug is a requirement type here, so the other categories do not exclude it');
+  const ado = new FakeAdo();
+  ado.items.delete(3);
+  ado.requirementTypes = ['User Story', 'Bug'];
+  ado.bugTypes = ['Bug'];
+  ado.add(17, 'Bug', 'A bug on the backlog');
+  ado.add(18, 'Issue', 'An impediment');
+  const r = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await r.find({ kind: 'requirement' })).map((x) => x.id),
+    [17],
+    'own types find the Bug, so no fallback',
+  );
+  // with no Bug or User Story item, the fallback runs: Bug is a requirement type here, so it is not in NOT IN
+  ado.items.delete(17);
+  ado.add(17, 'Task', 't');
+  const r2 = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await r2.find({ kind: 'requirement' })).map((x) => x.id),
+    [18],
+  );
+});
+
+test('read C4: one stray or Removed User Story does not hide the Issues, and creating one stays consistent', async () => {
+  const ado = new FakeAdo();
+  ado.items.delete(3);
+  for (const id of [15, 16, 17]) ado.add(id, 'Issue', `Issue ${id}`);
+  ado.add(30, 'User Story', 'Gone', { state: 'Removed' });
+  const r = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await r.find({ kind: 'requirement' })).map((x) => x.id),
+    [15, 16, 17],
+    'a Removed story is not a requirement',
+  );
+  assert.match(r.notice ?? '', /No User Story/);
+  ado.items.delete(30);
+  await r.create({ title: 'New story' });
+  assert.equal(r.notice, undefined, 'the notice is dropped once the project has a story');
+  assert.deepEqual(
+    (await r.find({ kind: 'requirement' })).map((x) => x.title),
+    ['New story'],
+    'the same adapter answers as a new one would',
+  );
+  assert.deepEqual(
+    (await new AdoRequirements(...onFake(ado)).find({ kind: 'requirement' })).map((x) => x.title),
+    ['New story'],
+  );
+});
+
+test('read H: a valid module filters by area; an area of the tree is known', async () => {
+  const ado = new FakeAdo();
+  ado.add(40, 'User Story', 'In web', { area: 'Shop\\Web', iteration: 'Shop\\Sprint 24' });
+  const r = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await r.requirements({ sprint: 'Sprint 24', module: 'Web' })).map((x) => x.id),
+    ['40'],
+  );
+  await assert.rejects(r.requirements({ ...period, module: 'Nope' }), blocked(/known: Shop, Shop\\Web/));
+});
+
+test('read H2: a module copied from the hint, with the project in front, works as it is', async () => {
+  const ado = new FakeAdo();
+  ado.add(41, 'User Story', 'In web', { area: 'Shop\\Web', iteration: 'Shop\\Sprint 24' });
+  const r = new AdoRequirements(...onFake(ado));
+  for (const module of ['Shop\\Web', 'Web'])
+    assert.deepEqual(
+      (await r.requirements({ sprint: 'Sprint 24', module })).map((x) => x.id),
+      ['41'],
+      module,
+    );
+  assert.deepEqual(
+    (await r.requirements({ sprint: 'Sprint 24', module: 'Shop' })).map((x) => x.id),
+    ['3', '41'],
+    'the project alone is the whole tree',
+  );
+  await assert.rejects(r.requirements({ ...period, module: 'Shop\\Nope' }), blocked(/known: Shop, Shop\\Web/));
+});
+
+// ---- qam doctor --check-write: can this user write plans, suites and test cases? Only GETs are ever sent.
+
+const NODE = 'vstfs:///Classification/Node/';
+const writeCheck = (ado: FakeAdo, more: Partial<AdoSettings> = {}) =>
+  new AdoTestCases(...onFake(ado, more)).checkWrite();
+const onlyReads = (ado: FakeAdo) =>
+  assert.ok(
+    ado.log.length > 0 && ado.log.every((l) => l.startsWith('GET ')),
+    `a write was sent: ${ado.log.filter((l) => !l.startsWith('GET ')).join(', ')}`,
+  );
+
+test('write check: Azure DevOps says the user holds the permissions, from one combined query, and only GETs are sent', async () => {
+  const ado = new FakeAdo();
+  const r = await writeCheck(ado);
+  assert.deepEqual([r.state, r.area, r.missing, r.testCaseType], ['allowed', 'Shop', [], 'present']);
+  assert.deepEqual(ado.permissionCalls, [{ bits: 224, tokens: [`${NODE}${ado.areaId('Shop')}`] }]);
+  assert.match(
+    r.detail,
+    /^Azure DevOps says your user holds Manage test plans, Manage test suites and Edit work items/,
+  );
+  assert.match(r.detail, /area 'Shop'/);
+  assert.match(r.detail, /licence.*not checked/i);
+  assert.match(r.detail, /Test Management \(Read & Write\).*Work Items \(Read & Write\).*first write/s);
+  onlyReads(ado);
+});
+
+test('write check: the bits are the live CSS ones (securitynamespaces) and the namespace is the area one', async () => {
+  const ns = (await new AdoClient('org', 'Shop', () => 'Basic t', new FakeAdo().fetch).get(
+    `securitynamespaces/${CSS_NAMESPACE}`,
+  )) as { value: { actions: { bit: number; displayName: string }[] }[] };
+  for (const w of WRITE_BITS)
+    assert.ok(
+      ns.value[0].actions.some((a) => a.bit === w.bit && a.displayName === w.name),
+      `${w.bit} ${w.name}`,
+    );
+  assert.deepEqual(
+    WRITE_BITS.map((w) => w.bit),
+    [64, 128, 32],
+  );
+});
+
+test("write check: a plan under a child area is checked with the child's own token, ancestors colon-joined", async () => {
+  const ado = new FakeAdo();
+  ado.areas = ['Web'];
+  ado.subAreas = { Web: ['Cart'] };
+  ado.plans[0].areaPath = 'Shop\\Web\\Cart';
+  const child = [ado.areaId('Shop'), ado.areaId('Shop\\Web'), ado.areaId('Shop\\Web\\Cart')]
+    .map((id) => `${NODE}${id}`)
+    .join(':');
+  ado.denied.set(child, 64); // a deny on the child area only: the root says yes
+  const r = await writeCheck(ado);
+  assert.equal(ado.permissionCalls[0].tokens[0], child);
+  assert.deepEqual([r.state, r.area, r.missing], ['blocked', 'Shop\\Web\\Cart', ['Manage test plans']]);
+  assert.match(r.detail, /area 'Shop\\Web\\Cart'/);
+  onlyReads(ado);
+  // and a deny on the root alone does not touch the child's own answer
+  const other = new FakeAdo();
+  other.areas = ['Web'];
+  other.subAreas = { Web: ['Cart'] };
+  other.plans[0].areaPath = 'Shop\\Web\\Cart';
+  other.denied.set(`${NODE}${other.areaId('Shop')}`, 224);
+  const o = await writeCheck(other);
+  assert.deepEqual(
+    [o.state, o.missing],
+    ['blocked', ['Edit work items in this node']],
+    'only the work-item right is read at the root',
+  );
+});
+
+test('review 1: Edit work items is checked where test cases land (the root area), the plan rights on the plan area', async () => {
+  const setup = () => {
+    const ado = new FakeAdo();
+    ado.subAreas = { Web: ['Cart'] };
+    ado.plans[0].areaPath = 'Shop\\Web';
+    return ado;
+  };
+  const web = (a: FakeAdo) => `${NODE}${a.areaId('Shop')}:${NODE}${a.areaId('Shop\\Web')}`;
+  const ado = setup();
+  const ok = await writeCheck(ado);
+  assert.equal(ok.state, 'allowed');
+  assert.deepEqual(
+    ado.permissionCalls.map((c) => [c.bits, c.tokens[0]]),
+    [
+      [192, web(ado)],
+      [32, `${NODE}${ado.areaId('Shop')}`],
+    ],
+  );
+  assert.match(
+    ok.detail,
+    /Manage test plans and Manage test suites on area 'Shop\\Web'.*Edit work items in this node on area 'Shop'/s,
+  );
+  // rights on the plan's area but not at the root: the first test-case create would be a 403
+  const noRoot = setup();
+  noRoot.denied.set(`${NODE}${noRoot.areaId('Shop')}`, 32);
+  const r = await writeCheck(noRoot);
+  assert.deepEqual([r.state, r.missing], ['blocked', ['Edit work items in this node']]);
+  assert.match(r.detail, /lacks Edit work items in this node on area 'Shop'/);
+  // a deny of 32 on the plan's area alone does not block: no test case lands there
+  const noWeb = setup();
+  noWeb.denied.set(web(noWeb), 32);
+  assert.equal((await writeCheck(noWeb)).state, 'allowed');
+  onlyReads(ado);
+});
+
+test('review 2: single-bit answers that all say yes, or are no boolean, are unknown, never "lacks everything"', async () => {
+  const mk = (answers: Record<number, unknown>) => {
+    const m = new Mock();
+    m.on('GET', `${BASE}/testplan/plans`, { value: [{ id: 1, name: 'Shop Web', areaPath: 'Shop' }] });
+    m.on('GET', `${BASE}/wit/classificationnodes/areas`, { identifier: 'r', name: 'Shop' });
+    m.on('GET', `${BASE}/wit/workitemtypes/Test Case`, { name: 'Test Case' });
+    for (const [bits, v] of Object.entries(answers))
+      m.on('GET', `${ORG}/permissions/${CSS_NAMESPACE}/${bits}`, { count: 1, value: [v] });
+    return store(m, { repoName: 'Shop Web' }).checkWrite();
+  };
+  const disagree = await mk({ 224: false, 64: true, 128: true, 32: true });
+  assert.deepEqual([disagree.state, disagree.missing], ['unknown', []]);
+  assert.match(disagree.detail, /^unknown: .*disagree/);
+  const noBool = await mk({ 224: false, 64: true, 128: 'maybe', 32: true });
+  assert.deepEqual([noBool.state, noBool.missing], ['unknown', []]);
+  const some = await mk({ 224: false, 64: false, 128: 'maybe', 32: true });
+  assert.deepEqual([some.state, some.missing], ['blocked', ['Manage test plans']]);
+});
+
+test('review 3: the unknown text names the first write that would tell: the plan POST only when there is no plan', async () => {
+  const withPlan = new FakeAdo();
+  withPlan.permissionStatus = 403;
+  const a = await writeCheck(withPlan);
+  assert.doesNotMatch(a.detail, /POST testplan\/plans/);
+  assert.match(a.detail, /creating a suite or test case/);
+  const noPlan = new FakeAdo(false);
+  noPlan.permissionStatus = 403;
+  assert.match(
+    (await writeCheck(noPlan, { repoName: 'shop-web' })).detail,
+    /POST testplan\/plans \(creating the plan\)/,
+  );
+});
+
+test('review 4: a sprint equal to the project name queries UNDER the project, as the TF51011 hint lists it', async () => {
+  const ado = new FakeAdo();
+  ado.add(42, 'User Story', 'In sprint', { iteration: 'Shop\\Sprint 24' });
+  const r = new AdoRequirements(...onFake(ado));
+  assert.ok((await r.requirements({ sprint: 'Shop' })).some((x) => x.id === '42'));
+  assert.ok((await r.requirements({ sprint: 'Shop\\Sprint 24' })).some((x) => x.id === '42'));
+});
+
+test('review 7: the plan choices list at most 20 plans, then say how many more, and the create choice stays last', async () => {
+  const m = new Mock().on('GET', `${BASE}/testplan/plans`, {
+    value: Array.from({ length: 25 }, (_, i) => ({ id: i + 1, name: `Plan ${i + 1}` })),
+  });
+  await assert.rejects(store(m, { repoName: 'billing' }).plan(), (e) => {
+    assert.ok(e instanceof NoPlanError);
+    assert.equal(e.plans.length, 25, 'the data keeps every plan');
+    assert.match(e.message, /\n {2}20\. Use the plan 'Plan 20'/);
+    assert.doesNotMatch(e.message, /Plan 21'/);
+    assert.match(e.message, /and 5 more.*QAMASTER_ADO_PLAN=<exact plan name>/);
+    assert.match(e.message, /\n {2}21\. Create a new plan/);
+    return true;
+  });
+});
+
+test('review 9: an unknown permission answer with a missing Test Case type leads with the certain answer', async () => {
+  const ado = new FakeAdo();
+  ado.permissionStatus = 403;
+  ado.testCaseType = false;
+  const r = await writeCheck(ado);
+  assert.deepEqual([r.state, r.testCaseType, r.missing], ['blocked', 'missing', []]);
+  const lines = r.detail.split('\n');
+  assert.match(lines[0], /process has no Test Case work item type/);
+  assert.match(lines[1], /^unknown: .*403/);
+});
+
+test('review 10: area paths and the project are matched without regard to case', async () => {
+  const ado = new FakeAdo();
+  ado.subAreas = { Web: ['Cart'] };
+  ado.plans[0].areaPath = 'shop\\web\\CART';
+  const r = await writeCheck(ado);
+  assert.equal(r.state, 'allowed');
+  const want = [ado.areaId('Shop'), ado.areaId('Shop\\Web'), ado.areaId('Shop\\Web\\Cart')]
+    .map((id) => `${NODE}${id}`)
+    .join(':');
+  assert.equal(ado.permissionCalls[0].tokens[0], want);
+});
+
+test('write check: a missing permission is named, after the combined query says false', async () => {
+  for (const [bit, name] of [
+    [64, 'Manage test plans'],
+    [128, 'Manage test suites'],
+    [32, 'Edit work items in this node'],
+  ] as const) {
+    const ado = new FakeAdo();
+    ado.denied.set(`${NODE}${ado.areaId('Shop')}`, bit);
+    const r = await writeCheck(ado);
+    assert.equal(r.state, 'blocked', name);
+    assert.deepEqual(r.missing, [name]);
+    assert.deepEqual(
+      ado.permissionCalls.map((c) => c.bits),
+      [224, 64, 128, 32],
+      'the combined query first, the single bits only after a false',
+    );
+    assert.match(r.detail, new RegExp(`^Azure DevOps says your user lacks ${name} on area 'Shop' in org/Shop`));
+    assert.match(r.detail, /project administrator.*QAMASTER_ADO_PROJECT/s);
+    onlyReads(ado);
+  }
+  const two = new FakeAdo();
+  two.denied.set(`${NODE}${two.areaId('Shop')}`, 128 + 32);
+  assert.deepEqual((await writeCheck(two)).missing, ['Manage test suites', 'Edit work items in this node']);
+});
+
+test('write check: when the permissions call answers 403 or 404 the state is unknown, naming the first write that would tell; a 401 is rejected credentials', async () => {
+  const rejected = new FakeAdo();
+  rejected.permissionStatus = 401;
+  await assert.rejects(writeCheck(rejected), /rejected the credentials/);
+  for (const status of [403, 404]) {
+    const ado = new FakeAdo();
+    ado.permissionStatus = status;
+    const r = await writeCheck(ado);
+    assert.equal(r.state, 'unknown', String(status));
+    assert.match(r.detail, /^unknown: /);
+    assert.match(r.detail, /creating a suite or test case/);
+    assert.match(r.detail, /Test Management \(Read & Write\).*Work Items \(Read & Write\)/s);
+    assert.deepEqual(r.missing, []);
+    onlyReads(ado);
+  }
+  const odd = new Mock();
+  odd.on('GET', `${BASE}/testplan/plans`, { value: [{ id: 1, name: 'Shop Web', areaPath: 'Shop' }] });
+  odd.on('GET', `${BASE}/wit/classificationnodes/areas`, { identifier: 'r', name: 'Shop' });
+  odd.on('GET', `${BASE}/wit/workitemtypes/Test Case`, { name: 'Test Case' });
+  odd.on('GET', `${ORG}/permissions/${CSS_NAMESPACE}/224`, { count: 1, value: ['maybe'] });
+  assert.equal(
+    (await store(odd, { repoName: 'Shop Web' }).checkWrite()).state,
+    'unknown',
+    'an answer that is no boolean',
+  );
+});
+
+test("write check: an area that can't be resolved is said so, never replaced by the root", async () => {
+  const gone = new FakeAdo();
+  gone.plans[0].areaPath = 'Shop\\Gone';
+  const r = await writeCheck(gone);
+  assert.equal(r.state, 'unknown');
+  assert.match(r.detail, /^unknown: .*can't find the area 'Shop\\Gone'/);
+  assert.deepEqual(
+    gone.permissionCalls.map((c) => c.bits),
+    [32],
+    'the plan rights were not asked about the root instead: only Edit work items, which is a root question anyway',
+  );
+  const elsewhere = new FakeAdo();
+  elsewhere.plans[0].areaPath = 'Other\\Web';
+  assert.equal((await writeCheck(elsewhere)).state, 'unknown');
+  assert.deepEqual(
+    elsewhere.permissionCalls.map((c) => c.bits),
+    [32],
+  );
+  // a plan without an area path, and an area list this token can't read
+  const m = new Mock();
+  mockPlan(m);
+  m.on('GET', `${BASE}/wit/workitemtypes/Test Case`, { name: 'Test Case' });
+  m.on('GET', `${BASE}/wit/classificationnodes/areas`, { identifier: 'r', name: 'Shop' });
+  m.on('GET', `${ORG}/permissions/${CSS_NAMESPACE}/32`, { count: 1, value: [true] });
+  const noArea = await store(m, { repoName: 'Shop Web' }).checkWrite();
+  assert.equal(noArea.state, 'unknown');
+  assert.match(noArea.detail, /has no area path/);
+  const m2 = new Mock();
+  m2.on('GET', `${BASE}/testplan/plans`, { value: [{ id: 1, name: 'Shop Web', areaPath: 'Shop' }] });
+  m2.on('GET', `${BASE}/wit/classificationnodes/areas`, {}, { status: 403 });
+  m2.on('GET', `${BASE}/wit/workitemtypes/Test Case`, { name: 'Test Case' });
+  const denied = await store(m2, { repoName: 'Shop Web' }).checkWrite();
+  assert.equal(denied.state, 'unknown');
+  assert.equal(m2.calls.filter((c) => c.url.pathname.includes('/permissions/')).length, 0);
+});
+
+test("write check: with no plan yet (the create case) the project's root area is checked, and it says so", async () => {
+  const ado = new FakeAdo(false);
+  const r = await writeCheck(ado, { repoName: 'shop-web' });
+  assert.deepEqual([r.state, r.area], ['allowed', 'Shop']);
+  assert.deepEqual(ado.permissionCalls[0].tokens, [`${NODE}${ado.areaId('Shop')}`]);
+  assert.match(r.detail, /no plan yet.*root area/i);
+  ado.denied.set(`${NODE}${ado.areaId('Shop')}`, 64);
+  assert.deepEqual((await writeCheck(ado, { repoName: 'shop-web' })).missing, ['Manage test plans']);
+  onlyReads(ado);
+});
+
+test('write check: a process without the Test Case type is reported apart from the permissions', async () => {
+  const ado = new FakeAdo();
+  ado.testCaseType = false;
+  const r = await writeCheck(ado);
+  assert.deepEqual([r.state, r.testCaseType, r.missing], ['blocked', 'missing', []]);
+  assert.match(r.detail, /process has no Test Case work item type/);
+  assert.match(r.detail, /Azure DevOps says your user holds/, 'the permissions result is still there');
+  ado.denied.set(`${NODE}${ado.areaId('Shop')}`, 64);
+  const both = await writeCheck(ado);
+  assert.deepEqual([both.missing, both.testCaseType], [['Manage test plans'], 'missing']);
+  // a type this token can't read is not "missing"
+  const unreadable = new FakeAdo();
+  unreadable.typeStatus = 403;
+  const u = await writeCheck(unreadable);
+  assert.deepEqual([u.state, u.testCaseType], ['allowed', 'unknown']);
+  assert.match(u.detail, /couldn't check .*Test Case/);
+});
+
+test('write check: two plans matching the repo name block with their own message, not a guess', async () => {
+  const ado = new FakeAdo();
+  ado.plans.push({ ...ado.plans[0], id: 2 });
+  await assert.rejects(writeCheck(ado), blocked(/2 test plans .* match/));
+});
+
+test('review R8: a non-JSON error body shows as it is, and long messages are cut at 300 characters', async () => {
+  const html = new Mock();
+  html.on('GET', `${BASE}/wit/workitems/1`, null, { status: 502 });
+  const raw = new AdoClient(
+    'org',
+    'Shop',
+    () => 'Basic t',
+    async () => new Response('<html>Bad Gateway</html>', { status: 502 }),
+    async () => {},
+  );
+  await assert.rejects(raw.get('wit/workitems/1'), blocked(/502: <html>Bad Gateway<\/html>/));
+  const long = (body: string) =>
+    new AdoClient(
+      'org',
+      'Shop',
+      () => 'Basic t',
+      async () => new Response(body, { status: 400 }),
+      async () => {},
+    );
+  for (const body of [JSON.stringify({ message: 'x'.repeat(1000) }), 'y'.repeat(1000)])
+    await assert.rejects(long(body).get('wit/workitems/1'), (e) => {
+      assert.ok(e instanceof BlockedError);
+      assert.ok(e.message.length < 400, `message is ${e.message.length} long`);
+      assert.match(e.message, /returned 400: [xy]{300}$/);
+      return true;
+    });
+});
+
+test('review 11: the fake UNDER filter respects path segments: Web does not reach Webshop', async () => {
+  const ado = new FakeAdo();
+  ado.areas = ['Web', 'Webshop'];
+  ado.add(43, 'User Story', 'In webshop', { area: 'Shop\\Webshop', iteration: 'Shop\\Sprint 24' });
+  ado.add(44, 'User Story', 'In web', { area: 'Shop\\Web', iteration: 'Shop\\Sprint 24' });
+  const r = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await r.requirements({ sprint: 'Sprint 24', module: 'Web' })).map((x) => x.id),
+    ['44'],
+  );
 });
