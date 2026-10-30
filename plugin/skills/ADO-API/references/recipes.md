@@ -17,6 +17,7 @@ az devops configure --defaults organization=https://dev.azure.com/<org> project=
 | Task | az CLI | Fallback | Scopes |
 |---|---|---|---|
 | Who am I, is the CLI ready | `az account show` · `az extension show --name azure-devops` | — | — |
+| The organization's projects (doctor lists them when the configured one doesn't exist) | `az devops project list --top 500 -o json` | `qam ado call GET projects --org-level --all-pages` (*not yet run live*) | Project and Team (Read) |
 | Query work items | `az boards query --wiql "SELECT [System.Id] FROM workitems WHERE [System.TeamProject] = '<project>' AND [System.Title] CONTAINS 'coupon'" -o json` | `qam ado call POST wit/wiql --body q.json --param '$top=50'`, with `{"query": "…"}`. A WIQL POST only reads, so it needs no `--apply` | Work Items (Read) |
 | Show a work item with its links | `az boards work-item show --id 26 --expand relations -o json` | `qam ado call GET wit/workitems/26 --param '$expand=relations'` | Work Items (Read) |
 | A sprint's requirements | `az boards query --wiql "… [System.WorkItemType] IN GROUP 'Microsoft.RequirementCategory' AND [System.IterationPath] UNDER '<project>\Sprint 24'"` | WIQL as above | Work Items (Read) |
