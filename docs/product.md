@@ -31,6 +31,8 @@ QAMaster builds a team's test cases and automation from the application and its 
 
 ## Scope
 
+Plugin releases inside this scope, and the next one's plan: [releases.md](releases.md).
+
 ### v1
 - One Claude Code plugin, `qamaster`, and the `qam` CLI behind it.
 - Build stages from Autonomous-QE: DSM, AUT skills, requirements, TestGen with tolerance 0, playwright-bdd scripts for Web, Mobile Web, API, Android and iOS, the script gate.
