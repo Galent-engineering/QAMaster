@@ -176,8 +176,7 @@ export const STAGES: Stage[] = [
         ? { done: true, detail: `${saved.length} scope(s) saved` }
         : { done: false, detail: 'none fetched yet (optional)' };
     },
-    how: () =>
-      'Fetching sprint stories isn\'t built yet: qam pipeline mark requirements skipped --note "…".',
+    how: () => 'Fetching sprint stories isn\'t built yet: qam pipeline mark requirements skipped --note "…".',
   },
   {
     id: 'test-cases',

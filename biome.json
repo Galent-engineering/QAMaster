@@ -7,7 +7,7 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**/*.mts", "**/*.json", "!package-lock.json", "!tests/fixtures"]
+    "includes": ["**/*.mts", "**/*.json", "!package-lock.json", "!tests/fixtures", "!.claude"]
   },
   "formatter": {
     "enabled": true,
