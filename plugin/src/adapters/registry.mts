@@ -6,6 +6,7 @@
  */
 import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
+import { makeAdoRequirements, makeAdoStore } from './ado.mts';
 import type { RequirementSource, Runner, TestCaseStore } from './base.mts';
 
 type Factory<T> = (config: Config) => T;
@@ -17,8 +18,8 @@ function notBuilt(name: string): Factory<never> {
   };
 }
 
-export const STORES: Record<string, Factory<TestCaseStore>> = { ado: notBuilt('ado') };
-export const REQUIREMENTS: Record<string, Factory<RequirementSource>> = { ado: notBuilt('ado') };
+export const STORES: Record<string, Factory<TestCaseStore>> = { ado: makeAdoStore };
+export const REQUIREMENTS: Record<string, Factory<RequirementSource>> = { ado: makeAdoRequirements };
 export const RUNNERS: Record<string, Factory<Runner>> = {
   'playwright-bdd': notBuilt('playwright-bdd'),
   pytest: notBuilt('pytest'),

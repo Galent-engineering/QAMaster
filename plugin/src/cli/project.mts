@@ -5,12 +5,14 @@
  *               [--source FOLDER|GIT-URL [--branch B] [--name N] [--clone-to DIR | --use-clone DIR]]
  *               [--entry claude-code,vscode,…]
  *     qam pipeline start [--url URL] [--source S] [--app NAME] [--channels web,api] | status | next | mark <stage> <status> [--note T] | reset [<stage>]
- *     qam doctor
+ *     qam doctor [--check-write]
  *     qam integrations list [--all] | add <entry…> | remove <id> | verify
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
+import type { TestCaseStore, WriteCheck } from '../adapters/base.mts';
+import { buildStore } from '../adapters/registry.mts';
 import {
   add,
   type Context,
@@ -25,7 +27,7 @@ import { mark, reset, start, status, table } from '../pipeline/pipeline.mts';
 import { pluginVersion, type SetupOptions, type Step, setupProject } from '../pipeline/setup.mts';
 import { checkSource } from '../pipeline/sources.mts';
 import type { Config } from '../shared/config.mts';
-import { BlockedError } from '../shared/errors.mts';
+import { BlockedError, NoPlanError } from '../shared/errors.mts';
 
 const project = (cfg: Config) => cfg.qaProject ?? cfg.root;
 const appName = (cfg: Config, dir: string) => cfg.project.app?.name ?? path.basename(dir);
@@ -250,9 +252,24 @@ export function pipeline(cfg: Config, argv: string[], json: boolean): number {
   return 0;
 }
 
-export function doctor(cfg: Config, _argv: string[], json: boolean): number {
+export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Promise<number> {
+  // doctor used to ignore its argv, so a --json after the command must still work
+  const { values: v } = parse<{ 'check-write'?: boolean; json?: boolean }>(
+    argv,
+    { 'check-write': { type: 'boolean' }, json: { type: 'boolean' } },
+    'qam doctor',
+  );
+  const json = jsonFlag || !!v.json;
   const dir = project(cfg);
-  const checks: { check: string; ok: boolean; detail: string }[] = [];
+  // `state` and the plan fields are extra, only on the checks that have them
+  const checks: {
+    check: string;
+    ok: boolean;
+    detail: string;
+    state?: WriteCheck['state'];
+    plans?: { id: number; name: string }[];
+    createName?: string;
+  }[] = [];
   const dsmFile = path.join(dir, 'config', 'dsm-config.json');
   const dsm = fs.existsSync(dsmFile) ? readJson(dsmFile) : null;
   checks.push({
@@ -286,7 +303,53 @@ export function doctor(cfg: Config, _argv: string[], json: boolean): number {
   });
   for (const i of verify(ctx(cfg)))
     checks.push({ check: `integration ${i.id}`, ok: !i.problem, detail: i.problem ?? 'working' });
-  checks.push({ check: 'test case store', ok: true, detail: 'checked once the ADO adapter is built (step 4)' });
+  // the store, read-only: the plan and its test cases (the pipeline's store stage reads this record)
+  let store: { ok: boolean; at: string; detail: string };
+  let built: TestCaseStore | null = null;
+  const storeCheck: (typeof checks)[number] = { check: 'test case store', ok: false, detail: '' };
+  try {
+    built = buildStore(cfg);
+    const cases = await built.inPlan();
+    store = {
+      ok: true,
+      at: new Date().toISOString(),
+      detail: `${built.where()}: ${cases.size} test case(s) in the plan`,
+    };
+  } catch (e) {
+    if (!(e instanceof BlockedError)) throw e;
+    store = { ok: false, at: new Date().toISOString(), detail: e.message.replace(/\s+/g, ' ') };
+    // the numbered plan choices keep their lines, and are also data for --json
+    if (e instanceof NoPlanError) Object.assign(storeCheck, { plans: e.plans, createName: e.createName });
+    storeCheck.detail = e instanceof NoPlanError ? e.message : store.detail;
+  }
+  storeCheck.ok = store.ok;
+  storeCheck.detail ||= store.detail;
+  checks.push(storeCheck);
+  let write: WriteCheck | null = null;
+  if (v['check-write']) {
+    const name = 'write access';
+    if (!built)
+      checks.push({ check: name, ok: false, detail: "not checked: the test case store isn't set up (see above)" });
+    else if (!built.checkWrite) {
+      write = {
+        state: 'unknown',
+        detail: "unknown: this store can't be asked. Its first write will tell.",
+        area: null,
+        missing: [],
+        testCaseType: 'unknown',
+      };
+    } else {
+      try {
+        write = await built.checkWrite();
+      } catch (e) {
+        if (!(e instanceof BlockedError)) throw e;
+        // the create flow reads write.state from --json, so a check that couldn't run still reports one
+        const detail = e.message.replace(/\s+/g, ' ');
+        write = { state: 'blocked', detail, area: null, missing: [], testCaseType: 'unknown' };
+      }
+    }
+    if (write) checks.push({ check: name, ok: write.state !== 'blocked', detail: write.detail, state: write.state });
+  }
   const ok = checks.every((c) => c.ok);
   fs.mkdirSync(path.join(dir, QAMASTER_DIR), { recursive: true });
   const record = path.join(dir, QAMASTER_DIR, 'doctor.json');
@@ -294,12 +357,15 @@ export function doctor(cfg: Config, _argv: string[], json: boolean): number {
   try {
     prev = JSON.parse(fs.readFileSync(record, 'utf8'));
   } catch {}
-  writeJson(record, { ...prev, at: new Date().toISOString(), ok, checks });
-  if (json) console.log(JSON.stringify({ result: ok ? 'pass' : 'blocked', checks }));
+  writeJson(record, { ...prev, at: new Date().toISOString(), ok, checks, store });
+  if (json) console.log(JSON.stringify({ result: ok ? 'pass' : 'blocked', checks, ...(write ? { write } : {}) }));
   else {
     const w = Math.max(...checks.map((c) => c.check.length));
+    const label = (c: (typeof checks)[number]) => (c.state === 'unknown' ? 'WARN  ' : c.ok ? 'ok    ' : 'FIX   ');
+    // a detail of several lines (the plan choices, the write answer) keeps them under the detail column
+    const indent = ' '.repeat(2 + 6 + 1 + w + 2);
     console.log(
-      `QAMaster doctor: ${ok ? 'all good' : 'needs attention'}\n${checks.map((c) => `  ${c.ok ? 'ok    ' : 'FIX   '} ${c.check.padEnd(w)}  ${c.detail}`).join('\n')}`,
+      `QAMaster doctor: ${ok ? 'all good' : 'needs attention'}\n${checks.map((c) => `  ${label(c)} ${c.check.padEnd(w)}  ${c.detail.replace(/\n/g, `\n${indent}`)}`).join('\n')}`,
     );
   }
   return ok ? 0 : 2;

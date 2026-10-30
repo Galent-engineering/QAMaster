@@ -15,6 +15,19 @@ import type {
   UiModel,
 } from '../shared/models.mts';
 
+/** What `qam doctor --check-write` learned about writing to the store. `unknown` is neither a pass nor a block. */
+export type WriteCheck = {
+  state: 'allowed' | 'blocked' | 'unknown';
+  /** The whole answer in words, ready to print; starts with "unknown" for that state. */
+  detail: string;
+  /** The area path the permissions were asked about, or null when it could not be resolved. */
+  area: string | null;
+  /** The permissions the store says the user lacks, by name. */
+  missing: string[];
+  /** Whether the project's process has the Test Case work item type. */
+  testCaseType: 'present' | 'missing' | 'unknown';
+};
+
 /** Where test cases live: QAMASTER_STORE; v1 has ado (Q23). */
 export interface TestCaseStore {
   /** Where the test cases come from, for `qam doctor`: "Azure DevOps galent/Shop, plan Shop Web". */
@@ -30,6 +43,15 @@ export interface TestCaseStore {
   /** The store's undoable removal; returns what was done, in plain words. */
   retire(item: Item): Promise<string[]>;
   addToSuite(caseId: number, suite: string): Promise<void>;
+  /** The plan named like the repo (or as configured), created when there is none. Publish calls it only with --apply. */
+  ensurePlan(): Promise<{ id: number; name: string; created: boolean }>;
+  /** A static suite of the plan, by name, created under the plan's root suite when missing. Publish --apply only. */
+  ensureSuite(name: string): Promise<{ id: number; name: string; created: boolean }>;
+  /**
+   * Optional: whether the credential's user may create plans, suites and test cases, asked of the store with reads
+   * only (no write is sent). Optional so a store that can't answer needn't, and doctor says so.
+   */
+  checkWrite?(): Promise<WriteCheck>;
 }
 
 /** Where requirements live: QAMASTER_REQUIREMENTS; v1 has ado. */

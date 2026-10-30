@@ -188,8 +188,26 @@ class FakeItems {
 }
 
 export class FakeStore extends FakeItems implements TestCaseStore {
+  hasPlan = true;
+  suites = new Map([['payments', 1]]); // suite name (lower case) -> id
   constructor(items: Item[] = TEST_CASES) {
     super(items);
+  }
+
+  async ensurePlan(): Promise<{ id: number; name: string; created: boolean }> {
+    const created = !this.hasPlan;
+    if (created) this.writes.push(`plan ${PLAN}`);
+    this.hasPlan = true;
+    return { id: 1, name: PLAN, created };
+  }
+
+  async ensureSuite(name: string): Promise<{ id: number; name: string; created: boolean }> {
+    const known = this.suites.get(name.toLowerCase());
+    if (known) return { id: known, name, created: false };
+    const id = this.suites.size + 1;
+    this.suites.set(name.toLowerCase(), id);
+    this.writes.push(`create suite ${name}`);
+    return { id, name, created: true };
   }
 
   async inPlan(): Promise<Map<number, TestCase>> {
@@ -211,6 +229,8 @@ export class FakeStore extends FakeItems implements TestCaseStore {
   async addToSuite(caseId: number, suite: string): Promise<void> {
     const stored = this.items.get(caseId);
     if (!stored) throw new BlockedError(`No test case ${caseId}.`);
+    if (!this.suites.has(suite.toLowerCase()))
+      throw new BlockedError(`No static suite '${suite}' in test plan '${PLAN}'.`);
     const name = `${PLAN} / ${suite}`;
     if (!stored.suites.includes(name)) stored.suites.push(name);
     this.writes.push(`suite ${caseId} ${suite}`);

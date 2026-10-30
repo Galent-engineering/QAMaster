@@ -1,0 +1,15 @@
+{
+  "count": 2,
+  "value": [
+    {
+      "id": 501,
+      "fields": {
+        "System.Title": "Coupon applies",
+        "System.Tags": "coupon; path:shop/checkout/**",
+        "Microsoft.VSTS.TCM.AutomatedTestName": "tests/test_coupon.py::test_applies"
+      }
+    },
+    {"id": 502, "fields": {"System.Title": "Expired coupon"}},
+    null
+  ]
+}

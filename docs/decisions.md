@@ -511,6 +511,20 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - A mismatched runner otherwise fails late, at the first gate run.
 - **Gave up:** each new framework must list its runners and targets. That's a small table in its adapter.
 
+**Q33. Claude's own ADO work goes through the az CLI first; the engine keeps its REST adapter; publish can create plans and suites** (2026-10-30, accepted 2026-10-30, New; refines Q5 and Q7)
+- **Decision:**
+  - **Claude's own ADO work** (looking things up, the work-items skill, checking a publish) uses the az CLI first: `az boards` for work items, queries and iterations, and `az devops invoke --api-version 7.1` for the rest.
+  - **When the CLI can't do a call**, Claude uses `qam ado call`. The CLI can't when it isn't installed or isn't signed in, when a list is longer than one page, or when an update needs a revision check. `qam ado call` makes one REST call with the adapter's auth, retries and errors, and refuses writes without `--apply`.
+  - **A call that had to be built** is saved as a recipe: first in the QA project's `.qamaster/ado-recipes.md`, then folded into the `ADO-API` skill's `references/recipes.md` in the next release. Recipes hold no data.
+  - **The `qam` engine keeps its REST adapter** (`adapters/ado.mts`, Q5): the gate, `qam doctor` and publish. They need revision-guarded updates and page tokens, which `az boards` lacks, and the az start-up time on every call would slow the gate.
+  - **The store can create the plan named like the repo, and a static suite per module** (`ensurePlan`, `ensureSuite`). Publish calls them only with `--apply`, after the preview (Q7).
+- **Why:**
+  - The person wants ADO work to use the az CLI first, to build an API call only when it can't, and to keep built calls for reuse and for future plugin versions.
+  - The person wants publish to create and write to Test Plans.
+- **Gave up:**
+  - Two ways of reaching ADO: the CLI for Claude's work, REST for the engine.
+  - Recipes can drift from the API. Each one records the date it last worked.
+
 ---
 
 ## Open questions

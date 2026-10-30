@@ -11,6 +11,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { loadConfig } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
+import { ado } from './ado.mts';
 import { dsm } from './dsm.mts';
 import { autSkills } from './knowledge.mts';
 import { doctor, integrations, pipeline, setup } from './project.mts';
@@ -27,7 +28,8 @@ const PLUGIN_ROOT = path.resolve(import.meta.dirname, '../..');
 export const COMMANDS: Record<string, string> = {
   setup: 'Config, app URL and code sources, packages, browsers, launcher, entry points. Safe to re-run',
   pipeline: 'Onboarding pipeline: start | status | next | mark',
-  doctor: 'Check settings, credentials, the test plan and the runner',
+  doctor:
+    'Check settings, credentials, the test plan and the runner; --check-write asks whether the user may write (reads only)',
   integrations: 'Where QAMaster is plugged in: list [--all] | add <entry…> | remove <id> | verify',
   dsm: 'Design Structure Matrix: run | refresh | changes | impact <files…> | scan | build | render',
   'aut-skills': 'Application knowledge skills (AUT_<App>) from the DSM; --check says whether they are current',
@@ -45,6 +47,7 @@ export const COMMANDS: Record<string, string> = {
   report: 'Build reports: all | manual | <type>',
   req: 'Requirements in the tracker: list | show | create | update | retire',
   tc: 'Test cases in the tracker: list | show | create | update | retire',
+  ado: 'Azure DevOps: call <METHOD> <path> (one REST call; writes need --apply)',
   export: 'Export skills and commands to other AI tools',
   'mcp-serve': 'QAMaster MCP server (stdio) for other AI tools',
 };
@@ -54,6 +57,7 @@ type Options = { json: boolean; repo: string };
 /** The built commands. Each gets the global options and its own arguments, and returns the exit code. */
 const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promise<number>> = {
   dsm: (opts, args) => dsm(loadConfig(opts.repo), args, opts.json),
+  ado: (opts, args) => ado(loadConfig(opts.repo), args, opts.json),
   'aut-skills': (opts, args) => autSkills(loadConfig(opts.repo), args, opts.json),
   testgen: (opts, args) => testgen(loadConfig(opts.repo), args, opts.json),
   review: (opts, args) => review(loadConfig(opts.repo), args, opts.json),
