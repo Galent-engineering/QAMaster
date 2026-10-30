@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import type { TestCaseStore, WriteCheck } from '../adapters/base.mts';
+import { withCache } from '../adapters/cache.mts';
 import { buildStore } from '../adapters/registry.mts';
 import {
   add,
@@ -308,7 +309,7 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
   let built: TestCaseStore | null = null;
   const storeCheck: (typeof checks)[number] = { check: 'test case store', ok: false, detail: '' };
   try {
-    built = buildStore(cfg);
+    built = withCache(buildStore(cfg), project(cfg), true).store; // doctor reads live and refreshes the cache (Q34)
     const cases = await built.inPlan();
     store = {
       ok: true,

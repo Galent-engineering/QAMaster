@@ -31,6 +31,7 @@ export const GITIGNORE_LINES = [
   'dsm/.auth/',
   `${QAMASTER_DIR}/plugin.json`,
   `${QAMASTER_DIR}/*.tmp`,
+  `${QAMASTER_DIR}/cache/`,
   'reports/output/',
 ];
 /** Claude Code permission rules: Claude can't read secret files or the saved session (Q16). */

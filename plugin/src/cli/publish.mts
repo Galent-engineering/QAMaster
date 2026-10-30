@@ -1,15 +1,17 @@
 /**
  * qam publish (Q7, Q8, Q34): what a reviewed run would write to the test case store, and with --apply, writing it.
  *
- *     qam publish <run> [--apply] [--retire] [--leave-out ID,…] [--skip-smoke ID,…]
+ *     qam publish <run> [--apply] [--retire]  [--refresh] [--leave-out ID,…] [--skip-smoke ID,…]
  *
- * <run> is a folder, or a name under testgen/output/. Without --apply nothing is written. Exit codes: 0 nothing to
+ * <run> is a folder, or a name under testgen/output/. Without --apply nothing is written. A store that isn't a local
+ * file is read through the cache (Q34) in a dry run, and --refresh, like --apply, reads it live. Exit codes: 0 nothing to
  * write, 3 something awaits the person's yes, 1 a conflict is left (the store was changed by someone since the last
  * publish), 2 blocked. The ledger is saved after every write, so a failure half way can't lose a created test case.
  */
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
+import { withCache } from '../adapters/cache.mts';
 import { buildStore } from '../adapters/registry.mts';
 import type { Dsm } from '../dsm/build.mts';
 import { type Applied, checkStore, readLedger, record, writeLedger } from '../publish/ledger.mts';
@@ -70,7 +72,8 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   const dir = cfg.qaProject ?? cfg.root;
   const dsm = readDsm(dir);
   const run = loadRun(runDir(dir, positionals[0]), { dsmGeneratedAt: dsm.generated_at, owners: cfg.project.owners });
-  const store = buildStore(cfg);
+  const cached = withCache(buildStore(cfg), dir, !!(v.refresh || v.apply));
+  const store = cached.store;
   const where = store.where();
   let ledger: Ledger | null = readLedger(dir);
   checkStore(ledger, where);
@@ -118,6 +121,7 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     `QAMaster publish ${run.name} → ${where} (${v.apply ? 'applying' : 'dry run'})`,
     `Reviewed by ${run.reviewedBy}${run.reviewedAt ? ` on ${run.reviewedAt.slice(0, 10)}` : ''}`,
     ...(run.ownerWarning ? [`Warning: ${run.ownerWarning}`] : []),
+    ...(cached.age() ? [`Store as of ${cached.age()} (from the cache). Run with --refresh to read it again.`] : []),
   ];
   const section = (head: string, rows: string[]) => rows.length && lines.push('', head, ...rows.map((r) => `  ${r}`));
   section(
@@ -196,6 +200,10 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
       }
     }
     if (unchanged.length) save(unchanged.map((change) => ({ change })));
+    if (!heldBack) {
+      const record = { publishedAt: now, store: where, ...applied, unchanged: unchanged.length };
+      fs.writeFileSync(path.join(run.dir, 'published.json'), `${JSON.stringify(record, null, 1)}\n`);
+    }
     lines.push(
       `Created ${applied.created}, updated ${applied.updated}, retired ${applied.retired}, unchanged ${unchanged.length}; ${heldBack} held back by a conflict.`,
     );
@@ -209,6 +217,7 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
         apply: !!v.apply,
         run: run.name,
         store: where,
+        storeAsOf: cached.age(),
         reviewedBy: run.reviewedBy,
         ...(run.ownerWarning ? { warning: run.ownerWarning } : {}),
         changes: result.changes.map(({ change: _write, ...c }) => c),
@@ -226,6 +235,7 @@ function parse(argv: string[]) {
     args: argv,
     options: {
       apply: { type: 'boolean' },
+      refresh: { type: 'boolean' },
       retire: { type: 'boolean' },
       'leave-out': { type: 'string', multiple: true },
       'skip-smoke': { type: 'string', multiple: true },

@@ -272,3 +272,32 @@ test('publish: cases the DSM cannot place are named, and the owner warning shows
   assert.match(r.out, /Not linked to code \(no path: tag\): TC-CART-001/);
   assert.match(r.out, /Warning: Cart's owner is a\.rao@example\.test.*jo@example\.test reviewed/);
 });
+
+test('publish: --refresh is accepted, and a clean apply marks the run published for the pipeline', () => {
+  const p = project();
+  p.writeRun([kase('TC-CART-001')]);
+  assert.equal(p.qam('publish', RUN, '--refresh').status, 3);
+  const stage = () => {
+    const st = p.json('pipeline', 'status');
+    return (st.stages ?? st).find((s: { stage: string }) => s.stage === 'publish');
+  };
+  assert.equal(stage().status, 'pending');
+  assert.equal(p.qam('publish', RUN, '--apply').status, 0);
+  const rec = JSON.parse(p.read(`testgen/output/${RUN}/published.json`));
+  assert.deepEqual(
+    [rec.created, rec.updated, rec.retired, rec.store],
+    [1, 0, 0, 'File testcases/testcases.csv, plan Shop'],
+  );
+  assert.equal(stage().status, 'done');
+});
+
+test('publish: a run with a conflict left is not marked published', () => {
+  const p = project();
+  p.writeRun([kase('TC-CART-001')]);
+  p.qam('publish', RUN, '--apply');
+  fs.rmSync(path.join(p.dir, `testgen/output/${RUN}/published.json`));
+  fs.writeFileSync(path.join(p.dir, CSV), p.read(CSV).replace('Case TC-CART-001', 'Edited by hand'));
+  p.writeRun([kase('TC-CART-001', { title: 'Mine' })]);
+  assert.equal(p.qam('publish', RUN, '--apply').status, 1);
+  assert.equal(p.exists(`testgen/output/${RUN}/published.json`), false);
+});

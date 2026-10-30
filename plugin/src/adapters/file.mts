@@ -124,6 +124,8 @@ function parseCsv(text: string, shown: string): { cells: string[]; line: number 
 const csvCell = (v: string) => (/[",\r\n]/.test(v) || v !== v.trim() ? `"${v.replaceAll('"', '""')}"` : v);
 
 export class FileStore implements TestCaseStore {
+  /** The file is already local, so a cache would only add a second copy (Q34). */
+  readonly local = true;
   file: string;
   plan: string;
   shown: string;
