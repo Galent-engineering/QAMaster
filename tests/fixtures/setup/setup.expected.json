@@ -44,7 +44,7 @@
     {
       "step": ".gitignore",
       "status": "created",
-      "detail": "node_modules/, .env, .env.*, !.env.example, dsm/.lock, dsm/.auth/, .qamaster/plugin.json, .qamaster/*.tmp, reports/output/"
+      "detail": "node_modules/, .env, .env.*, !.env.example, dsm/.lock, dsm/.auth/, .qamaster/plugin.json, .qamaster/*.tmp, .qamaster/cache/, reports/output/"
     },
     {
       "step": "package.json",

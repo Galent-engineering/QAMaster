@@ -575,6 +575,58 @@ The deeper lesson: a validator can prove a **reference exists**. It can't prove 
 4. Validation is a program's check of references; review is a person's judgement of meaning (Q12). Calling the first "review" let AQE's pipeline count unreviewed cases as reviewed.
 </details>
 
+## Lesson: publish, the store and the ledger (porting step 7)
+
+### What it's for
+
+Publish is the link between the two halves. TestGen writes draft cases into `testgen/output/`; the gate selects from the test cases in a **store**. Publish copies reviewed drafts into the store, with the tags the gate selects by. It's the one step that writes to a place the team already works in, so it must be explicit, repeatable and unable to damage anyone's edits (Q7, Q8, Q34).
+
+### The split of work
+
+| Piece | Does |
+|---|---|
+| `loadRun` | Refuses a run that isn't validated, wasn't reviewed, or changed after its review |
+| `derive` | Makes each case's tags, steps and automation link from facts: group tags from the module, `path:` tags from the source files behind the screens it visits |
+| `diff` | Compares what we'd write with the **ledger** (what we wrote last time) and the **store** (what's there now): create, update, unchanged, conflict, retire |
+| The ledger | `.qamaster/ledger.json`: each draft ID, its test case ID, a hash of what we wrote, the tags we own, and the revision we saw |
+| The store | ADO Test Plans, or a CSV in the QA project. Both sit behind the same interface and the same contract tests |
+| The cache | A local copy of what the store said, for fast previews. Never the master |
+| `qam publish` | Dry run by default (exit 3 when something awaits a yes); `--apply` writes |
+
+### Three ideas worth keeping
+
+- **Three copies, one master.** The draft, the ledger and the store each hold a version of a case. The store is the master once published. The ledger doesn't say what's true; it says what *we* last wrote, so we can tell our change from someone else's.
+- **A revision is how you notice another person.** Each stored case has a revision that goes up on every change. If it moved since the ledger recorded it, someone else edited the case, and we hold our change back as a **conflict** instead of overwriting. The file store works the same way: a hand edit to the CSV counts as a change, because each row carries a signature of its content.
+- **A stale cache may be wrong about conflicts, but it can't cause one.** The preview may read the cache, so it can miss an edit. `--apply` always reads the store live and the store checks the revision itself, so nothing is overwritten. Speed is allowed to cost accuracy only where a second check follows.
+
+### What we found by trying to break it
+
+- **Tags that select everything.** With a path depth of 3, one Juice Shop screen got `path:frontend/src/app/**`, the whole Angular app, so every change would pick that case. Running the derivation on the real DSM showed it, and the default is now 4.
+- **A plan that couldn't be created.** The first version asked the store for its plan before doing anything, and a project with no plan stopped right there, so `--apply` could never create it. The test that ran publish on an ADO with no plan found it.
+- **A design choice, not a finding: our formatting vs. the store's.** Fields are compared only when our content changed, and the ledger's hash decides that. Comparing every field every time would risk endless "changes" if a store keeps text a little differently. Not yet seen on live ADO.
+- **Half-finished publishes.** The ledger is saved after every write, not at the end. A crash after creating five cases would otherwise lose their IDs and create them again.
+
+### How we built it
+
+- **Pure pieces first.** `derive`, `diff`, the ledger update and the smoke suggestion are plain functions with tests; only reading the run and writing the store touch files.
+- **A second store to prove the interface.** The file store passes the same contract suite as the ADO adapter, then publish runs end to end on both: one on a CSV, one on an in-memory ADO.
+- **Each safety rule was broken on purpose** (conflict check off, retire ignoring its flag, a dry run that writes), and the matching test had to fail.
+
+### Check yourself
+
+1. Why does the ledger store a hash and a revision, instead of just the test case ID?
+2. The preview used the cache and showed an update. `--apply` then reported a conflict. Is that a bug?
+3. Why is a case that's no longer generated closed only with `--retire`, and never deleted?
+4. Why is the ledger saved after each write rather than once at the end?
+
+<details><summary>Answers</summary>
+
+1. The hash says whether *our* content changed since we last wrote it; the revision says whether *someone else's* did. With both, "ours changed, theirs didn't" is an update and "ours changed, theirs did too" is a conflict. An ID alone can't tell them apart.
+2. No, it's the design. The preview may read a cache that missed an edit; `--apply` reads live, sees the new revision, and holds the change back. The person sees a conflict instead of losing an edit.
+3. A case someone retired might still be wanted, and ADO can't undo a delete made through its API (Q7). Closing removes it from the plan and can be reversed.
+4. If a publish stopped half way, cases already created would have no ledger entry, and the next publish would create them again.
+</details>
+
 ---
 
 ## Journal
@@ -590,3 +642,5 @@ The deeper lesson: a validator can prove a **reference exists**. It can't prove 
 | 2026-10-29 | 3 Crawl and refresh | A safety net must fail closed and be restored in `finally`. Three stacked guard bugs, each reproduced on a hand-made app that counts writes |
 | 2026-10-29 | 3 Crawl and refresh (built) | Safety decisions as pure functions, a guard set by phase and restored in `finally`, and a real crawl test that proves zero writes, checked to fail when the guard is off |
 | 2026-10-29 | 4 Setup and pipeline | Setup only adds what's missing; pipeline stages decide "done" from evidence in the project, so they resume and show staleness |
+| 2026-10-30 | Publish (steps 1-6) | The file store (CSV, hand edits count as changes), the publish engine and ledger, and `qam publish`. Path depth 3 selected a whole Angular app, so the default is 4 |
+| 2026-10-30 | Publish (steps 7-8) | A cache that never decides: reads may be stale, writes check the live store. Running publish on an ADO with no plan found a check that blocked `--apply` from creating it |
