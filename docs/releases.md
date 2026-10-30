@@ -2,6 +2,8 @@
 
 What each plugin version holds, and what the next one is planned to hold. Scope by product version (v1, v1.1, v2) is in [product.md](product.md#scope); this file tracks the plugin's own releases inside it.
 
+Findings come from the [demos](demos/README.md).
+
 Effort: XS < 30 min · S ~1 h · M half a day · L a day or more.
 
 ## 0.2.0: publish, and fixes from the first walkthrough
@@ -27,6 +29,7 @@ Publish (Q33, Q34), plus the fixes the 0.1.0 walkthrough turned up (WALKTHROUGH-
 | Accept the store's version of a conflicted case (today the message only says to look in the store) | M | Med: only on conflicts | A flag or command name, approved |
 | xlsx `file` store. No runtime dependencies, so a minimal reader and writer on `node:zlib` (xlsx is zipped XML) | M | Med for teams with no tracker | Hand-written vs a dependency exception (Q34) |
 | Upgrade an old config on request, beyond the 0.2.0 doctor warning | S | Low-med | A flag name, e.g. on `setup`, approved |
+| Domain_Test_Design skills crowd the `/` menu: hide them from the menu (Claude still loads them) | XS | Med: first thing a new user sees ([demo 0.1.0 step 1](demos/2026-10-30-0.1.0-juice-shop.md)) | Check the current skill frontmatter docs for the menu-hiding field |
 | Accept or drop Q36 (JSON form of the `file` store); decide whether both files present should block | XS | Low | Your call |
 | Findings from the publish walkthrough (WALKTHROUGH-publish) | ? | ? | The filled-in feedback, triaged like this table |
 | Findings from the first live ADO publish, project creation included | ? | ? | The live run |
