@@ -325,3 +325,46 @@ test('dry run: test folders are left out of the scan, so a Cypress harness page 
   const routes = read(path.join(qa, 'dsm/code-model.json')).routes.map((r: { route: string }) => r.route);
   assert.deepEqual(routes.sort(), ['/home', '/site/about.cy.html', '/tests']);
 });
+
+test('doctor warns when a config predates a newer default, and setup still leaves it as it is', () => {
+  const qa = tmp();
+  gitRepo(path.join(qa, 'app'));
+  qam(qa, 'setup', '--no-install', '--source', 'app');
+  const check = (dir: string) =>
+    json(dir, 'doctor').checks.find((c: { check: string }) => c.check === 'config defaults');
+  assert.deepEqual([check(qa).ok, check(qa).state], [true, undefined], 'a fresh config has every default');
+  // an older config: pathDepth 3, and an exclude list without codefixes/ and e2e/
+  const qamFile = path.join(qa, 'config/qamaster.json');
+  const dsmFile = path.join(qa, 'config/dsm-config.json');
+  const q = read(qamFile);
+  q.publish.pathDepth = 3;
+  fs.writeFileSync(qamFile, JSON.stringify(q));
+  const d = read(dsmFile);
+  d.repositories[0].exclude = d.repositories[0].exclude.filter((e: string) => !['codefixes/', 'e2e/'].includes(e));
+  fs.writeFileSync(dsmFile, JSON.stringify(d));
+  const before = [fs.readFileSync(qamFile, 'utf8'), fs.readFileSync(dsmFile, 'utf8')];
+  const c = check(qa);
+  assert.deepEqual([c.ok, c.state], [true, 'unknown'], 'a warning, not a failure');
+  assert.match(c.detail, /publish\.pathDepth is 3, the default is now 4/);
+  assert.match(c.detail, /fine if deliberate/);
+  assert.match(c.detail, /source app: exclude lacks e2e\/, codefixes\//);
+  const r = qam(qa, 'doctor');
+  assert.match(r.out, /WARN +config defaults +publish\.pathDepth is 3/);
+  assert.doesNotMatch(r.out, /FIX +config defaults/);
+  qam(qa, 'setup', '--no-install');
+  assert.deepEqual(
+    [fs.readFileSync(qamFile, 'utf8'), fs.readFileSync(dsmFile, 'utf8')],
+    before,
+    'setup never overwrites',
+  );
+  // the warning never decides the exit code: with only it to report, doctor passes
+  const file = spawnSync(QAM, ['--repo', qa, 'doctor'], {
+    encoding: 'utf8',
+    env: { ...process.env, QAMASTER_HOME: HOME, QAMASTER_STORE: 'file' },
+  });
+  assert.equal(file.status, 0, file.stdout);
+  assert.match(file.stdout, /WARN +config defaults/);
+  // a project without a config gets no defaults check at all
+  const none = tmp();
+  assert.equal(check(none), undefined);
+});

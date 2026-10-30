@@ -26,9 +26,10 @@ import {
 } from '../integrations/integrations.mts';
 import { mark, reset, start, status, table } from '../pipeline/pipeline.mts';
 import { pluginVersion, type SetupOptions, type Step, setupProject } from '../pipeline/setup.mts';
-import { checkSource } from '../pipeline/sources.mts';
+import { checkSource, DEFAULT_EXCLUDE } from '../pipeline/sources.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError, NoPlanError, NoProjectError } from '../shared/errors.mts';
+import { DEFAULT_PROJECT_CONFIG } from '../shared/schema.mts';
 
 const project = (cfg: Config) => cfg.qaProject ?? cfg.root;
 const appName = (cfg: Config, dir: string) => cfg.project.app?.name ?? path.basename(dir);
@@ -297,6 +298,31 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
       if (!(e instanceof BlockedError)) throw e;
       checks.push({ check: `source ${r.name}`, ok: false, detail: e.message });
     }
+  }
+  // a config written by an older QAMaster keeps its values (setup never overwrites), so say which defaults moved on
+  const qamFile = path.join(dir, 'config', 'qamaster.json');
+  if (cfg.qaProject && dsm && fs.existsSync(qamFile)) {
+    const stale: string[] = [];
+    const depth = (readJson(qamFile).publish as { pathDepth?: unknown } | undefined)?.pathDepth;
+    const def = DEFAULT_PROJECT_CONFIG.publish.pathDepth;
+    if (depth !== undefined && depth !== def)
+      stale.push(
+        `publish.pathDepth is ${depth}, the default is now ${def}: set it in config/qamaster.json (fine if deliberate).`,
+      );
+    for (const r of repos as { name: string; exclude?: unknown }[]) {
+      if (!Array.isArray(r.exclude)) continue;
+      const lacks = DEFAULT_EXCLUDE.filter((e) => !(r.exclude as unknown[]).includes(e));
+      if (lacks.length)
+        stale.push(
+          `source ${r.name}: exclude lacks ${lacks.join(', ')}: add to its exclude in config/dsm-config.json.`,
+        );
+    }
+    checks.push({
+      check: 'config defaults',
+      ok: true,
+      detail: stale.join('\n') || 'current',
+      ...(stale.length ? { state: 'unknown' as const } : {}),
+    });
   }
   const pw = fs.existsSync(path.join(dir, 'node_modules', 'playwright', 'package.json'));
   checks.push({
