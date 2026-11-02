@@ -788,21 +788,21 @@ class AdoItems {
     return `testplan/Plans/${plan.id}/Suites/${found[0].id}/TestCase`;
   }
 
-  /** The test plan named like the repo (case, spaces and punctuation ignored), or QAMASTER_ADO_PLAN. */
+  /** The test plan named like the app (config app.name, else the repo folder; case, spaces and punctuation ignored), or QAMASTER_ADO_PLAN. */
   async plan(): Promise<Json> {
     const [found, plans] = await this.findPlan();
     if (found) return found;
     const where = `${this.client.organization}/${this.client.project}`;
     const how = this.settings.plan
       ? `QAMASTER_ADO_PLAN='${this.settings.plan}' matches no test plan`
-      : `No test plan is named like this repo ('${this.settings.repoName}')`;
+      : `No test plan is named like the app ('${this.settings.repoName}')`;
     // ensurePlan would create this name, so it is the default of the last choice
     const createName = this.settings.plan || this.settings.repoName;
     const listed = plans.map((p) => ({ id: Number(p.id), name: String(p.name) }));
     const shown = listed.slice(0, MAX_PLAN_CHOICES);
     const choices = [
       ...shown.map((p) => `Use the plan '${p.name}': set QAMASTER_ADO_PLAN=${p.name} in the repo's .env.`),
-      `Create a new plan, named '${createName}' by default or any name you type (if it differs from the repo name, then set QAMASTER_ADO_PLAN=<that name> in the repo's .env). A plan in another project needs QAMASTER_ADO_PROJECT changed first.`,
+      `Create a new plan, named '${createName}' by default or any name you type (if it differs from the app name, then set QAMASTER_ADO_PLAN=<that name> in the repo's .env). A plan in another project needs QAMASTER_ADO_PROJECT changed first.`,
     ];
     const more = listed.length - shown.length;
     const numbered = choices.map((c, i) => `  ${i + 1}. ${c}`);
@@ -1233,7 +1233,7 @@ export function adoSettings(config: Config): AdoSettings {
     project,
     plan: config.env.QAMASTER_ADO_PLAN || undefined,
     team: config.env.QAMASTER_ADO_TEAM || undefined,
-    repoName: path.basename(config.root),
+    repoName: config.project.app?.name || path.basename(config.root),
   };
 }
 const clientFor = (s: AdoSettings, config: Config) =>

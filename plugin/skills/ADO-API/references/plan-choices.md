@@ -3,9 +3,9 @@
 ## What `qam doctor` prints
 
 ```
-FIX   test case store  No test plan is named like this repo ('shop-web') in <org>/<project>. Choose one:
+FIX   test case store  No test plan is named like the app ('shop-web') in <org>/<project>. Choose one:
                          1. Use the plan 'Shop Web': set QAMASTER_ADO_PLAN=Shop Web in the repo's .env.
-                         2. Create a new plan, named 'shop-web' by default or any name you type (if it differs from the repo name, then set QAMASTER_ADO_PLAN=<that name> in the repo's .env). A plan in another project needs QAMASTER_ADO_PROJECT changed first.
+                         2. Create a new plan, named 'shop-web' by default or any name you type (if it differs from the app name, then set QAMASTER_ADO_PLAN=<that name> in the repo's .env). A plan in another project needs QAMASTER_ADO_PROJECT changed first.
 ```
 
 - Exit code 2. With `--json` the check also has `plans: [{id, name}]` and `createName`.

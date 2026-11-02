@@ -26,7 +26,7 @@ Settings come from the app repo's `.env`: `QAMASTER_ADO_ORG`, `QAMASTER_ADO_PROJ
 
 ## When `qam doctor` finds no matching test plan
 
-The store check says "No test plan is named like this repo" or "QAMASTER_ADO_PLAN=<x> matches no test plan". Its detail is a numbered list: each existing plan, then **create a new plan** last. `--json` has the same as `plans` and `createName` on the `test case store` check. Steps and details: [references/plan-choices.md](references/plan-choices.md).
+The store check says "No test plan is named like the app" or "QAMASTER_ADO_PLAN=<x> matches no test plan". Its detail is a numbered list: each existing plan, then **create a new plan** last. `--json` has the same as `plans` and `createName` on the `test case store` check. Steps and details: [references/plan-choices.md](references/plan-choices.md).
 
 1. Show the person the numbered choices as listed, and say they can type another name for a new plan. Wait for their pick.
 2. An existing plan: ask them to set `QAMASTER_ADO_PLAN=<plan name>` in the repo's `.env` (you don't edit `.env`), then run `qam doctor` again.
@@ -36,7 +36,7 @@ The store check says "No test plan is named like this repo" or "QAMASTER_ADO_PLA
    - **allowed**: say it is what Azure DevOps reports for their user, not proof of the token's scopes.
 4. Show exactly what will be created (the plan name, the organization and project), and wait for their explicit yes.
 5. Only then: `qam ado call POST testplan/plans --body <file> --apply`, with `{"name": "<plan name>"}`.
-6. If the name differs from the repo name, tell them to set `QAMASTER_ADO_PLAN=<plan name>`. A plan in another project needs `QAMASTER_ADO_PROJECT` changed first.
+6. If the name differs from the app name (`app.name` in `config/qamaster.json`, else the repo folder), tell them to set `QAMASTER_ADO_PLAN=<plan name>`. A plan in another project needs `QAMASTER_ADO_PROJECT` changed first.
 
 ## Rules
 

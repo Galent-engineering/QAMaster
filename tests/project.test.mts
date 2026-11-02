@@ -368,3 +368,11 @@ test('doctor warns when a config predates a newer default, and setup still leave
   const none = tmp();
   assert.equal(check(none), undefined);
 });
+
+// From the 0.2.0 publish walkthrough: the hook was first named after the folder and had to be renamed.
+test('0.2.1 A3: setup names the claude-hooks integration after --app, in the same run', () => {
+  const qa = tmp();
+  assert.equal(qam(qa, 'setup', '--no-install', '--app', 'JuiceShopOnline', '--entry', 'claude-code').status, 0);
+  const ids = read(path.join(qa, '.qamaster/integrations.json')).integrations.map((i: { id: string }) => i.id);
+  assert.deepEqual(ids, ['claude-hooks:JuiceShopOnline']);
+});

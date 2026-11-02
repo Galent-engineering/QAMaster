@@ -177,7 +177,8 @@ export function setup(cfg: Config, argv: string[], json: boolean): number {
   let entries: ReturnType<typeof add> | null = null;
   if (!broken && v.entry && !opts.check)
     entries = add(
-      ctx(cfg),
+      // cfg was loaded before this run wrote app.name, so name the integration from the file
+      { ...ctx(cfg), app: (readJson(qamFile).app as { name?: string } | undefined)?.name ?? ctx(cfg).app },
       v.entry
         .split(',')
         .map((x) => x.trim())

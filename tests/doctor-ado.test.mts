@@ -68,7 +68,7 @@ test('doctor: when no plan matches, the plans are numbered, creating one is last
   assert.equal(r.code, 2);
   assert.match(
     r.out,
-    /FIX +test case store +No test plan is named like this repo \('billing'\) in org\/Shop\. Choose one:/,
+    /FIX +test case store +No test plan is named like the app \('billing'\) in org\/Shop\. Choose one:/,
   );
   // continuation lines stay under the detail column
   assert.match(r.out, /\n {8,}1\. Use the plan 'Shop Web': set QAMASTER_ADO_PLAN=Shop Web/);
@@ -169,7 +169,7 @@ test('doctor --check-write: with no plan yet it checks the root area, and the pl
   const { cfg } = project(ado);
   const r = await run(cfg, ['--check-write']);
   assert.equal(r.code, 2, 'the store is still blocked: no plan');
-  assert.match(r.out, /FIX +test case store +No test plan is named like this repo/);
+  assert.match(r.out, /FIX +test case store +No test plan is named like the app/);
   assert.match(r.out, /ok +write access +Azure DevOps says your user holds .*no plan yet/);
   assert.deepEqual(ado.permissionCalls[0].tokens, [`${NODE}${ado.areaId('Shop')}`]);
 });

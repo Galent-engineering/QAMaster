@@ -14,12 +14,14 @@ import {
   AdoRequirements,
   type AdoSettings,
   AdoTestCases,
+  adoSettings,
   authHeader,
   CSS_NAMESPACE,
   parseSteps,
   stepsXml,
   WRITE_BITS,
 } from '../plugin/src/adapters/ado.mts';
+import { loadConfig } from '../plugin/src/shared/config.mts';
 import { BlockedError, NoPlanError, NoProjectError } from '../plugin/src/shared/errors.mts';
 import { requirementSourceContract, testCaseStoreContract } from './contracts.mts';
 import { FakeAdo } from './fake-ado.mts';
@@ -146,7 +148,7 @@ test('cm: no matching plan is blocked, listing the plans seen', async () => {
   await assert.rejects(
     store(m, { repoName: 'billing' }).plan(),
     blocked(
-      /^No test plan is named like this repo \('billing'\) in org\/Shop\. Choose one:\n {2}1\. .*'Shop Web'.*QAMASTER_ADO_PLAN=Shop Web.*\n {2}2\. .*'Regression'.*QAMASTER_ADO_PLAN=Regression.*\n {2}3\. Create a new plan.*'billing'/,
+      /^No test plan is named like the app \('billing'\) in org\/Shop\. Choose one:\n {2}1\. .*'Shop Web'.*QAMASTER_ADO_PLAN=Shop Web.*\n {2}2\. .*'Regression'.*QAMASTER_ADO_PLAN=Regression.*\n {2}3\. Create a new plan.*'billing'/,
     ),
   );
 });
@@ -703,7 +705,7 @@ test('fix 6: a Closed test case left in a suite is not in the plan', async () =>
 test('publish: ensurePlan creates the plan named like the repo once; ensureSuite adds a static suite under its root', async () => {
   const ado = new FakeAdo(false);
   const s = new AdoTestCases(...onFake(ado, { repoName: 'shop-web' }));
-  await assert.rejects(s.plan(), blocked(/No test plan is named like this repo/));
+  await assert.rejects(s.plan(), blocked(/No test plan is named like the app/));
   assert.deepEqual(await s.ensurePlan(), { id: 1000, name: 'shop-web', created: true });
   assert.equal((await s.ensurePlan()).created, false);
   const suite = await s.ensureSuite('Checkout');
@@ -1591,4 +1593,14 @@ test('review 11: the fake UNDER filter respects path segments: Web does not reac
     (await r.requirements({ sprint: 'Sprint 24', module: 'Web' })).map((x) => x.id),
     ['44'],
   );
+});
+
+// From the 0.2.0 publish walkthrough: the plan was named after the folder (DemoTestv0.2.1), not the app.
+test('0.2.1 A2: the default plan name is app.name, else the folder name', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-plan-name-'));
+  const env = { QAMASTER_ADO_ORG: 'org', QAMASTER_ADO_PROJECT: 'Shop' };
+  assert.equal(adoSettings(loadConfig(dir, { ...env })).repoName, path.basename(dir));
+  fs.mkdirSync(path.join(dir, 'config'));
+  fs.writeFileSync(path.join(dir, 'config/qamaster.json'), JSON.stringify({ app: { name: 'JuiceShopOnline' } }));
+  assert.equal(adoSettings(loadConfig(dir, { ...env })).repoName, 'JuiceShopOnline');
 });
