@@ -10,6 +10,8 @@ import type { Change, NotRun, PlanItem, Reason, TestCase } from '../shared/model
 
 const PATH = 'path:';
 const SMOKE = 'smoke';
+/** Below this many cases in the plan no file counts as shared (Q37, amended 2026-11-02). */
+export const SHARED_MIN_PLAN = 20;
 /** Link prefixes that differ from the runner's registry name. */
 const PREFIX_RUNNER: Record<string, string> = { bdd: 'playwright-bdd' };
 
@@ -71,8 +73,10 @@ export function candidates(i: SelectInput): Map<number, Reason[]> {
   const byPath = new Set<string>();
   for (const f of i.change.files) {
     const covering = cases.filter((tc) => paths(tc).some((p) => matches(p, f.path)));
-    if (i.sharedShare !== undefined && covering.length > i.sharedShare * cases.length)
-      i.shared?.push({ file: f.path, cases: covering.length });
+    // a share of a small plan says nothing: with 3 cases, 2 covering a file is ordinary coverage
+    const shared =
+      i.sharedShare !== undefined && cases.length >= SHARED_MIN_PLAN && covering.length > i.sharedShare * cases.length;
+    if (shared) i.shared?.push({ file: f.path, cases: covering.length });
     else byPath.add(f.path);
   }
   for (const tc of cases)

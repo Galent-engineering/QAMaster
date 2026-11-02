@@ -125,11 +125,23 @@ test('asProjectConfig accepts the documented example', () => {
     testgen: { hallucination_tolerance: 0 },
     ai: 'on',
     owners: { Checkout: 'a.rao@example.com' },
-    gate: { retries: 1, noMatch: 'pass-with-warning' },
+    gate: { retries: 1, noMatch: 'pass-with-warning', sharedShare: 0.3 },
+    runners: { pytest: { root: '../shop/tests' }, 'playwright-bdd': { root: 'Shop' } },
   };
   const c = asProjectConfig(example, 'qamaster.json');
   assert.equal(c.app?.name, 'Shop');
   assert.deepEqual(c.owners, { Checkout: 'a.rao@example.com' });
+  assert.deepEqual(c.runners.pytest, { root: '../shop/tests' });
+});
+
+test('gate.sharedShare defaults to 0.3 and must be a fraction; a runner needs a root (Q37, Q38)', () => {
+  assert.equal(asProjectConfig({}, 'q.json').gate.sharedShare, 0.3);
+  assert.deepEqual(asProjectConfig({}, 'q.json').runners, {});
+  assert.throws(
+    () => asProjectConfig({ gate: { sharedShare: 30 } }, 'q.json'),
+    /"gate\.sharedShare" must be a fraction/,
+  );
+  assert.throws(() => asProjectConfig({ runners: { pytest: {} } }, 'q.json'), /"runners\.pytest" must be/);
 });
 
 test('publish.pathDepth defaults to 4, in the schema and in the template qam setup copies', () => {

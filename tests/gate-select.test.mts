@@ -126,7 +126,8 @@ test('linkRunner reads the prefix: bdd is playwright-bdd, and an unknown or miss
 // Q37: a file whose glob covers more than gate.sharedShare of the plan selects through smoke and the DSM, not path.
 test('a shared file selects no cases by path, and is reported with how many cases its tags cover', () => {
   const big = new Map(CAT);
-  for (let i = 0; i < 6; i++) big.set(1000 + i, kase(1000 + i, `Env ${i}`, ['path:src/environments/*']));
+  for (let i = 0; i < 9; i++) big.set(1000 + i, kase(1000 + i, `Env ${i}`, ['path:src/environments/*']));
+  for (let i = 0; i < 10; i++) big.set(2000 + i, kase(2000 + i, `Other ${i}`, []));
   const shared: { file: string; cases: number }[] = [];
   const r = candidates({
     change: change('src/environments/environment.ts', 'shop/cart/x.py'),
@@ -135,7 +136,7 @@ test('a shared file selects no cases by path, and is reported with how many case
     sharedShare: 0.3,
     shared,
   });
-  assert.deepEqual(shared, [{ file: 'src/environments/environment.ts', cases: 6 }]);
+  assert.deepEqual(shared, [{ file: 'src/environments/environment.ts', cases: 9 }]);
   assert.deepEqual(describe(r), { 701: ['path shop/cart/**'], 601: ['smoke'] });
 });
 
@@ -147,4 +148,12 @@ test('DSM reasons are added after smoke and before groups', () => {
     dsm: new Map([[502, ['/checkout']]]),
   });
   assert.deepEqual(describe(r), { 601: ['smoke'], 502: ['dsm /checkout'], 701: ['group cart: cart changed'] });
+});
+
+// Found by the gate's CLI test: in a 3-case plan, a file 2 cases cover is ordinary coverage, not shared.
+test('in a plan of fewer than 20 cases no file is shared', () => {
+  const shared: { file: string; cases: number }[] = [];
+  const r = candidates({ change: change('shop/checkout/a.py'), catalog: CAT, wanted: {}, sharedShare: 0.3, shared });
+  assert.deepEqual(shared, []);
+  assert.deepEqual([...r.keys()].sort(), [501, 502, 601]);
 });

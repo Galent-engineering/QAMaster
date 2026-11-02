@@ -21,7 +21,8 @@ export type ProjectConfig = {
   smoke: { max: number; priorities: Priority[]; categories: Category[] };
   ai: 'on' | 'off';
   owners: Record<string, string>; // module -> owner's email
-  gate: { retries: number; noMatch: 'pass-with-warning' };
+  gate: { retries: number; noMatch: 'pass-with-warning'; sharedShare: number };
+  runners: Record<string, { root: string }>; // runner name -> its folder, relative to the QA project (Q38)
 };
 
 export const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
@@ -29,7 +30,8 @@ export const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   smoke: { max: 20, priorities: ['P1'], categories: ['Positive', 'E2E'] },
   ai: 'on',
   owners: {},
-  gate: { retries: 1, noMatch: 'pass-with-warning' },
+  gate: { retries: 1, noMatch: 'pass-with-warning', sharedShare: 0.3 },
+  runners: {},
 };
 
 type Obj = Record<string, unknown>;
@@ -90,6 +92,16 @@ export function asProjectConfig(data: unknown, file: string): ProjectConfig {
   if (gate.retries !== undefined)
     out.gate.retries = isCount(gate.retries) ? gate.retries : bad('gate.retries', 'a whole number');
   if (gate.noMatch !== undefined && gate.noMatch !== 'pass-with-warning') bad('gate.noMatch', '"pass-with-warning"');
+  if (gate.sharedShare !== undefined) {
+    const ok = typeof gate.sharedShare === 'number' && gate.sharedShare > 0 && gate.sharedShare <= 1;
+    out.gate.sharedShare = ok ? (gate.sharedShare as number) : bad('gate.sharedShare', 'a fraction above 0, up to 1');
+  }
+
+  const runners = section(data, 'runners');
+  for (const [name, r] of Object.entries(runners)) {
+    if (!isObj(r) || typeof r.root !== 'string' || !r.root) bad(`runners.${name}`, '{ "root": "<folder>" }');
+    out.runners[name] = { root: (r as { root: string }).root };
+  }
 
   return out;
 }
