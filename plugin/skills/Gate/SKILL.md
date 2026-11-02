@@ -20,8 +20,9 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
 3. **Shared files:** a changed file whose path tags cover more than `gate.sharedShare` (30%) of a plan of 20 or more cases selects nothing by path; smoke and the DSM cover it (Q37).
 4. **Runner per case:** the automation link's prefix names it: `pytest:<node id>` or `bdd:@<TC id>` (Q9, Q38). Each runner runs in its own folder (`runners.<name>.root` in config/qamaster.json, else `QAMASTER_TEST_ROOT`). A link with no prefix, or a runner QAMaster doesn't have, blocks.
 5. **Not run:** no link means manual. A link the runner doesn't collect is **BROKEN**, and the check fails until it's fixed.
-6. **Approval** is bound to HEAD and, when the tests live in a QA project, to its commit. A new commit voids it.
-7. **Verdict:** fail if any approved case failed, didn't run or was skipped, or a selected link is BROKEN. Failed then passed on retry is *flaky*: a pass with a warning. Nothing matched is a pass with a coverage warning.
+6. **Just-in-time scripts (Q39):** `qam automate <id>` lists the selected cases that need a playwright-bdd script drafted or updated. The `AutomationCode` skill writes them, `qam check-scripts` must pass, and `qam automate <id> --done` records them and adds them to the plan. They stay uncommitted. Any edit after that voids the approval.
+7. **Approval** is bound to HEAD and, when the tests live in a QA project, to its commit. A new commit voids it.
+8. **Verdict:** fail if any approved case failed, didn't run or was skipped, or a selected link is BROKEN. Failed then passed on retry is *flaky*: a pass with a warning. A drafted script that fails is labelled *new script failed*: check the script or the app. Nothing matched is a pass with a coverage warning.
 
 ## Common answers
 
