@@ -1,6 +1,6 @@
 #!/bin/sh
-# Runs in the container as the user `node`, started by run.sh. Each step states the exit code QAMaster 0.3.0 gives today;
-# a step whose finding gets fixed changes its expected code (findings F1–F11 in the report).
+# Runs in the container as the user `node`, started by run.sh. Each step states the exit code QAMaster 0.3.1 gives
+# (findings F1–F11 of the 0.3.0 report, fixed in 0.3.1; docs/plans/0.3.1.md).
 set -u
 Q=/opt/qamaster/plugin/bin/qam
 E2E=/opt/e2e
@@ -21,11 +21,11 @@ newest_plan() { ls -t .qamaster/plans | head -1 | sed 's/\.json$//'; }
 ID='-c user.email=dev@example.test -c user.name=Dev'
 
 # ---------- pytest path: a clone of CheckMasterDemo, tests in the app repo ----------
-step 'Without git: setup names it, plan crashes (F1)'
+step 'Without git: setup and plan both name it (F1)'
 mkdir ~/nogit && cp -r /src/CheckMasterDemo/site /src/CheckMasterDemo/tests /src/CheckMasterDemo/pyproject.toml ~/nogit/
 cd ~/nogit
 expect 2 env PATH=$NOGIT $Q setup --no-install --app CheckMasterDemo
-expect 1 env PATH=$NOGIT QAMASTER_STORE=file $Q plan
+expect 2 env PATH=$NOGIT QAMASTER_STORE=file $Q plan
 
 step 'Setup in the demo clone, with the claude-code entry point'
 git clone -q /src/CheckMasterDemo ~/demo && cd ~/demo
@@ -37,10 +37,10 @@ git init -q --bare ~/remotes/demo.git && git remote set-url origin ~/remotes/dem
 git branch -m main && git push -q -u origin main && git remote set-head origin main
 git switch -q -c feature/coupon && echo '// SAVE10 is the launch coupon.' >>site/coupon.js && git $ID commit -qam 'coupon: note'
 
-step 'doctor: FIX app on a gate-only project, and no word on python, uv or browsers (F4)'
+step 'doctor: app is a WARN on a gate-only project; the pytest runner is checked (F4)'
 expect 2 $Q doctor
 
-step 'plan without uv: blocked, the hint says uv sync (F3)'
+step 'plan without uv: blocked, says how to install uv (F3)'
 expect 2 env PATH=$NOUV $Q plan
 
 step 'plan with python3 but no pytest (no uv.lock)'
@@ -48,9 +48,11 @@ cp -r ~/demo ~/demo-nolock && cd ~/demo-nolock && git rm -q uv.lock && git $ID c
 expect 2 $Q plan
 cd ~/demo
 
-step 'plan with uv: downloads Python 3.12 and the wheels without asking (F5)'
+step 'plan with uv but no environment: blocked with uv sync, nothing downloaded (F5)'
+expect 2 $Q plan
+expect 1 ls ~/.local/share/uv/python
+uv sync -q # the person's step: downloads Python 3.12 and the test dependencies
 expect 3 $Q plan
-ls ~/.local/share/uv/python
 P=$(newest_plan)
 
 step 'approve without a git identity'
@@ -58,8 +60,8 @@ expect 2 $Q approve "$P"
 git config --global user.email dev@example.test && git config --global user.name Dev
 expect 0 $Q approve "$P"
 
-step 'run without a browser: FAIL, not blocked (F2)'
-expect 1 $Q run "$P"
+step 'run without a browser: blocked with the install command (F2)'
+expect 2 $Q run "$P"
 
 step 'Chromium for Python, then check'
 uv run playwright install chromium >/dev/null 2>&1
@@ -76,8 +78,8 @@ step 'An unchecked commit: the hook blocks'
 git reset -q --hard HEAD~1 && echo x >>README.md && git commit -qam readme
 expect 0 sh -c "sh $E2E/hook-event.sh $PWD | grep -q 'hook exit=2'"
 
-step 'git off PATH in a gated repo: the hook allows (F11)'
-expect 0 env PATH=$NOGIT sh -c "sh $E2E/hook-event.sh $PWD | grep -q 'hook exit=0'"
+step 'git off PATH in a gated repo: the hook allows, with a note (F11)'
+expect 0 env PATH=$NOGIT sh -c "sh $E2E/hook-event.sh $PWD 2>&1 | grep -q \"couldn't check this push\""
 unset QAMASTER_STORE
 
 # ---------- playwright-bdd path: Juice Shop, a separate QA project ----------
@@ -108,9 +110,9 @@ expect 3 $Q plan
 P=$(newest_plan)
 expect 3 $Q automate "$P"
 
-step 'Draft two scripts; check-scripts before npm install says fail, not blocked (F8)'
+step 'Draft two scripts; check-scripts before npm install is blocked (F8)'
 cp -r $E2E/drafts/. ~/qa/JuiceShopOnline/
-expect 1 $Q check-scripts
+expect 2 $Q check-scripts
 (cd ~/qa/JuiceShopOnline && npm install --no-audit --no-fund --loglevel=error >/dev/null)
 expect 0 $Q check-scripts
 expect 3 $Q automate "$P" --done
@@ -125,20 +127,20 @@ expect 0 env QAMASTER_STORE=file $Q publish $R --apply
 grep -o 'bdd:@TC-[A-Z0-9-]*' testcases/testcases.csv | sort -u
 git commit -qam 'Publish script links' && git push -q
 
-step 'The next check runs the store-linked scripts'
+step 'The next check runs the store-linked scripts; the app repo shows no gate files (F7)'
 cd ~/juice-shop
 expect 0 $Q check --yes
+expect 1 sh -c "git status --porcelain --untracked-files=all | grep -E '\\.qamaster/(plans|verdicts|evidence)|\\.env'"
 
-step 'doctor dirties the QA project, and the next plan blocks (F6)'
+step 'doctor no longer blocks the next plan (F6)'
 expect 2 $Q doctor # FIX Playwright: setup ran with --no-install, so the crawl's package isn't there
-expect 2 $Q plan
-(cd ~/qa && git commit -qam doctor)
+expect 3 $Q plan
 
-step 'App unreachable: FAIL, not blocked (F2)'
+step 'App unreachable: blocked, names the URL (F2)'
 expect 3 $Q plan
 P=$(newest_plan)
 expect 0 $Q approve "$P"
-expect 1 env WEB_BASE_URL=http://localhost:3000 $Q run "$P"
+expect 2 env WEB_BASE_URL=http://localhost:3000 $Q run "$P"
 
 step 'Gate the app repo with the push hook'
 expect 0 $Q integrations add claude-code
