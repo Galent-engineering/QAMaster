@@ -83,6 +83,28 @@ export interface Runner {
   run(selection: Map<number, string[]>, root: string, evidence: string): Promise<TestResult[]>;
 }
 
+/** What `check-scripts` found: each gate's findings, empty when it passed. */
+export type ScriptCheck = { status: 'pass' | 'fail'; findings: Record<string, string[]> };
+
+/**
+ * Writes and checks the automation scripts of one framework (Q25), paired with the runners that run them (Q32). The
+ * drafting itself is the AutomationCode skill's; the adapter gives it a folder, finds which cases have scripts, and
+ * gates what was written.
+ */
+export interface Framework {
+  name: string;
+  /** The runners that can run its scripts (Q32). */
+  runners: string[];
+  /** Creates the automation folder from the template; never overwrites. Optional: an existing framework is there. */
+  create?(dir: string, app: string, webUrl: string): { created: boolean };
+  /** The quality gate. `known` is every TC ID of the TestGen runs; `quick` skips the slow checks. */
+  check(dir: string, o: { known: Set<string>; quick: boolean }): ScriptCheck;
+  /** TC ID -> the files whose scenarios are tagged with it. */
+  scripts(dir: string): Map<string, string[]>;
+  /** The automation link for a TC ID (Q9). */
+  link(localId: string): string;
+}
+
 /** Reads a git repository. Read-only by construction: it has no way to write. */
 export interface RepoReader {
   diff(base: string, head: string): Promise<Change>;

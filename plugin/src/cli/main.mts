@@ -12,6 +12,7 @@ import path from 'node:path';
 import { loadConfig } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import { ado } from './ado.mts';
+import { app, checkScripts } from './automation.mts';
 import { dsm } from './dsm.mts';
 import { gate } from './gate.mts';
 import { autSkills } from './knowledge.mts';
@@ -68,6 +69,8 @@ const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promi
   pipeline: (opts, args) => pipeline(loadConfig(opts.repo), args, opts.json),
   doctor: (opts, args) => doctor(loadConfig(opts.repo), args, opts.json),
   integrations: (opts, args) => integrations(loadConfig(opts.repo), args, opts.json),
+  app: (opts, args) => app(loadConfig(opts.repo), args, opts.json),
+  'check-scripts': (opts, args) => checkScripts(loadConfig(opts.repo), args, opts.json),
   plan: (opts, args) => gate(loadConfig(opts.repo), 'plan', args, opts.json),
   approve: (opts, args) => gate(loadConfig(opts.repo), 'approve', args, opts.json),
   run: (opts, args) => gate(loadConfig(opts.repo), 'run', args, opts.json),
