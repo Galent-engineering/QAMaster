@@ -11,6 +11,7 @@ import { BlockedError } from '../shared/errors.mts';
 import type { Item, ItemChange, ItemStep, LedgerEntry, PublishChange } from '../shared/models.mts';
 import type { ProjectConfig } from '../shared/schema.mts';
 import { readRunRecord, runHash, validationProblem } from '../testgen/run.mts';
+import { isSecretData } from '../testgen/validate.mts';
 
 /** A case as `testgen/output/<run>/testcases.json` has it; only what publishing reads. */
 export type PublishCase = {
@@ -178,8 +179,11 @@ export function derive(c: PublishCase, ctx: PublishContext): Derived {
   const tags = [...group, ...paths];
 
   const evidence = [...new Set([...c.evidence, ...c.steps.flatMap((s) => s.evidence ?? [])])];
-  const data = Object.entries(c.test_data ?? {}).map(
-    ([k, v]) => `- ${k} = ${typeof v === 'string' ? v : JSON.stringify(v)}`,
+  // the store is read by more people than the QA project: a credential stays in the run's test data only
+  const data = Object.entries(c.test_data ?? {}).map(([k, v]) =>
+    isSecretData(k, v)
+      ? `- ${k} = (kept in the run's test data, not published)`
+      : `- ${k} = ${typeof v === 'string' ? v : JSON.stringify(v)}`,
   );
   const description = [
     c.objective,

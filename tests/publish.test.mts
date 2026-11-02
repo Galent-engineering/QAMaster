@@ -388,3 +388,24 @@ test('0.2.2 B1: a description that differs only in blank lines or trailing space
   const r2 = diff(input([reworded], [entry('TC-1', 7, was.hash, { ownedTags: was.tags })], [have]));
   assert.deepEqual(r2.changes[0].fields, ['description']);
 });
+
+// From the 0.2.1 verification (B4): "- password = Qa-Cust#2026a" went to ADO in the description.
+test('0.2.2 B4: credential-like test data is masked in the published description; the rest is kept', () => {
+  const d = derive(
+    kase('TC-1', {
+      test_data: {
+        email: 'qa.customer01@example.test',
+        password: 'pw',
+        otp_secret: 'x',
+        note: 'Reg#Pass2026',
+        coupon: 'SAVE10',
+      },
+    }),
+    ctx(),
+  );
+  assert.match(d.description, /- email = qa\.customer01@example\.test/);
+  assert.match(d.description, /- coupon = SAVE10/);
+  for (const key of ['password', 'otp_secret', 'note'])
+    assert.match(d.description, new RegExp(`- ${key} = \\(kept in the run's test data, not published\\)`));
+  assert.doesNotMatch(d.description, /Reg#Pass2026|= pw\b/);
+});
