@@ -296,3 +296,19 @@ test('fix 8: no DSM or no run is blocked, not failed', () => {
   assert.equal(r.status, 2);
   assert.match(r.err, /No DSM at dsm\/dsm\.json\. Run qam dsm run first/);
 });
+
+// From the 0.2.0 publish walkthrough: titles like "Register with password Reg#Pass2026" went to ADO.
+test('0.2.1 A6: a credential-like value in a title, objective, expected result or step is a finding', () => {
+  const titled = findings((_, cases) => {
+    cases[0].title = 'Register with password Reg#Pass2026 succeeds';
+  });
+  assert.match(titled.join('\n'), /title contains a credential-like value "Reg#Pass2026": name the test data instead/);
+  const step = findings((_, cases) => {
+    lastStep(cases).action = 'Type Secr3t!x in the Password field';
+  });
+  assert.match(step.join('\n'), /step \d+: action contains a credential-like value "Secr3t!x"/);
+  // ordinary ids, routes and the rule itself are not credentials
+  const { manifest, cases } = run();
+  cases[0].title = 'Password field rejects fewer than 5 characters (TC-LOGIN-001)';
+  assert.equal(validate(manifest, cases, facts(), settings()).status, 'pass');
+});

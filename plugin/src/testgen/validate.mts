@@ -148,6 +148,22 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&');
 const s = (v: unknown) => (v === null || v === undefined ? 'None' : String(v)); // AQE printed Python's None
 const pair = (a: unknown, b: unknown) => JSON.stringify([a ?? null, b ?? null]);
 
+// a password-like word, and a token mixing at least three of lower case, upper case, digits and symbols
+const SECRET_WORD = /pass(word)?|passwd|pwd|secret|token|api[\s_-]?key|pin\b/i;
+const credentialLike = (text: unknown): string | null => {
+  if (typeof text !== 'string' || !SECRET_WORD.test(text)) return null;
+  for (const raw of text.split(/\s+/)) {
+    const t = raw.replace(/^["'`(]+|["'`).,;:]+$/g, '');
+    const kinds = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((re) => re.test(t)).length;
+    // ids (TC-LOGIN-001), routes and paths are never credentials
+    if (t.length >= 6 && kinds >= 3 && /\d|[^A-Za-z0-9]/.test(t) && !/^[A-Z]+(-[A-Z0-9]+)+$|\/|^https?:/.test(t))
+      return t;
+  }
+  return null;
+};
+const CREDENTIAL_HINT =
+  'name the test data instead (e.g. "the registered user\'s password"); the value belongs in test_data only';
+
 export function validate(
   manifest: Manifest | null,
   cases: TestCase[] | null,
@@ -211,6 +227,10 @@ export function validate(
     ids.add(w);
     for (const field of ['title', 'component', 'type', 'category', 'priority', 'objective', 'expected_result']) {
       if (!tc[field]) errors.push(`${w}: missing ${field}`);
+    }
+    for (const field of ['title', 'objective', 'expected_result'] as const) {
+      const secret = credentialLike(tc[field]);
+      if (secret) errors.push(`${w}: ${field} contains a credential-like value "${secret}": ${CREDENTIAL_HINT}`);
     }
     if (tc.type && !TYPES.includes(tc.type)) errors.push(`${w}: type ${s(tc.type)} not one of ${TYPES.join(', ')}`);
     if (tc.category && !CATEGORIES.includes(tc.category))
@@ -291,6 +311,10 @@ export function validate(
           errors.push(
             `${sw}: generic wording "${g}" in ${field}: say exactly what is done and with which value ("${s(value).slice(0, 80)}")`,
           );
+      }
+      for (const field of ['action', 'expected', 'data'] as const) {
+        const secret = credentialLike(st[field]);
+        if (secret) errors.push(`${sw}: ${field} contains a credential-like value "${secret}": ${CREDENTIAL_HINT}`);
       }
       const route = facts.screen(st.screen);
       if (!st.screen) errors.push(`${sw}: no screen`);

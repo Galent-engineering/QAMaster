@@ -66,6 +66,7 @@ A list of cases:
   - `severity`: Critical, High, Medium, Low, from the domain's risk hotspots and the requirement, never guessed;
   - `channel`: Web, Mobile Web, Android, iOS, API, Desktop.
 - **Report fields:** `feature` is exactly one word. `test_data` is `{}` when the case needs none.
+- **No credentials in the text.** A password, token or key value goes in `test_data` only. Titles, objectives, expected results and steps name it ("the registered user's password"), never quote it: they are published to the test case store as written. The validator reports a credential-like value there as a finding.
 - **Steps:**
   - `screen` is where the action happens; `leads_to` is where it navigates.
   - The first step is on an entry screen from the context pack, unless `start_via: "deep-link"` with a `start_via_reason`.
