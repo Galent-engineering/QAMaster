@@ -147,8 +147,39 @@ test('derive: group tags are the module and module-submodule, as lower-case word
 
 test('derive: path tags are the folders behind the screens a case visits, without the repo name, with a folder inside another dropped', () => {
   const t = derive(kase('TC-1'), ctx()).tags.filter((x) => x.startsWith('path:'));
-  // /cart owns src/cart/Cart.tsx, src/cart/api/cart.ts (inside src/cart) and src/shared/money.ts; /checkout adds src/checkout
-  assert.deepEqual(t, ['path:a/b/c/**', 'path:src/cart/**', 'path:src/checkout/**', 'path:src/shared/**']);
+  // pathDepth 3: a folder at that depth is a glob of its subtree; a shallower folder covers only its own files (Q37)
+  assert.deepEqual(t, [
+    'path:a/b/c/**',
+    'path:src/cart/*',
+    'path:src/cart/api/**',
+    'path:src/checkout/*',
+    'path:src/shared/*',
+  ]);
+});
+
+// From the 0.2.0 publish walkthrough: app.routing.ts gave path:frontend/src/app/**, which covers the whole app.
+test("0.2.1 A4: a file in a folder shallower than pathDepth covers only that folder's files, not its subfolders", () => {
+  const c = ctx({
+    settings: { ...ctx().settings, publish: { pathDepth: 4, suiteBy: 'module' } },
+    dsm: {
+      page: {
+        nodes: [
+          {
+            id: '/cart',
+            files: [
+              'shop:frontend/src/app/app.routing.ts',
+              'shop:frontend/src/app/login/login.component.ts',
+              'shop:frontend/src/environments/environment.ts',
+            ],
+          },
+        ],
+      },
+    } as never,
+  });
+  assert.deepEqual(
+    derive(kase('TC-1'), c).tags.filter((x) => x.startsWith('path:')),
+    ['path:frontend/src/app/*', 'path:frontend/src/app/login/**', 'path:frontend/src/environments/*'],
+  );
 });
 
 test('derive: a folder deeper than pathDepth is cut there, and a file at the repo root is the file itself', () => {
@@ -161,7 +192,7 @@ test('derive: a folder deeper than pathDepth is cut there, and a file at the rep
 
 test('derive: files cited as code evidence count too, and a screen the DSM cannot place gives no tag and is flagged', () => {
   const cited = derive(kase('TC-1', { evidence: ['code:shop:src/rules/coupon.ts:12'] }), ctx());
-  assert.ok(cited.tags.includes('path:src/rules/**'));
+  assert.ok(cited.tags.includes('path:src/rules/*'));
   const none = derive(
     kase('TC-2', { steps: [{ screen: '/lonely', action: 'Open', expected: 'It opens' }], evidence: [] }),
     ctx(),

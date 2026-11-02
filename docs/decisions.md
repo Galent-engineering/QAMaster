@@ -588,6 +588,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Gave up:**
   - A change to a shared file selects fewer cases by path, so the plan relies on smoke and DSM impact for it.
   - Whether a file counts as shared depends on the plan's size at check time, so it can change as cases are published.
+- **Amended 2026-11-02 (while building 0.2.1 A4):** a file in a folder shallower than `pathDepth` is tagged with that folder's own files, `dir/*` (`path:frontend/src/app/*`), not as the file itself. `*` matches within one folder only, as in CheckMaster's matcher. A new file added to the same folder is still covered, and subfolders aren't. A folder at `pathDepth` or deeper keeps `dir/**`.
+
 
 **Q38. The runner is picked for each case, from its automation link** (2026-11-02, accepted 2026-11-02; amends Q4 and Q32, builds on Q9)
 - **Decision:**

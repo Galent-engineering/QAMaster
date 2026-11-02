@@ -91,7 +91,10 @@ test('publish: a dry run shows what would be created, writes nothing, and exits 
   assert.equal(r.status, 3, r.err);
   assert.match(r.out, /QAMaster publish 20261030-1200-cart → File testcases\/testcases\.csv, plan Shop \(dry run\)/);
   assert.match(r.out, /Reviewed by jo@example\.test on 2026-10-30/);
-  assert.match(r.out, /Create \(2\)\n\s+TC-CART-001\s+Case TC-CART-001\s+suite Cart · tags cart, path:src\/cart\/\*\*/);
+  assert.match(
+    r.out,
+    /Create \(2\)\n\s+TC-CART-001\s+Case TC-CART-001\s+suite Cart · tags cart, path:src\/cart\/\*(,|\s|$)/,
+  );
   assert.match(r.out, /Reply yes to apply/);
   assert.equal(p.exists(CSV), false);
   assert.equal(p.exists(LEDGER), false);

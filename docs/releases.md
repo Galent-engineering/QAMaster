@@ -27,7 +27,7 @@ Publish (Q33, Q34), plus the fixes the 0.1.0 walkthrough turned up (WALKTHROUGH-
 Plan: [plans/0.2.1.md](plans/0.2.1.md). It holds the fixes from the [0.2.0 publish walkthrough](demos/2026-10-30-0.2.0-publish-feedback.md) that the 0.3.0 gate depends on:
 - review needs an explicit approval;
 - the plan is named after the app;
-- a file directly in a shallow folder is tagged as itself, not as the whole folder (Q37; broad tags are kept, and the 0.3.0 gate decides what a shared file selects);
+- a file in a shallow folder is tagged with that folder's own files (`dir/*`), not the whole subtree (Q37; broad tags are kept, and the 0.3.0 gate decides what a shared file selects);
 - smoke is counted across the whole plan;
 - credential-like text in test cases is a validator finding;
 - the `file` store blocks when both of its files exist (Q36, accepted 2026-11-02).

@@ -135,10 +135,16 @@ export type Derived = {
 /** "<repo>:<path>" to "<path>". */
 const inRepo = (f: string) => f.replace(/^[\w.-]+:/, '');
 
-/** A file's folder as a glob at most `depth` folders deep; a file at the repo root stands for itself. */
+/**
+ * A file's folder as a glob: cut to `depth` folders and covering the subtree when it is that deep; a shallower folder
+ * covers only its own files (`dir/*`), since its subfolders are other parts of the app (Q37). A file at the repo root
+ * stands for itself.
+ */
 function pathTag(file: string, depth: number): string {
   const dir = path.posix.dirname(file);
-  return dir === '.' ? `path:${file}` : `path:${dir.split('/').slice(0, depth).join('/')}/**`;
+  if (dir === '.') return `path:${file}`;
+  const parts = dir.split('/');
+  return parts.length < depth ? `path:${dir}/*` : `path:${parts.slice(0, depth).join('/')}/**`;
 }
 
 function sources(c: PublishCase, ctx: PublishContext): string[] {

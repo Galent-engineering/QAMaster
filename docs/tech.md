@@ -211,7 +211,7 @@ load      the run's testcases.json; refuse unless validation == pass and reviewe
           warn (don't block) if config.owners names an owner for the run's module and reviewedBy differs
 derive    tags:   path:<glob>   from DSM evidence on every screen the case visits (dsm.json screen → source files),
                                 collapsed to folders at config.publish.pathDepth (default 4), deduplicated;
-                                a file shallower than pathDepth is tagged as itself (Q37). Broad tags are
+                                a file in a folder shallower than pathDepth gives dir/*, that folder's own files (Q37). Broad tags are
                                 kept; the gate's path selector decides what a shared file selects
                   <module>, <module>-<sub-module>
                   smoke         suggested when priority P1 and category in {Positive, E2E}, up to config.smoke.max

@@ -119,7 +119,7 @@ test('ado publish: --apply creates the work item with its tags and steps, adds i
   assert.match(p.ledger().store, /^Azure DevOps org\/Shop/);
   assert.equal(field(ado, entry.trackerId, 'System.WorkItemType'), 'Test Case');
   assert.equal(field(ado, entry.trackerId, 'System.Title'), 'Case TC-CART-001');
-  assert.match(String(field(ado, entry.trackerId, 'System.Tags')), /cart; path:src\/cart\/\*\*/);
+  assert.match(String(field(ado, entry.trackerId, 'System.Tags')), /cart; path:src\/cart\/\*(;|$)/);
   const suite = ado.plans[0].suites.find((s) => s.name === 'Cart');
   assert.ok(suite?.members.has(entry.trackerId), 'the case is in the Cart suite, created for it');
   assert.ok(fs.existsSync(path.join(p.dir, 'testgen/output', RUN, 'published.json')));
