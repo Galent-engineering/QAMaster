@@ -58,5 +58,6 @@ export function checkScripts(cfg: Config, argv: string[], json: boolean): number
     for (const [gate, list] of Object.entries(r.findings))
       for (const f of list) console.log(`  ${gate.padEnd(10)} ${f}`);
   }
-  return r.status === 'pass' ? 0 : 1;
+  // packages not installed is a setup problem to fix first, not a failed check (exit 2)
+  return r.status === 'pass' ? 0 : r.findings.install ? 2 : 1;
 }

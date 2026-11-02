@@ -80,10 +80,23 @@ export function check(event: { tool_input?: { command?: string }; cwd?: string }
   }
 }
 
+/** A gated repo at or above `cwd`, found without git (for the note when git is missing). */
+function gatedByFiles(cwd: string): boolean {
+  for (let dir = path.resolve(cwd); ; dir = path.dirname(dir)) {
+    if (gated(dir)) return true;
+    if (path.dirname(dir) === dir) return false;
+  }
+}
+
 if (import.meta.main) {
   let reason: string | null = null;
   try {
-    reason = check(JSON.parse(fs.readFileSync(0, 'utf8')));
+    const event = JSON.parse(fs.readFileSync(0, 'utf8'));
+    reason = check(event);
+    // Q14: a push the hook can't judge is allowed, but never silently (F11)
+    const push = isPush(event.tool_input?.command ?? '');
+    if (!reason && push && spawnSync('git', ['--version']).error && gatedByFiles(event.cwd || '.'))
+      process.stderr.write("QAMaster couldn't check this push: git isn't available.\n");
   } catch {
     reason = null; // a hook that can't read its event never blocks
   }

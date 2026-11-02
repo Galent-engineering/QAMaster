@@ -123,6 +123,7 @@ test('a failed test is retried once; failed then passed is flaky, with both atte
           durationS: 0,
           testIds,
           evidence: testCaseId === 501 && evidence.endsWith('attempt-1') ? ['shot.png'] : [],
+          ...(testCaseId === 501 && evidence.endsWith('attempt-1') ? { error: 'Timeout waiting for #total' } : {}),
         }),
       );
     },
@@ -134,6 +135,11 @@ test('a failed test is retried once; failed then passed is flaky, with both atte
   assert.equal(verdict.result, 'pass');
   assert.equal(verdict.results.find((r) => r.testCaseId === 501)?.status, 'flaky');
   assert.deepEqual(verdict.results.find((r) => r.testCaseId === 501)?.evidence, ['shot.png']);
+  assert.equal(
+    verdict.results.find((r) => r.testCaseId === 501)?.error,
+    'Timeout waiting for #total',
+    'F10: the first error is kept',
+  );
 });
 
 test('a selected case whose runner QAMaster does not have blocks the plan (Q38)', async () => {

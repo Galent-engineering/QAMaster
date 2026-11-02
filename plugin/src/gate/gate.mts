@@ -171,7 +171,12 @@ export async function runPlan(g: Gate, plan: Plan, evidence: string): Promise<Ve
     for (const [id, retry] of await attempt(g, runners, failed, `${evidence}/attempt-${n}`)) {
       // the failed attempt's evidence shows what went wrong
       if (retry.status === 'passed')
-        results.set(id, { ...retry, status: 'flaky', evidence: results.get(id)?.evidence ?? [] });
+        results.set(id, {
+          ...retry,
+          status: 'flaky',
+          evidence: results.get(id)?.evidence ?? [],
+          ...(results.get(id)?.error ? { error: results.get(id)?.error } : {}),
+        });
     }
   }
   const ordered = selected.map(

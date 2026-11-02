@@ -105,13 +105,13 @@ test('reuse: duplicate and copy-paste steps, and scenarios that differ only in v
   );
 });
 
-test('check-scripts fails with the install step when the folder has no node_modules', () => {
+test('check-scripts is blocked with the install step when the folder has no node_modules', () => {
   const qa = tmpDir('qam-app-');
   write(qa, { 'config/qamaster.json': JSON.stringify({ app: { name: 'Shop', url: 'http://localhost:3000' } }) });
   qam(qa, 'app', 'create');
   write(path.join(qa, 'Shop'), GOOD);
   write(qa, { 'testgen/output/r1/testcases.json': JSON.stringify([{ id: 'TC-LOGIN-001', steps: [] }]) });
   const r = qam(qa, 'check-scripts', '--quick');
-  assert.equal(r.status, 1);
+  assert.equal(r.status, 2, 'a setup problem, not a failed check (0.3.1 F8)');
   assert.match(r.out, /Script check: fail \(Shop\/\)\n\s+install\s+playwright-bdd isn't installed/);
 });

@@ -92,3 +92,16 @@ test('a broken event never blocks', () => {
   const r = spawnSync(process.execPath, [HOOK], { input: 'not json', encoding: 'utf8' });
   assert.equal(r.status, 0);
 });
+
+// From the clean Docker run (F11): without git a gated repo's push was allowed silently. Q14: still allow, but say so.
+test('0.3.1 F11: in a gated repo without git, the push is allowed with a note', () => {
+  const dir = repo();
+  const event = { tool_name: 'Bash', tool_input: { command: 'git push' }, cwd: dir };
+  const r = spawnSync(process.execPath, [HOOK], {
+    input: JSON.stringify(event),
+    encoding: 'utf8',
+    env: { ...process.env, PATH: '/nonexistent' },
+  });
+  assert.equal(r.status, 0);
+  assert.match(r.stderr, /QAMaster couldn't check this push: git isn't available/);
+});

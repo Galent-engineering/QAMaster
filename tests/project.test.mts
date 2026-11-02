@@ -376,3 +376,10 @@ test('0.2.1 A3: setup names the claude-hooks integration after --app, in the sam
   const ids = read(path.join(qa, '.qamaster/integrations.json')).integrations.map((i: { id: string }) => i.id);
   assert.deepEqual(ids, ['claude-hooks:JuiceShopOnline']);
 });
+
+// From the clean Docker run (F9): setup installed Chromium without its system libraries, and said nothing.
+test("0.3.1 F9: on Linux, setup says how to install Chromium's system libraries", async () => {
+  const { browserDepsHint } = await import('../plugin/src/pipeline/setup.mts');
+  assert.match(browserDepsHint('linux'), /sudo npx playwright install-deps chromium/);
+  assert.equal(browserDepsHint('darwin'), '');
+});

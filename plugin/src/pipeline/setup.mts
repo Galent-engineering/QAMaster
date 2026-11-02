@@ -271,10 +271,17 @@ function install(
     steps.push({
       step: 'Playwright browsers',
       status: b.ok ? 'ok' : 'failed',
-      detail: b.ok ? list.join(', ') : b.out.split('\n').slice(-2).join(' '),
+      detail: b.ok ? `${list.join(', ')}${browserDepsHint(process.platform)}` : b.out.split('\n').slice(-2).join(' '),
     });
   }
   return steps;
+}
+
+/** On Linux, Chromium needs OS libraries that npm can't install (F9): say how, since it needs root. */
+export function browserDepsHint(platform: string): string {
+  return platform === 'linux'
+    ? '. On Linux it also needs its system libraries: sudo npx playwright install-deps chromium'
+    : '';
 }
 
 export type SetupOptions = { check: boolean; install: boolean; browsers: 'chromium' | 'all' | 'none' };

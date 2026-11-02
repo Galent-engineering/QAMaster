@@ -218,10 +218,11 @@ export function renderVerdict(v: Verdict, plan: Plan): string {
     lines.push(
       `  ${r.status.padEnd(8)} TC${r.testCaseId}  ${title(titles.get(r.testCaseId) ?? '')}  ${r.durationS.toFixed(1)}s`,
     );
-    if (r.error && r.status !== 'flaky') {
+    if (r.error) {
       const errs = r.error.split('\n').filter((l) => l.trim());
       // pytest marks its assertion lines with E; Playwright's message leads with the assertion
       const shown = errs.filter((l) => l.startsWith('E ')).slice(0, 4);
+      if (r.status === 'flaky') lines.push('      first attempt:');
       lines.push(...(shown.length ? shown : errs.slice(0, 5)).map((l) => `      ${l}`));
     }
     lines.push(...r.evidence.map((f) => `      evidence: ${f}`));
