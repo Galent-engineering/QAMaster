@@ -972,6 +972,50 @@ It uses `IN GROUP 'Microsoft.RequirementCategory'` instead of a fixed list of ty
 - publish itself (preview, ledger, `--apply`), which is porting step 7;
 - surfacing the requirements fallback notice in a front end (feature 6), and whether a team's "bugs as requirements" setting counts.
 
+### Gate: CheckMaster porting steps 5 and 6 (Learn 2026-11-02)
+
+Plan: [plans/0.3.0.md](plans/0.3.0.md), step B1. Source: `../CheckMasterPlugin/plugin/src/checkmaster/`.
+
+**What it is.** About 1,000 lines of Python in five parts:
+- `git.collect`: the committed diff from the merge base with `--base` up to HEAD.
+- `selection`: path, smoke and group reasons, then split into run and not run (manual, BROKEN).
+- `pipeline`: plan, approve, run.
+- `verdict.decide`.
+- `adapters/pytest_runner` plus the `pytest_plugin` shim: list, select, report and evidence, and the retry loop.
+
+State lives in `.checkmaster/plans/<id>.json` and `.checkmaster/verdicts/<head>.json`. The push hook (`hooks/pre_push.py`) is a `PreToolUse` hook on Bash. It allows a push only when `verdicts/<HEAD>.json` says pass, and only in repos that have `.checkmaster/`.
+
+**What ports as is**
+- The glob matcher: `**` crosses folders, `*` and `?` stay within one (QAMaster's `dir/*` tags rely on this).
+- The reason order, the manual and BROKEN split, and the parametrized-variant resolve.
+- The verdict rules (Q13), and the plan and verdict layouts with QAMaster's names.
+- The shim, with `--checkmaster-*` renamed to `--qamaster-*`, standard library and pytest only.
+- The hook's push detection: `git -C x push`, `VAR=1 git push`, and chained commands.
+
+**What changes for QAMaster**
+
+| # | CheckMaster | QAMaster | Why |
+|---|---|---|---|
+| 1 | The link is a raw pytest node ID | `<runner>:<id>` (Q9), and the gate picks the runner from the prefix (Q38) | Mixed runners |
+| 2 | Retries live in the pytest runner | Retries move into the gate engine, around any runner | playwright-bdd gets the same flaky rule |
+| 3 | Approval is bound to HEAD only | Bound to HEAD, the QA project's commit (Q22) and the hash of the drafted scripts (Q39) | Tests can live elsewhere, and scripts are drafted |
+| 4 | The approver is `git config user.name` | `git config user.email`, as `qam review` records it (Q12) | One identity across the gates |
+| 5 | Selection reasons: path, smoke, tag | Plus the shared-file rule (Q37) and DSM impact and gaps (Q31 `dsm`, using `dsm/update.mts` `impact()`) | QAMaster has the DSM |
+| 6 | Hook in Python | Hook in Node (`.mts`, standard library), because QAMaster needs no Python except the pytest shim | One runtime |
+| 7 | Any repo with `.checkmaster/` is gated | See open question 4: the QA project also has `.qamaster/` (ledger, cache) | Pushing scripts must not need a verdict |
+
+**CheckMaster behaviours worth keeping in mind**
+- `collect` reads committed changes only. Uncommitted edits aren't in the plan. That's right for a push gate, because the push sends commits.
+- `run` collects the tests again before running, so a test deleted after approval shows as `not_run` and fails the verdict.
+- "No test case matches" is a pass with a warning (`no_test_cases: warn`). That's Q13's coverage-gap pass.
+- A group named with `--tag` that no case has blocks the plan (exit 2), so a typo in a Claude-picked group is caught.
+
+**Open questions (for you)**
+1. **Links with no prefix.** CheckMasterDemo's ADO cases hold raw node IDs, such as `tests/test_cart.py::test_add`. Treat a link with no prefix as `QAMASTER_RUNNER`'s runner, or block until it's relinked?
+2. **Catalog read.** Does `qam plan` read the store live every time, or through the store cache (Q34)?
+3. **The DSM selector in the MVP.** Selecting the cases that visit DSM-impacted screens means mapping screens to cases through the runs and the ledger. Is that in 0.3.0, or do shared files select smoke only until then?
+4. **What the hook gates.** Only repos where the `claude-hooks` integration is recorded (`.qamaster/integrations.json`), so the QA project's own pushes are never blocked?
+
 ## Roadmap: what comes after the v1 MVP
 
 These AQE features are left out of step 3 on purpose. Each becomes its own feature later, through the same loop. The v2 / v3 split is a proposal: v2 is what makes the build stages richer for the teams already using v1, and v3 is broader tooling. [product.md](product.md#scope) carries the same lists.
