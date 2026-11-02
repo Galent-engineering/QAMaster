@@ -176,3 +176,15 @@ test('json file store: QAMASTER_STORE=file uses testcases/testcases.json when th
   assert.equal(JSON.parse(fs.readFileSync(path.join(dir, 'testcases', 'testcases.json'), 'utf8')).length, 1);
   assert.equal(fs.existsSync(path.join(dir, 'testcases', 'testcases.csv')), false);
 });
+
+// Q36, amended on acceptance (2026-11-02): with both files, the CSV no longer wins silently.
+test('0.2.1 A7: the file store blocks when testcases.csv and testcases.json both exist, naming which to remove', () => {
+  const dir = tmpDir('qam-json-both-');
+  fs.mkdirSync(path.join(dir, 'testcases'));
+  fs.writeFileSync(path.join(dir, 'testcases', 'testcases.json'), '[]\n');
+  fs.writeFileSync(path.join(dir, 'testcases', 'testcases.csv'), '');
+  assert.throws(
+    () => buildStore(loadConfig(dir, { QAMASTER_STORE: 'file' })),
+    blocked(/testcases\.csv and testcases\/testcases\.json both exist.*Remove the one you don't use/),
+  );
+});

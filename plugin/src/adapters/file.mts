@@ -519,6 +519,11 @@ export function makeFileStore(config: Config): TestCaseStore {
   const plan = config.project.app?.name ?? path.basename(config.root);
   const csv = path.join(base, FILE_STORE_PATH);
   const json = path.join(base, JSON_STORE_PATH);
-  const rel = !fs.existsSync(csv) && fs.existsSync(json) ? JSON_STORE_PATH : FILE_STORE_PATH;
+  // with both, one would win silently and the other's cases would stop being read (Q36, amended)
+  if (fs.existsSync(csv) && fs.existsSync(json))
+    throw new BlockedError(
+      `${FILE_STORE_PATH} and ${JSON_STORE_PATH} both exist in ${base}, so the file store can't tell which holds the test cases. Remove the one you don't use (keep it in git history if you need it), then run again.`,
+    );
+  const rel = fs.existsSync(json) ? JSON_STORE_PATH : FILE_STORE_PATH;
   return new FileStore(path.join(base, rel), plan, rel.split(path.sep).join('/'));
 }
