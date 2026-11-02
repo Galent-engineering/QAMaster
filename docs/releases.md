@@ -22,17 +22,21 @@ Publish (Q33, Q34), plus the fixes the 0.1.0 walkthrough turned up (WALKTHROUGH-
 | Doctor warns when an existing config misses a newer default (`pathDepth`, scan excludes) | `cli/project.mts` | |
 | The `file` store also reads and writes `testcases/testcases.json`, used when there is no CSV | `adapters/file.mts`, `shared/schema.mts` | Q36 (proposed) |
 
-## 0.2.1: planned
+## 0.2.1: fixes from the publish walkthrough that the gate depends on
 
-Plan: [plans/0.2.1.md](plans/0.2.1.md). It holds the fixes from the [0.2.0 publish walkthrough](demos/2026-10-30-0.2.0-publish-feedback.md) that the 0.3.0 gate depends on:
-- review needs an explicit approval;
-- the plan is named after the app;
-- a file in a shallow folder is tagged with that folder's own files (`dir/*`), not the whole subtree (Q37; broad tags are kept, and the 0.3.0 gate decides what a shared file selects);
-- smoke is counted across the whole plan;
-- credential-like text in test cases is a validator finding;
-- the `file` store blocks when both of its files exist (Q36, accepted 2026-11-02).
+Plan: [plans/0.2.1.md](plans/0.2.1.md). Built on `feature/0.2.1-fixes`, released 2026-11-02. Findings from the [0.2.0 publish walkthrough](demos/2026-10-30-0.2.0-publish-feedback.md).
 
-The other findings, and the earlier 0.2.1 backlog, are listed with where each one goes in that plan's [Later](plans/0.2.1.md#later) section.
+| Change | Where | Decision |
+|---|---|---|
+| Review needs an explicit yes to "Do you approve run X as reviewed?"; a request for the dry run isn't one, and publish never records a review | `skills/TestGen`, `skills/Publish`, `commands/publish.md` | Q12 |
+| The ADO plan is named after `app.name`, else the folder; messages say "named like the app" | `adapters/ado.mts` | |
+| Setup names the `claude-hooks` integration after the app it writes in the same run | `cli/project.mts` | Q27 |
+| A file in a folder shallower than `pathDepth` is tagged `dir/*` (that folder's own files), not `dir/**`. Existing cases show as updates on the next publish | `publish/publish.mts` | Q37 |
+| Smoke is counted across the whole plan; the preview names cases held back by a full cap; `--apply` exits 3 and writes nothing when the cap filled since the dry run (recorded in `.qamaster/cache/`); apply reports the smoke in the plan | `publish/publish.mts`, `cli/publish.mts`, `skills/Publish` | Q8 |
+| A credential-like value in a title, objective, expected result or step is a validator finding | `testgen/validate.mts`, `skills/TestGen/references/cases.md` | Q10 |
+| The `file` store blocks when `testcases.csv` and `testcases.json` both exist | `adapters/file.mts` | Q36 |
+
+The other findings, and the earlier 0.2.1 backlog, are in that plan's [Later](plans/0.2.1.md#later) section.
 
 ## 0.3.0: planned
 
