@@ -64,9 +64,9 @@ Plan: [plans/0.3.0.md](plans/0.3.0.md). Built on `feature/0.3.0-gate`, tested en
 | Publish links only pushed scripts, with a `Script:` line at the commit | `publish/scripts.mts` | Q39, Q40 |
 | `/qamaster:check`, the Gate skill, and the push hook (only in repos with `claude-hooks` recorded) | `commands/check.md`, `skills/Gate`, `hooks/` | Q14 |
 
-## 0.3.1: planned
+## 0.3.1: built, bump pending
 
-Plan: [plans/0.3.1.md](plans/0.3.1.md). It holds the prerequisites a clean machine needs, checked and explained, from the [clean Docker run](demos/2026-11-02-0.3.0-docker-e2e.md) (F1–F11):
+Plan: [plans/0.3.1.md](plans/0.3.1.md). Built on `feature/0.3.1-setup-gaps` and checked in a clean container ([re-run](demos/2026-11-02-0.3.0-docker-e2e.md#031-re-run-2026-11-02): 41 of 41 steps). It holds the prerequisites a clean machine needs, checked and explained, from the [clean Docker run](demos/2026-11-02-0.3.0-docker-e2e.md) (F1–F11):
 - runner setup problems block instead of failing, and pytest never downloads without a yes (Q41);
 - the gate's local files are kept out of the app repo's commits (Q42);
 - `qam doctor` checks the gate's prerequisites;

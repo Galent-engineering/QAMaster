@@ -54,7 +54,7 @@ export function checkScripts(cfg: Config, argv: string[], json: boolean): number
   const r = playwrightBdd.check(dir, { known, quick: !!v.quick });
   if (json) console.log(JSON.stringify(r, null, 1));
   else {
-    console.log(`Script check: ${r.status} (${path.basename(dir)}/)`);
+    console.log(`Script check: ${r.findings.install ? 'blocked' : r.status} (${path.basename(dir)}/)`);
     for (const [gate, list] of Object.entries(r.findings))
       for (const f of list) console.log(`  ${gate.padEnd(10)} ${f}`);
   }

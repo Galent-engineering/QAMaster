@@ -113,5 +113,5 @@ test('check-scripts is blocked with the install step when the folder has no node
   write(qa, { 'testgen/output/r1/testcases.json': JSON.stringify([{ id: 'TC-LOGIN-001', steps: [] }]) });
   const r = qam(qa, 'check-scripts', '--quick');
   assert.equal(r.status, 2, 'a setup problem, not a failed check (0.3.1 F8)');
-  assert.match(r.out, /Script check: fail \(Shop\/\)\n\s+install\s+playwright-bdd isn't installed/);
+  assert.match(r.out, /Script check: blocked \(Shop\/\)\n\s+install\s+playwright-bdd isn't installed/);
 });
