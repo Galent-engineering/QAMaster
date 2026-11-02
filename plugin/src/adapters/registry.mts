@@ -9,6 +9,7 @@ import { BlockedError } from '../shared/errors.mts';
 import { makeAdoRequirements, makeAdoStore } from './ado.mts';
 import type { RequirementSource, Runner, TestCaseStore } from './base.mts';
 import { makeFileStore } from './file.mts';
+import { PytestRunner } from './runner-pytest.mts';
 
 type Factory<T> = (config: Config) => T;
 
@@ -23,7 +24,7 @@ export const STORES: Record<string, Factory<TestCaseStore>> = { ado: makeAdoStor
 export const REQUIREMENTS: Record<string, Factory<RequirementSource>> = { ado: makeAdoRequirements };
 export const RUNNERS: Record<string, Factory<Runner>> = {
   'playwright-bdd': notBuilt('playwright-bdd'),
-  pytest: notBuilt('pytest'),
+  pytest: () => new PytestRunner(),
 };
 
 function pick<T>(registry: Record<string, Factory<T>>, key: string, name: string, config: Config): T {
