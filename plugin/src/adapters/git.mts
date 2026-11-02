@@ -10,6 +10,9 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { RepoSnapshot } from '../dsm/scan.mts';
+import { BlockedError } from '../shared/errors.mts';
+import type { Change } from '../shared/models.mts';
+import type { RepoReader } from './base.mts';
 
 export function git(dir: string, args: string[], input?: string): { ok: boolean; stdout: Buffer } {
   const r = spawnSync('git', ['-C', dir, ...args], { input, maxBuffer: 1024 * 1024 * 1024 });
@@ -130,4 +133,57 @@ export function changesSince(
     .split('\n')
     .filter(Boolean);
   return rec;
+}
+
+/** git's answer as text, or a BlockedError with what it said. */
+function gitText(dir: string, args: string[]): string {
+  const r = spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  if (r.status !== 0) throw new BlockedError(`git ${args.join(' ')} failed in ${dir}: ${(r.stderr || '').trim()}`);
+  return r.stdout;
+}
+
+/** The branch a change is compared with when --base isn't given: origin/HEAD, else main, else master. */
+export function defaultBase(dir: string): string {
+  for (const ref of ['origin/HEAD', 'main', 'master'])
+    if (git(dir, ['rev-parse', '--verify', '--quiet', ref]).ok) return ref;
+  throw new BlockedError(`Couldn't find a base branch (origin/HEAD, main or master) in ${dir}. Pass --base <branch>.`);
+}
+
+/** The gate's view of the app repo (ported from CheckMaster's git.py). Only reads. */
+export class GitRepoReader implements RepoReader {
+  private readonly dir: string;
+
+  constructor(dir: string) {
+    this.dir = dir;
+  }
+
+  /** The committed change from the merge base of `base` and `head` up to `head`; a rename keeps its new path. */
+  async diff(base: string, head: string): Promise<Change> {
+    const from = gitText(this.dir, ['merge-base', base, head]).trim();
+    const files = gitText(this.dir, ['diff', '--name-status', '-M', from, head])
+      .split('\n')
+      .filter(Boolean)
+      .map((line) => {
+        const [status, ...paths] = line.split('\t');
+        return { path: paths[paths.length - 1], status: status[0] };
+      });
+    return {
+      base,
+      head: gitText(this.dir, ['rev-parse', head]).trim(),
+      branch: gitText(this.dir, ['rev-parse', '--abbrev-ref', 'HEAD']).trim(),
+      files,
+    };
+  }
+
+  async readFile(ref: string, file: string): Promise<string> {
+    return gitText(this.dir, ['show', `${ref}:${file}`]);
+  }
+
+  async listTree(ref: string): Promise<string[]> {
+    return gitText(this.dir, ['ls-tree', '-r', '--name-only', ref]).split('\n').filter(Boolean);
+  }
+
+  async head(): Promise<string> {
+    return gitText(this.dir, ['rev-parse', 'HEAD']).trim();
+  }
 }
