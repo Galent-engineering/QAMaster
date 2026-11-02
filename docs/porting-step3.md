@@ -1010,11 +1010,11 @@ State lives in `.checkmaster/plans/<id>.json` and `.checkmaster/verdicts/<head>.
 - "No test case matches" is a pass with a warning (`no_test_cases: warn`). That's Q13's coverage-gap pass.
 - A group named with `--tag` that no case has blocks the plan (exit 2), so a typo in a Claude-picked group is caught.
 
-**Open questions (for you)**
-1. **Links with no prefix.** CheckMasterDemo's ADO cases hold raw node IDs, such as `tests/test_cart.py::test_add`. Treat a link with no prefix as `QAMASTER_RUNNER`'s runner, or block until it's relinked?
-2. **Catalog read.** Does `qam plan` read the store live every time, or through the store cache (Q34)?
-3. **The DSM selector in the MVP.** Selecting the cases that visit DSM-impacted screens means mapping screens to cases through the runs and the ledger. Is that in 0.3.0, or do shared files select smoke only until then?
-4. **What the hook gates.** Only repos where the `claude-hooks` integration is recorded (`.qamaster/integrations.json`), so the QA project's own pushes are never blocked?
+**Settled 2026-11-02 (your answers)**
+1. **A link with no prefix blocks** (exit 2), naming the cases, until it's relinked as `pytest:<nodeid>` or `bdd:@TC-…`. CheckMasterDemo's ADO links have to be relinked before D3 (an ADO write, which needs your yes), or D3 runs on the `file` store with prefixed links.
+2. **`qam plan` reads the store live every time.** The cache isn't used by the gate.
+3. **The DSM selector is in the MVP.** The changed files go through `impact()` to the impacted screens. Through the runs (`testcases.json` steps) and the ledger (local ID → store ID), they select the cases that visit those screens, with the reason `dsm`. Impacted screens that no case visits are coverage gaps. A shared file (Q37) selects smoke and these cases.
+4. **The hook gates a repo only when `.qamaster/integrations.json` records `claude-hooks` for it.** The QA project's own pushes are never blocked.
 
 ## Roadmap: what comes after the v1 MVP
 
