@@ -73,7 +73,8 @@ export class PytestRunner implements Runner {
     const tail = `${r.stdout ?? ''}${r.stderr ?? ''}`.trim().slice(-1500);
     if (r.error) throw new BlockedError(notStarted(cmd[0], root, r.error.message));
     // uv --no-sync with no environment yet: uv made an empty one and can't find pytest in it
-    if (cmd[0] === 'uv' && /Failed to spawn: `?pytest/.test(tail))
+    // or no Python for it at all: uv may not download one (UV_PYTHON_DOWNLOADS=never)
+    if (path.basename(cmd[0]) === 'uv' && /Failed to spawn: `?pytest|No interpreter found for Python/.test(tail))
       throw new BlockedError(
         `The project's test environment in ${root} isn't set up. Run uv sync there (it downloads Python and the test dependencies), then run again.`,
       );

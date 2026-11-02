@@ -50,7 +50,7 @@ cd ~/demo
 
 step 'plan with uv but no environment: blocked with uv sync, nothing downloaded (F5)'
 expect 2 $Q plan
-expect 1 ls ~/.local/share/uv/python
+expect 0 test ! -e ~/.local/share/uv/python
 uv sync -q # the person's step: downloads Python 3.12 and the test dependencies
 expect 3 $Q plan
 P=$(newest_plan)
@@ -144,7 +144,8 @@ expect 2 env WEB_BASE_URL=http://localhost:3000 $Q run "$P"
 
 step 'Gate the app repo with the push hook'
 expect 0 $Q integrations add claude-code
-expect 0 sh -c "sh $E2E/hook-event.sh $PWD | grep -q 'hook exit=2'"
+# the unreachable-app run was blocked and wrote no verdict (Q41), so this commit's earlier pass still stands
+expect 0 sh -c "sh $E2E/hook-event.sh $PWD | grep -q 'hook exit=0'"
 
 printf '\n%s step(s) gave an unexpected exit code.\n' "$mismatches"
 exit "$mismatches"

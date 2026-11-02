@@ -167,3 +167,18 @@ test('0.3.1 F3: a missing uv or python3 names how to install it', async () => {
   await assert.rejects(new PytestRunner(['/nonexistent/uv']).collected(root), /uv isn't installed .*docs\.astral\.sh/);
   await assert.rejects(new PytestRunner(['/nonexistent/python3']).collected(root), /python3 isn't installed/);
 });
+
+// From the 0.3.1 Docker re-run: with the project's Python missing, uv's own error came through raw.
+test('0.3.1 F5: a missing Python for the project says to run uv sync', async () => {
+  const bin = tmpDir('qam-fake-uv-');
+  const uv = path.join(bin, 'uv');
+  fs.writeFileSync(
+    uv,
+    "#!/bin/sh\necho 'error: No interpreter found for Python 3.12 in managed installations or search path' >&2\necho \"hint: A managed Python download is available for Python 3.12, but Python downloads are set to 'never'\" >&2\nexit 2\n",
+  );
+  fs.chmodSync(uv, 0o755);
+  await assert.rejects(
+    new PytestRunner([uv, 'run', '--no-sync', 'pytest']).collected(tmpDir('qam-pytest-nopy-')),
+    /isn't set up\. Run uv sync there \(it downloads Python and the test dependencies\)/,
+  );
+});
