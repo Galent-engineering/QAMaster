@@ -242,7 +242,8 @@ select    candidates(change, catalog, groups) → {case → reasons}: path, smok
           a changed file whose glob covers > gate.sharedShare of the plan is shared: path selects only
           its smoke and DSM-impacted cases (Q37, proposed)
           dsm.impact(change.files) → screens; screens with no selected case → gaps
-          Runner.collected(root) per runner + split() → PlanItem[], NotRun[] (manual, BROKEN, unknown runner) → Plan
+          Runner.collected(root) per runner + split() → PlanItem[], NotRun[] (manual, BROKEN) → Plan;
+          a missing runner tool or an unknown link prefix → BlockedError, after offering the install (Q38)
 automate  (Q39) per selected case: no script → Framework drafts; stale (case hash or code under its path: tags
           changed) → updates; else keeps. check-scripts must pass. Plan records scriptsHash of the drafted diff
 approve   approve(plan, by, add, remove) → Plan with approvedBy/At; refuses if HEAD, testsHead or scriptsHash moved

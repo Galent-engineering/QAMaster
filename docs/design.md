@@ -140,7 +140,7 @@ Layout rules:
 | All approved tests passed | `pass` |
 | Any approved test failed after one retry | `fail` |
 | A script drafted by this check, never passed before, failed | `fail`, labelled "new script failed: check the script or the app" (Q39, proposed) |
-| A case's link names no registered runner | `fail`, listed under Not run (Q38, proposed) |
+| A runner's tools are missing and the person didn't approve the download, or a link names a runner QAMaster doesn't have | `blocked`, with what to install or change (Q38, proposed) |
 | An approved test didn't run or was skipped | `fail` |
 | A selected case is BROKEN | `fail` |
 | No test case matched the change | `pass`, with a coverage-gap warning |

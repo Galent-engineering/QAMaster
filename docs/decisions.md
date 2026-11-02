@@ -593,10 +593,15 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Decision (proposed, for the person to accept):**
   - The gate groups the approved cases by the prefix of their automation link (`pytest:`, `bdd:`; Q9). It runs each group with the runner registered under that prefix, and merges the results into one verdict. A plan can mix runners.
   - Each runner runs in its own folder: `config/qamaster.json → runners.<name>.root`, a path relative to the QA project. When unset, the runner uses `QAMASTER_TEST_ROOT`, and failing that the repo root, as today.
-  - A link whose prefix has no registered runner puts the case under **Not run**, with the reason. That fails the verdict, like a BROKEN link (Q13).
+  - **A runner whose tools are missing is fetched, with a yes.** Before running, each runner checks its folder: pytest needs Python, pytest and the project's environment; playwright-bdd needs `playwright`, `playwright-bdd` and the browser. When something is missing:
+    1. **Use what's already on the machine.** An existing `node_modules`, uv environment or Playwright browser cache is reused, with no download.
+    2. **Otherwise, ask.** `/qamaster:check` shows exactly what would be downloaded and where from: the packages in the project's own `package.json` or `uv.lock` (npm or PyPI), and the Playwright browser (Playwright's download host). It shows sizes when they're known, then waits. Only on a yes does it install, through the same install step as `qam setup`. Python packages go through uv, never pip.
+    3. **Never in the background.** The push hook, CI, `--yes` and runs with no terminal never download. They block (exit 2) with the command to run.
+  - **A link prefix QAMaster has no runner for** (for example `cypress:` today) can't be fetched, because a runner is plugin code. The gate blocks (exit 2), naming the cases and the ways forward: change the link, or wait for that runner.
+  - Both cases are **blocked**, not **fail**. They're setup problems, like missing settings in Q13, so a developer is never told their code broke something.
   - `QAMASTER_RUNNER` no longer means "the project's only runner". It names the runner that new links are written for, and it's the default when a project has one runner. Q32's compatible pairs still apply to each runner.
 - **Why:** teams have API tests in pytest and UI tests in playwright-bdd. The link already says which runner each case needs, so the person never has to choose.
-- **Gave up:** a project-wide `QAMASTER_RUNNER` that's simpler to explain. A mixed plan also takes as long as its slowest runner.
+- **Gave up:** a project-wide `QAMASTER_RUNNER` that's simpler to explain. A mixed plan also takes as long as its slowest runner. The first check on a new machine can stop to ask for a download.
 
 **Q39. Automation is drafted just in time, inside the gate** (2026-11-02, proposed; amends Q12 and Q22, keeps Q13, Q14 and Q19)
 - **Decision (proposed, for the person to accept):**
