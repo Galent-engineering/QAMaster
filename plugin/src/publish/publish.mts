@@ -206,15 +206,16 @@ export function suggestSmoke(
   ledger: LedgerEntry[],
   inStore: number,
   settings: Settings,
-): { ids: string[]; total: number; max: number } {
+): { ids: string[]; total: number; max: number; notOffered: number } {
   const { max, priorities, categories } = settings.smoke;
   const known = new Map(ledger.map((e) => [e.localId, e]));
-  const ids = derived
+  // max is for the whole plan, so the smoke already in the store counts against it
+  const eligible = derived
     .filter((d) => priorities.includes(d.priority as never) && categories.includes(d.category as never))
     .filter((d) => !known.get(d.id)?.smokeDeclined && !hasTag(known.get(d.id)?.ownedTags ?? [], 'smoke'))
-    .slice(0, Math.max(0, max - inStore))
     .map((d) => d.id);
-  return { ids, total: inStore + ids.length, max };
+  const ids = eligible.slice(0, Math.max(0, max - inStore));
+  return { ids, total: inStore + ids.length, max, notOffered: eligible.length - ids.length };
 }
 
 // ---- diff

@@ -87,7 +87,7 @@ Conflict (1), not written
 
 Unchanged (40)
 
-Smoke suggestions (P1, Positive or E2E; the plan's smoke set would be 7 of max 20 for the whole plan)
+Smoke suggestions (P1, Positive or E2E; the plan has 5 smoke, 2 ticked here: 7 of max 20 for the whole plan)
   [x] TC-CHECKOUT-016  Card payment completes the order
   [x] TC5101           Coupon applies discount to cart total
   (TC5107 not suggested: QA removed smoke on 2026-10-21)

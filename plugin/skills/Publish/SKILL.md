@@ -18,10 +18,10 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
    - what will be **created** and **updated**, and in which suite;
    - each **conflict**: someone changed that test case in the store since the last publish, so it won't be written;
    - **not linked to code**: cases with no `path:` tag, which the gate can't select by code;
-   - the **smoke suggestions**, ticked by default, for the person to confirm or untick;
+   - the **smoke suggestions**, ticked by default, for the person to confirm or untick. `smoke.max` is for the **whole plan**, not each run: say how many smoke cases the plan already has, and, if the preview says some matching cases weren't offered because the set is full, say that too;
    - what is **retired** only with `--retire`.
 4. **Wait for the person's yes.** Their reply in chat is the approval. If they untick a smoke suggestion, add `--skip-smoke <id>`; if they name cases to leave out, add `--leave-out <id>`. Add `--retire` only if they ask to close the cases listed under Retire. No yes, no `--apply`.
-5. **Apply:** the same command with `--apply` and the flags they chose. It always reads the store live. Report what the last line says (created, updated, retired, unchanged, held back).
+5. **Apply:** the same command with `--apply` and the flags they chose. It always reads the store live. Report what apply printed, its last line included (created, updated, retired, unchanged, held back, smoke in the plan), never the preview's numbers. If it exits 3 with "Smoke changed since the dry run", nothing was written: show the new dry run and ask again.
 6. **Afterwards:** `qam pipeline status` shows Publish as done when nothing was held back. A conflict is never overwritten: tell the person which test case it is and that the fix is to look at it in the store (or accept their edit by changing the draft), then publish again.
 
 Exit codes: `0` nothing to write, `3` awaiting approval, `1` a conflict is left, `2` blocked (read the message, it says what to do).

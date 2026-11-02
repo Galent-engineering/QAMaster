@@ -45,9 +45,9 @@ function project() {
     path.join(dir, 'dsm/dsm.json'),
     JSON.stringify({ generated_at: 'D1', page: { nodes: [{ id: '/cart', files: ['shop:src/cart/Cart.tsx'] }] } }),
   );
-  const runDir = path.join(dir, 'testgen/output/20261030-1200-cart');
   /** Writes the run, validated and reviewed as the files stand. `review: false` leaves it unreviewed. */
-  const writeRun = (cases: Case[], o: { review?: boolean } = {}) => {
+  const writeRun = (cases: Case[], o: { review?: boolean; name?: string } = {}) => {
+    const runDir = path.join(dir, 'testgen/output', o.name ?? RUN);
     fs.mkdirSync(runDir, { recursive: true });
     fs.writeFileSync(
       path.join(runDir, 'manifest.json'),
@@ -179,7 +179,10 @@ test('publish: smoke is suggested and ticked, written only on apply, and --skip-
   const p = project();
   p.writeRun([kase('TC-CART-001'), kase('TC-CART-002'), kase('TC-CART-003', { priority: 'P3' })]);
   const dry = p.qam('publish', RUN);
-  assert.match(dry.out, /Smoke suggestions \(P1, Positive or E2E; the smoke set would be 2 of max 20\)/);
+  assert.match(
+    dry.out,
+    /Smoke suggestions \(P1, Positive or E2E; the plan has 0 smoke, 2 ticked here: 2 of max 20 for the whole plan\)/,
+  );
   assert.match(dry.out, /\[x\] TC-CART-001/);
   assert.match(dry.out, /\[x\] TC-CART-002/);
   assert.doesNotMatch(dry.out, /\[x\] TC-CART-003/);
@@ -303,4 +306,38 @@ test('publish: a run with a conflict left is not marked published', () => {
   p.writeRun([kase('TC-CART-001', { title: 'Mine' })]);
   assert.equal(p.qam('publish', RUN, '--apply').status, 1);
   assert.equal(p.exists(`testgen/output/${RUN}/published.json`), false);
+});
+
+// From the 0.2.0 publish walkthrough: 4 previews promised 38 smoke cases, the plan-wide cap let 20 through, unannounced.
+test('0.2.1 A5: smoke is counted across the plan; apply refuses when the cap changed since the dry run', () => {
+  const p = project();
+  fs.writeFileSync(
+    path.join(p.dir, 'config/qamaster.json'),
+    JSON.stringify({ app: { name: 'Shop' }, smoke: { max: 2 } }),
+  );
+  const B = '20261030-1300-cart';
+  p.writeRun([kase('TC-CART-001'), kase('TC-CART-002')]);
+  p.writeRun([kase('TC-CART-101'), kase('TC-CART-102')], { name: B });
+  // both previews run before either is applied, so each sees an empty plan
+  assert.match(p.qam('publish', RUN).out, /\[x\] TC-CART-001/);
+  assert.match(p.qam('publish', B).out, /\[x\] TC-CART-101/);
+  assert.equal(p.qam('publish', RUN, '--apply').status, 0);
+
+  const stale = p.qam('publish', B, '--apply');
+  assert.equal(stale.status, 3, stale.out);
+  assert.match(
+    stale.out,
+    /Smoke changed since the dry run: the plan has 2 smoke now, so 0 of the 2 suggested fit \(max 2\)\. Nothing was written/,
+  );
+  assert.doesNotMatch(p.read(CSV), /TC-CART-101/);
+
+  const again = p.qam('publish', B);
+  assert.match(
+    again.out,
+    /2 more cases match the smoke rule but weren't offered: the plan's smoke set is full \(2 of max 2\)/,
+  );
+  assert.doesNotMatch(again.out, /\[x\] TC-CART-101/);
+  const applied = p.qam('publish', B, '--apply');
+  assert.equal(applied.status, 0, applied.out);
+  assert.match(applied.out, /smoke in the plan: 2 of max 2/);
 });

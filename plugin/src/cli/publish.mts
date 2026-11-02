@@ -12,7 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import type { NewProject } from '../adapters/base.mts';
-import { withCache } from '../adapters/cache.mts';
+import { cacheFile, withCache } from '../adapters/cache.mts';
 import { buildStore } from '../adapters/registry.mts';
 import type { Dsm } from '../dsm/build.mts';
 import { type Applied, checkStore, readLedger, record, writeLedger } from '../publish/ledger.mts';
@@ -134,6 +134,11 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     : (await store.find({ kind: 'test_case', tag: 'smoke', limit: 1000 })).length;
   const suggestion = suggestSmoke(derived, entries, smokeInStore, cfg.project);
   const confirmed = new Set(suggestion.ids.filter((id) => !skipSmoke.has(id)));
+  // the dry run records the smoke it offered; apply reads the store live, and a cap filled in between (another run
+  // applied first) would otherwise write fewer smoke cases than the person approved, without a word
+  const previewFile = path.join(path.dirname(cacheFile(dir)), `preview-${run.name}.json`);
+  const offered = v.apply ? readPreview(previewFile) : null;
+  const lost = (offered ?? []).filter((id) => !skipSmoke.has(id) && !confirmed.has(id));
   const result = diff({ derived, ledger: entries, items, module: run.scope.module, confirmedSmoke: confirmed });
 
   const by = (kind: PlannedChange['kind']) => result.changes.filter((c) => c.kind === kind);
@@ -175,14 +180,33 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   );
   if (unchanged.length) lines.push('', `Unchanged (${unchanged.length})`);
   if (notLinked.length) lines.push('', `Not linked to code (no path: tag): ${notLinked.join(', ')}`);
+  const { priorities, categories, max } = cfg.project.smoke;
   if (suggestion.ids.length) {
-    const { priorities, categories, max } = cfg.project.smoke;
     lines.push(
       '',
-      `Smoke suggestions (${priorities.join(', ')}, ${categories.join(' or ')}; the smoke set would be ${smokeInStore + confirmed.size} of max ${max})`,
+      `Smoke suggestions (${priorities.join(', ')}, ${categories.join(' or ')}; the plan has ${smokeInStore} smoke, ${confirmed.size} ticked here: ${smokeInStore + confirmed.size} of max ${max} for the whole plan)`,
       ...suggestion.ids.map((id) => `  [${skipSmoke.has(id) ? ' ' : 'x'}] ${id}  ${title.get(id)}`),
     );
   }
+  if (suggestion.notOffered) {
+    lines.push(
+      '',
+      `${suggestion.notOffered} more case${suggestion.notOffered > 1 ? 's match' : ' matches'} the smoke rule but weren't offered: the plan's smoke set is full (${suggestion.total} of max ${max}). Raise smoke.max in config/qamaster.json to offer them.`,
+    );
+  }
+  if (lost.length) {
+    lines.push(
+      '',
+      `Smoke changed since the dry run: the plan has ${smokeInStore} smoke now, so ${(offered ?? []).length - lost.length} of the ${(offered ?? []).length} suggested fit (max ${max}). Nothing was written. Run the dry run again and review the new smoke list.`,
+    );
+    console.log(
+      json
+        ? JSON.stringify({ result: 'awaiting approval', apply: true, run: run.name, smokeChanged: lost })
+        : lines.join('\n'),
+    );
+    return 3;
+  }
+  if (!v.apply) writePreview(previewFile, suggestion.ids);
   lines.push('');
   if (!pending && !conflicts.length) lines.push('Nothing to publish.');
   else if (!v.apply && pending) {
@@ -192,6 +216,7 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   }
 
   const applied = { created: 0, updated: 0, retired: 0 };
+  let smokeWritten = 0;
   let heldBack = conflicts.length;
   if (v.apply) {
     const now = new Date().toISOString();
@@ -219,6 +244,7 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
           save([{ change: c, item: await store.update(read, c.change) }]);
           applied.updated++;
         }
+        if (confirmed.has(c.localId)) smokeWritten++;
       } catch (e) {
         if (!(e instanceof BlockedError)) throw e;
         heldBack++;
@@ -240,8 +266,9 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
       fs.writeFileSync(path.join(run.dir, 'published.json'), `${JSON.stringify(record, null, 1)}\n`);
     }
     lines.push(
-      `Created ${applied.created}, updated ${applied.updated}, retired ${applied.retired}, unchanged ${unchanged.length}; ${heldBack} held back by a conflict.`,
+      `Created ${applied.created}, updated ${applied.updated}, retired ${applied.retired}, unchanged ${unchanged.length}; ${heldBack} held back by a conflict; smoke in the plan: ${smokeInStore + smokeWritten} of max ${max}.`,
     );
+    fs.rmSync(previewFile, { force: true });
   }
 
   const code = v.apply ? (heldBack ? 1 : 0) : pending ? 3 : conflicts.length ? 1 : 0;
@@ -260,7 +287,14 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
           : {}),
         changes: result.changes.map(({ change: _write, ...c }) => c),
         notLinked,
-        smoke: { suggested: suggestion.ids, skipped: [...skipSmoke], max: cfg.project.smoke.max },
+        smoke: {
+          suggested: suggestion.ids,
+          skipped: [...skipSmoke],
+          max,
+          inPlan: smokeInStore,
+          notOffered: suggestion.notOffered,
+          ...(v.apply ? { written: smokeWritten } : {}),
+        },
         ...(v.apply ? { applied, heldBack } : {}),
       }),
     );
@@ -280,4 +314,22 @@ function parse(argv: string[]) {
     },
     allowPositionals: true,
   });
+}
+
+function readPreview(file: string): string[] | null {
+  try {
+    const data = JSON.parse(fs.readFileSync(file, 'utf8')) as { smoke?: unknown };
+    return Array.isArray(data.smoke) ? data.smoke.filter((x): x is string => typeof x === 'string') : null;
+  } catch {
+    return null; // no dry run recorded (or an unreadable one): apply decides from the live store alone
+  }
+}
+
+function writePreview(file: string, smoke: string[]): void {
+  try {
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, `${JSON.stringify({ smoke })}\n`);
+  } catch {
+    // like the cache: a record that can't be written costs the check, never the preview
+  }
 }

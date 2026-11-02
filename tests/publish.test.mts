@@ -244,9 +244,10 @@ test('smoke: P1 Positive or E2E cases are suggested up to the cap, less what the
     derive(kase('E'), ctx()),
   ];
   const s = ctx().settings;
-  assert.deepEqual(suggestSmoke(d, [], 0, s), { ids: ['A', 'C'], total: 2, max: 2 });
+  assert.deepEqual(suggestSmoke(d, [], 0, s), { ids: ['A', 'C'], total: 2, max: 2, notOffered: 1 });
   assert.deepEqual(suggestSmoke(d, [], 1, s).ids, ['A']);
   assert.deepEqual(suggestSmoke(d, [], 2, s).ids, []);
+  assert.equal(suggestSmoke(d, [], 2, s).notOffered, 3, 'a full plan offers none, and says how many it held back');
   const declined = [entry('A', 1, d[0].hash, { smokeDeclined: true })];
   assert.deepEqual(suggestSmoke(d, declined, 0, s).ids, ['C', 'E']);
   assert.equal(derive(kase('A'), ctx()).tags.includes('smoke'), false);
