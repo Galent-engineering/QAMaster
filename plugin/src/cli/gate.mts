@@ -127,7 +127,29 @@ export function gateFor(cfg: Config): Gate {
   };
 }
 
+/** The gate's local files in the app repo, kept out of its commits through the clone's own exclude file (Q42). */
+const LOCAL = [
+  `${QAMASTER_DIR}/plans/`,
+  `${QAMASTER_DIR}/verdicts/`,
+  `${QAMASTER_DIR}/evidence/`,
+  `${QAMASTER_DIR}/drafts.json`,
+  '.env',
+];
+function excludeLocal(root: string): void {
+  const r = spawnSync('git', ['-C', root, 'rev-parse', '--git-path', 'info/exclude'], { encoding: 'utf8' });
+  if (r.status !== 0 || !r.stdout.trim()) return; // not a git repository: nothing to keep out
+  const file = path.resolve(root, r.stdout.trim());
+  const have = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  const lines = new Set(have.split('\n').map((l) => l.trim()));
+  const missing = LOCAL.filter((l) => !lines.has(l));
+  if (!missing.length) return;
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const sep = have && !have.endsWith('\n') ? '\n' : '';
+  fs.appendFileSync(file, `${sep}# QAMaster: this clone's own gate files (Q42)\n${missing.join('\n')}\n`);
+}
+
 const stateDir = (cfg: Config, kind: 'plans' | 'verdicts' | 'evidence') => {
+  excludeLocal(cfg.root);
   const dir = path.join(cfg.root, QAMASTER_DIR, kind);
   fs.mkdirSync(dir, { recursive: true });
   // plans, verdicts and evidence are this machine's; .qamaster/integrations.json is the shared part

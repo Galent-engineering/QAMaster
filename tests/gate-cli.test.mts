@@ -42,7 +42,9 @@ async function shop(): Promise<string | null> {
     'config/qamaster.json': JSON.stringify({ app: { name: 'Shop' } }),
     '.gitignore': '.venv/\n__pycache__/\n.qamaster/\n.pytest_cache/\n',
   });
+  // the project's own environment, as a user sets it up (the runner never downloads: Q41)
   if (sh(dir, 'uv', 'lock', '--offline', '--quiet').status !== 0) return null;
+  if (sh(dir, 'uv', 'sync', '--offline', '--quiet').status !== 0) return null;
   const store = buildStore(loadConfig(dir, { QAMASTER_STORE: 'file' }));
   await store.ensureSuite('Cart');
   for (const [title, tags, link] of [
@@ -148,4 +150,22 @@ test('0.3.1 F6: a changed .qamaster/doctor.json in the QA project does not block
   fs.writeFileSync(path.join(dir, '.env'), `QAMASTER_TEST_ROOT=${qa}\n`);
   const r = qam(dir, 'plan');
   assert.doesNotMatch(r.err, /uncommitted changes/);
+});
+
+// From the clean Docker run (F7), Q42: the gate's local files stay out of the app repo's commits.
+test('0.3.1 F7: after plan, approve and run, git status in the app repo shows none of the gate files', async (t) => {
+  const dir = await shop();
+  if (!dir) return t.skip('uv cannot lock pytest offline here');
+  // an app repo whose .gitignore knows nothing of QAMaster
+  fs.writeFileSync(path.join(dir, '.gitignore'), '.venv/\n__pycache__/\n.pytest_cache/\n');
+  git(dir, 'commit', '-qam', 'plain gitignore');
+  fs.writeFileSync(path.join(dir, '.env'), 'QAMASTER_STORE=file\n');
+  const plan = qam(dir, 'check', '--yes');
+  assert.equal(plan.status, 0, plan.out + plan.err);
+  const status = sh(dir, 'git', 'status', '--porcelain', '--untracked-files=all').stdout;
+  assert.doesNotMatch(status, /\.qamaster\/(plans|verdicts|evidence)|\.env/, status);
+  const exclude = fs.readFileSync(path.join(dir, '.git/info/exclude'), 'utf8');
+  assert.match(exclude, /# QAMaster: this clone's own gate files \(Q42\)\n\.qamaster\/plans\/\n/);
+  qam(dir, 'check', '--yes');
+  assert.equal(fs.readFileSync(path.join(dir, '.git/info/exclude'), 'utf8'), exclude, 'added once');
 });
