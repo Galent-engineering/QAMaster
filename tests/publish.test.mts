@@ -409,3 +409,23 @@ test('0.2.2 B4: credential-like test data is masked in the published description
     assert.match(d.description, new RegExp(`- ${key} = \\(kept in the run's test data, not published\\)`));
   assert.doesNotMatch(d.description, /Reg#Pass2026|= pw\b/);
 });
+
+// Q40: the Script line is the feature's web address at the pushed commit, for the hosts teams use.
+test('webUrl: GitHub, Bitbucket and Azure Repos addresses; none for an unknown host', async () => {
+  const { webUrl } = await import('../plugin/src/publish/scripts.mts');
+  const f = 'Shop/features/cart.feature';
+  assert.equal(webUrl('git@github.com:acme/shop-qa.git', f, 'abc'), `https://github.com/acme/shop-qa/blob/abc/${f}`);
+  assert.equal(
+    webUrl('https://bitbucket.org/acme/shop-qa.git', f, 'abc'),
+    `https://bitbucket.org/acme/shop-qa/src/abc/${f}`,
+  );
+  assert.equal(
+    webUrl('https://acme@dev.azure.com/acme/Shop/_git/shop-qa', f, 'abc'),
+    `https://dev.azure.com/acme/Shop/_git/shop-qa?path=/${f}&version=GCabc`,
+  );
+  assert.equal(
+    webUrl('git@ssh.dev.azure.com:v3/acme/Shop/shop-qa', f, 'abc'),
+    `https://dev.azure.com/acme/Shop/_git/shop-qa?path=/${f}&version=GCabc`,
+  );
+  assert.equal(webUrl('/srv/git/shop-qa.git', f, 'abc'), null);
+});

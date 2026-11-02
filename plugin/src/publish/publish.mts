@@ -43,7 +43,8 @@ export type PublishContext = {
   scope: { module: string; subModule: string };
   dsm: DsmFiles;
   settings: Settings;
-  scenarios: Set<string>; // @TC ids of the scenarios in the automation suite (Q9)
+  scenarios: Set<string>; // @TC ids of the scenarios in the automation suite (Q9) whose scripts are pushed (Q39)
+  scripts?: Map<string, string>; // TC id -> where its script is, at the pushed commit (Q40)
 };
 
 const same = (a: string, b: string) => a.toLowerCase() === b.toLowerCase();
@@ -192,6 +193,7 @@ export function derive(c: PublishCase, ctx: PublishContext): Derived {
     '',
     `Expected result: ${c.expected_result}`,
     ...(evidence.length ? ['', 'Sources', ...evidence.map((e) => `- ${e}`)] : []),
+    ...(ctx.scripts?.has(c.id) ? ['', `Script: ${ctx.scripts.get(c.id)}`] : []),
   ].join('\n');
   const steps = c.steps.map((s) => ({ action: s.action, expected: s.expected }));
   const automatedTest = ctx.scenarios.has(c.id) ? `bdd:@${c.id}` : null;

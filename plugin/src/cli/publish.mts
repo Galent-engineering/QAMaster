@@ -13,6 +13,7 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import type { NewProject } from '../adapters/base.mts';
 import { cacheFile, withCache } from '../adapters/cache.mts';
+import { playwrightBdd } from '../adapters/framework-bdd.mts';
 import { buildStore } from '../adapters/registry.mts';
 import type { Dsm } from '../dsm/build.mts';
 import { type Applied, checkStore, readLedger, record, writeLedger } from '../publish/ledger.mts';
@@ -25,9 +26,11 @@ import {
   type PublishContext,
   suggestSmoke,
 } from '../publish/publish.mts';
+import { publishable } from '../publish/scripts.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError, NoPlanError, NoProjectError } from '../shared/errors.mts';
 import type { Item, Ledger } from '../shared/models.mts';
+import { appFolder } from './automation.mts';
 import { runDir } from './testgen.mts';
 
 const ids = (xs: string[] | undefined) =>
@@ -48,18 +51,6 @@ function readDsm(dir: string): Dsm {
   } catch {
     throw new BlockedError(`No DSM at ${path.relative(dir, file)}. Run qam dsm run first.`);
   }
-}
-
-/** The @TC-… tags of the scenarios in the automation suite, <App>/features (Q9). None before the suite exists. */
-function scenarioIds(dir: string, app: string | undefined): Set<string> {
-  const found = new Set<string>();
-  const features = app ? path.join(dir, app, 'features') : '';
-  if (!features || !fs.existsSync(features)) return found;
-  for (const f of fs.readdirSync(features, { recursive: true, encoding: 'utf8' })) {
-    if (!f.endsWith('.feature')) continue;
-    for (const m of fs.readFileSync(path.join(features, f), 'utf8').matchAll(/@(TC-[\w-]+)/g)) found.add(m[1]);
-  }
-  return found;
 }
 
 export async function publish(cfg: Config, argv: string[], json: boolean): Promise<number> {
@@ -85,11 +76,18 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   for (const id of [...leftOut, ...skipSmoke]) {
     if (!known.has(id)) throw new BlockedError(`${id} isn't in ${run.name}. Its cases: ${[...known].join(', ')}.`);
   }
+  // a script is linked only once it's committed and pushed to the QA repo's remote (Q39), with where it is (Q40)
+  let app: string | null = null;
+  try {
+    app = appFolder(cfg);
+  } catch {}
+  const scripts = app && fs.existsSync(app) ? publishable(app, playwrightBdd.scripts(app)) : null;
   const ctx: PublishContext = {
     scope: run.scope,
     dsm,
     settings: cfg.project,
-    scenarios: scenarioIds(dir, cfg.project.app?.name),
+    scenarios: new Set(scripts?.linked.keys() ?? []),
+    ...(scripts ? { scripts: scripts.linked } : {}),
   };
   const derived: Derived[] = run.cases.filter((c) => !leftOut.has(c.id)).map((c) => derive(c, ctx));
 
@@ -180,6 +178,12 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   );
   if (unchanged.length) lines.push('', `Unchanged (${unchanged.length})`);
   if (notLinked.length) lines.push('', `Not linked to code (no path: tag): ${notLinked.join(', ')}`);
+  const unpushed = (scripts?.unpushed ?? []).filter((id) => title.has(id));
+  if (unpushed.length)
+    lines.push(
+      '',
+      `Scripts not pushed to the QA repo (${unpushed.length}): their automation links stay unpublished until they're committed and pushed: ${unpushed.join(', ')}`,
+    );
   const { priorities, categories, max } = cfg.project.smoke;
   if (suggestion.ids.length) {
     lines.push(

@@ -88,7 +88,8 @@ export function bind(
   const hashOf = new Map(o.ledger.map((e) => [e.localId, e.hash]));
   const cases = { ...o.drafts.cases };
   for (const w of touched) cases[w.localId] = { caseHash: hashOf.get(w.localId) ?? '' };
-  const files = Object.fromEntries(folderFiles(o.appDir).map((f) => [f, sha(f)]));
+  // real paths: git reports them so (macOS: /private/var for /var), and the clean-tree rule compares with git's
+  const files = Object.fromEntries(folderFiles(fs.realpathSync(o.appDir)).map((f) => [f, sha(f)]));
 
   const drafted = new Map(touched.map((w) => [w.testCaseId, w.localId]));
   const moved = plan.notRun.filter((n) => drafted.has(n.testCase.id));

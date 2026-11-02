@@ -255,16 +255,38 @@ test('publish: a ledger from another store blocks before anything is written', (
   assert.equal(p.exists(CSV), false);
 });
 
-test('publish: a scenario tagged with the case ID in the automation suite becomes its automation link', () => {
+// Q39, Q40: a script is linked only once it's pushed to the QA repo's remote, with a Script line pinned to the commit.
+test('publish: a scenario tagged with the case ID becomes its link only once pushed, with where it is', () => {
   const p = project();
   fs.mkdirSync(path.join(p.dir, 'Shop/features'), { recursive: true });
   fs.writeFileSync(
     path.join(p.dir, 'Shop/features/cart.feature'),
-    'Feature: Cart\n\n  @TC-CART-001\n  Scenario: Pay\n    Given a cart\n',
+    '@web\nFeature: Cart\n\n  @TC-CART-001\n  Scenario: Pay\n    Given a cart\n',
   );
   p.writeRun([kase('TC-CART-001'), kase('TC-CART-002')]);
+  const dry = p.qam('publish', RUN);
+  assert.match(dry.out, /Scripts not pushed to the QA repo \(1\): .*TC-CART-001/);
+  assert.doesNotMatch(dry.out, /bdd:@/);
+
+  const g = (...a: string[]) =>
+    assert.equal(
+      spawnSync('git', ['-C', p.dir, '-c', 'user.name=t', '-c', 'user.email=t@example.test', ...a]).status,
+      0,
+      a.join(' '),
+    );
+  const remote = tmpDir('qam-qa-remote-');
+  g('init', '-q', '-b', 'main');
+  g('add', '-A');
+  g('commit', '-qm', 'scripts');
+  assert.match(p.qam('publish', RUN).out, /not pushed to the QA repo \(1\)/, 'committed but not pushed');
+  assert.equal(spawnSync('git', ['init', '-q', '--bare', remote]).status, 0);
+  g('remote', 'add', 'origin', remote);
+  g('push', '-q', 'origin', 'main');
+  const sha = spawnSync('git', ['-C', p.dir, 'rev-parse', 'HEAD'], { encoding: 'utf8' }).stdout.trim();
+
   p.qam('publish', RUN, '--apply');
   assert.match(row(p.read(CSV), '1000'), /bdd:@TC-CART-001/);
+  assert.match(p.read(CSV), new RegExp(`Script: Shop/features/cart\\.feature @ ${sha.slice(0, 12)}`));
   assert.doesNotMatch(row(p.read(CSV), '1001'), /bdd:@/);
 });
 

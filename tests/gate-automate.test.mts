@@ -88,7 +88,7 @@ test('bind: blocks until each case to draft has a scenario, then moves it into t
   assert.deepEqual(r.plan.newScripts, [2, 1]);
   assert.equal(r.plan.scriptsHash, folderHash(app));
   assert.deepEqual(r.drafts.cases, { 'TC-A-001': { caseHash: 'h-a' }, 'TC-A-002': { caseHash: 'h-b2' } });
-  const feature = path.join(app, 'features/web/a.feature');
+  const feature = path.join(fs.realpathSync(app), 'features/web/a.feature');
   assert.ok(recordedUnchanged(r.drafts, feature));
   fs.appendFileSync(feature, '# edited\n');
   assert.equal(recordedUnchanged(r.drafts, feature), false);
