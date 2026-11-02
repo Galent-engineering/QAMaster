@@ -40,6 +40,6 @@ Steps import `Given`, `When`, `Then` and `expect` from `src/fixtures`. Test data
 ## Steps
 
 1. `qam automate <plan-id>` lists the cases. Read each draft or update case in its run.
-2. Write or change the scripts for those cases only. An **update** changes the scenario to match the changed case.
+2. Write or change the scripts for those cases only. An **update** changes the scenario to match the changed case. A case that can't be automated reliably yet (it needs an account that isn't set up, a CAPTCHA, a real payment) stays manual: say which and why, and draft the rest.
 3. `qam check-scripts` until it passes. Fix the scripts, never the check.
 4. `qam automate <plan-id> --done` records them and binds the plan. The scripts stay uncommitted: tell the person to review and commit them, and that their automation links reach the test case store only after they're pushed and published again (Q39).

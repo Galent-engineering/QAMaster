@@ -631,6 +631,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - Scripts drafted by a check come from the reviewed case and its facts (DSM, AUT skills, code), not from sprint requirements, until Requirements (feature 6) is built.
   - A case's automation link reaches the store only after its script is committed, pushed and published again.
   - Storing Gherkin in the tracker itself (Jira with Xray) is left for a Jira store (Q23), after v1.
+- **Amended 2026-11-02 (while building the 0.3.0 automate step):** a selected case can stay manual. `qam automate --done` records the scripts that were drafted. A case still without a scenario stays under **Not run (manual)**, visible in the plan, instead of blocking. Some cases (a pre-registered account, a CAPTCHA) are reasonably left manual for a while.
 
 **Q40. Each test case links to its script in the QA repo, pinned to a commit** (2026-11-02, accepted 2026-11-02; builds on Q9 and Q39)
 - **Decision:**

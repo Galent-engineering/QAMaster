@@ -3,6 +3,7 @@
  *   worklist()  each case of the plan that a TestGen case stands behind (through the ledger) is a draft (no scenario is
  *               tagged with it yet), an update (its case changed since its script was recorded) or a keep;
  *   bind()      after the AutomationCode skill wrote the scripts and the script check passed: records each drafted case
+ *               (a case it left without a scenario stays manual, under Not run)
  *               and the hash of every file in the automation folder (.qamaster/drafts.json), moves the drafted manual
  *               cases into the plan with their local link, and binds the plan to the folder's hash.
  * Approval then refuses if any script changed after bind; the QA project's "uncommitted changes" rule skips the files
@@ -11,7 +12,6 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import { BlockedError } from '../shared/errors.mts';
 import type { LedgerEntry, Plan } from '../shared/models.mts';
 
 export type Drafts = {
@@ -67,7 +67,7 @@ export function worklist(
   return out;
 }
 
-/** Records the drafted scripts and binds the plan to them. Blocks when a case to draft still has no scenario. */
+/** Records the drafted scripts and binds the plan to them. A case to draft that still has no scenario stays manual. */
 export function bind(
   plan: Plan,
   o: {
@@ -79,12 +79,8 @@ export function bind(
     link: (localId: string) => string;
   },
 ): { plan: Plan; drafts: Drafts } {
-  const touched = o.work.filter((w) => w.action !== 'keep');
-  const missing = touched.filter((w) => !o.scripts.get(w.localId)?.length);
-  if (missing.length)
-    throw new BlockedError(
-      `No scenario is tagged with ${missing.map((w) => `@${w.localId}`).join(', ')} in ${path.basename(o.appDir)}/features yet: draft ${missing.length === 1 ? 'it' : 'them'} first, then run this again.`,
-    );
+  // a case left without a scenario stays manual, under Not run: the person may keep some cases manual on purpose
+  const touched = o.work.filter((w) => w.action !== 'keep' && o.scripts.get(w.localId)?.length);
   const hashOf = new Map(o.ledger.map((e) => [e.localId, e.hash]));
   const cases = { ...o.drafts.cases };
   for (const w of touched) cases[w.localId] = { caseHash: hashOf.get(w.localId) ?? '' };

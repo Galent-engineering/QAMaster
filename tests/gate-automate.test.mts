@@ -7,7 +7,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { bind, folderHash, recordedUnchanged, worklist } from '../plugin/src/gate/automate.mts';
-import { BlockedError } from '../plugin/src/shared/errors.mts';
 import type { LedgerEntry, Plan } from '../plugin/src/shared/models.mts';
 import { tmpDir } from './tmp.mts';
 
@@ -58,16 +57,15 @@ test('worklist: no scenario is a draft, a case changed since its script was reco
   );
 });
 
-test('bind: blocks until each case to draft has a scenario, then moves it into the plan and hashes the folder', () => {
+test('bind: a case without a scenario stays manual; a drafted one moves into the plan, and the folder is hashed', () => {
   const app = tmpDir('qam-automate-');
   const scripts = new Map([['TC-A-003', ['features/web/a.feature']]]);
   const drafts = { cases: {}, files: {} };
   const work = worklist(PLAN, { ledger: LEDGER, scripts, drafts });
   const link = (id: string) => `bdd:@${id}`;
-  assert.throws(
-    () => bind(PLAN, { appDir: app, work, ledger: LEDGER, scripts, drafts, link }),
-    (e) => e instanceof BlockedError && /@TC-A-002, @TC-A-001/.test(e.message),
-  );
+  const none = bind(PLAN, { appDir: app, work, ledger: LEDGER, scripts, drafts, link });
+  assert.deepEqual(none.plan.newScripts, [], 'nothing drafted: the manual case stays under Not run');
+  assert.equal(none.plan.notRun.length, 1);
   fs.mkdirSync(path.join(app, 'features/web'), { recursive: true });
   fs.writeFileSync(
     path.join(app, 'features/web/a.feature'),
