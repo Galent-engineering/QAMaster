@@ -21,6 +21,8 @@ A run is a folder `testgen/output/<YYYYMMDD-HHMM>-<module>/` holding two files y
 }
 ```
 
+`generated_at` is the current time in **UTC** (`date -u +%Y-%m-%dT%H:%M:%SZ`), not the local time from the run's folder name. The validator reports one that's in the future.
+
 Leave out `requirements_scope` when there are no fetched requirements.
 
 ## testcases.json

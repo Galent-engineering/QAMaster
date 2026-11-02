@@ -173,6 +173,7 @@ export function validate(
   cases: TestCase[] | null,
   facts: Facts,
   cfg: TestGenSettings,
+  now: Date = new Date(),
 ): Report {
   const empty = (error: string): Report => ({
     status: 'fail',
@@ -216,6 +217,12 @@ export function validate(
   };
 
   if (!manifest.domain) errors.push('manifest: domain not set (determine it with Domain_Test_Design_Skill)');
+  // a local time written with a Z lands hours away; ahead of now is the case that can be caught
+  const generated = manifest.generated_at ? Date.parse(manifest.generated_at) : Number.NaN;
+  if (generated > now.getTime() + 10 * 60_000)
+    errors.push(
+      `manifest: generated_at ${manifest.generated_at} is after now (${now.toISOString()}): write the current time in UTC, e.g. from \`date -u +%Y-%m-%dT%H:%M:%SZ\``,
+    );
   checkEvidence('manifest.domain_evidence', manifest.domain_evidence);
   const scope = manifest.components ?? [];
   for (const c of scope) {

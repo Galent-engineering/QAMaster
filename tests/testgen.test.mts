@@ -327,3 +327,17 @@ test('0.2.2 B2/B3: emails, hyphenated words and step data are not credentials; e
   assert.equal(hits.length, 2, hits.join('\n'));
   assert.match(hits.join('\n'), /"Reg#Pass2026"[\s\S]*"Wrong-Pass#9999"/);
 });
+
+// From the 0.2.1 verification (B5): a run named …-1854 (local time) had generated_at 18:54Z, hours in the future.
+test('0.2.2 B5: a manifest generated_at in the future is a finding (local time written as UTC)', () => {
+  const now = new Date('2026-10-30T13:45:00Z');
+  const { manifest, cases } = run();
+  manifest.generated_at = '2026-10-30T18:54:00Z';
+  const r = validate(manifest, cases, facts(), settings(), now);
+  assert.match(
+    r.errors.join('\n'),
+    /manifest: generated_at 2026-10-30T18:54:00Z is after now .*write the current time in UTC/,
+  );
+  manifest.generated_at = '2026-10-30T13:40:00Z';
+  assert.equal(validate(manifest, cases, facts(), settings(), now).status, 'pass');
+});
