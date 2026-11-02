@@ -612,7 +612,10 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 
     The `Framework` (Q25) does the drafting through the `AutomationCode` skill. Then `qam check-scripts` must pass.
   - **One approval (amends Q12).** Running `/qamaster:check` is the go-ahead to draft (Q12's gate 2). Gate 3's approval covers the cases and the scripts, which are shown together as new, updated or kept, with diffs. A person still decides before anything runs.
-  - **Uncommitted, hash-bound (amends Q22).** Drafted scripts stay as uncommitted changes in the test root. The approval is bound to HEAD, the QA project's commit and a hash of the drafted scripts. Any later edit voids it. "Test root has uncommitted changes → blocked" now applies only to changes the plan didn't make. After the run, QAMaster tells the person to review and commit the scripts. It never commits them itself.
+  - **Where scripts live (amends Q22).** The recommended home is a **separate QA repo** per app, the QA project (for example `shop-qa` on Bitbucket), with `QAMASTER_TEST_ROOT` pointing at its `<App>/` folder. The app repo isn't cluttered, and scripts are still versioned, reviewed by PR and branched. Tests inside the app repo (CheckMaster's setup) stay supported, but aren't the default. Scripts are never stored as attachments on test cases: attachments aren't versioned or runnable, and shared step code would be copied into every case.
+  - **Uncommitted, hash-bound (amends Q22).** Drafted scripts stay as uncommitted changes in the test root. The approval is bound to HEAD, the QA project's commit and a hash of the drafted scripts, and any later edit voids it. QAMaster records each draft's hash in `.qamaster/`. A later check reuses its own drafts while their hashes match. "Test root has uncommitted changes → blocked" applies only to changes QAMaster didn't draft, which includes a draft the person has since edited by hand: that one has to be committed first, so QAMaster never overwrites it. QAMaster never commits or pushes. Committing and pushing are the person's.
+  - **Drafts are shown until they're pushed.** Every plan lists drafts that aren't yet on the QA repo's remote, for example "3 drafted scripts not pushed: their links stay unpublished". A draft whose run failed stays for the person to fix. The plan prints the exact `git restore` / `git clean` command that discards only those files, for the person to run. QAMaster never deletes them itself.
+  - **Links only for pushed scripts (amends Q9's publish step).** Publish writes an automation link (Q9) only for a script that's on the QA repo's remote branch (`git branch -r --contains`). A link in the store then always points at code a teammate can pull.
   - **New scripts (keeps Q13).** A script with no recorded pass that fails makes the verdict **fail**. The failure is labelled "new script failed: check the script or the app". A script's first pass is recorded in the ledger.
   - **Hooks stay fast (keeps Q14 and Q19).** The push hook never drafts scripts. Without an approved, passing verdict for HEAD it blocks with "run `/qamaster:check`". Drafting happens there, in the session, and is timed apart from the plan's 30-second target.
   - Onboarding stages 10–13 (tech.md) become optional, for a team that wants every case automated up front.
@@ -623,6 +626,19 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - `/qamaster:check` takes minutes when scripts need drafting.
   - A failure in a new script may be the script's fault. The label says so, but the push is still blocked until the script is fixed or the case is removed from the plan.
   - Scripts drafted by a check come from the reviewed case and its facts (DSM, AUT skills, code), not from sprint requirements, until Requirements (feature 6) is built.
+  - A case's automation link reaches the store only after its script is committed, pushed and published again.
+  - Storing Gherkin in the tracker itself (Jira with Xray) is left for a Jira store (Q23), after v1.
+
+**Q40. Each test case links to its script in the QA repo, pinned to a commit** (2026-11-02, proposed; builds on Q9 and Q39)
+- **Decision (proposed, for the person to accept):**
+  - When publish writes an automation link (Q9), it also writes a **Script** line in the test case's description, next to the **Sources** heading, with the script's web address at the commit that was published. For example: `Script: https://bitbucket.org/acme/shop-qa/src/<sha>/Shop/features/checkout/coupon.feature`.
+  - The address is built from the QA repo's `origin` remote, for Bitbucket, GitHub and Azure Repos. For any other host it writes the repo-relative path and the commit, without a link.
+  - The line belongs to QAMaster, like the Sources list. It's rewritten when the script's commit changes, and removed when the link is removed. Nothing else in the description is touched.
+  - It's part of the publish preview, as "script link added" or "script link updated", and is written only on `--apply` (Q7).
+- **Why:** QA can open the exact script from the test case in ADO without the code being stored there (Q39).
+- **Gave up:**
+  - Every new script commit updates the test case's description, so ADO's history records the change.
+  - A link to a private repo opens only for people with access to it.
 
 ---
 

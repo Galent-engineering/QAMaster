@@ -80,7 +80,7 @@ Create (3)
   TC-CHECKOUT-016  Card payment completes the order         suite Checkout · tags checkout, path:src/checkout/**
 
 Update (1)
-  TC5101 ← TC-CHECKOUT-002  steps changed (3 → 4)          automation link added: bdd:@TC-CHECKOUT-002
+  TC5101 ← TC-CHECKOUT-002  steps changed (3 → 4)          automation link added: bdd:@TC-CHECKOUT-002, script link added (Q40)
 
 Conflict (1), not written
   TC5104 ← TC-CHECKOUT-007  changed in ADO by A. Rao on 2026-10-27; review it there or re-run with the ADO version
@@ -124,6 +124,7 @@ Scripts (Q39, proposed; uncommitted in the test root, approved with the plan)
   new      TC5110  bdd:@TC-CHECKOUT-018   features/checkout/coupon.feature (+24)
   updated  TC4410  bdd:@TC-CHECKOUT-016   code under src/checkout/** changed (+3 −1)
   kept     TC1001  pytest:tests/test_login.py::test_login
+  2 drafted scripts not pushed to the QA repo: their links stay unpublished
 ```
 
 Layout rules:

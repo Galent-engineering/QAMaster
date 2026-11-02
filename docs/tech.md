@@ -217,7 +217,9 @@ derive    tags:   path:<glob>   from DSM evidence on every screen the case visit
                   smoke         suggested when priority P1 and category in {Positive, E2E}, up to config.smoke.max
                                 for the whole plan (counting smoke already in the store; --apply recounts live);
                                 written only if QA confirms it in the preview; never re-suggested once removed (ledger)
-          link:   bdd:@<id>     when the <App>/ suite has a scenario tagged @<id>; else none (manual)
+          link:   bdd:@<id>     when the <App>/ suite has a scenario tagged @<id> that is on the QA repo's
+                                remote branch (Q39); else none (manual). Script: <web URL at commit> in the
+                                description, next to Sources (Q40)
 diff      against the ledger and the tracker:
                   no ledger entry                     → create
                   hash changed, tracker rev unchanged → update (only QAMaster-owned fields and tags)
