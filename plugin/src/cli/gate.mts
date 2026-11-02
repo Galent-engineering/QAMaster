@@ -39,7 +39,11 @@ const readJson = <T,>(file: string): T | null => {
     return null;
   }
 };
-const git = (dir: string, args: string[]) => spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8' });
+const git = (dir: string, args: string[]) => {
+  const r = spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8' });
+  if (r.error) throw new BlockedError("git isn't installed: install git 2.20 or later, then run again.");
+  return r;
+};
 
 /** The QA project's commit, when the tests live there; it must be clean, so the plan is bound to what runs (Q22). */
 function testsHead(cfg: Config): string | undefined {
@@ -51,7 +55,9 @@ function testsHead(cfg: Config): string | undefined {
   const drafts = readDrafts(cfg);
   const dirty = git(cfg.testRoot, ['status', '--porcelain', '--untracked-files=all'])
     .stdout.split('\n')
-    .filter((l) => l.trim() && !recordedUnchanged(drafts, path.join(top, l.slice(3).replace(/^.* -> /, ''))))
+    // doctor's record changes on every check and says nothing about what runs
+    .filter((l) => l.trim() && !l.endsWith(`${QAMASTER_DIR}/doctor.json`))
+    .filter((l) => !recordedUnchanged(drafts, path.join(top, l.slice(3).replace(/^.* -> /, ''))))
     .join('\n');
   const changedDrafts = dirty
     .split('\n')

@@ -138,6 +138,7 @@ export function changesSince(
 /** git's answer as text, or a BlockedError with what it said. */
 function gitText(dir: string, args: string[]): string {
   const r = spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  if (r.error) throw new BlockedError("git isn't installed: install git 2.20 or later, then run again.");
   if (r.status !== 0) throw new BlockedError(`git ${args.join(' ')} failed in ${dir}: ${(r.stderr || '').trim()}`);
   return r.stdout;
 }

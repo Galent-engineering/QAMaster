@@ -32,6 +32,7 @@ export const GITIGNORE_LINES = [
   `${QAMASTER_DIR}/plugin.json`,
   `${QAMASTER_DIR}/*.tmp`,
   `${QAMASTER_DIR}/cache/`,
+  `${QAMASTER_DIR}/doctor.json`, // rewritten on every doctor run
   'reports/output/',
 ];
 /** Claude Code permission rules: Claude can't read secret files or the saved session (Q16). */

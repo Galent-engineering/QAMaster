@@ -118,3 +118,34 @@ test('a new commit voids the plan before it runs', async (t) => {
   assert.equal(r.status, 2);
   assert.match(r.err, /HEAD moved/);
 });
+
+// From the clean Docker run (F1): without git the gate crashed with a TypeError and exit 1.
+test('0.3.1 F1: without git the gate blocks with how to install it', () => {
+  const dir = tmpDir('qam-nogit-');
+  write(dir, { 'config/qamaster.json': JSON.stringify({ app: { name: 'Shop' } }) });
+  const main = path.resolve(import.meta.dirname, '..', 'plugin/src/cli/main.mts');
+  const r = spawnSync(process.execPath, [main, '--repo', dir, 'plan', '--base', 'main'], {
+    encoding: 'utf8',
+    env: { ...process.env, PATH: '/nonexistent', QAMASTER_HOME: HOME, QAMASTER_STORE: 'file' },
+  });
+  assert.equal(r.status, 2, r.stderr);
+  assert.match(r.stderr, /git isn't installed: install git 2\.20 or later, then run again/);
+});
+
+// From the clean Docker run (F6): doctor rewrote the tracked .qamaster/doctor.json, and the next plan blocked.
+test('0.3.1 F6: a changed .qamaster/doctor.json in the QA project does not block the plan', async (t) => {
+  const dir = await shop();
+  if (!dir) return t.skip('uv cannot lock pytest offline here');
+  const qa = tmpDir('qam-qa-');
+  write(qa, { 'config/qamaster.json': JSON.stringify({ app: { name: 'Shop' } }), '.qamaster/doctor.json': '{}' });
+  for (const a of [
+    ['init', '-q', '-b', 'main'],
+    ['add', '-A'],
+    ['commit', '-qm', 'qa'],
+  ])
+    git(qa, ...a);
+  fs.writeFileSync(path.join(qa, '.qamaster/doctor.json'), '{"store":{"ok":true}}');
+  fs.writeFileSync(path.join(dir, '.env'), `QAMASTER_TEST_ROOT=${qa}\n`);
+  const r = qam(dir, 'plan');
+  assert.doesNotMatch(r.err, /uncommitted changes/);
+});
