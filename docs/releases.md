@@ -67,8 +67,8 @@ Plan: [plans/0.3.0.md](plans/0.3.0.md). Built on `feature/0.3.0-gate`, tested en
 ## 0.3.1: planned
 
 Plan: [plans/0.3.1.md](plans/0.3.1.md). It holds the prerequisites a clean machine needs, checked and explained, from the [clean Docker run](demos/2026-11-02-0.3.0-docker-e2e.md) (F1–F11):
-- runner setup problems block instead of failing, and pytest never downloads without a yes (Q41, proposed);
-- the gate's local files are kept out of the app repo's commits (Q42, proposed);
+- runner setup problems block instead of failing, and pytest never downloads without a yes (Q41);
+- the gate's local files are kept out of the app repo's commits (Q42);
 - `qam doctor` checks the gate's prerequisites;
 - clear messages for git, uv, python3 and pytest;
 - doctor no longer blocks the next plan.

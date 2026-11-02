@@ -43,4 +43,4 @@ Every hands-on walkthrough of a QAMaster build, with the tester's feedback, kept
 | 0.2.1 verification B4 | Passwords in `test_data` still reach ADO through the description | 0.2.2: masked as "(kept in the run's test data, not published)" |
 | 0.2.1 verification B5 | The TestGen manifest's `generated_at` is local time marked as UTC | 0.2.2: validator finding, and the reference says UTC |
 | 0.2.1 verification E1–E7 | Enhancements: cross-run smoke warning, remember `--skip-smoke`, `qam review` confirmation, and others | Later ([verification](2026-11-02-0.2.1-verification.md#enhancements-for-later)) |
-| 0.3.0 Docker F1–F11 | Prerequisites not checked or explained on a clean machine (setup problems as test failures, silent uv downloads, doctor gaps, a crash without git, files left in the app repo) | 0.3.1 ([plan](../plans/0.3.1.md)); decisions Q41, Q42 and a Q14 amendment, proposed |
+| 0.3.0 Docker F1–F11 | Prerequisites not checked or explained on a clean machine (setup problems as test failures, silent uv downloads, doctor gaps, a crash without git, files left in the app repo) | 0.3.1 ([plan](../plans/0.3.1.md)); decisions Q41, Q42 and a Q14 amendment |
