@@ -27,7 +27,7 @@ Every hands-on walkthrough of a QAMaster build, with the tester's feedback, kept
 | 0.2.0 publish A8 | The review was recorded when the tester said "Show dry run", not after an explicit approval | 0.2.1 A1 ([plan](../plans/0.2.1.md)) |
 | 0.2.0 publish step 3 | The ADO plan name defaulted to the folder name, not `app.name` | 0.2.1 A2 |
 | 0.2.0 publish A2 | The `claude-hooks` integration was named after the folder | 0.2.1 A3 |
-| 0.2.0 publish step 3 | Path tags too broad: `environments/**` on 86% of cases, `Services/**` on 58%, `app/**` from files directly in `app/` | 0.2.1 A4, Q37 (proposed) |
+| 0.2.0 publish step 3 | Path tags too broad: `environments/**` on 86% of cases, `Services/**` on 58%, `app/**` from files directly in `app/` | 0.2.1 A4 (shallow-folder tags), 0.3.0 B4 (the gate's shared-file rule); Q37 (proposed) |
 | 0.2.0 publish steps 4–5 | Smoke: 38 promised across 4 previews, 20 written (the cap is plan-wide), with no warning; a full cap isn't shown | 0.2.1 A5 |
 | 0.2.0 publish step 3 | Synthetic passwords in titles went to ADO | 0.2.1 A6 (validator finding) |
 | 0.2.0 publish A4, A7 | Thin form coverage: Angular forms have no `<form>` tag, and the crawl wasn't signed in (no `.env.dsm`) | After 0.3.0, first in line ([Later](../plans/0.2.1.md#later)) |

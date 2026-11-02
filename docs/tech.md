@@ -211,8 +211,8 @@ load      the run's testcases.json; refuse unless validation == pass and reviewe
           warn (don't block) if config.owners names an owner for the run's module and reviewedBy differs
 derive    tags:   path:<glob>   from DSM evidence on every screen the case visits (dsm.json screen → source files),
                                 collapsed to folders at config.publish.pathDepth (default 4), deduplicated;
-                                a file shallower than pathDepth is tagged as itself; a file behind more than
-                                config.publish.sharedShare (0.3) of the cases is shared and gets no tag (Q37, proposed)
+                                a file shallower than pathDepth is tagged as itself (Q37, proposed). Broad tags are
+                                kept; the gate's path selector decides what a shared file selects
                   <module>, <module>-<sub-module>
                   smoke         suggested when priority P1 and category in {Positive, E2E}, up to config.smoke.max
                                 for the whole plan (counting smoke already in the store; --apply recounts live);
@@ -239,6 +239,8 @@ collect   RepoReader.diff(mergeBase(base, HEAD), HEAD) → Change
           (v1.1 in CI: check out the QA branch named like the app branch, else main, first)
 catalog   TestCaseStore.inPlan() → every test case in the plan with tags and automation link
 select    candidates(change, catalog, groups) → {case → reasons}: path, smoke, group
+          a changed file whose glob covers > gate.sharedShare of the plan is shared: path selects only
+          its smoke and DSM-impacted cases (Q37, proposed)
           dsm.impact(change.files) → screens; screens with no selected case → gaps
           Runner.collected(root) per runner + split() → PlanItem[], NotRun[] (manual, BROKEN, unknown runner) → Plan
 automate  (Q39) per selected case: no script → Framework drafts; stale (case hash or code under its path: tags

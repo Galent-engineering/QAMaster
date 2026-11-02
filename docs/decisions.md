@@ -576,15 +576,18 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - A CSV that appears later (a pull, an export) silently wins: the store's `where()` changes, so publish blocks on the ledger's store mismatch, and the JSON cases are no longer read. Whether to block when both files exist is not decided.
 - **Amended 2026-11-02 (on acceptance):** when `testcases.csv` and `testcases.json` both exist, the `file` store blocks (exit 2) and names the file to remove. A CSV no longer wins silently. Built in [0.2.1](plans/0.2.1.md), item A7.
 
-**Q37. Shared files get no `path:` tag** (2026-11-02, proposed; amends Q8)
+**Q37. Every `path:` tag is kept; the gate decides what a shared file selects** (2026-11-02, proposed; amends Q8 and Q31)
 - **Decision (proposed, for the person to accept):**
-  - A file in a folder shallower than `publish.pathDepth` is tagged as itself (`path:frontend/src/app/app.routing.ts`), not as its folder (`path:frontend/src/app/**`). A folder glob at that depth covers the whole app.
-  - A file is **shared** when it sits behind more than `config/qamaster.json → publish.sharedShare` of the cases one publish derives (default `0.3`, a fraction). A shared file gets no `path:` tag. The publish preview lists the shared files, with how many cases each one sits behind.
-  - The gate covers a change to a shared file through the `smoke` and `dsm` selectors (Q31), not through `path:`. How a shared change is shown in the plan is settled in 0.3.0's step B1.
-- **Why:** in the 0.2.0 walkthrough (Juice Shop, 243 cases), `path:frontend/src/environments/**` was on 208 cases (86%), `Services/**` on 142 and `frontend/src/app/**` on 72. A change to `environment.ts` would select most of the plan, which breaks the selection target in product.md (at most 30% of the suite).
+  - **Publish keeps every derived `path:` tag**, including folders behind most of the plan (`environments/**`, `Services/**`). The tags record which code each case depends on (Q8), and nothing is removed from the store.
+  - **One fix at publish:** a file in a folder shallower than `publish.pathDepth` is tagged as itself (`path:frontend/src/app/app.routing.ts`), not as its folder (`path:frontend/src/app/**`). A folder glob at that depth covers the whole app, so the old tag was wrong, not just broad.
+  - **The gate's `path` selector (Q31) handles shared files.** When a changed file matches a `path:` glob that sits on more than `config/qamaster.json → gate.sharedShare` of the plan's cases (default `0.3`, a fraction), that file is *shared*. Through it, `path` selects only the cases that are also smoke or DSM-impacted. The plan names each shared file and how many cases its glob covers, for example "environment.ts is shared (208 cases); selected smoke + DSM impact".
+  - The `full` preset (Q31) selects every case under a shared glob, for anyone who wants that.
+- **Why:**
+  - In the 0.2.0 walkthrough (Juice Shop, 243 cases), `path:frontend/src/environments/**` was on 208 cases (86%). Selecting by it would break the selection target in product.md (at most 30% of the suite). With just-in-time automation (Q39), it would also mean drafting scripts for most of the plan on a one-line change.
+  - Keeping the tags means no mass tag rewrite in ADO later. The rule lives in one gate setting that can be tuned or switched off.
 - **Gave up:**
   - A change to a shared file selects fewer cases by path, so the plan relies on smoke and DSM impact for it.
-  - The share is counted per publish, so a file can become shared, or stop being shared, as runs are added. Its tags change on the next publish, as for any derived tag.
+  - Whether a file counts as shared depends on the plan's size at check time, so it can change as cases are published.
 
 **Q38. The runner is picked for each case, from its automation link** (2026-11-02, proposed; amends Q4 and Q32, builds on Q9)
 - **Decision (proposed, for the person to accept):**

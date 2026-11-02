@@ -172,17 +172,17 @@ QAMASTER_ADO_PROJECT=Shop
 ```json
 {
   "app": { "name": "Shop", "url": "https://shop.example.test", "repo": "../shop", "channels": ["web", "api"] },
-  "publish": { "pathDepth": 4, "sharedShare": 0.3, "suiteBy": "module" },
+  "publish": { "pathDepth": 4, "suiteBy": "module" },
   "smoke": { "max": 20, "priorities": ["P1"], "categories": ["Positive", "E2E"] },
   "testgen": { "hallucination_tolerance": 0 },
   "ai": "on",
   "owners": { "Checkout": "a.rao@example.com" },
-  "gate": { "retries": 1, "noMatch": "pass-with-warning" },
+  "gate": { "retries": 1, "noMatch": "pass-with-warning", "sharedShare": 0.3 },
   "runners": { "pytest": { "root": "../shop/tests" }, "playwright-bdd": { "root": "Shop" } }
 }
 ```
 
-`publish.sharedShare` (Q37) and `runners` (Q38) are proposed and built in [0.2.1](plans/0.2.1.md) and [0.3.0](plans/0.3.0.md). A runner without a `runners` entry uses `QAMASTER_TEST_ROOT`.
+`gate.sharedShare` (Q37) and `runners` (Q38) are proposed and built in [0.3.0](plans/0.3.0.md). A runner without a `runners` entry uses `QAMASTER_TEST_ROOT`.
 
 The DSM, TestGen and MCP config files keep Autonomous-QE's formats.
 
