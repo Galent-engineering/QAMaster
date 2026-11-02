@@ -2,7 +2,7 @@
 
 What each plugin version holds, and what the next one is planned to hold. Scope by product version (v1, v1.1, v2) is in [product.md](product.md#scope); this file tracks the plugin's own releases inside it.
 
-Findings come from the [demos](demos/README.md).
+Findings come from the [demos](demos/README.md). From 0.2.1 on, each planned release has a versioned plan in [plans/](plans/README.md). This file keeps the summary.
 
 Effort: XS < 30 min · S ~1 h · M half a day · L a day or more.
 
@@ -24,14 +24,23 @@ Publish (Q33, Q34), plus the fixes the 0.1.0 walkthrough turned up (WALKTHROUGH-
 
 ## 0.2.1: planned
 
-| Item | Effort | Impact | Needs first |
-|---|---|---|---|
-| Accept the store's version of a conflicted case (today the message only says to look in the store) | M | Med: only on conflicts | A flag or command name, approved |
-| xlsx `file` store. No runtime dependencies, so a minimal reader and writer on `node:zlib` (xlsx is zipped XML) | M | Med for teams with no tracker | Hand-written vs a dependency exception (Q34) |
-| Upgrade an old config on request, beyond the 0.2.0 doctor warning | S | Low-med | A flag name, e.g. on `setup`, approved |
-| Domain_Test_Design skills crowd the `/` menu: hide them from the menu (Claude still loads them) | XS | Med: first thing a new user sees ([demo 0.1.0 step 1](demos/2026-10-30-0.1.0-juice-shop.md)) | Check the current skill frontmatter docs for the menu-hiding field |
-| Accept or drop Q36 (JSON form of the `file` store); decide whether both files present should block | XS | Low | Your call |
-| Findings from the publish walkthrough (WALKTHROUGH-publish) | ? | ? | The filled-in feedback, triaged like this table |
-| Findings from the first live ADO publish, project creation included | ? | ? | The live run |
+Plan: [plans/0.2.1.md](plans/0.2.1.md). It holds the fixes from the [0.2.0 publish walkthrough](demos/2026-10-30-0.2.0-publish-feedback.md) that the 0.3.0 gate depends on:
+- review needs an explicit approval;
+- the plan is named after the app;
+- path tags leave out shared files (Q37, proposed);
+- smoke is counted across the whole plan;
+- credential-like text in test cases is a validator finding;
+- the `file` store blocks when both of its files exist (Q36, accepted 2026-11-02).
 
-Not in 0.2.1: `qam requirements fetch` (sprint stories, L), and the v2 and v3 scope in product.md.
+The other findings, and the earlier 0.2.1 backlog, are listed with where each one goes in that plan's [Later](plans/0.2.1.md#later) section.
+
+## 0.3.0: planned
+
+Plan: [plans/0.3.0.md](plans/0.3.0.md). The first full working plugin:
+- the gate (plan, approve, run, verdict), ported from CheckMaster;
+- just-in-time automation, which drafts playwright-bdd scripts for the cases a change touches (Q39, proposed);
+- the pytest and playwright-bdd runners, picked for each case from its automation link (Q38, proposed);
+- `/qamaster:check` and the push hook;
+- end-to-end runs on CheckMasterDemo and Juice Shop.
+
+Not in 0.3.0: Feedback, Reports and Requirements (`qam requirements fetch`), and the v1.1, v2 and v3 scope in product.md.

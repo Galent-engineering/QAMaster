@@ -567,13 +567,54 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - No choice of process, visibility or version control from QAMaster. The defaults fit a new QA project; anything else is made in ADO.
   - A token that can create projects is broader than publishing needs. Teams that don't want that create the project by hand, and publish then never asks.
 
-**Q36. The `file` store also reads and writes a JSON form** (2026-10-30, proposed; amends Q34)
-- **Decision (proposed, for the person to accept):**
+**Q36. The `file` store also reads and writes a JSON form** (2026-10-30, accepted 2026-11-02 with the amendment below; amends Q34)
+- **Decision:**
   - **`testcases/testcases.json` is the `file` store's second form:** a JSON array with one record per case (the CSV's columns, steps inside) and `{"suite": "…"}` records for empty suites. IDs, revisions, signatures and hand-edit detection work as for the CSV. `shared/schema.mts` (`asFileStoreRecords`) checks it; suites and tags are trimmed and blanks dropped, as in the CSV.
   - **Which form:** the CSV, `testcases/testcases.csv`, unless it is missing and `testcases.json` is there. No setting picks it.
 - **Why:** a JSON file is easier for scripts and other tools to read and write than one row per step.
 - **Gave up / open:**
   - A CSV that appears later (a pull, an export) silently wins: the store's `where()` changes, so publish blocks on the ledger's store mismatch, and the JSON cases are no longer read. Whether to block when both files exist is not decided.
+- **Amended 2026-11-02 (on acceptance):** when `testcases.csv` and `testcases.json` both exist, the `file` store blocks (exit 2) and names the file to remove. A CSV no longer wins silently. Built in [0.2.1](plans/0.2.1.md), item A7.
+
+**Q37. Shared files get no `path:` tag** (2026-11-02, proposed; amends Q8)
+- **Decision (proposed, for the person to accept):**
+  - A file in a folder shallower than `publish.pathDepth` is tagged as itself (`path:frontend/src/app/app.routing.ts`), not as its folder (`path:frontend/src/app/**`). A folder glob at that depth covers the whole app.
+  - A file is **shared** when it sits behind more than `config/qamaster.json → publish.sharedShare` of the cases one publish derives (default `0.3`, a fraction). A shared file gets no `path:` tag. The publish preview lists the shared files, with how many cases each one sits behind.
+  - The gate covers a change to a shared file through the `smoke` and `dsm` selectors (Q31), not through `path:`. How a shared change is shown in the plan is settled in 0.3.0's step B1.
+- **Why:** in the 0.2.0 walkthrough (Juice Shop, 243 cases), `path:frontend/src/environments/**` was on 208 cases (86%), `Services/**` on 142 and `frontend/src/app/**` on 72. A change to `environment.ts` would select most of the plan, which breaks the selection target in product.md (at most 30% of the suite).
+- **Gave up:**
+  - A change to a shared file selects fewer cases by path, so the plan relies on smoke and DSM impact for it.
+  - The share is counted per publish, so a file can become shared, or stop being shared, as runs are added. Its tags change on the next publish, as for any derived tag.
+
+**Q38. The runner is picked for each case, from its automation link** (2026-11-02, proposed; amends Q4 and Q32, builds on Q9)
+- **Decision (proposed, for the person to accept):**
+  - The gate groups the approved cases by the prefix of their automation link (`pytest:`, `bdd:`; Q9). It runs each group with the runner registered under that prefix, and merges the results into one verdict. A plan can mix runners.
+  - Each runner runs in its own folder: `config/qamaster.json → runners.<name>.root`, a path relative to the QA project. When unset, the runner uses `QAMASTER_TEST_ROOT`, and failing that the repo root, as today.
+  - A link whose prefix has no registered runner puts the case under **Not run**, with the reason. That fails the verdict, like a BROKEN link (Q13).
+  - `QAMASTER_RUNNER` no longer means "the project's only runner". It names the runner that new links are written for, and it's the default when a project has one runner. Q32's compatible pairs still apply to each runner.
+- **Why:** teams have API tests in pytest and UI tests in playwright-bdd. The link already says which runner each case needs, so the person never has to choose.
+- **Gave up:** a project-wide `QAMASTER_RUNNER` that's simpler to explain. A mixed plan also takes as long as its slowest runner.
+
+**Q39. Automation is drafted just in time, inside the gate** (2026-11-02, proposed; amends Q12 and Q22, keeps Q13, Q14 and Q19)
+- **Decision (proposed, for the person to accept):**
+  - **When.** After `qam plan` picks the cases for a change, the gate's *automate* step looks at each selected case:
+    - no script: draft one;
+    - the script is stale, because its case changed (ledger hash) or code under its `path:` tags changed: update it;
+    - otherwise: keep it.
+
+    The `Framework` (Q25) does the drafting through the `AutomationCode` skill. Then `qam check-scripts` must pass.
+  - **One approval (amends Q12).** Running `/qamaster:check` is the go-ahead to draft (Q12's gate 2). Gate 3's approval covers the cases and the scripts, which are shown together as new, updated or kept, with diffs. A person still decides before anything runs.
+  - **Uncommitted, hash-bound (amends Q22).** Drafted scripts stay as uncommitted changes in the test root. The approval is bound to HEAD, the QA project's commit and a hash of the drafted scripts. Any later edit voids it. "Test root has uncommitted changes → blocked" now applies only to changes the plan didn't make. After the run, QAMaster tells the person to review and commit the scripts. It never commits them itself.
+  - **New scripts (keeps Q13).** A script with no recorded pass that fails makes the verdict **fail**. The failure is labelled "new script failed: check the script or the app". A script's first pass is recorded in the ledger.
+  - **Hooks stay fast (keeps Q14 and Q19).** The push hook never drafts scripts. Without an approved, passing verdict for HEAD it blocks with "run `/qamaster:check`". Drafting happens there, in the session, and is timed apart from the plan's 30-second target.
+  - Onboarding stages 10–13 (tech.md) become optional, for a team that wants every case automated up front.
+- **Why:**
+  - Scripts get written only where code changes, so 243 published cases don't need 243 scripts before the first push.
+  - The tester's generated cases can be run on the first change.
+- **Gave up:**
+  - `/qamaster:check` takes minutes when scripts need drafting.
+  - A failure in a new script may be the script's fault. The label says so, but the push is still blocked until the script is fixed or the case is removed from the plan.
+  - Scripts drafted by a check come from the reviewed case and its facts (DSM, AUT skills, code), not from sprint requirements, until Requirements (feature 6) is built.
 
 ---
 

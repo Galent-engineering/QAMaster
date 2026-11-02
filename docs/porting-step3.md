@@ -59,6 +59,8 @@ The order follows the dependencies, starting with the pure functions that are ea
 | 8 | **Automation** | `e2e-automation/scaffold` 274, `check_scripts` 157, `shared/bdd-quality` 83, `shared/aut-app` 69, `framework/TestAutomation` with `scripts/locator-sync` | `src/automation/` behind the `Framework` adapter (Q25; its methods are designed in this feature's Learn phase), `plugin/framework/` | `qam app create`, `qam check-scripts` | `AutomationCode` (playwright-bdd parts only), `UI-Locator-Sync` | 7 |
 | 9 | **Reports** | `reports/build_report`, `build_all`, `compose_summary`, `dsm_to_report`, `testgen_to_report`, `playwright_to_report`, `types/*` (six report types) | `src/reports/`, `plugin/reports/templates/` | `qam report all\|manual\|<type>` | `QE-Reports` and its six report skills | 1, 7, 8 |
 
+**Reordered 2026-11-02 (your call):** feature 8, Automation, is built in [0.3.0](plans/0.3.0.md) together with the gate (tech.md porting steps 5 and 6). Its scripts are drafted just in time, inside the gate (Q39, proposed), so its `qam` commands are called by `qam check` as well as by onboarding stages 10–13. Features 6 and 9 come after 0.3.0.
+
 **Reordered 2026-10-29 (your call):** feature 7, TestGen, comes next, before step 4 and feature 6. This gives the earliest QE-engine demo: app in, reviewed test cases out. Requirements are optional in the pipeline, and generating cases needs no ADO. Decision 4 still holds: the ADO adapter comes before feature 6. Step 4's Learn is kept on `feature/step4_ado-adapter`.
 
 Not in step 3:

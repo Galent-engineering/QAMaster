@@ -10,6 +10,7 @@ Read before working on a feature:
 - [docs/decisions.md](docs/decisions.md): settled decisions. Don't reverse one silently; propose a new entry.
 - [docs/data-handling.md](docs/data-handling.md): what goes to Claude, and `QAMASTER_AI=off`
 - [docs/releases.md](docs/releases.md): what each plugin version holds, and the next one's plan
+- [docs/plans/](docs/plans/README.md): one versioned plan per release, the working source of truth for that release. A change of scope adds a revision row
 - [docs/demos/](docs/demos/README.md): every walkthrough with the tester's feedback, and where each finding went
 - [docs/learning.md](docs/learning.md): concepts and design explained, one lesson per ported feature. Add a lesson when a feature finishes Learn
 

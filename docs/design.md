@@ -34,7 +34,7 @@
 | `/qamaster:dsm [run\|refresh\|changes\|…]` | Build or refresh the DSM and show what changed | `dsm/` |
 | `/qamaster:publish [run]` | Dry run of what goes to ADO, then waits for a yes, then applies | ADO, ledger |
 | `/qamaster:plan [base]` | Shows the plan for the current change, with Claude's group picks. Runs nothing | `.qamaster/plans/` |
-| `/qamaster:check [base]` | Plan, then waits for approval, then runs and reports the verdict | `.qamaster/` |
+| `/qamaster:check [base]` | Plan, then drafts or updates scripts for the selected cases (Q39, proposed), shows the cases and scripts, waits for one approval, then runs and reports the verdict | `.qamaster/`, scripts in the test root (left uncommitted) |
 | `/qamaster:report` | Builds every report there is data for | `reports/output/` |
 
 Skills trigger on plain words: "write test cases for checkout", "which tests cover this change", "show test case 26", "retire TC34", "why did my push get blocked".
@@ -57,7 +57,7 @@ qam check-scripts
 qam plan    [--base REF] [--tag GROUP[=WHY]]
 qam approve <plan-id> [--add TC…|GROUP] [--remove TC…|GROUP] [--by NAME]
 qam run     <plan-id>
-qam check   [--base REF] [--tag …] [--yes] [--all]
+qam check   [--base REF] [--tag …] [--yes] [--all]   # plan, automate (Q39), approve, run
 qam feedback [<sha>]
 qam report all|manual|<type>
 qam req|tc list|show|create|update|retire ... [--apply]
@@ -87,7 +87,7 @@ Conflict (1), not written
 
 Unchanged (40)
 
-Smoke suggestions (P1, Positive or E2E; the smoke set would be 7 of max 20)
+Smoke suggestions (P1, Positive or E2E; the plan's smoke set would be 7 of max 20 for the whole plan)
   [x] TC-CHECKOUT-016  Card payment completes the order
   [x] TC5101           Coupon applies discount to cart total
   (TC5107 not suggested: QA removed smoke on 2026-10-21)
@@ -119,6 +119,11 @@ Coverage gaps (from the DSM)
 
 Other groups (add with --tag, or approve --add <group>)
   payments: Refund to card; Pay with gift card
+
+Scripts (Q39, proposed; uncommitted in the test root, approved with the plan)
+  new      TC5110  bdd:@TC-CHECKOUT-018   features/checkout/coupon.feature (+24)
+  updated  TC4410  bdd:@TC-CHECKOUT-016   code under src/checkout/** changed (+3 −1)
+  kept     TC1001  pytest:tests/test_login.py::test_login
 ```
 
 Layout rules:
@@ -134,12 +139,14 @@ Layout rules:
 |---|---|
 | All approved tests passed | `pass` |
 | Any approved test failed after one retry | `fail` |
+| A script drafted by this check, never passed before, failed | `fail`, labelled "new script failed: check the script or the app" (Q39, proposed) |
+| A case's link names no registered runner | `fail`, listed under Not run (Q38, proposed) |
 | An approved test didn't run or was skipped | `fail` |
 | A selected case is BROKEN | `fail` |
 | No test case matched the change | `pass`, with a coverage-gap warning |
 | Missing settings, credentials, ADO unreachable, no plan | `blocked` |
-| The QA project (`QAMASTER_TEST_ROOT`) has uncommitted changes | `blocked` |
-| HEAD or the QA project's commit moved since approval | plan void; approve again |
+| The QA project (`QAMASTER_TEST_ROOT`) has uncommitted changes the plan didn't make | `blocked` |
+| HEAD, the QA project's commit or the drafted scripts changed since approval | plan void; approve again |
 | Plan not approved | pending, never green |
 
 A test that fails and then passes on retry is **flaky**. It's listed but doesn't fail the verdict. Evidence for each failed or flaky case (screenshot, video, trace) is listed under it, with the command to open the trace.
@@ -151,9 +158,9 @@ A test that fails and then passes on retry is **flaky**. It's listed but doesn't
 ```bash
 QAMASTER_ADO_ORG=galent
 QAMASTER_ADO_PROJECT=Shop
-# QAMASTER_ADO_PLAN=Shop Web            # only if no plan is named like the repo folder
+# QAMASTER_ADO_PLAN=Shop Web            # only if no plan is named like app.name (else the folder)
 # QAMASTER_TEST_ROOT=../shop-qa/Shop    # only if the tests live in a QA project
-# QAMASTER_RUNNER=pytest                # default playwright-bdd
+# QAMASTER_RUNNER=pytest                # runner for new links; default playwright-bdd (Q38)
 # QAMASTER_STORE=ado                    # or file: testcases.csv (or .json) in the QA project (Q34, Q36)
 # QAMASTER_STORE=file                   # testcases/testcases.csv, or testcases.json when there is no CSV (Q34, Q36)
 # QAMASTER_AI=off                       # turn off every AI step for this repo (Q24, data-handling.md)
@@ -165,14 +172,17 @@ QAMASTER_ADO_PROJECT=Shop
 ```json
 {
   "app": { "name": "Shop", "url": "https://shop.example.test", "repo": "../shop", "channels": ["web", "api"] },
-  "publish": { "pathDepth": 4, "suiteBy": "module" },
+  "publish": { "pathDepth": 4, "sharedShare": 0.3, "suiteBy": "module" },
   "smoke": { "max": 20, "priorities": ["P1"], "categories": ["Positive", "E2E"] },
   "testgen": { "hallucination_tolerance": 0 },
   "ai": "on",
   "owners": { "Checkout": "a.rao@example.com" },
-  "gate": { "retries": 1, "noMatch": "pass-with-warning" }
+  "gate": { "retries": 1, "noMatch": "pass-with-warning" },
+  "runners": { "pytest": { "root": "../shop/tests" }, "playwright-bdd": { "root": "Shop" } }
 }
 ```
+
+`publish.sharedShare` (Q37) and `runners` (Q38) are proposed and built in [0.2.1](plans/0.2.1.md) and [0.3.0](plans/0.3.0.md). A runner without a `runners` entry uses `QAMASTER_TEST_ROOT`.
 
 The DSM, TestGen and MCP config files keep Autonomous-QE's formats.
 

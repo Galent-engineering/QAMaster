@@ -200,6 +200,8 @@ AQE's 13 stages, plus **Review** and **Publish** as their own stages, and a firs
 | 14 | First gate run | `qam check --all` | A verdict for the current HEAD |
 | 15 | Reports | `qam report all` | Six reports built |
 
+**Stages 10–13 are optional (Q39, proposed).** By default, automation is drafted just in time, inside the gate, for the cases each change touches (see Gate). The stages remain for a team that wants every case automated up front.
+
 Publishing (9) happens before automation (10–13) on purpose. Manual cases are useful in Test Plans even before scripts exist; the gate lists them under **Not run**. Stage 13 then fills in the automation link for each scenario. The next `qam publish` updates *Automated Test Name* on cases that now have a script.
 
 ## Publish (`src/publish/`)
@@ -208,9 +210,12 @@ Publishing (9) happens before automation (10–13) on purpose. Manual cases are 
 load      the run's testcases.json; refuse unless validation == pass and reviewedBy is set
           warn (don't block) if config.owners names an owner for the run's module and reviewedBy differs
 derive    tags:   path:<glob>   from DSM evidence on every screen the case visits (dsm.json screen → source files),
-                                collapsed to folders at config.publish.pathDepth (default 4), deduplicated
+                                collapsed to folders at config.publish.pathDepth (default 4), deduplicated;
+                                a file shallower than pathDepth is tagged as itself; a file behind more than
+                                config.publish.sharedShare (0.3) of the cases is shared and gets no tag (Q37, proposed)
                   <module>, <module>-<sub-module>
-                  smoke         suggested when priority P1 and category in {Positive, E2E}, up to config.smoke.max;
+                  smoke         suggested when priority P1 and category in {Positive, E2E}, up to config.smoke.max
+                                for the whole plan (counting smoke already in the store; --apply recounts live);
                                 written only if QA confirms it in the preview; never re-suggested once removed (ledger)
           link:   bdd:@<id>     when the <App>/ suite has a scenario tagged @<id>; else none (manual)
 diff      against the ledger and the tracker:
@@ -235,13 +240,16 @@ collect   RepoReader.diff(mergeBase(base, HEAD), HEAD) → Change
 catalog   TestCaseStore.inPlan() → every test case in the plan with tags and automation link
 select    candidates(change, catalog, groups) → {case → reasons}: path, smoke, group
           dsm.impact(change.files) → screens; screens with no selected case → gaps
-          Runner.collected(testRoot) + split() → PlanItem[], NotRun[] (manual or BROKEN) → Plan
-approve   approve(plan, by, add, remove) → Plan with approvedBy/At; refuses if HEAD or testsHead moved
-run       Runner.run(selection) → TestResult[], retry failed cases once → decide() → Verdict
+          Runner.collected(root) per runner + split() → PlanItem[], NotRun[] (manual, BROKEN, unknown runner) → Plan
+automate  (Q39) per selected case: no script → Framework drafts; stale (case hash or code under its path: tags
+          changed) → updates; else keeps. check-scripts must pass. Plan records scriptsHash of the drafted diff
+approve   approve(plan, by, add, remove) → Plan with approvedBy/At; refuses if HEAD, testsHead or scriptsHash moved
+run       group by link prefix → each Runner.run(selection) in runners.<name>.root (Q38) → TestResult[],
+          retry failed cases once → decide() → Verdict ("new script failed" labelled, Q39)
 feedback  gaps + BROKEN + stale cases → .qamaster/feedback/<sha>.json, defect drafts for failures
 ```
 
-`qam plan` stops after select, `qam approve` and `qam run` take a plan ID, and `qam check` does all three.
+`qam plan` stops after select, `qam approve` and `qam run` take a plan ID, and `qam check` does all of them, the automate step included. Built in [0.3.0](plans/0.3.0.md).
 
 ### Runners
 
@@ -335,3 +343,5 @@ All hooks use only the standard library and stay quiet when they allow (Q14).
 | 9 | Hooks, commands, skills; the Q14 hook rules | Both | S |
 | 10 | End to end against a demo app and a sandbox ADO project | — | M |
 | 11 (v1.1) | git pre-push hook, `CodeHost` (github, azure-repos) and PR check integrations (GitHub Actions, Azure Pipelines), PR comment, QA branch matching in CI (Q28) | CM design + New | M |
+
+Where it stands (2026-11-02): steps 1, 2, 4 and 7 are done; step 3 has features 1–5 and 7 done, and 6, 8 and 9 open. Steps 5, 6 (pytest and playwright-bdd), the push hook from 9, and 10 are planned in [plans/0.3.0.md](plans/0.3.0.md), which also brings in AQE feature 8 (Automation). Step 8 and the rest of 9 come after 0.3.0.

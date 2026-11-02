@@ -133,7 +133,7 @@ How to read it:
 - **Two lineages, one engine.** The top half of the engine is Autonomous-QE's pipeline, the bottom half is CheckMaster's gate. Both were rewritten into one TypeScript engine with shared models (Q1).
 - **Publish is the bridge.** It turns a validated test run into Azure DevOps test cases that the gate can select. The tags and automation links come from facts QAMaster already has, so nobody types them by hand (Q8, Q9).
 - **Every external system sits behind an adapter.** The engine never calls Azure DevOps, git, a browser or a test runner directly (Q4).
-- **The person decides at three gates:** test case review before publishing, the go-ahead before automating, and plan approval before each run (Q12).
+- **The person decides at three gates:** test case review before publishing, the go-ahead before automating, and plan approval before each run (Q12). With just-in-time automation (Q39, proposed), running `/qamaster:check` is the go-ahead, and one approval covers the drafted scripts and the plan.
 
 ## 2. The loop
 
