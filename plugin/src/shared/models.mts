@@ -88,7 +88,7 @@ export type TestCase = { id: number; title: string; url: string; tags: string[];
 export type Reason = { kind: 'path' | 'smoke' | 'group' | 'added' | 'dsm'; detail: string };
 export type PlanItem = { testCase: TestCase; reasons: Reason[]; selected: boolean };
 /** `broken`: the automated test named in the store isn't in the test root, so the check fails until it's fixed. */
-export type NotRun = { testCase: TestCase; why: string; broken: boolean };
+export type NotRun = { testCase: TestCase; why: string; broken: boolean; reasons?: Reason[] }; // reasons: why it was selected
 export type Gap = { screen: string; files: string[]; why: string }; // new: DSM impact with no case
 
 export type Plan = {
@@ -102,6 +102,9 @@ export type Plan = {
   shared?: { file: string; cases: number }[]; // changed files whose path tags cover too much of the plan (Q37)
   catalogSize: number;
   otherGroups: Record<string, string[]>; // group tag -> titles of the test cases it would add
+  /** Q39: cases whose scripts this check drafted or updated, and the hash of those scripts the approval is bound to. */
+  newScripts?: number[];
+  scriptsHash?: string;
   approvedBy?: string;
   approvedAt?: string;
 };

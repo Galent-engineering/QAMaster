@@ -11,9 +11,12 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
+import { playwrightBdd } from '../adapters/framework-bdd.mts';
 import { defaultBase, GitRepoReader } from '../adapters/git.mts';
 import { buildStore, RUNNERS } from '../adapters/registry.mts';
 import type { RepoConfig } from '../dsm/scan.mts';
+import type { Work } from '../gate/automate.mts';
+import { bind, type Drafts, folderHash, recordedUnchanged, worklist } from '../gate/automate.mts';
 import { dsmCases, repoDirs, runCases } from '../gate/dsm.mts';
 import { approve, type Gate, makePlan, runPlan } from '../gate/gate.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
@@ -21,6 +24,7 @@ import { readLedger } from '../publish/ledger.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import type { CodeModel, Plan, Verdict } from '../shared/models.mts';
+import { appFolder } from './automation.mts';
 
 const PASS = 0;
 const FAIL = 1;
@@ -41,13 +45,31 @@ function testsHead(cfg: Config): string | undefined {
   if (path.resolve(cfg.testRoot) === path.resolve(cfg.root)) return undefined;
   const head = git(cfg.testRoot, ['rev-parse', 'HEAD']);
   if (head.status !== 0) return undefined; // not a git repository: nothing to bind to
-  const dirty = git(cfg.testRoot, ['status', '--porcelain']).stdout.trim();
+  // files QAMaster drafted and recorded, unchanged since, are allowed (Q39); anything else must be committed
+  const top = git(cfg.testRoot, ['rev-parse', '--show-toplevel']).stdout.trim();
+  const drafts = readDrafts(cfg);
+  const dirty = git(cfg.testRoot, ['status', '--porcelain', '--untracked-files=all'])
+    .stdout.split('\n')
+    .filter((l) => l.trim() && !recordedUnchanged(drafts, path.join(top, l.slice(3).replace(/^.* -> /, ''))))
+    .join('\n');
   if (dirty)
     throw new BlockedError(
       `The QA project at ${cfg.testRoot} has uncommitted changes, so the plan can't say what will run (Q22). Commit or stash them, then run again:\n${dirty.split('\n').slice(0, 10).join('\n')}`,
     );
   return head.stdout.trim();
 }
+
+const DRAFTS = 'drafts.json';
+const readDrafts = (cfg: Config): Drafts | null => readJson<Drafts>(path.join(cfg.root, QAMASTER_DIR, DRAFTS));
+/** The automation folder, when the QA project has one. */
+const automationFolder = (cfg: Config): string | null => {
+  try {
+    const dir = appFolder(cfg);
+    return fs.existsSync(dir) ? dir : null;
+  } catch {
+    return null;
+  }
+};
 
 /** The gate's services, from the settings. */
 export function gateFor(cfg: Config): Gate {
@@ -64,7 +86,9 @@ export function gateFor(cfg: Config): Gate {
     runner: (name) => (Object.hasOwn(RUNNERS, name) ? RUNNERS[name](cfg) : null),
     root: (name) => {
       const r = cfg.project.runners[name]?.root;
-      return r ? path.resolve(project, r) : cfg.testRoot;
+      if (r) return path.resolve(project, r);
+      // playwright-bdd scripts live in the QA project's automation folder (qam app create)
+      return name === playwrightBdd.runners[0] ? (automationFolder(cfg) ?? cfg.testRoot) : cfg.testRoot;
     },
     testsHead: () => testsHead(cfg),
     ...(code
@@ -82,6 +106,10 @@ export function gateFor(cfg: Config): Gate {
       : {}),
     retries: cfg.project.gate.retries,
     sharedShare: cfg.project.gate.sharedShare,
+    scriptsHash: () => {
+      const dir = automationFolder(cfg);
+      return dir ? folderHash(dir) : undefined;
+    },
   };
 }
 
@@ -195,6 +223,7 @@ function parse(argv: string[], command: string) {
         add: { type: 'string', multiple: true },
         remove: { type: 'string', multiple: true },
         yes: { type: 'boolean' },
+        done: { type: 'boolean' },
       },
     });
   } catch (e) {
@@ -249,6 +278,7 @@ export async function gate(cfg: Config, command: string, argv: string[], json: b
     return AWAITING;
   }
   const plan = loadPlan(cfg, positionals[0]);
+  if (command === 'automate') return automateCommand(cfg, plan, !!v.done, json);
   if (command === 'approve') {
     const approved = await approve(g, plan, whoAmI(cfg), list(v.add), list(v.remove));
     savePlan(cfg, approved);
@@ -256,4 +286,80 @@ export async function gate(cfg: Config, command: string, argv: string[], json: b
     return PASS;
   }
   return finish(cfg, g, plan, json);
+}
+
+/**
+ * qam automate <plan-id> [--done] (Q39): without --done, what the AutomationCode skill has to draft, update or keep;
+ * with --done, the script check must pass, then the drafts are recorded and the plan is bound to them (exit 3).
+ */
+function automateCommand(cfg: Config, plan: Plan, done: boolean, json: boolean): number {
+  const project = cfg.qaProject ?? cfg.root;
+  const dir = automationFolder(cfg);
+  if (!dir)
+    throw new BlockedError(
+      'No automation folder yet. Run qam app create, then npm install in it, then run this again.',
+    );
+  const ledger = readLedger(project)?.entries ?? [];
+  const drafts = readDrafts(cfg) ?? { cases: {}, files: {} };
+  const scripts = playwrightBdd.scripts(dir);
+  const work = worklist(plan, { ledger, scripts, drafts });
+  const runOf = new Map<string, string>();
+  const outDir = path.join(project, 'testgen', 'output');
+  for (const run of fs.existsSync(outDir) ? fs.readdirSync(outDir).sort() : [])
+    for (const c of readJson<{ id?: string }[]>(path.join(outDir, run, 'testcases.json')) ?? [])
+      if (c.id) runOf.set(c.id, run);
+  if (!done) {
+    const n = (a: Work['action']) => work.filter((w) => w.action === a).length;
+    const lines = [
+      `Automate plan ${plan.id} in ${path.relative(project, dir)}/: ${n('draft')} to draft, ${n('update')} to update, ${n('keep')} kept`,
+      ...work.map(
+        (w) =>
+          `  ${w.action.padEnd(7)} TC${w.testCaseId} ← ${w.localId}  ${w.files.length ? w.files.join(', ') : `no script yet (run ${runOf.get(w.localId) ?? '?'})`}`,
+      ),
+    ];
+    if (n('draft') + n('update'))
+      lines.push(
+        '',
+        `Write them with the AutomationCode skill, run qam check-scripts, then qam automate ${plan.id} --done.`,
+      );
+    console.log(
+      json
+        ? JSON.stringify(
+            { plan: plan.id, folder: dir, work: work.map((w) => ({ ...w, run: runOf.get(w.localId) })) },
+            null,
+            1,
+          )
+        : lines.join('\n'),
+    );
+    return n('draft') + n('update') ? AWAITING : PASS;
+  }
+  const known = new Set(runOf.keys());
+  const check = playwrightBdd.check(dir, { known, quick: false });
+  if (check.status !== 'pass') {
+    console.log(
+      json
+        ? JSON.stringify(check, null, 1)
+        : [
+            `Script check: fail, so nothing was recorded`,
+            ...Object.entries(check.findings).flatMap(([k, l]) => l.map((f) => `  ${k.padEnd(10)} ${f}`)),
+          ].join('\n'),
+    );
+    return FAIL;
+  }
+  const r = bind(plan, {
+    appDir: dir,
+    work,
+    ledger,
+    scripts: playwrightBdd.scripts(dir),
+    drafts,
+    link: playwrightBdd.link,
+  });
+  fs.writeFileSync(path.join(stateDir(cfg, 'plans'), '..', DRAFTS), `${JSON.stringify(r.drafts, null, 1)}\n`);
+  savePlan(cfg, r.plan);
+  out(
+    json,
+    r.plan,
+    `${renderPlan(r.plan)}\n\nScripts recorded (not committed: review and commit them yourself). Approve with qam approve ${plan.id}, then qam run ${plan.id}.`,
+  );
+  return AWAITING;
 }

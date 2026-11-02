@@ -121,7 +121,7 @@ export function split(
       automatedTest: null,
     };
     const link = testCase.automatedTest;
-    if (!link) notRun.push({ testCase, why: 'manual (no automated test)', broken: false });
+    if (!link) notRun.push({ testCase, why: 'manual (no automated test)', broken: false, reasons: why });
     else if (!linkRunner(link)) unprefixed.push(testCase);
     else if (!resolve(link, collected).length)
       notRun.push({ testCase, why: `its test ${link} isn't in the test root (renamed or moved?)`, broken: true });

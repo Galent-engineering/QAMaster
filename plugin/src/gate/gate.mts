@@ -27,6 +27,8 @@ export type Gate = {
   dsm?: (files: string[]) => { cases: Map<number, string[]>; gaps: Gap[] };
   retries: number;
   sharedShare?: number;
+  /** The current hash of the automation folder, when a plan was bound to drafted scripts (Q39). */
+  scriptsHash?: () => string | undefined;
 };
 
 const ids = (xs: number[]) => xs.map((id) => `TC${id}`).join(', ');
@@ -90,6 +92,10 @@ async function requireSame(g: Gate, plan: Plan): Promise<void> {
   const tests = g.testsHead?.();
   if (plan.testsHead && tests !== plan.testsHead)
     throw new BlockedError(`The QA project moved since plan ${plan.id} was made (Q22). Run qam plan again.`);
+  if (plan.scriptsHash && g.scriptsHash?.() !== plan.scriptsHash)
+    throw new BlockedError(
+      `The automation scripts changed since they were recorded for plan ${plan.id} (Q39). Run qam check-scripts, then qam automate ${plan.id} --done again.`,
+    );
 }
 
 /** Test case IDs (`TC6` or `6`) and group tags, as test case IDs. */
@@ -179,5 +185,5 @@ export async function runPlan(g: Gate, plan: Plan, evidence: string): Promise<Ve
         evidence: [],
       },
   );
-  return decide(plan, ordered);
+  return decide(plan, ordered, { newScripts: new Set(plan.newScripts ?? []) });
 }

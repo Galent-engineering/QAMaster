@@ -194,3 +194,20 @@ test('dsmCases: changed files map to screens, then to published cases; a screen 
     },
   ]);
 });
+
+// Q39: the drafted scripts bind the plan; any edit after that voids the approval, and a new script's failure is labelled.
+test('a plan bound to drafted scripts refuses approval when they changed, and labels a new script that failed', async () => {
+  let folder = 'h1';
+  const { g } = gate({ failing: new Set([502]), scriptsHash: () => folder });
+  const plan = { ...(await makePlan(g, 'main', {})), scriptsHash: 'h1', newScripts: [502] };
+  folder = 'h2';
+  await assert.rejects(
+    approve(g, structuredClone(plan), 'ada', [], []),
+    blocked(/scripts changed since they were recorded/),
+  );
+  folder = 'h1';
+  const approved = await approve(g, plan, 'ada', [], []);
+  const v = await runPlan(g, approved, '/ev');
+  assert.equal(v.result, 'fail');
+  assert.match(v.reasons.join(' '), /TC502 failed: new script failed: check the script or the app\./);
+});

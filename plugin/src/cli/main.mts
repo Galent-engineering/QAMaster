@@ -43,6 +43,7 @@ export const COMMANDS: Record<string, string> = {
   app: 'Create the automation folder: create --app NAME --web-url URL',
   'check-scripts': 'Quality gate for automation scripts',
   plan: 'Propose test cases for the change; runs nothing',
+  automate: 'List the scripts a plan needs drafted or updated; --done records them and binds the plan (Q39)',
   approve: 'Approve a plan, optionally adding or removing test cases',
   run: 'Run an approved plan and record the verdict',
   check: 'plan, approve (interactive or --yes), run',
@@ -73,6 +74,7 @@ const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promi
   'check-scripts': (opts, args) => checkScripts(loadConfig(opts.repo), args, opts.json),
   plan: (opts, args) => gate(loadConfig(opts.repo), 'plan', args, opts.json),
   approve: (opts, args) => gate(loadConfig(opts.repo), 'approve', args, opts.json),
+  automate: (opts, args) => gate(loadConfig(opts.repo), 'automate', args, opts.json),
   run: (opts, args) => gate(loadConfig(opts.repo), 'run', args, opts.json),
   check: (opts, args) => gate(loadConfig(opts.repo), 'check', args, opts.json),
 };
