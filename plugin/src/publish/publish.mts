@@ -132,6 +132,14 @@ export type Derived = {
   notLinked: boolean; // no source file could be found behind the case: no path: tag
 };
 
+/** A description as the store keeps it: ADO drops blank lines and may keep trailing spaces, which change nothing. */
+const sameText = (t: string | null | undefined) =>
+  (t ?? '')
+    .split(/\r?\n/)
+    .map((l) => l.trimEnd())
+    .filter(Boolean)
+    .join('\n');
+
 /** "<repo>:<path>" to "<path>". */
 const inRepo = (f: string) => f.replace(/^[\w.-]+:/, '');
 
@@ -294,7 +302,7 @@ export function diff(i: DiffInput): { changes: PlannedChange[]; declinedSmoke: s
         fields.push('title');
         change.title = d.title;
       }
-      if (it.description !== d.description) {
+      if (sameText(it.description) !== sameText(d.description)) {
         fields.push('description');
         change.description = d.description;
       }

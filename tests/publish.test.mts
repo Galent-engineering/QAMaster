@@ -375,3 +375,16 @@ test('diff: confirmed smoke is part of the tags; one QA removed in the store is 
   assert.deepEqual(r.declinedSmoke, ['TC-1']);
   assert.deepEqual(kinds(r), ['unchanged TC-1']);
 });
+
+// From the 0.2.1 verification (B1): ADO drops blank lines, so every update rewrote the description.
+test('0.2.2 B1: a description that differs only in blank lines or trailing spaces is not a change', () => {
+  const was = derive(kase('TC-1', { preconditions: ['Signed in'] }), ctx());
+  const roundTripped = was.description.replace(/\n{2,}/g, '\n').replace(/\n/g, '  \n');
+  const now = derive(kase('TC-1', { preconditions: ['Signed in'], title: 'New title' }), ctx());
+  const have = stored(was, 7, { description: roundTripped });
+  const r = diff(input([now], [entry('TC-1', 7, was.hash, { ownedTags: was.tags })], [have]));
+  assert.deepEqual(r.changes[0].fields, ['title']);
+  const reworded = derive(kase('TC-1', { preconditions: ['Signed out'] }), ctx());
+  const r2 = diff(input([reworded], [entry('TC-1', 7, was.hash, { ownedTags: was.tags })], [have]));
+  assert.deepEqual(r2.changes[0].fields, ['description']);
+});
