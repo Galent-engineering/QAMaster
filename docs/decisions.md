@@ -214,6 +214,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Why:** Autonomous-QE's Stop hooks could run for up to seven minutes at the end of every turn, and its PostToolUse hooks ran on every Bash call. That slows every session, even ones unrelated to QA.
 - **Gave up:** an automatic full gate after every edit. A turn can end with scripts that haven't been re-checked. `/qamaster:status` and the push gate catch that.
 - **Amended 2026-10-29:** the Claude Code hooks are the first kind of *integration* (Q27). Git hooks, PR checks and branch policies follow as further kinds, and every place QAMaster is plugged in is recorded.
+- **Amended 2026-11-02 (proposed, from the clean Docker run, F11):** a hook that can't judge a push, for example because git isn't available, still allows it. It now says so on stderr in one line, so nobody mistakes an unchecked push for a checked one.
 
 **Q15. Read-only toward repos and trackers, except where a decision says otherwise** (2026-10-28, accepted 2026-10-28, AQE + CM)
 - **Decision:**
@@ -643,6 +644,26 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Gave up:**
   - Every new script commit updates the test case's description, so ADO's history records the change.
   - A link to a private repo opens only for people with access to it.
+
+**Q41. A runner's setup problem blocks, and a runner never downloads without a yes** (2026-11-02, proposed; amends Q13 and Q38)
+- **Decision (proposed, for the person to accept):**
+  - **Blocked, not fail.** A runner that can't start its tests because of the machine's setup throws `BlockedError` (exit 2) with the command that fixes it, and the gate writes no verdict. That covers:
+    - a missing browser ("Executable doesn't exist");
+    - missing system libraries ("error while loading shared libraries");
+    - the app unreachable at its base URL (`ERR_CONNECTION_REFUSED`).
+
+    A setup problem is never reported as a test failure, and never as "new script failed".
+  - **No silent downloads.** The pytest runner runs `uv run --no-sync` with `UV_PYTHON_DOWNLOADS=never`. A missing project environment blocks with "run uv sync (downloads Python and the test dependencies)". `/qamaster:check` offers to run it, and does only after the person's yes. The hook and CI never download (Q38).
+- **Why:** the clean Docker run (F2, F5). On a new machine every case "failed" for want of a browser, and `qam plan` fetched about 240 MB unasked. A developer would read both as problems with their code.
+- **Gave up:** a first `qam plan` that just works on a machine missing its test environment. The person runs one install command first.
+
+**Q42. The gate keeps its local files out of the app repo's commits** (2026-11-02, proposed; amends Q15)
+- **Decision (proposed, for the person to accept):**
+  - When the gate first writes to an app repo, it adds `.qamaster/plans/`, `.qamaster/verdicts/`, `.qamaster/evidence/`, `.qamaster/drafts.json` and `.env` to that clone's `.git/info/exclude`. The file is local to the clone, git never commits or shares it, and existing lines are kept.
+  - `.qamaster/integrations.json` isn't excluded: teams commit it (Q27).
+  - This is the one write QAMaster makes inside the app repo's `.git`. Q15's read-only rule otherwise stands: no commits, no branches, no tracked files.
+- **Why:** the clean Docker run (F7). With a separate QA project, plans, verdicts, screenshots, videos and the developer's `.env` sat untracked in the app repo, and `git add -A` would have committed them.
+- **Gave up:** strict read-only toward the app repo. The alternative, a warning that asks the developer to edit `.gitignore` by hand, was rejected as easy to miss.
 
 ---
 
