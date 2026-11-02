@@ -6,7 +6,7 @@ allowed-tools: Bash(node:*), Read
 
 Publish a reviewed run with these arguments: `$ARGUMENTS`. If no run is named, use the newest folder under `testgen/output/` that `qam pipeline status` shows as reviewed, and say which one.
 
-Follow the `Publish` skill. Start with the dry run, from the QA project:
+Follow the `Publish` skill. If the run isn't reviewed, stop and say so; the review is the person's separate yes in the `TestGen` skill, never this command's. Otherwise start with the dry run, from the QA project:
 
 ```bash
 node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" publish <run> $ARGUMENTS

@@ -25,7 +25,7 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
    - every DSM journey through it, with an E2E or Business test.
 6. **Validate:** `qam testgen validate <run>`. Fix each finding from the facts. Never fix one by adding evidence that doesn't apply, or by deleting coverage to hide a gap. A gap that truly can't be tested goes in `manifest.coverage_exclusions`, with a reason the person can check. Repeat until it passes.
 7. **Render:** `qam testgen render <run>` writes `testcases.md`, `<Component>.feature` (tagged `@TC-<id>`) and `testcases.csv`.
-8. **Review.** Show the person the run: `testcases.md`, the counts, the coverage, the exclusions. **Passing validation isn't a review.** The validator proves that every reference exists; only the person can judge that a cited line says what the case claims. Run `qam review <run>` only after they say yes. It refuses a run that changed after validation, or whose DSM was rebuilt.
+8. **Review.** Show the person the run: `testcases.md`, the counts, the coverage, the exclusions. **Passing validation isn't a review.** The validator proves that every reference exists; only the person can judge that a cited line says what the case claims. Then ask exactly one question: **"Do you approve run `<run>` as reviewed?"** Run `qam review <run>` only when the reply is a yes to that question. A request to see more ("show the dry run", "go on", "publish it") is not an approval: answer it, then ask the question again. `qam review` refuses a run that changed after validation, or whose DSM was rebuilt.
 
 ## Rules
 
