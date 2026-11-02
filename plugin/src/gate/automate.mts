@@ -15,8 +15,8 @@ import path from 'node:path';
 import type { LedgerEntry, Plan } from '../shared/models.mts';
 
 export type Drafts = {
-  /** TC ID -> the hash of its test case when its script was recorded. */
-  cases: Record<string, { caseHash: string }>;
+  /** TC ID -> the hash of its test case when its script was recorded, and whether the script has passed once. */
+  cases: Record<string, { caseHash: string; proven?: boolean }>;
   /** Every file of the automation folder at bind (absolute path -> sha256). */
   files: Record<string, string>;
 };
@@ -48,20 +48,24 @@ export function folderHash(dir: string): string {
 /** The cases the plan selected (manual ones included) that a TestGen case stands behind, and what each needs. */
 export function worklist(
   plan: Plan,
-  o: { ledger: LedgerEntry[]; scripts: Map<string, string[]>; drafts: Drafts },
+  o: { ledger: LedgerEntry[]; scripts: Map<string, string[]>; drafts: Drafts; caseHash?: Map<string, string> },
 ): Work[] {
   const byTracker = new Map(o.ledger.map((e) => [e.trackerId, e]));
-  const cases = [
-    ...plan.items.filter((i) => i.selected).map((i) => i.testCase.id),
-    ...plan.notRun.filter((n) => !n.broken).map((n) => n.testCase.id),
-  ];
+  const manual = new Set(plan.notRun.filter((n) => !n.broken).map((n) => n.testCase.id));
+  const cases = [...plan.items.filter((i) => i.selected).map((i) => i.testCase.id), ...manual];
   const out: Work[] = [];
   for (const id of cases) {
     const e = byTracker.get(id);
     if (!e) continue; // not from a TestGen run: nothing to draft from
     const files = o.scripts.get(e.localId) ?? [];
     const recorded = o.drafts.cases[e.localId];
-    const action = !files.length ? 'draft' : recorded && recorded.caseHash !== e.hash ? 'update' : 'keep';
+    // a manual case's script that QAMaster hasn't recorded yet is still a draft, also once it's written
+    const action =
+      !files.length || (manual.has(id) && !recorded)
+        ? 'draft'
+        : recorded && recorded.caseHash !== (o.caseHash?.get(e.localId) ?? e.hash)
+          ? 'update'
+          : 'keep';
     out.push({ testCaseId: id, localId: e.localId, action, files });
   }
   return out;
@@ -77,18 +81,25 @@ export function bind(
     scripts: Map<string, string[]>;
     drafts: Drafts;
     link: (localId: string) => string;
+    /** TC ID -> the hash of the case in its TestGen run. */
+    caseHash?: Map<string, string>;
   },
 ): { plan: Plan; drafts: Drafts } {
   // a case left without a scenario stays manual, under Not run: the person may keep some cases manual on purpose
   const touched = o.work.filter((w) => w.action !== 'keep' && o.scripts.get(w.localId)?.length);
-  const hashOf = new Map(o.ledger.map((e) => [e.localId, e.hash]));
+  // the TestGen case's own hash when given: publishing adds a link and a Script line, which isn't a change to the case
+  const hashOf = new Map(o.ledger.map((e) => [e.localId, o.caseHash?.get(e.localId) ?? e.hash]));
   const cases = { ...o.drafts.cases };
+  // a drafted or updated script is new until it passes once (Q39)
   for (const w of touched) cases[w.localId] = { caseHash: hashOf.get(w.localId) ?? '' };
   // real paths: git reports them so (macOS: /private/var for /var), and the clean-tree rule compares with git's
   const files = Object.fromEntries(folderFiles(fs.realpathSync(o.appDir)).map((f) => [f, sha(f)]));
 
-  const drafted = new Map(touched.map((w) => [w.testCaseId, w.localId]));
-  const moved = plan.notRun.filter((n) => drafted.has(n.testCase.id));
+  // every manual case that has a script runs with its local link, recorded earlier or now
+  const scripted = new Map(
+    o.work.filter((w) => o.scripts.get(w.localId)?.length).map((w) => [w.testCaseId, w.localId]),
+  );
+  const moved = plan.notRun.filter((n) => scripted.has(n.testCase.id));
   return {
     drafts: { cases, files },
     plan: {
@@ -96,13 +107,14 @@ export function bind(
       items: [
         ...plan.items,
         ...moved.map((n) => ({
-          testCase: { ...n.testCase, automatedTest: o.link(drafted.get(n.testCase.id) ?? '') },
+          testCase: { ...n.testCase, automatedTest: o.link(scripted.get(n.testCase.id) ?? '') },
           reasons: n.reasons ?? [],
           selected: true,
         })),
       ],
-      notRun: plan.notRun.filter((n) => !drafted.has(n.testCase.id)),
-      newScripts: [...drafted.keys()],
+      notRun: plan.notRun.filter((n) => !scripted.has(n.testCase.id)),
+      // only scripts QAMaster drafted can be new; one already linked in the store has run before
+      newScripts: [...scripted].filter(([, id]) => cases[id] && !cases[id].proven).map(([tc]) => tc),
       scriptsHash: folderHash(o.appDir),
     },
   };
@@ -112,4 +124,15 @@ export function bind(
 export function recordedUnchanged(drafts: Drafts | null, file: string): boolean {
   const want = drafts?.files[file];
   return !!want && fs.existsSync(file) && sha(file) === want;
+}
+
+/** Marks the recorded scripts of the cases that passed (or passed on retry) as proven: no longer new (Q39). */
+export function prove(drafts: Drafts, ledger: LedgerEntry[], passed: number[]): Drafts {
+  const local = new Map(ledger.map((e) => [e.trackerId, e.localId]));
+  const cases = { ...drafts.cases };
+  for (const tc of passed) {
+    const id = local.get(tc);
+    if (id && cases[id]) cases[id] = { ...cases[id], proven: true };
+  }
+  return { ...drafts, cases };
 }

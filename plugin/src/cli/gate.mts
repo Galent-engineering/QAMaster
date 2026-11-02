@@ -8,6 +8,7 @@
  * verdict. The store is read live (settled 2026-11-02).
  */
 import { spawnSync } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
@@ -16,7 +17,7 @@ import { defaultBase, GitRepoReader } from '../adapters/git.mts';
 import { buildStore, RUNNERS } from '../adapters/registry.mts';
 import type { RepoConfig } from '../dsm/scan.mts';
 import type { Work } from '../gate/automate.mts';
-import { bind, type Drafts, folderHash, recordedUnchanged, worklist } from '../gate/automate.mts';
+import { bind, type Drafts, folderHash, prove, recordedUnchanged, worklist } from '../gate/automate.mts';
 import { dsmCases, repoDirs, runCases } from '../gate/dsm.mts';
 import { approve, type Gate, makePlan, runPlan } from '../gate/gate.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
@@ -52,6 +53,13 @@ function testsHead(cfg: Config): string | undefined {
     .stdout.split('\n')
     .filter((l) => l.trim() && !recordedUnchanged(drafts, path.join(top, l.slice(3).replace(/^.* -> /, ''))))
     .join('\n');
+  const changedDrafts = dirty
+    .split('\n')
+    .filter((l) => l.trim() && drafts?.files[path.join(top, l.slice(3).replace(/^.* -> /, ''))]);
+  if (changedDrafts.length)
+    throw new BlockedError(
+      `Automation scripts changed since QAMaster recorded them (Q39):\n${changedDrafts.slice(0, 10).join('\n')}\nRun qam check-scripts, then qam automate <plan-id> --done again (or commit the change), then approve.`,
+    );
   if (dirty)
     throw new BlockedError(
       `The QA project at ${cfg.testRoot} has uncommitted changes, so the plan can't say what will run (Q22). Commit or stash them, then run again:\n${dirty.split('\n').slice(0, 10).join('\n')}`,
@@ -157,7 +165,7 @@ export function renderPlan(plan: Plan): string {
     ...(plan.items.length
       ? plan.items.map(
           (i) =>
-            `  [${i.selected ? 'x' : ' '}] TC${i.testCase.id}  ${title(i.testCase.title)}  ${i.reasons.map((r) => why(r.kind, r.detail)).join('; ')}`,
+            `  [${i.selected ? 'x' : ' '}] TC${i.testCase.id}  ${title(i.testCase.title)}  ${i.reasons.map((r) => why(r.kind, r.detail)).join('; ')}${plan.newScripts?.includes(i.testCase.id) ? '  (new script)' : ''}`,
         )
       : ['  none']),
   ];
@@ -187,7 +195,10 @@ export function renderPlan(plan: Plan): string {
     lines.push(
       '',
       'Other groups (add with --tag, or approve --add <group>)',
-      ...Object.entries(plan.otherGroups).map(([tag, titles]) => `  ${tag}: ${titles.join('; ')}`),
+      ...Object.entries(plan.otherGroups).map(
+        ([tag, titles]) =>
+          `  ${tag}: ${titles.slice(0, 3).join('; ')}${titles.length > 3 ? `; and ${titles.length - 3} more` : ''}`,
+      ),
     );
   if (plan.approvedBy)
     lines.push('', `Approved by ${plan.approvedBy} at ${plan.approvedAt?.slice(0, 16).replace('T', ' ')}.`);
@@ -203,8 +214,9 @@ export function renderVerdict(v: Verdict, plan: Plan): string {
     );
     if (r.error && r.status !== 'flaky') {
       const errs = r.error.split('\n').filter((l) => l.trim());
+      // pytest marks its assertion lines with E; Playwright's message leads with the assertion
       const shown = errs.filter((l) => l.startsWith('E ')).slice(0, 4);
-      lines.push(...(shown.length ? shown : errs.slice(-4)).map((l) => `      ${l}`));
+      lines.push(...(shown.length ? shown : errs.slice(0, 5)).map((l) => `      ${l}`));
     }
     lines.push(...r.evidence.map((f) => `      evidence: ${f}`));
   }
@@ -250,6 +262,17 @@ function out(json: boolean, data: unknown, text: string) {
 async function finish(cfg: Config, g: Gate, plan: Plan, json: boolean): Promise<number> {
   const evidence = path.join(stateDir(cfg, 'evidence'), plan.change.head);
   const verdict = await runPlan(g, plan, evidence);
+  const drafts = readDrafts(cfg);
+  if (drafts) {
+    const passed = verdict.results
+      .filter((r) => r.status === 'passed' || r.status === 'flaky')
+      .map((r) => r.testCaseId);
+    const ledger = readLedger(cfg.qaProject ?? cfg.root)?.entries ?? [];
+    fs.writeFileSync(
+      path.join(cfg.root, QAMASTER_DIR, DRAFTS),
+      `${JSON.stringify(prove(drafts, ledger, passed), null, 1)}\n`,
+    );
+  }
   fs.writeFileSync(
     path.join(stateDir(cfg, 'verdicts'), `${verdict.head}.json`),
     `${JSON.stringify(verdict, null, 1)}\n`,
@@ -302,7 +325,13 @@ function automateCommand(cfg: Config, plan: Plan, done: boolean, json: boolean):
   const ledger = readLedger(project)?.entries ?? [];
   const drafts = readDrafts(cfg) ?? { cases: {}, files: {} };
   const scripts = playwrightBdd.scripts(dir);
-  const work = worklist(plan, { ledger, scripts, drafts });
+  // each TestGen case's own hash: a script needs updating only when its case changed
+  const caseHash = new Map<string, string>();
+  const runsDir = path.join(project, 'testgen', 'output');
+  for (const run of fs.existsSync(runsDir) ? fs.readdirSync(runsDir) : [])
+    for (const c of readJson<{ id?: string }[]>(path.join(runsDir, run, 'testcases.json')) ?? [])
+      if (c.id) caseHash.set(c.id, createHash('sha256').update(JSON.stringify(c)).digest('hex').slice(0, 16));
+  const work = worklist(plan, { ledger, scripts, drafts, caseHash });
   const runOf = new Map<string, string>();
   const outDir = path.join(project, 'testgen', 'output');
   for (const run of fs.existsSync(outDir) ? fs.readdirSync(outDir).sort() : [])
@@ -353,6 +382,7 @@ function automateCommand(cfg: Config, plan: Plan, done: boolean, json: boolean):
     scripts: playwrightBdd.scripts(dir),
     drafts,
     link: playwrightBdd.link,
+    caseHash,
   });
   fs.writeFileSync(path.join(stateDir(cfg, 'plans'), '..', DRAFTS), `${JSON.stringify(r.drafts, null, 1)}\n`);
   savePlan(cfg, r.plan);
