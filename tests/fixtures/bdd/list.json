@@ -1,0 +1,68 @@
+{
+ "suites": [
+  {
+   "title": "features/web/home.feature.spec.js",
+   "file": "features/web/home.feature.spec.js",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Home",
+     "file": "features/web/home.feature.spec.js",
+     "line": 4,
+     "column": 6,
+     "specs": [
+      {
+       "title": "The home page welcomes the visitor",
+       "ok": true,
+       "tags": [
+        "web",
+        "TC-HOME-001"
+       ],
+       "tests": [
+        {
+         "timeout": 30000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [],
+         "status": "skipped"
+        }
+       ],
+       "id": "54014b05dbadc538e63e-58a526709c23e37a484a",
+       "file": "features/web/home.feature.spec.js",
+       "line": 6,
+       "column": 7
+      },
+      {
+       "title": "The home page shows a missing text",
+       "ok": true,
+       "tags": [
+        "web",
+        "TC-HOME-002"
+       ],
+       "tests": [
+        {
+         "timeout": 30000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [],
+         "status": "skipped"
+        }
+       ],
+       "id": "54014b05dbadc538e63e-5c748cebed9c8dda40a0",
+       "file": "features/web/home.feature.spec.js",
+       "line": 11,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "errors": []
+}

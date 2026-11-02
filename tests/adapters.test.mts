@@ -35,7 +35,11 @@ test('the ADO adapters say which settings they need; the runners block until the
       .where()
       .includes('org/Shop'),
   );
-  assert.throws(() => buildRunner(config()), { name: 'BlockedError', message: /adapter isn't built yet/ });
+  assert.equal(typeof buildRunner(config()).run, 'function', 'playwright-bdd, the default runner, is built');
+  assert.throws(() => buildRunner(config({ QAMASTER_RUNNER: 'cypress' })), {
+    name: 'BlockedError',
+    message: /QAMASTER_RUNNER=cypress isn't a known adapter/,
+  });
 });
 
 test('retag adds and removes without case and keeps order', () => {

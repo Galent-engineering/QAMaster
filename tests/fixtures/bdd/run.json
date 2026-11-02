@@ -1,0 +1,161 @@
+{
+ "suites": [
+  {
+   "title": "features/web/home.feature.spec.js",
+   "file": "features/web/home.feature.spec.js",
+   "column": 0,
+   "line": 0,
+   "specs": [],
+   "suites": [
+    {
+     "title": "Home",
+     "file": "features/web/home.feature.spec.js",
+     "line": 4,
+     "column": 6,
+     "specs": [
+      {
+       "title": "The home page welcomes the visitor",
+       "ok": true,
+       "tags": [
+        "web",
+        "TC-HOME-001"
+       ],
+       "tests": [
+        {
+         "timeout": 30000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "status": "passed",
+           "duration": 234,
+           "errors": [],
+           "retry": 0,
+           "steps": [
+            {
+             "title": "Given I open the path \"/\"",
+             "duration": 35
+            },
+            {
+             "title": "Then I should see the text \"Welcome to Sample\"",
+             "duration": 16
+            }
+           ],
+           "annotations": [],
+           "attachments": []
+          }
+         ],
+         "status": "expected"
+        }
+       ],
+       "id": "54014b05dbadc538e63e-58a526709c23e37a484a",
+       "file": "features/web/home.feature.spec.js",
+       "line": 6,
+       "column": 7
+      },
+      {
+       "title": "The home page shows a missing text",
+       "ok": false,
+       "tags": [
+        "web",
+        "TC-HOME-002"
+       ],
+       "tests": [
+        {
+         "timeout": 30000,
+         "annotations": [],
+         "expectedStatus": "passed",
+         "projectId": "chromium",
+         "projectName": "chromium",
+         "results": [
+          {
+           "status": "failed",
+           "duration": 5268,
+           "error": {
+            "message": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('Not on the page').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" getByText('Not on the page').first() with timeout 5000ms\n  - waiting for getByText('Not on the page').first()\n",
+            "stack": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('Not on the page').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" getByText('Not on the page').first() with timeout 5000ms\n  - waiting for getByText('Not on the page').first()\n\n    at Object.<anonymous> (/Sample/steps/shared/common.steps.ts:10:64)\n    at /Sample/.features-gen/features/web/home.feature.spec.js:13:5",
+            "location": {
+             "file": "/Sample/steps/shared/common.steps.ts",
+             "column": 64,
+             "line": 10
+            },
+            "snippet": "   at ../steps/shared/common.steps.ts:10\n\n   8 |\n   9 | Then('I should see the text {string}', async ({ page }, text: string) => {\n> 10 |   await expect(page.getByText(text, { exact: false }).first()).toBeVisible();\n     |                                                                ^\n  11 | });\n  12 |\n  13 | Then('the URL should contain {string}', async ({ page }, part: string) => {"
+           },
+           "errors": [
+            {
+             "location": {
+              "file": "/Sample/steps/shared/common.steps.ts",
+              "column": 64,
+              "line": 10
+             },
+             "message": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('Not on the page').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" getByText('Not on the page').first() with timeout 5000ms\n  - waiting for getByText('Not on the page').first()\n\n\n   at ../steps/shared/common.steps.ts:10\n\n   8 |\n   9 | Then('I should see the text {string}', async ({ page }, text: string) => {\n> 10 |   await expect(page.getByText(text, { exact: false }).first()).toBeVisible();\n     |                                                                ^\n  11 | });\n"
+            }
+           ],
+           "retry": 0,
+           "steps": [
+            {
+             "title": "Given I open the path \"/\"",
+             "duration": 9
+            },
+            {
+             "title": "Then I should see the text \"Not on the page\"",
+             "duration": 5008,
+             "error": {
+              "message": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('Not on the page').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" getByText('Not on the page').first() with timeout 5000ms\n  - waiting for getByText('Not on the page').first()\n",
+              "stack": "Error: expect(locator).toBeVisible() failed\n\nLocator: getByText('Not on the page').first()\nExpected: visible\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n  - Expect \"toBeVisible\" getByText('Not on the page').first() with timeout 5000ms\n  - waiting for getByText('Not on the page').first()\n\n    at Object.<anonymous> (/Sample/steps/shared/common.steps.ts:10:64)\n    at /Sample/.features-gen/features/web/home.feature.spec.js:13:5",
+              "location": {
+               "file": "/Sample/steps/shared/common.steps.ts",
+               "column": 64,
+               "line": 10
+              },
+              "snippet": "   at ../steps/shared/common.steps.ts:10\n\n   8 |\n   9 | Then('I should see the text {string}', async ({ page }, text: string) => {\n> 10 |   await expect(page.getByText(text, { exact: false }).first()).toBeVisible();\n     |                                                                ^\n  11 | });\n  12 |\n  13 | Then('the URL should contain {string}', async ({ page }, part: string) => {"
+             }
+            }
+           ],
+           "annotations": [],
+           "attachments": [
+            {
+             "name": "screenshot",
+             "contentType": "image/png",
+             "path": "/ev/attempt-1/features-web-home.feature--271d3-e-page-shows-a-missing-text-chromium/test-failed-1.png"
+            },
+            {
+             "name": "video",
+             "contentType": "video/webm",
+             "path": "/ev/attempt-1/features-web-home.feature--271d3-e-page-shows-a-missing-text-chromium/video.webm"
+            },
+            {
+             "name": "error-context",
+             "contentType": "text/markdown",
+             "path": "/ev/attempt-1/features-web-home.feature--271d3-e-page-shows-a-missing-text-chromium/error-context.md"
+            },
+            {
+             "name": "trace",
+             "contentType": "application/zip",
+             "path": "/ev/attempt-1/features-web-home.feature--271d3-e-page-shows-a-missing-text-chromium/trace.zip"
+            }
+           ],
+           "errorLocation": {
+            "file": "/Sample/steps/shared/common.steps.ts",
+            "column": 64,
+            "line": 10
+           }
+          }
+         ],
+         "status": "unexpected"
+        }
+       ],
+       "id": "54014b05dbadc538e63e-5c748cebed9c8dda40a0",
+       "file": "features/web/home.feature.spec.js",
+       "line": 11,
+       "column": 7
+      }
+     ]
+    }
+   ]
+  }
+ ],
+ "errors": []
+}

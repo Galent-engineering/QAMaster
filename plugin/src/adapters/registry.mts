@@ -9,21 +9,15 @@ import { BlockedError } from '../shared/errors.mts';
 import { makeAdoRequirements, makeAdoStore } from './ado.mts';
 import type { RequirementSource, Runner, TestCaseStore } from './base.mts';
 import { makeFileStore } from './file.mts';
+import { PlaywrightBddRunner } from './runner-bdd.mts';
 import { PytestRunner } from './runner-pytest.mts';
 
 type Factory<T> = (config: Config) => T;
 
-/** Stands in for an adapter whose porting step hasn't landed yet. */
-function notBuilt(name: string): Factory<never> {
-  return () => {
-    throw new BlockedError(`The ${name} adapter isn't built yet.`);
-  };
-}
-
 export const STORES: Record<string, Factory<TestCaseStore>> = { ado: makeAdoStore, file: makeFileStore };
 export const REQUIREMENTS: Record<string, Factory<RequirementSource>> = { ado: makeAdoRequirements };
 export const RUNNERS: Record<string, Factory<Runner>> = {
-  'playwright-bdd': notBuilt('playwright-bdd'),
+  'playwright-bdd': () => new PlaywrightBddRunner(),
   pytest: () => new PytestRunner(),
 };
 
