@@ -16,7 +16,8 @@ Every hands-on walkthrough of a QAMaster build, with the tester's feedback, kept
 | 2026-11-02 | 0.2.1 | Copies of the 0.2.0 project (ADO read-only, plus the file store) | [verification](2026-11-02-0.2.1-verification.md), run by Claude | All 7 fixes pass. 5 bugs (B1–B5) and 7 enhancements noted. Score 4/5 |
 | 2026-11-02 | 0.3.0 | CheckMasterDemo (pytest), local Juice Shop v20.3.0 (playwright-bdd) | [end to end](2026-11-02-0.3.0-end-to-end.md), run by Claude | D3 and D4 pass. 7 bugs found and fixed with tests |
 | 2026-11-02 | 0.3.0 | A clean `node:24` Docker container, with CheckMasterDemo and Juice Shop | [clean-room run](2026-11-02-0.3.0-docker-e2e.md), in a separate Claude session | Both paths pass once the prerequisites are in. 11 findings, F1–F11 |
-| *(you choose)* | 0.3.2 | Practice Software Testing (Toolshop), never seen by QAMaster | [happy path, limitations, goals](2026-11-02-0.3.1-toolshop.md) | Not started |
+| *(you choose)* | 0.3.2 | Any application QAMaster has never seen | [happy path, limitations, goals](2026-11-02-0.3.2-unknown-app.md) | Not started |
+| 2026-11-02 | 0.3.2 (branch) | Practice Software Testing (Toolshop), run internally by Claude as a developer | [internal script](2026-11-02-0.3.1-toolshop.md), findings to come | In progress |
 | 2026-11-02 | 0.3.0 | The same two flows in a clean `node:24-bookworm-slim` container | [Docker end to end](2026-11-02-0.3.0-docker-e2e.md), run by Claude; reproduce with `scripts/docker-e2e/run.sh` | Both paths pass once the prerequisites are in. 11 findings (F1–F11), not fixed |
 
 ## Findings and where they went

@@ -75,7 +75,7 @@ Plan: [plans/0.3.1.md](plans/0.3.1.md). Built on `feature/0.3.1-setup-gaps`, rel
 
 ## 0.3.2: planned
 
-- `/qamaster:status`: each pipeline stage with its evidence and the next step, read-only (`qam pipeline status`). `docs/design.md` listed it, but no build shipped it. It's needed for the [Toolshop walkthrough](demos/2026-11-02-0.3.1-toolshop.md).
+- `/qamaster:status`: each pipeline stage with its evidence and the next step, read-only (`qam pipeline status`). `docs/design.md` listed it, but no build shipped it. It's needed for the [walkthrough on an unknown app](demos/2026-11-02-0.3.2-unknown-app.md).
 - Findings from that walkthrough.
 
 Not in 0.3.0: Feedback, Reports and Requirements (`qam requirements fetch`), and the v1.1, v2 and v3 scope in product.md.
