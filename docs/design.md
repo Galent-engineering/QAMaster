@@ -34,7 +34,7 @@
 | `/qamaster:dsm [run\|refresh\|changes\|…]` | Build or refresh the DSM and show what changed | `dsm/` |
 | `/qamaster:publish [run]` | Dry run of what goes to ADO, then waits for a yes, then applies | ADO, ledger |
 | `/qamaster:plan [base]` | Shows the plan for the current change, with Claude's group picks. Runs nothing | `.qamaster/plans/` |
-| `/qamaster:check [base]` | Plan, then drafts or updates scripts for the selected cases (Q39, proposed), shows the cases and scripts, waits for one approval, then runs and reports the verdict | `.qamaster/`, scripts in the test root (left uncommitted) |
+| `/qamaster:check [base]` | Plan, then drafts or updates scripts for the selected cases (Q39), shows the cases and scripts, waits for one approval, then runs and reports the verdict | `.qamaster/`, scripts in the test root (left uncommitted) |
 | `/qamaster:report` | Builds every report there is data for | `reports/output/` |
 
 Skills trigger on plain words: "write test cases for checkout", "which tests cover this change", "show test case 26", "retire TC34", "why did my push get blocked".
@@ -120,7 +120,7 @@ Coverage gaps (from the DSM)
 Other groups (add with --tag, or approve --add <group>)
   payments: Refund to card; Pay with gift card
 
-Scripts (Q39, proposed; uncommitted in the test root, approved with the plan)
+Scripts (Q39; uncommitted in the test root, approved with the plan)
   new      TC5110  bdd:@TC-CHECKOUT-018   features/checkout/coupon.feature (+24)
   updated  TC4410  bdd:@TC-CHECKOUT-016   code under src/checkout/** changed (+3 −1)
   kept     TC1001  pytest:tests/test_login.py::test_login
@@ -140,8 +140,8 @@ Layout rules:
 |---|---|
 | All approved tests passed | `pass` |
 | Any approved test failed after one retry | `fail` |
-| A script drafted by this check, never passed before, failed | `fail`, labelled "new script failed: check the script or the app" (Q39, proposed) |
-| A runner's tools are missing and the person didn't approve the download, or a link names a runner QAMaster doesn't have | `blocked`, with what to install or change (Q38, proposed) |
+| A script drafted by this check, never passed before, failed | `fail`, labelled "new script failed: check the script or the app" (Q39) |
+| A runner's tools are missing and the person didn't approve the download, or a link names a runner QAMaster doesn't have | `blocked`, with what to install or change (Q38) |
 | An approved test didn't run or was skipped | `fail` |
 | A selected case is BROKEN | `fail` |
 | No test case matched the change | `pass`, with a coverage-gap warning |
@@ -183,7 +183,7 @@ QAMASTER_ADO_PROJECT=Shop
 }
 ```
 
-`gate.sharedShare` (Q37) and `runners` (Q38) are proposed and built in [0.3.0](plans/0.3.0.md). A runner without a `runners` entry uses `QAMASTER_TEST_ROOT`.
+`gate.sharedShare` (Q37) and `runners` (Q38) are built in [0.3.0](plans/0.3.0.md). A runner without a `runners` entry uses `QAMASTER_TEST_ROOT`.
 
 The DSM, TestGen and MCP config files keep Autonomous-QE's formats.
 

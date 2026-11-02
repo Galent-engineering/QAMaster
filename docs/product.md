@@ -26,7 +26,7 @@ QAMaster builds a team's test cases and automation from the application and its 
 
 1. **Build:** from the app URL and its read-only repo, QAMaster maps every screen, learns the app's flows, reads the sprint's requirements and writes test cases. Every step cites evidence. A person reviews them.
 2. **Publish:** the reviewed cases go into the Azure DevOps test plan. Selection tags and automation links are filled in from what QAMaster already knows.
-3. **Gate:** on every push, QAMaster reads the diff and picks the test cases it touches. It drafts or updates the automation those cases need (Q39, proposed). A person approves the pick and the scripts, the tests run on the runner each case names (Q38, proposed), and the push goes through only on a pass.
+3. **Gate:** on every push, QAMaster reads the diff and picks the test cases it touches. It drafts or updates the automation those cases need (Q39). A person approves the pick and the scripts, the tests run on the runner each case names (Q38), and the push goes through only on a pass.
 4. **Feedback:** results feed the reports and defect drafts. Screens a change touched with no tests become a proposed test design run.
 
 ## Scope
@@ -35,7 +35,7 @@ Plugin releases inside this scope, and the next one's plan: [releases.md](releas
 
 ### v1
 - One Claude Code plugin, `qamaster`, and the `qam` CLI behind it.
-- Build stages from Autonomous-QE: DSM, AUT skills, requirements, TestGen with tolerance 0, playwright-bdd scripts for Web, Mobile Web, API, Android and iOS, the script gate. Scripts are drafted just in time by the gate, for the cases a change touches; automating every case up front stays an option (Q39, proposed).
+- Build stages from Autonomous-QE: DSM, AUT skills, requirements, TestGen with tolerance 0, playwright-bdd scripts for Web, Mobile Web, API, Android and iOS, the script gate. Scripts are drafted just in time by the gate, for the cases a change touches; automating every case up front stays an option (Q39).
 - Publish to Azure DevOps Test Plans, with derived tags and automation links.
 - The CheckMaster gate: plan, approve, run, verdict, push hook. Runners: playwright-bdd and pytest.
 - Feedback: coverage gaps, stale cases, BROKEN links, defect drafts.

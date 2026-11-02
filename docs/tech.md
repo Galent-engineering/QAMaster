@@ -200,7 +200,7 @@ AQE's 13 stages, plus **Review** and **Publish** as their own stages, and a firs
 | 14 | First gate run | `qam check --all` | A verdict for the current HEAD |
 | 15 | Reports | `qam report all` | Six reports built |
 
-**Stages 10–13 are optional (Q39, proposed).** By default, automation is drafted just in time, inside the gate, for the cases each change touches (see Gate). The stages remain for a team that wants every case automated up front.
+**Stages 10–13 are optional (Q39).** By default, automation is drafted just in time, inside the gate, for the cases each change touches (see Gate). The stages remain for a team that wants every case automated up front.
 
 Publishing (9) happens before automation (10–13) on purpose. Manual cases are useful in Test Plans even before scripts exist; the gate lists them under **Not run**. Stage 13 then fills in the automation link for each scenario. The next `qam publish` updates *Automated Test Name* on cases that now have a script.
 
@@ -211,7 +211,7 @@ load      the run's testcases.json; refuse unless validation == pass and reviewe
           warn (don't block) if config.owners names an owner for the run's module and reviewedBy differs
 derive    tags:   path:<glob>   from DSM evidence on every screen the case visits (dsm.json screen → source files),
                                 collapsed to folders at config.publish.pathDepth (default 4), deduplicated;
-                                a file shallower than pathDepth is tagged as itself (Q37, proposed). Broad tags are
+                                a file shallower than pathDepth is tagged as itself (Q37). Broad tags are
                                 kept; the gate's path selector decides what a shared file selects
                   <module>, <module>-<sub-module>
                   smoke         suggested when priority P1 and category in {Positive, E2E}, up to config.smoke.max
@@ -242,7 +242,7 @@ collect   RepoReader.diff(mergeBase(base, HEAD), HEAD) → Change
 catalog   TestCaseStore.inPlan() → every test case in the plan with tags and automation link
 select    candidates(change, catalog, groups) → {case → reasons}: path, smoke, group
           a changed file whose glob covers > gate.sharedShare of the plan is shared: path selects only
-          its smoke and DSM-impacted cases (Q37, proposed)
+          its smoke and DSM-impacted cases (Q37)
           dsm.impact(change.files) → screens; screens with no selected case → gaps
           Runner.collected(root) per runner + split() → PlanItem[], NotRun[] (manual, BROKEN) → Plan;
           a missing runner tool or an unknown link prefix → BlockedError, after offering the install (Q38)

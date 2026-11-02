@@ -576,8 +576,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - A CSV that appears later (a pull, an export) silently wins: the store's `where()` changes, so publish blocks on the ledger's store mismatch, and the JSON cases are no longer read. Whether to block when both files exist is not decided.
 - **Amended 2026-11-02 (on acceptance):** when `testcases.csv` and `testcases.json` both exist, the `file` store blocks (exit 2) and names the file to remove. A CSV no longer wins silently. Built in [0.2.1](plans/0.2.1.md), item A7.
 
-**Q37. Every `path:` tag is kept; the gate decides what a shared file selects** (2026-11-02, proposed; amends Q8 and Q31)
-- **Decision (proposed, for the person to accept):**
+**Q37. Every `path:` tag is kept; the gate decides what a shared file selects** (2026-11-02, accepted 2026-11-02; amends Q8 and Q31)
+- **Decision:**
   - **Publish keeps every derived `path:` tag**, including folders behind most of the plan (`environments/**`, `Services/**`). The tags record which code each case depends on (Q8), and nothing is removed from the store.
   - **One fix at publish:** a file in a folder shallower than `publish.pathDepth` is tagged as itself (`path:frontend/src/app/app.routing.ts`), not as its folder (`path:frontend/src/app/**`). A folder glob at that depth covers the whole app, so the old tag was wrong, not just broad.
   - **The gate's `path` selector (Q31) handles shared files.** When a changed file matches a `path:` glob that sits on more than `config/qamaster.json → gate.sharedShare` of the plan's cases (default `0.3`, a fraction), that file is *shared*. Through it, `path` selects only the cases that are also smoke or DSM-impacted. The plan names each shared file and how many cases its glob covers, for example "environment.ts is shared (208 cases); selected smoke + DSM impact".
@@ -589,8 +589,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - A change to a shared file selects fewer cases by path, so the plan relies on smoke and DSM impact for it.
   - Whether a file counts as shared depends on the plan's size at check time, so it can change as cases are published.
 
-**Q38. The runner is picked for each case, from its automation link** (2026-11-02, proposed; amends Q4 and Q32, builds on Q9)
-- **Decision (proposed, for the person to accept):**
+**Q38. The runner is picked for each case, from its automation link** (2026-11-02, accepted 2026-11-02; amends Q4 and Q32, builds on Q9)
+- **Decision:**
   - The gate groups the approved cases by the prefix of their automation link (`pytest:`, `bdd:`; Q9). It runs each group with the runner registered under that prefix, and merges the results into one verdict. A plan can mix runners.
   - Each runner runs in its own folder: `config/qamaster.json → runners.<name>.root`, a path relative to the QA project. When unset, the runner uses `QAMASTER_TEST_ROOT`, and failing that the repo root, as today.
   - **A runner whose tools are missing is fetched, with a yes.** Before running, each runner checks its folder: pytest needs Python, pytest and the project's environment; playwright-bdd needs `playwright`, `playwright-bdd` and the browser. When something is missing:
@@ -603,8 +603,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Why:** teams have API tests in pytest and UI tests in playwright-bdd. The link already says which runner each case needs, so the person never has to choose.
 - **Gave up:** a project-wide `QAMASTER_RUNNER` that's simpler to explain. A mixed plan also takes as long as its slowest runner. The first check on a new machine can stop to ask for a download.
 
-**Q39. Automation is drafted just in time, inside the gate** (2026-11-02, proposed; amends Q12 and Q22, keeps Q13, Q14 and Q19)
-- **Decision (proposed, for the person to accept):**
+**Q39. Automation is drafted just in time, inside the gate** (2026-11-02, accepted 2026-11-02; amends Q12 and Q22, keeps Q13, Q14 and Q19)
+- **Decision:**
   - **When.** After `qam plan` picks the cases for a change, the gate's *automate* step looks at each selected case:
     - no script: draft one;
     - the script is stale, because its case changed (ledger hash) or code under its `path:` tags changed: update it;
@@ -629,8 +629,8 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - A case's automation link reaches the store only after its script is committed, pushed and published again.
   - Storing Gherkin in the tracker itself (Jira with Xray) is left for a Jira store (Q23), after v1.
 
-**Q40. Each test case links to its script in the QA repo, pinned to a commit** (2026-11-02, proposed; builds on Q9 and Q39)
-- **Decision (proposed, for the person to accept):**
+**Q40. Each test case links to its script in the QA repo, pinned to a commit** (2026-11-02, accepted 2026-11-02; builds on Q9 and Q39)
+- **Decision:**
   - When publish writes an automation link (Q9), it also writes a **Script** line in the test case's description, next to the **Sources** heading, with the script's web address at the commit that was published. For example: `Script: https://bitbucket.org/acme/shop-qa/src/<sha>/Shop/features/checkout/coupon.feature`.
   - The address is built from the QA repo's `origin` remote, for Bitbucket, GitHub and Azure Repos. For any other host it writes the repo-relative path and the commit, without a link.
   - The line belongs to QAMaster, like the Sources list. It's rewritten when the script's commit changes, and removed when the link is removed. Nothing else in the description is touched.
