@@ -312,3 +312,18 @@ test('0.2.1 A6: a credential-like value in a title, objective, expected result o
   cases[0].title = 'Password field rejects fewer than 5 characters (TC-LOGIN-001)';
   assert.equal(validate(manifest, cases, facts(), settings()).status, 'pass');
 });
+
+// From the 0.2.1 verification (B2, B3): emails, plain hyphenated words and step data were flagged; only the first value
+// in a text was reported.
+test('0.2.2 B2/B3: emails, hyphenated words and step data are not credentials; every real one is reported', () => {
+  const { manifest, cases } = run();
+  cases[0].title = 'One-character password with qa.customer01@example.test and user qa.newuser0142 is rejected';
+  lastStep(cases).data = 'Reg#Pass2026';
+  assert.equal(validate(manifest, cases, facts(), settings()).status, 'pass');
+  const two = findings((_, cs) => {
+    lastStep(cs).action = 'Type Reg#Pass2026 as the password, then Wrong-Pass#9999 as the repeated password';
+  });
+  const hits = two.filter((e) => e.includes('credential-like'));
+  assert.equal(hits.length, 2, hits.join('\n'));
+  assert.match(hits.join('\n'), /"Reg#Pass2026"[\s\S]*"Wrong-Pass#9999"/);
+});

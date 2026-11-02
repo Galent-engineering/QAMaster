@@ -148,19 +148,23 @@ const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&');
 const s = (v: unknown) => (v === null || v === undefined ? 'None' : String(v)); // AQE printed Python's None
 const pair = (a: unknown, b: unknown) => JSON.stringify([a ?? null, b ?? null]);
 
-// a password-like word, and a token mixing at least three of lower case, upper case, digits and symbols
+// next to a password-like word: a token with a digit, and mixed case or a symbol other than . _ - (Reg#Pass2026). Emails,
+// usernames like qa.newuser0142, words like One-character, ids (TC-LOGIN-001), routes and URLs are not credentials
 const SECRET_WORD = /pass(word)?|passwd|pwd|secret|token|api[\s_-]?key|pin\b/i;
-const credentialLike = (text: unknown): string | null => {
-  if (typeof text !== 'string' || !SECRET_WORD.test(text)) return null;
-  for (const raw of text.split(/\s+/)) {
-    const t = raw.replace(/^["'`(]+|["'`).,;:]+$/g, '');
-    const kinds = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((re) => re.test(t)).length;
-    // ids (TC-LOGIN-001), routes and paths are never credentials
-    if (t.length >= 6 && kinds >= 3 && /\d|[^A-Za-z0-9]/.test(t) && !/^[A-Z]+(-[A-Z0-9]+)+$|\/|^https?:/.test(t))
-      return t;
-  }
-  return null;
+const isCredential = (t: string) =>
+  t.length >= 6 &&
+  /\d/.test(t) &&
+  ((/[a-z]/.test(t) && /[A-Z]/.test(t)) || /[^A-Za-z0-9._@-]/.test(t)) &&
+  !t.includes('@') &&
+  !/^[A-Z]+(-[A-Z0-9]+)+$|\/|^https?:/.test(t);
+export const credentialValues = (text: unknown): string[] => {
+  if (typeof text !== 'string' || !SECRET_WORD.test(text)) return [];
+  const tokens = text.split(/\s+/).map((raw) => raw.replace(/^["'`(]+|["'`).,;:]+$/g, ''));
+  return [...new Set(tokens.filter(isCredential))];
 };
+/** A test_data value that would leak a credential if published: its key names a secret, or it looks like one. */
+export const isSecretData = (key: string, value: unknown) =>
+  SECRET_WORD.test(key) || (typeof value === 'string' && isCredential(value));
 const CREDENTIAL_HINT =
   'name the test data instead (e.g. "the registered user\'s password"); the value belongs in test_data only';
 
@@ -229,8 +233,8 @@ export function validate(
       if (!tc[field]) errors.push(`${w}: missing ${field}`);
     }
     for (const field of ['title', 'objective', 'expected_result'] as const) {
-      const secret = credentialLike(tc[field]);
-      if (secret) errors.push(`${w}: ${field} contains a credential-like value "${secret}": ${CREDENTIAL_HINT}`);
+      for (const secret of credentialValues(tc[field]))
+        errors.push(`${w}: ${field} contains a credential-like value "${secret}": ${CREDENTIAL_HINT}`);
     }
     if (tc.type && !TYPES.includes(tc.type)) errors.push(`${w}: type ${s(tc.type)} not one of ${TYPES.join(', ')}`);
     if (tc.category && !CATEGORIES.includes(tc.category))
@@ -312,9 +316,10 @@ export function validate(
             `${sw}: generic wording "${g}" in ${field}: say exactly what is done and with which value ("${s(value).slice(0, 80)}")`,
           );
       }
-      for (const field of ['action', 'expected', 'data'] as const) {
-        const secret = credentialLike(st[field]);
-        if (secret) errors.push(`${sw}: ${field} contains a credential-like value "${secret}": ${CREDENTIAL_HINT}`);
+      // step data holds the value by design; the text around it must not
+      for (const field of ['action', 'expected'] as const) {
+        for (const secret of credentialValues(st[field]))
+          errors.push(`${sw}: ${field} contains a credential-like value "${secret}": ${CREDENTIAL_HINT}`);
       }
       const route = facts.screen(st.screen);
       if (!st.screen) errors.push(`${sw}: no screen`);
