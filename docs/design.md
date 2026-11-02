@@ -52,9 +52,10 @@ qam requirements fetch --sprint NAME | --current-sprint | --from D --to D
 qam testgen context|validate|render <run>
 qam review <run>                              # records gate 1 with the ADO account + git email; commands call it only after the person's yes
 qam publish <run> [--apply] [--retire] [--leave-out ID,…] [--skip-smoke ID,…]
-qam app create --app NAME --web-url URL [--api-url URL]
-qam check-scripts
+qam app create [--app NAME] [--web-url URL]       # <App>/ in the QA project from the playwright-bdd template
+qam check-scripts [--quick]
 qam plan    [--base REF] [--tag GROUP[=WHY]]
+qam automate <plan-id> [--done]               # Q39: scripts to draft/update/keep; --done records them, binds the plan
 qam approve <plan-id> [--add TC…|GROUP] [--remove TC…|GROUP] [--by NAME]
 qam run     <plan-id>
 qam check   [--base REF] [--tag …] [--yes] [--all]   # plan, automate (Q39), approve, run

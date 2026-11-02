@@ -14,6 +14,7 @@ Every hands-on walkthrough of a QAMaster build, with the tester's feedback, kept
 | 2026-10-30 | 0.1.0 | OWASP Juice Shop v20.3.0 | [setup to reviewed test cases](2026-10-30-0.1.0-juice-shop.md) | Done through step 9. Feedback written for steps 1 and 4 |
 | 2026-10-30 | 0.2.0 | Juice Shop online demo, app `JuiceShopOnline`, 243 cases in ADO | [publish](2026-10-30-0.2.0-publish.md), [feedback](2026-10-30-0.2.0-publish-feedback.md) | Steps 0–5 and 8 done, step 6 part 1, step 7 not run. Score 3/5 |
 | 2026-11-02 | 0.2.1 | Copies of the 0.2.0 project (ADO read-only, plus the file store) | [verification](2026-11-02-0.2.1-verification.md), run by Claude | All 7 fixes pass. 5 bugs (B1–B5) and 7 enhancements noted. Score 4/5 |
+| 2026-11-02 | 0.3.0 (unreleased) | CheckMasterDemo (pytest), local Juice Shop v20.3.0 (playwright-bdd) | [end to end](2026-11-02-0.3.0-end-to-end.md), run by Claude | D3 and D4 pass. 7 bugs found and fixed with tests |
 
 ## Findings and where they went
 

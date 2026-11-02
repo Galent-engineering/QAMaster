@@ -49,13 +49,19 @@ Plan: [plans/0.2.2.md](plans/0.2.2.md). Built on `feature/0.2.2-fixes`. Findings
 | Credential-like `test_data` is masked in the store's description; the run keeps the value | `publish/publish.mts` | Q16 |
 | A manifest `generated_at` in the future is a finding; the TestGen reference says to write UTC | `testgen/validate.mts`, `skills/TestGen/references/cases.md` | Q10 |
 
-## 0.3.0: planned
+## 0.3.0: the first full working plugin
 
-Plan: [plans/0.3.0.md](plans/0.3.0.md). The first full working plugin:
-- the gate (plan, approve, run, verdict), ported from CheckMaster;
-- just-in-time automation, which drafts playwright-bdd scripts for the cases a change touches (Q39);
-- the pytest and playwright-bdd runners, picked for each case from its automation link (Q38);
-- `/qamaster:check` and the push hook;
-- end-to-end runs on CheckMasterDemo and Juice Shop.
+Plan: [plans/0.3.0.md](plans/0.3.0.md). Built on `feature/0.3.0-gate` and tested end to end ([report](demos/2026-11-02-0.3.0-end-to-end.md)). The version bump waits for your yes.
+
+| Change | Where | Decision |
+|---|---|---|
+| The gate: `qam plan`, `approve`, `run`, `check`. Selection by path, smoke, DSM impact and groups. Shared files (20+ case plans). Manual and BROKEN cases. Verdicts with retries and evidence. The store is read live | `gate/`, `cli/gate.mts`, `adapters/git.mts` | Q11–Q13, Q22, Q31, Q37 |
+| A runner for each case from its link's prefix, in its own folder (`runners.<name>.root`). A missing runner blocks | `gate/gate.mts`, `shared/schema.mts` | Q38 |
+| The pytest runner and shim | `adapters/runner-pytest.mts`, `runners/pytest/` | Q20 |
+| The playwright-bdd framework: a minimal web template, `qam app create`, `qam check-scripts` | `framework/playwright-bdd/`, `automation/`, `adapters/framework-bdd.mts` | Q25, Q32 |
+| The playwright-bdd runner | `adapters/runner-bdd.mts` | Q20 |
+| Just-in-time automation: `qam automate <plan-id> [--done]`, recorded and hash-bound drafts, "new script failed" until a first pass | `gate/automate.mts`, `skills/AutomationCode` | Q39 |
+| Publish links only pushed scripts, with a `Script:` line at the commit | `publish/scripts.mts` | Q39, Q40 |
+| `/qamaster:check`, the Gate skill, and the push hook (only in repos with `claude-hooks` recorded) | `commands/check.md`, `skills/Gate`, `hooks/` | Q14 |
 
 Not in 0.3.0: Feedback, Reports and Requirements (`qam requirements fetch`), and the v1.1, v2 and v3 scope in product.md.

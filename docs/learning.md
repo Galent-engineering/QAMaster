@@ -629,6 +629,52 @@ Publish is the link between the two halves. TestGen writes draft cases into `tes
 
 ---
 
+## Lesson: the gate and just-in-time automation (0.3.0)
+
+### What it's for
+
+The gate answers "is this change safe to push?" with evidence. It reads the diff, picks the published test cases the change touches, writes or updates the automation those cases need, asks a person to approve, runs them, and gives a verdict that unlocks `git push` (Q11–Q13, Q38, Q39).
+
+### The split of work
+
+| Piece | Does |
+|---|---|
+| `select` | Reasons to run a case, in order: `path:` tag matches, `smoke`, DSM impact (cases visiting touched screens), groups. A file whose tags cover too much of a plan of 20 or more cases is *shared* and selects nothing by path (Q37) |
+| `dsm` | Changed file → owned screens (code model) → cases in the runs that visit them (via the ledger). A touched screen no case visits is a coverage gap |
+| `automate` | Lists cases to draft, update or keep. `--done` checks the scripts, records them by hash, moves drafted cases into the plan with their local link, and binds the plan to the scripts |
+| `gate` | Plan, approve (bound to HEAD, the QA project's commit and the scripts' hash), run with one retry, decide |
+| Runners | One per link prefix: `pytest:` with a shim loaded into the user's pytest; `bdd:@` with bddgen and Playwright's JSON reporter |
+| The hook | Blocks `git push` from Claude without a passing verdict for HEAD, only in repos set up for it |
+
+### Three ideas worth keeping
+
+- **The link names its runner.** `pytest:…` or `bdd:@TC-…` says who runs a case, so one plan can mix runners and nobody configures it per project.
+- **Bind approval to what will run.** HEAD, the QA project's commit and a hash of the drafted scripts. If any of them change, the approval no longer describes what would run, so it's void.
+- **A new script is a suspect, not a witness.** A script that has never passed fails the verdict like any other, but labelled "new script failed", because the script may be what's wrong. It's trusted (proven) after its first pass.
+
+### What we found by trying it for real
+
+- **The 30% shared rule misfired on a 3-case plan.** Two of three cases covering a file is ordinary coverage. Shared now needs a plan of 20 or more cases.
+- **`--done` saw the drafts as "keep".** At that point the scripts already exist. A manual case's script that QAMaster hasn't recorded is still a draft.
+- **Publishing made every script look outdated.** The link and Script line change the ledger's hash. Scripts are now compared with the TestGen case's own hash.
+- **A drafted script raced the page.** It read Juice Shop's social links before Angular rendered them. It passed once, then failed. The "new script" label pointed at the right suspect.
+- **Not every case should be drafted at once.** Cases needing an account or a CAPTCHA can stay manual and visible under Not run, instead of blocking the check.
+
+### Check yourself
+
+1. Why does the plan record a hash of the scripts, when HEAD and the QA commit are already recorded?
+2. A script was drafted, recorded and passed. Then the case's expected result changed in TestGen. What does `qam automate` say about it?
+3. Why does publish leave out the automation link of a script that's committed but not pushed?
+
+<details><summary>Answers</summary>
+
+1. Drafted scripts are uncommitted, so neither commit changes when someone edits them. The hash is what makes an edit after approval visible.
+2. **update**: its case's hash no longer matches the one recorded with the script.
+3. A teammate's check reads the store's link but runs from their own clone. A link to an unpushed script would point at code they can't pull, and the case would be BROKEN for them (Q39).
+</details>
+
+---
+
 ## Journal
 
 | Date | Feature | What we learned |
@@ -645,3 +691,4 @@ Publish is the link between the two halves. TestGen writes draft cases into `tes
 | 2026-10-30 | Publish (steps 1-6) | The file store (CSV, hand edits count as changes), the publish engine and ledger, and `qam publish`. Path depth 3 selected a whole Angular app, so the default is 4 |
 | 2026-10-30 | Publish (steps 7-8) | A cache that never decides: reads may be stale, writes check the live store. Running publish on an ADO with no plan found a check that blocked `--apply` from creating it |
 | 2026-10-30 | 0.2.0 fixes | An error is a menu, not a dead end: a missing project lists the real ones and the ways forward. An org-level write (creating a project) goes through the same preview and yes as any other write; reviewers caught a fix text that skipped the preview |
+| 2026-11-02 | Gate and just-in-time automation (0.3.0) | Bind approval to what will run (HEAD, QA commit, script hash). The link's prefix picks the runner. A new script is labelled until it passes once. Real runs found five design bugs that unit tests didn't |
