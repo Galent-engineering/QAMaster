@@ -40,7 +40,7 @@ The other findings, and the earlier 0.2.1 backlog, are in that plan's [Later](pl
 
 ## 0.2.2: fixes from the 0.2.1 verification
 
-Plan: [plans/0.2.2.md](plans/0.2.2.md). Built on `feature/0.2.2-fixes`. Findings from the [0.2.1 verification](demos/2026-11-02-0.2.1-verification.md).
+Plan: [plans/0.2.2.md](plans/0.2.2.md). Built on `feature/0.2.2-fixes` and released inside 0.3.0 (2026-11-02): there's no separate 0.2.2 package. Findings from the [0.2.1 verification](demos/2026-11-02-0.2.1-verification.md).
 
 | Change | Where | Decision |
 |---|---|---|
@@ -51,7 +51,7 @@ Plan: [plans/0.2.2.md](plans/0.2.2.md). Built on `feature/0.2.2-fixes`. Findings
 
 ## 0.3.0: the first full working plugin
 
-Plan: [plans/0.3.0.md](plans/0.3.0.md). Built on `feature/0.3.0-gate` and tested end to end ([report](demos/2026-11-02-0.3.0-end-to-end.md)). The version bump waits for your yes.
+Plan: [plans/0.3.0.md](plans/0.3.0.md). Built on `feature/0.3.0-gate`, tested end to end ([report](demos/2026-11-02-0.3.0-end-to-end.md)), released 2026-11-02.
 
 | Change | Where | Decision |
 |---|---|---|
