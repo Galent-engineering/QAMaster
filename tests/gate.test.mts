@@ -159,3 +159,38 @@ test('the DSM selects the cases on impacted screens and reports screens no case 
   assert.deepEqual(plan.items.find((i) => i.testCase.id === 701)?.reasons, [{ kind: 'dsm', detail: '/cart' }]);
   assert.equal(plan.gaps[0].screen, '/checkout/review');
 });
+
+// The DSM selector's own mapping (settled 2026-11-02): changed files -> owned screens -> published cases on them.
+test('dsmCases: changed files map to screens, then to published cases; a screen no case visits is a gap', async () => {
+  const { dsmCases } = await import('../plugin/src/gate/dsm.mts');
+  const code = {
+    files: {
+      'shop:src/cart/Cart.tsx': { owners: ['/cart'] },
+      'shop:src/checkout/Review.tsx': { owners: ['/checkout/review'] },
+      'shop:src/shared/money.ts': { owners: [] },
+    },
+  } as never;
+  const r = dsmCases({
+    files: ['web/src/cart/Cart.tsx', 'web/src/checkout/Review.tsx', 'web/src/shared/money.ts', 'README.md'],
+    appRoot: '/app',
+    repos: [{ name: 'shop', dir: '/app/web' }],
+    code,
+    cases: [
+      { localId: 'TC-CART-001', screens: ['/cart/', '/checkout'] },
+      { localId: 'TC-CART-002', screens: ['/cart'] }, // never published: not in the ledger
+      { localId: 'TC-HOME-001', screens: ['/'] },
+    ],
+    ledger: new Map([
+      ['TC-CART-001', 701],
+      ['TC-HOME-001', 9],
+    ]),
+  });
+  assert.deepEqual([...r.cases], [[701, ['/cart']]]);
+  assert.deepEqual(r.gaps, [
+    {
+      screen: '/checkout/review',
+      files: ['web/src/checkout/Review.tsx'],
+      why: 'no published test case visits this screen',
+    },
+  ]);
+});
