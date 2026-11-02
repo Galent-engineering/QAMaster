@@ -38,7 +38,7 @@ const isGroup = (tag: string) => tag !== SMOKE && !tag.startsWith(PATH);
 /** Group tag -> its test case IDs, sorted by tag. Groups are the tags that aren't rules. */
 export function groups(catalog: Map<number, TestCase>): Record<string, number[]> {
   const out: Record<string, number[]> = {};
-  for (const tc of catalog.values()) for (const t of tc.tags) if (isGroup(t)) (out[t] ??= []).push(tc.id);
+  for (const tc of catalog.values()) for (const t of tc.tags) if (isGroup(t)) out[t] = [...(out[t] ?? []), tc.id];
   return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)));
 }
 

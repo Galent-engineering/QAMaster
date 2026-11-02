@@ -99,6 +99,7 @@ export type Plan = {
   items: PlanItem[];
   notRun: NotRun[];
   gaps: Gap[];
+  shared?: { file: string; cases: number }[]; // changed files whose path tags cover too much of the plan (Q37)
   catalogSize: number;
   otherGroups: Record<string, string[]>; // group tag -> titles of the test cases it would add
   approvedBy?: string;
