@@ -8,7 +8,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { afterEach, test } from 'node:test';
 import { AdoClient, type AdoSettings, AdoTestCases, makeAdoStore } from '../plugin/src/adapters/ado.mts';
-import { STORES } from '../plugin/src/adapters/registry.mts';
+import { RUNNERS, STORES } from '../plugin/src/adapters/registry.mts';
 import { doctor } from '../plugin/src/cli/project.mts';
 import { setupProject } from '../plugin/src/pipeline/setup.mts';
 import { loadConfig } from '../plugin/src/shared/config.mts';
@@ -16,6 +16,13 @@ import { FakeAdo } from './fake-ado.mts';
 
 const NODE = 'vstfs:///Classification/Node/';
 const REAL_STORE = STORES.ado;
+// these tests are about the store and write access; the plan's bdd: links would also make doctor check the
+// playwright-bdd runner (0.3.1 F4), which tests/doctor-gate.test.mts covers, so a ready one stands in here
+RUNNERS['playwright-bdd'] = () => ({ collected: async () => [], run: async () => [], check: async () => [] });
+// and the app URL check answers without the network (the ADO client has its own fake fetch)
+const realFetch = globalThis.fetch;
+globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) =>
+  String(url).startsWith('https://shop.example.test') ? new Response('ok') : realFetch(url, init)) as typeof fetch;
 afterEach(() => {
   STORES.ado = REAL_STORE;
 });

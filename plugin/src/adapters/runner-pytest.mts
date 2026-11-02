@@ -19,6 +19,18 @@ const PREFIX = 'pytest:';
 const SHIM_DIR = path.resolve(import.meta.dirname, '..', '..', 'runners', 'pytest');
 const OK_EXIT = new Set([0, 1, 5]);
 const UV = ['uv', 'run', '--no-sync', 'pytest'];
+/** Starts Chromium through the tests' own Playwright, if they use it; prints "none" when they don't. */
+const BROWSER_PROBE = [
+  'import sys',
+  'try:',
+  '    from playwright.sync_api import sync_playwright',
+  'except ImportError:',
+  '    print("none")',
+  '    sys.exit(0)',
+  'with sync_playwright() as p:',
+  '    p.chromium.launch().close()',
+  'print("ok")',
+].join('\n');
 
 /** What to do when the runner's command itself is missing (Q41, F3). */
 function notStarted(tool: string, root: string, why: string): string {
@@ -75,6 +87,40 @@ export class PytestRunner implements Runner {
           : `pytest didn't run in ${root}:\n${tail}`,
       );
     return fs.readFileSync(want, 'utf8');
+  }
+
+  /** For qam doctor: the environment and pytest start (collection), then Chromium launches if the tests use Playwright. */
+  async check(root: string): Promise<{ check: string; ok: boolean; detail: string }[]> {
+    let n: number;
+    try {
+      n = (await this.collected(root)).length;
+    } catch (e) {
+      if (!(e instanceof BlockedError)) throw e;
+      return [{ check: 'pytest', ok: false, detail: e.message }];
+    }
+    const how = this.uv(root) ? 'uv run --no-sync pytest' : 'python3 -m pytest';
+    const out = [{ check: 'pytest', ok: true, detail: `${how}: ${n} test${n === 1 ? '' : 's'} collected` }];
+    const py = this.command
+      ? [...this.command.slice(0, this.command.indexOf('-m') < 0 ? undefined : this.command.indexOf('-m'))]
+      : this.uv(root)
+        ? ['uv', 'run', '--no-sync', 'python']
+        : ['python3'];
+    const r = spawnSync(py[0], [...py.slice(1), '-c', BROWSER_PROBE], {
+      cwd: root,
+      encoding: 'utf8',
+      env: { ...process.env, UV_PYTHON_DOWNLOADS: 'never' },
+    });
+    const text = `${r.stdout ?? ''}\n${r.stderr ?? ''}`.trim();
+    if (r.status === 0 && /^none$/m.test(text))
+      out.push({ check: 'pytest browser', ok: true, detail: 'no Playwright in these tests: no browser needed' });
+    else if (r.status === 0) out.push({ check: 'pytest browser', ok: true, detail: 'Chromium starts' });
+    else
+      out.push({
+        check: 'pytest browser',
+        ok: false,
+        detail: setupProblem(text, 'python', root, this.uv(root)) ?? text.split('\n').slice(-3).join(' '),
+      });
+    return out;
   }
 
   async collected(root: string): Promise<string[]> {

@@ -70,6 +70,43 @@ export class PlaywrightBddRunner implements Runner {
     }
   }
 
+  /** For qam doctor: the folder's packages are installed, Playwright starts, and Chromium launches. */
+  async check(root: string): Promise<{ check: string; ok: boolean; detail: string }[]> {
+    if (!fs.existsSync(path.join(root, 'node_modules', 'playwright-bdd')))
+      return [
+        {
+          check: 'playwright-bdd',
+          ok: false,
+          detail: `playwright-bdd isn't installed in ${root}. Run npm install there (it downloads @playwright/test and playwright-bdd), then run again.`,
+        },
+      ];
+    const v = spawnSync(this.npx, ['--no-install', 'playwright', '--version'], { cwd: root, encoding: 'utf8' });
+    const out = [
+      {
+        check: 'playwright-bdd',
+        ok: v.status === 0,
+        detail:
+          v.status === 0
+            ? `Playwright ${(v.stdout ?? '').trim().replace(/^Version /, '')}`
+            : plain(`${v.stderr ?? ''}`).trim(),
+      },
+    ];
+    const probe =
+      "require('@playwright/test').chromium.launch().then((b) => b.close()).then(() => console.log('ok'), (e) => { console.error(e.message); process.exit(1); })";
+    const r = spawnSync(process.execPath, ['-e', probe], { cwd: root, encoding: 'utf8' });
+    const text = plain(`${r.stdout ?? ''}\n${r.stderr ?? ''}`).trim();
+    out.push(
+      r.status === 0
+        ? { check: 'playwright-bdd browser', ok: true, detail: 'Chromium starts' }
+        : {
+            check: 'playwright-bdd browser',
+            ok: false,
+            detail: setupProblem(text, 'node', root) ?? text.split('\n').slice(0, 3).join(' '),
+          },
+    );
+    return out;
+  }
+
   async collected(root: string): Promise<string[]> {
     return [
       ...new Set(

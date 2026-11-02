@@ -81,6 +81,8 @@ export interface Runner {
   collected(root: string): Promise<string[]>;
   /** Runs the test IDs behind each test case ID; one result per test case. Failure evidence goes under `evidence`. */
   run(selection: Map<number, string[]>, root: string, evidence: string): Promise<TestResult[]>;
+  /** Optional: what `qam doctor` checks in `root`: the tool starts and its browser launches. Downloads nothing. */
+  check?(root: string): Promise<{ check: string; ok: boolean; detail: string }[]>;
 }
 
 /** What `check-scripts` found: each gate's findings, empty when it passed. */

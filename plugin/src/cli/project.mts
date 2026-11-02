@@ -13,7 +13,8 @@ import path from 'node:path';
 import { parseArgs } from 'node:util';
 import type { TestCaseStore, WriteCheck } from '../adapters/base.mts';
 import { withCache } from '../adapters/cache.mts';
-import { buildStore } from '../adapters/registry.mts';
+import { buildStore, RUNNERS } from '../adapters/registry.mts';
+import { linkRunner } from '../gate/select.mts';
 import {
   add,
   type Context,
@@ -30,6 +31,7 @@ import { checkSource, DEFAULT_EXCLUDE } from '../pipeline/sources.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError, NoPlanError, NoProjectError } from '../shared/errors.mts';
 import { DEFAULT_PROJECT_CONFIG } from '../shared/schema.mts';
+import { automationFolder, runnerRoot } from './gate.mts';
 
 const project = (cfg: Config) => cfg.qaProject ?? cfg.root;
 const appName = (cfg: Config, dir: string) => cfg.project.app?.name ?? path.basename(dir);
@@ -285,8 +287,8 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
   checks.push({ check: 'config/dsm-config.json', ok: !!dsm, detail: dsm ? 'present' : 'missing: run qam setup' });
   const app = (dsm?.application as { base_url?: string } | undefined) ?? {};
   const repos = (dsm?.repositories as { name: string; path: string; branch?: string }[] | undefined) ?? [];
-  if (dsm && !app.base_url && !repos.length)
-    checks.push({ check: 'app', ok: false, detail: 'no URL and no code source: run qam setup --url … --source …' });
+  // pushed once the store says whether this project gates (a gate-only project needs no app URL or source)
+  const noApp = !!dsm && !app.base_url && !repos.length;
   for (const r of repos) {
     try {
       const c = checkSource({ source: r.path, branch: r.branch, name: r.name }, dir);
@@ -337,9 +339,11 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
   let store: { ok: boolean; at: string; detail: string };
   let built: TestCaseStore | null = null;
   const storeCheck: (typeof checks)[number] = { check: 'test case store', ok: false, detail: '' };
+  let linked: string[] = [];
   try {
     built = withCache(buildStore(cfg), project(cfg), true).store; // doctor reads live and refreshes the cache (Q34)
     const cases = await built.inPlan();
+    linked = [...cases.values()].map((c) => c.automatedTest).filter((l): l is string => !!l);
     store = {
       ok: true,
       at: new Date().toISOString(),
@@ -356,6 +360,46 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
   storeCheck.ok = store.ok;
   storeCheck.detail ||= store.detail;
   checks.push(storeCheck);
+  // the gate's prerequisites (F4): each runner the plan's links use, then the app the tests open
+  const runners = new Set(linked.map((l) => linkRunner(l)).filter((n): n is string => !!n));
+  if (automationFolder(cfg)) runners.add('playwright-bdd');
+  if (noApp)
+    checks.push(
+      runners.size
+        ? {
+            check: 'app',
+            ok: true,
+            detail: 'no URL and no code source: the gate alone needs neither; the DSM and TestGen do',
+            state: 'unknown',
+          }
+        : { check: 'app', ok: false, detail: 'no URL and no code source: run qam setup --url … --source …' },
+    );
+  for (const name of [...runners].sort()) {
+    if (!Object.hasOwn(RUNNERS, name)) {
+      checks.push({
+        check: `runner ${name}`,
+        ok: false,
+        detail: `QAMaster has no ${name} runner: change those test cases' links`,
+      });
+      continue;
+    }
+    for (const c of (await RUNNERS[name](cfg).check?.(runnerRoot(cfg, name))) ?? [])
+      checks.push({ check: `runner ${c.check}`, ok: c.ok, detail: c.detail });
+  }
+  const url = process.env.WEB_BASE_URL || cfg.project.app?.url || app.base_url;
+  if (runners.size && url) {
+    let answer: string | null = null;
+    try {
+      answer = `HTTP ${(await fetch(url, { signal: AbortSignal.timeout(5000) })).status}`;
+    } catch {}
+    checks.push({
+      check: 'app URL',
+      ok: !!answer,
+      detail: answer
+        ? `${url} answers (${answer})`
+        : `${url} didn't answer: start the app, or set its URL (app.url in config/qamaster.json, or WEB_BASE_URL)`,
+    });
+  }
   let write: WriteCheck | null = null;
   if (v['check-write']) {
     const name = 'write access';

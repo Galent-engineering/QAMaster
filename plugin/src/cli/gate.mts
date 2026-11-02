@@ -76,7 +76,7 @@ function testsHead(cfg: Config): string | undefined {
 const DRAFTS = 'drafts.json';
 const readDrafts = (cfg: Config): Drafts | null => readJson<Drafts>(path.join(cfg.root, QAMASTER_DIR, DRAFTS));
 /** The automation folder, when the QA project has one. */
-const automationFolder = (cfg: Config): string | null => {
+export const automationFolder = (cfg: Config): string | null => {
   try {
     const dir = appFolder(cfg);
     return fs.existsSync(dir) ? dir : null;
@@ -84,6 +84,14 @@ const automationFolder = (cfg: Config): string | null => {
     return null;
   }
 };
+
+/** The folder a runner runs in: runners.<name>.root, else the automation folder for playwright-bdd, else the test root. */
+export function runnerRoot(cfg: Config, name: string): string {
+  const r = cfg.project.runners[name]?.root;
+  if (r) return path.resolve(cfg.qaProject ?? cfg.root, r);
+  // playwright-bdd scripts live in the QA project's automation folder (qam app create)
+  return name === playwrightBdd.runners[0] ? (automationFolder(cfg) ?? cfg.testRoot) : cfg.testRoot;
+}
 
 /** The gate's services, from the settings. */
 export function gateFor(cfg: Config): Gate {
@@ -98,12 +106,7 @@ export function gateFor(cfg: Config): Gate {
     store: buildStore(cfg),
     repo: new GitRepoReader(cfg.root),
     runner: (name) => (Object.hasOwn(RUNNERS, name) ? RUNNERS[name](cfg) : null),
-    root: (name) => {
-      const r = cfg.project.runners[name]?.root;
-      if (r) return path.resolve(project, r);
-      // playwright-bdd scripts live in the QA project's automation folder (qam app create)
-      return name === playwrightBdd.runners[0] ? (automationFolder(cfg) ?? cfg.testRoot) : cfg.testRoot;
-    },
+    root: (name) => runnerRoot(cfg, name),
     testsHead: () => testsHead(cfg),
     ...(code
       ? {
