@@ -1016,6 +1016,41 @@ State lives in `.checkmaster/plans/<id>.json` and `.checkmaster/verdicts/<head>.
 3. **The DSM selector is in the MVP.** The changed files go through `impact()` to the impacted screens. Through the runs (`testcases.json` steps) and the ledger (local ID → store ID), they select the cases that visit those screens, with the reason `dsm`. Impacted screens that no case visits are coverage gaps. A shared file (Q37) selects smoke and these cases.
 4. **The hook gates a repo only when `.qamaster/integrations.json` records `claude-hooks` for it.** The QA project's own pushes are never blocked.
 
+### 8. Automation, just in time (Learn 2026-11-02)
+
+Plan: [plans/0.3.0.md](plans/0.3.0.md), step C1. Sources: AQE 0.2.0 `tools/e2e-automation/scaffold.mts` 274 and `check_scripts.mts` 157, `tools/shared/bdd-quality.mts` 83 and `aut-app.mts` 69, `framework/TestAutomation`, and the `AutomationCode` and `UI-Locator-Sync` skills. 0.1.5 has the same scaffold. 0.2.0 adds `bdd-quality` (the reuse checks) and the `src/` managers, so 0.2.0 wins.
+
+**What AQE does**
+- `app create` copies the full template into `<App>/`: web, mobile web, API and native, with Allure, webdriverio, zod and faker, as an npm workspace.
+- `check-scripts` runs eight gates: bddgen, tsc, inline selectors, locator files, step placement, feature tags (platform and `@TC` from a TestGen run), `playwright test --list`, and reuse (duplicate or copy-paste steps, Scenario Outline candidates).
+- The `AutomationCode` skill writes from reviewed cases only, reuses steps before adding any, keeps selectors in locator files, and keeps data out of steps.
+
+**What the MVP keeps, and what it leaves for later**
+
+| | MVP (0.3.0) | Later |
+|---|---|---|
+| Template | QAMaster's own, `plugin/framework/playwright-bdd/`: web only. `@playwright/test` and `playwright-bdd` are its only dependencies. Same layers as AQE: `features/web`, `steps/pages`, `steps/shared`, `src/web/pages`, `src/web/locators` | AQE's full template: mobile web, API, native, Allure, test-data builders |
+| `qam app create --app NAME --web-url URL` | Copies the template to `<App>/` in the QA project and writes `app.json` (name, base URL). Never overwrites | npm workspaces, `--install` |
+| `qam check-scripts` | bddgen, selectors, locator files, placement, feature tags (`@web` and `@TC` known to a run), reuse, `playwright test --list`. `--quick` skips list | tsc (the template has no TypeScript dependency; Playwright compiles TS itself) |
+| Locators | From the front-end source, or marked custom (the skill's rule) | `UI-Locator-Sync` and from-crawl |
+
+**The `Framework` adapter (Q25, Q32)**, shaped to fit both playwright-bdd and AQE's existing-framework path:
+- `name`;
+- `runners`: the runners it pairs with (Q32);
+- `create(project, app, webUrl)`: optional, because an existing framework is already there;
+- `check(dir, opts)`;
+- `scripts(dir)`: TC ID → the files that tag it;
+- `link(localId)`: the automation link (`bdd:@TC-…`).
+
+**Just in time (Q39), as built**
+1. `qam automate <plan-id>` lists each selected case that has a TestGen case behind it (through the ledger) as **draft** (no script tags it), **update** (its case changed since the draft was recorded) or **keep**.
+2. The skill writes the scripts, and `qam check-scripts` must pass.
+3. `qam automate <plan-id> --done` records each draft's hash in `.qamaster/drafts.json`. It moves the drafted cases into the plan with their local link (`bdd:@TC-…`), marks them as new scripts, and binds the plan to the scripts' hash.
+4. `approve` refuses if the scripts changed after that. The QA project's "uncommitted changes" rule ignores files QAMaster recorded, while their hash still matches.
+5. Publish writes a case's link only when its script is on the QA repo's remote (C5).
+
+**Settled for the MVP:** "code under the case's path tags changed" doesn't force a redraft. The plan lists it as **review**, and the skill keeps the script unless the diff changes what the case checks.
+
 ## Roadmap: what comes after the v1 MVP
 
 These AQE features are left out of step 3 on purpose. Each becomes its own feature later, through the same loop. The v2 / v3 split is a proposal: v2 is what makes the build stages richer for the teams already using v1, and v3 is broader tooling. [product.md](product.md#scope) carries the same lists.
