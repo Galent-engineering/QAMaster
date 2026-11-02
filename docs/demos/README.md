@@ -35,8 +35,8 @@ Every hands-on walkthrough of a QAMaster build, with the tester's feedback, kept
 | 0.2.0 publish step 6 | A conflict doesn't say which fields differ; no command to take the store's version; a store-only edit is never reported | After 0.3.0 ([Later](../plans/0.2.1.md#later)) |
 | 0.2.0 publish A4 | The public demo answered 503 (rate limiting), and the crawl was slow | Not scheduled; demos use localhost |
 | 0.2.0 publish, overall | Steps 6 (conflict `--apply`) and 7 (retire) weren't run | Re-run in the 0.2.1 walkthrough |
-| 0.2.1 verification B1 | Every update rewrites the ADO description (blank lines lost on the round trip), and conflicts list `description` wrongly | Open: needs your approval ([verification](2026-11-02-0.2.1-verification.md)) |
-| 0.2.1 verification B2–B3 | The credential check flags emails, hyphenated words and step `data`, and reports only the first value per text | Open: needs your approval |
-| 0.2.1 verification B4 | Passwords in `test_data` still reach ADO through the description | Open: needs a decision on masking |
-| 0.2.1 verification B5 | The TestGen manifest's `generated_at` is local time marked as UTC | Open |
+| 0.2.1 verification B1 | Every update rewrites the ADO description (blank lines lost on the round trip), and conflicts list `description` wrongly | 0.2.2 ([plan](../plans/0.2.2.md)) |
+| 0.2.1 verification B2–B3 | The credential check flags emails, hyphenated words and step `data`, and reports only the first value per text | 0.2.2 |
+| 0.2.1 verification B4 | Passwords in `test_data` still reach ADO through the description | 0.2.2: masked as "(kept in the run's test data, not published)" |
+| 0.2.1 verification B5 | The TestGen manifest's `generated_at` is local time marked as UTC | 0.2.2: validator finding, and the reference says UTC |
 | 0.2.1 verification E1–E7 | Enhancements: cross-run smoke warning, remember `--skip-smoke`, `qam review` confirmation, and others | Later ([verification](2026-11-02-0.2.1-verification.md#enhancements-for-later)) |

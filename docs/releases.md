@@ -38,6 +38,17 @@ Plan: [plans/0.2.1.md](plans/0.2.1.md). Built on `feature/0.2.1-fixes`, released
 
 The other findings, and the earlier 0.2.1 backlog, are in that plan's [Later](plans/0.2.1.md#later) section.
 
+## 0.2.2: fixes from the 0.2.1 verification
+
+Plan: [plans/0.2.2.md](plans/0.2.2.md). Built on `feature/0.2.2-fixes`. Findings from the [0.2.1 verification](demos/2026-11-02-0.2.1-verification.md).
+
+| Change | Where | Decision |
+|---|---|---|
+| A description that differs only in blank lines or trailing spaces is unchanged (ADO drops blank lines) | `publish/publish.mts` | Q7 |
+| The credential check skips emails, plain words and step `data`, and reports every value in a text | `testgen/validate.mts` | Q10 |
+| Credential-like `test_data` is masked in the store's description; the run keeps the value | `publish/publish.mts` | Q16 |
+| A manifest `generated_at` in the future is a finding; the TestGen reference says to write UTC | `testgen/validate.mts`, `skills/TestGen/references/cases.md` | Q10 |
+
 ## 0.3.0: planned
 
 Plan: [plans/0.3.0.md](plans/0.3.0.md). The first full working plugin:
