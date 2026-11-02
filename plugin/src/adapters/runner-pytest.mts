@@ -13,15 +13,31 @@ import path from 'node:path';
 import { BlockedError } from '../shared/errors.mts';
 import type { TestResult, TestStatus } from '../shared/models.mts';
 import type { Runner } from './base.mts';
+import { setupProblem } from './runner-setup.mts';
 
 const PREFIX = 'pytest:';
 const SHIM_DIR = path.resolve(import.meta.dirname, '..', '..', 'runners', 'pytest');
 const OK_EXIT = new Set([0, 1, 5]);
+const UV = ['uv', 'run', '--no-sync', 'pytest'];
+
+/** What to do when the runner's command itself is missing (Q41, F3). */
+function notStarted(tool: string, root: string, why: string): string {
+  const name = path.basename(tool);
+  if (name === 'uv')
+    return `uv isn't installed (the project in ${root} uses uv.lock). Install it (https://docs.astral.sh/uv/getting-started/installation/), run uv sync there, then run again.`;
+  if (name === 'python3' || name === 'python')
+    return `python3 isn't installed. Install Python 3, then pytest in the project's environment in ${root} (python3 -m pip install pytest), then run again.`;
+  return `Couldn't start the test runner \`${tool}\` in ${root}: ${why}.`;
+}
 
 type Reported = { nodeid: string; outcome: string; duration: number; error: string | null; evidence?: string[] };
 
 export class PytestRunner implements Runner {
   private readonly command?: string[];
+
+  private uv(root: string): boolean {
+    return !this.command && fs.existsSync(path.join(root, 'uv.lock'));
+  }
 
   /** `command` overrides the uv / python choice (tests). */
   constructor(command?: string[]) {
@@ -29,10 +45,13 @@ export class PytestRunner implements Runner {
   }
 
   private pytest(root: string, args: string[], want: string): string {
-    const cmd =
-      this.command ??
-      (fs.existsSync(path.join(root, 'uv.lock')) ? ['uv', 'run', 'pytest'] : ['python3', '-m', 'pytest']);
-    const env = { ...process.env, PYTHONPATH: [SHIM_DIR, process.env.PYTHONPATH].filter(Boolean).join(path.delimiter) };
+    const cmd = this.command ?? (this.uv(root) ? UV : ['python3', '-m', 'pytest']);
+    // --no-sync and no Python downloads: a missing environment blocks with uv sync instead of downloading (Q41)
+    const env = {
+      ...process.env,
+      UV_PYTHON_DOWNLOADS: 'never',
+      PYTHONPATH: [SHIM_DIR, process.env.PYTHONPATH].filter(Boolean).join(path.delimiter),
+    };
     const r = spawnSync(cmd[0], [...cmd.slice(1), '-p', 'qamaster_pytest', ...args], {
       cwd: root,
       env,
@@ -40,15 +59,21 @@ export class PytestRunner implements Runner {
       maxBuffer: 256 * 1024 * 1024,
     });
     const tail = `${r.stdout ?? ''}${r.stderr ?? ''}`.trim().slice(-1500);
-    if (r.error)
+    if (r.error) throw new BlockedError(notStarted(cmd[0], root, r.error.message));
+    // uv --no-sync with no environment yet: uv made an empty one and can't find pytest in it
+    if (cmd[0] === 'uv' && /Failed to spawn: `?pytest/.test(tail))
       throw new BlockedError(
-        `Couldn't start the test runner \`${cmd.join(' ')}\` in ${root}: ${r.error.message}. Install it (uv sync, or pip's pytest in the project's environment), then run again.`,
+        `The project's test environment in ${root} isn't set up. Run uv sync there (it downloads Python and the test dependencies), then run again.`,
       );
     if (r.status === null || !OK_EXIT.has(r.status))
       throw new BlockedError(`pytest exited with code ${r.status}:\n${tail}`);
     // exit 1 is also what `python -m pytest` gives when pytest isn't installed: then there is no report
     if (!fs.existsSync(want))
-      throw new BlockedError(`pytest didn't run in ${root} (is it installed in the project's environment?):\n${tail}`);
+      throw new BlockedError(
+        /No module named pytest/.test(tail)
+          ? `pytest isn't installed in the project's environment in ${root}. Run uv add --dev pytest (uv), or python3 -m pip install pytest in that environment, then run again.`
+          : `pytest didn't run in ${root}:\n${tail}`,
+      );
     return fs.readFileSync(want, 'utf8');
   }
 
@@ -87,6 +112,9 @@ export class PytestRunner implements Runner {
     } finally {
       fs.rmSync(tmp, { recursive: true, force: true });
     }
+    // a browser that isn't there, can't start, or finds no app is the machine's problem, not the tests' (Q41)
+    const problem = setupProblem(tests.map((t) => t.error ?? '').join('\n'), 'python', root, this.uv(root));
+    if (problem) throw new BlockedError(problem);
     return [...selection].map(([id, ids]) =>
       aggregate(
         id,

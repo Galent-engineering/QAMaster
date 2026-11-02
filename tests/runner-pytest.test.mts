@@ -126,3 +126,44 @@ test('pytest failing to start or crashing blocks, with its output', { skip }, as
   await assert.rejects(new PytestRunner(PYTEST).collected(root), /pytest exited with code [24].*nothing_here/s);
   await assert.rejects(new PytestRunner(['no-such-pytest']).collected(root), /Couldn't start the test runner/);
 });
+
+// From the clean Docker run (F2): a browser that isn't installed failed every case; now it blocks with the command.
+test('0.3.1 F2: a missing Playwright browser blocks the run with the install command', { skip }, async () => {
+  const { root, runner } = suite({
+    'test_ui.py':
+      'def test_ui():\n    raise RuntimeError("BrowserType.launch: Executable doesn\'t exist at /x/chromium_headless_shell-1248/chrome-linux/headless_shell")\n',
+  });
+  await assert.rejects(
+    runner.run(new Map([[1, ['pytest:test_ui.py::test_ui']]]), root, path.join(root, 'ev')),
+    /Playwright's browser isn't installed .* Run python3 -m playwright install chromium there/,
+  );
+});
+
+// From the clean Docker run (F5): uv fetched Python and the wheels during qam plan; now a missing environment blocks.
+test('0.3.1 F5: with uv.lock and no environment, the runner blocks with uv sync and downloads nothing', {
+  skip,
+}, async () => {
+  const root = tmpDir('qam-pytest-uv-');
+  fs.writeFileSync(
+    path.join(root, 'pyproject.toml'),
+    '[project]\nname = "p"\nversion = "0"\nrequires-python = ">=3.14"\ndependencies = ["pytest==9.1.1"]\n',
+  );
+  const lock = spawnSync('uv', ['lock', '--offline', '-q'], { cwd: root, encoding: 'utf8' });
+  assert.equal(lock.status, 0, lock.stderr);
+  fs.writeFileSync(path.join(root, 'test_a.py'), 'def test_a():\n    pass\n');
+  await assert.rejects(new PytestRunner().collected(root), /isn't set up\. Run uv sync there \(it downloads Python/);
+  assert.equal(
+    fs.existsSync(path.join(root, '.venv', 'lib')) &&
+      fs.readdirSync(path.join(root, '.venv', 'lib')).length > 0 &&
+      fs.existsSync(path.join(root, '.venv', 'bin', 'pytest')),
+    false,
+    'pytest was not installed',
+  );
+});
+
+// F3: a missing tool says how to install it.
+test('0.3.1 F3: a missing uv or python3 names how to install it', async () => {
+  const root = tmpDir('qam-pytest-tools-');
+  await assert.rejects(new PytestRunner(['/nonexistent/uv']).collected(root), /uv isn't installed .*docs\.astral\.sh/);
+  await assert.rejects(new PytestRunner(['/nonexistent/python3']).collected(root), /python3 isn't installed/);
+});

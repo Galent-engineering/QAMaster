@@ -1,7 +1,7 @@
 ---
 description: Plan the test cases behind this change, wait for your approval, run them, and report pass or fail
 argument-hint: "[base-branch]"
-allowed-tools: Bash(node:*), Bash(git diff:*), Bash(git log:*), Read, Glob, Grep, Write, Edit
+allowed-tools: Bash(node:*), Bash(git diff:*), Bash(git log:*), Bash(uv sync:*), Bash(npx playwright install:*), Bash(npm install:*), Read, Glob, Grep, Write, Edit
 ---
 
 Check the current change with QAMaster's gate. You approve what runs before anything runs. Follow the `Gate` skill. The CLI is `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`, run from the app repo.
@@ -15,4 +15,4 @@ Check the current change with QAMaster's gate. You approve what runs before anyt
 7. Run `… run <plan-id>` and show the verdict exactly as printed.
 8. Summarise in one or two sentences: pass or fail, and for each failure the test case and the first line of its error. If it passed, say `git push` is now allowed for this commit. A failure marked "new script failed" may be the script's fault or the app's: say so.
 
-Exit codes: 0 pass, 1 fail, 2 blocked, 3 awaiting approval. On 2, show the message and its fix, and stop. If it says HEAD moved, offer to plan again. If a runner's tools are missing (pytest or Playwright not installed), show exactly what the message says to install, ask whether to install it, and run the install only after an explicit yes. Never install in the background.
+Exit codes: 0 pass, 1 fail, 2 blocked, 3 awaiting approval. On 2, show the message and its fix, and stop. If it says HEAD moved, offer to plan again. A blocked run can be the machine's setup, not the code (Q41): the test environment isn't set up (`uv sync`), Playwright's browser isn't installed (`npx playwright install chromium`, or `uv run playwright install chromium`), its system libraries are missing (`sudo npx playwright install-deps chromium`, which the person runs themselves), the automation folder needs `npm install`, or the app isn't running. Show the message as printed, say what the command downloads, ask whether to run it, and run it only after an explicit yes. Never install in the background, and never run `sudo`.

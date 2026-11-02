@@ -13,7 +13,7 @@ import { tmpDir } from './tmp.mts';
 const FIX = path.resolve(import.meta.dirname, 'fixtures/bdd');
 
 /** A folder with node_modules/playwright-bdd and a stub npx that logs its arguments and replays a report. */
-function folder(code = 1) {
+function folder(code = 1, runFixture = `${FIX}/run.json`) {
   const dir = tmpDir('qam-bdd-run-');
   fs.mkdirSync(path.join(dir, 'node_modules/playwright-bdd'), { recursive: true });
   const npx = path.join(dir, 'npx-stub.mjs');
@@ -25,7 +25,7 @@ const args = process.argv.slice(2);
 fs.appendFileSync(${JSON.stringify(path.join(dir, 'calls.log'))}, JSON.stringify(args) + '\\n');
 if (args[1] === 'bddgen') process.exit(0);
 const list = args.includes('--list');
-fs.copyFileSync(${JSON.stringify(FIX)} + (list ? '/list.json' : '/run.json'), process.env.PLAYWRIGHT_JSON_OUTPUT_NAME);
+fs.copyFileSync(list ? ${JSON.stringify(FIX)} + '/list.json' : ${JSON.stringify(runFixture)}, process.env.PLAYWRIGHT_JSON_OUTPUT_NAME);
 process.exit(list ? 0 : ${code});
 `,
   );
@@ -88,5 +88,27 @@ test('no node_modules, or Playwright crashing, blocks with what to do', async ()
   await assert.rejects(
     runner.run(new Map([[1, ['bdd:@TC-HOME-001']]]), dir, '/ev'),
     /playwright test exited with code 2/,
+  );
+});
+
+// From the clean Docker run (F2): a missing browser was reported as "new script failed"; now it blocks with the command.
+test("0.3.1 F2: a scenario that couldn't launch the browser blocks the run with the install command", async () => {
+  // the recorded report, with the failed scenario's error replaced by Playwright's missing-browser message
+  const missing =
+    "browserType.launch: Executable doesn't exist at /x/chromium_headless_shell-1248/chrome-linux/headless_shell";
+  const swap = (o: unknown): unknown =>
+    Array.isArray(o)
+      ? o.map(swap)
+      : o && typeof o === 'object'
+        ? Object.fromEntries(Object.entries(o).map(([k, v]) => [k, k === 'message' ? missing : swap(v)]))
+        : o;
+  const report = JSON.stringify(swap(JSON.parse(fs.readFileSync(`${FIX}/run.json`, 'utf8'))));
+  const variant = path.join(tmpDir('qam-bdd-fix-'), 'run.json');
+  fs.writeFileSync(variant, report);
+  assert.match(report, /Executable doesn't exist/);
+  const { dir, runner } = folder(1, variant);
+  await assert.rejects(
+    runner.run(new Map([[2, ['bdd:@TC-HOME-002']]]), dir, '/ev'),
+    /Playwright's browser isn't installed .* Run npx playwright install chromium there/,
   );
 });

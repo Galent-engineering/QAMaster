@@ -31,6 +31,6 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
 - **BROKEN:** the test was renamed or moved. Update the link.
 - **Coverage gap:** the change touches a screen no published case visits. Propose a TestGen run for it; never generate during a check.
 - **A test failed:** the verdict lists its evidence: a screenshot (`.png`, which can be read), a video and a Playwright trace (`npx playwright show-trace <trace.zip>`). Start with the error line and the screenshot.
-- **Blocked (exit 2):** read the message; it names the fix. `qam doctor` checks the settings.
+- **Blocked (exit 2):** read the message; it names the fix. It may be the machine's setup, not the code: a test environment to set up (`uv sync`), a browser to install, missing system libraries, or the app not running (Q41). No verdict is written, so nothing is blamed on the change. Offer the install command, and run it only after the person's yes. `qam doctor` checks the settings and the runners.
 
 Never approve a plan, or install a runner's tools, without the person's explicit reply.

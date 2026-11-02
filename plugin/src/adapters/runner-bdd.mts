@@ -12,6 +12,7 @@ import path from 'node:path';
 import { BlockedError } from '../shared/errors.mts';
 import type { TestResult, TestStatus } from '../shared/models.mts';
 import type { Runner } from './base.mts';
+import { setupProblem } from './runner-setup.mts';
 
 const PREFIX = 'bdd:@';
 const OK_EXIT = new Set([0, 1]);
@@ -89,6 +90,10 @@ export class PlaywrightBddRunner implements Runner {
           '--retries=0',
         ]).flatMap(specs)
       : [];
+    // a browser that isn't there, can't start, or finds no app is the machine's problem, not a script's (Q41)
+    const errors = all.flatMap((sp) => sp.tests.map((t) => plain(t.results.at(-1)?.error?.message ?? ''))).join('\n');
+    const problem = setupProblem(errors, 'node', root);
+    if (problem) throw new BlockedError(problem);
     return [...selection].map(([testCaseId, ids]) => {
       const wanted = new Set(ids.map((id) => id.slice(PREFIX.length)));
       const results = all
