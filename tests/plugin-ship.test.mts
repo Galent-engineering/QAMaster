@@ -53,3 +53,17 @@ test('plugin/ has no git-ignored files: a zip made from the folder would carry t
   const ignored = r.stdout.split('\n').filter(Boolean);
   assert.deepEqual(ignored, [], `remove these ignored files from plugin/:\n${ignored.join('\n')}`);
 });
+
+test("no skill, agent or command description has XML-like tags: Claude desktop's upload refuses them", () => {
+  const files = ['skills', 'agents', 'commands'].flatMap((d) => {
+    const dir = path.join(PLUGIN, d);
+    if (!fs.existsSync(dir)) return [];
+    return walk(dir).filter((f) => f.endsWith('.md') && (d !== 'skills' || path.basename(f) === 'SKILL.md'));
+  });
+  const bad = files.flatMap((f) => {
+    const front = fs.readFileSync(f, 'utf8').match(/^---\n([\s\S]*?)\n---/)?.[1] ?? '';
+    const desc = front.match(/^description:(.*(?:\n[ \t]+.*)*)/m)?.[1] ?? '';
+    return /<[^>]*>/.test(desc) ? [`${path.relative(PLUGIN, f)}: ${desc.match(/<[^>]*>/)?.[0]}`] : [];
+  });
+  assert.deepEqual(bad, [], `use {Name} instead of <Name> in these descriptions:\n${bad.join('\n')}`);
+});

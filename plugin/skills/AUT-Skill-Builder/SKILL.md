@@ -1,6 +1,6 @@
 ---
 name: AUT-Skill-Builder
-description: Builds and refreshes the application knowledge skills of the application under test (AUT_<App> and one AUT_<App>-<Component> skill per part of the app) from the Design Structure Matrix, then writes their business understanding and end-to-end business cases from the source code. Use when asked to create, generate, refresh or enrich the AUT skills or the application knowledge base, to document what each module of the app does, after the DSM is rebuilt, or when the onboarding pipeline's knowledge stage is next.
+description: Builds and refreshes the application knowledge skills of the application under test (AUT_{App} and one AUT_{App}-{Component} skill per part of the app) from the Design Structure Matrix, then writes their business understanding and end-to-end business cases from the source code. Use when asked to create, generate, refresh or enrich the AUT skills or the application knowledge base, to document what each module of the app does, after the DSM is rebuilt, or when the onboarding pipeline's knowledge stage is next.
 ---
 
 # AUT Skill Builder

@@ -708,7 +708,7 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 **Q45. `plugin/` ships no `bin/`, and is ready to zip at any time** (2026-11-03, accepted 2026-11-03; amends Q2)
 - **Decision:**
   - The `qam` wrappers move from `plugin/bin/` to the repo root's `bin/`, for development only. The plugin is reached through its commands, hooks and skills, which call `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`. In a terminal, use `qam setup`'s launcher, `.qamaster/bin/qam.mjs`.
-  - `plugin/` holds only what ships. `tests/plugin-ship.test.mts` fails on a top-level `bin/`, on `node_modules/`, `.env*`, `.DS_Store`, logs, a `.qamaster/` folder, or any git-ignored file inside it. `scripts/package.sh` refuses to zip a plugin with `bin/`.
+  - `plugin/` holds only what ships. `tests/plugin-ship.test.mts` fails on a top-level `bin/`, on `node_modules/`, `.env*`, `.DS_Store`, logs, a `.qamaster/` folder, or any git-ignored file inside it. `scripts/package.sh` refuses to zip a plugin with `bin/`. A skill, agent or command description has no XML-like tags (`<App>`): the upload refuses them too.
 - **Why:** Claude desktop's "Upload a plugin" refused the 0.3.2 zip: "claude.ai-hosted plugins may not ship bin/ executables", because they go on the PATH without appearing on the admin approval screen. `claude plugin validate` doesn't run that check. The person wants the plugin code clean and ready to zip at all times.
 - **Gave up:** `qam` on the PATH after a CLI plugin install.
 
