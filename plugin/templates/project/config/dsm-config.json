@@ -34,6 +34,10 @@
         "replace": "/:id"
       },
       {
+        "pattern": "/[0-9A-HJKMNP-TV-Z]{26}(?=/|$)",
+        "replace": "/:id"
+      },
+      {
         "pattern": "/\\d+(?=/|$)",
         "replace": "/:id"
       }

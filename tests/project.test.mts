@@ -340,6 +340,9 @@ test('doctor warns when a config predates a newer default, and setup still leave
   q.publish.pathDepth = 3;
   fs.writeFileSync(qamFile, JSON.stringify(q));
   const d = read(dsmFile);
+  d.application.route_normalization = d.application.route_normalization.filter(
+    (r: { pattern: string }) => !r.pattern.includes('0-9A-HJKMNP-TV-Z'),
+  );
   d.repositories[0].exclude = d.repositories[0].exclude.filter((e: string) => !['codefixes/', 'e2e/'].includes(e));
   fs.writeFileSync(dsmFile, JSON.stringify(d));
   const before = [fs.readFileSync(qamFile, 'utf8'), fs.readFileSync(dsmFile, 'utf8')];
@@ -348,6 +351,8 @@ test('doctor warns when a config predates a newer default, and setup still leave
   assert.match(c.detail, /publish\.pathDepth is 3, the default is now 4/);
   assert.match(c.detail, /fine if deliberate/);
   assert.match(c.detail, /source app: exclude lacks e2e\/, codefixes\//);
+  // 0.3.2 T2: an older config folds UUIDs and numbers but not ULIDs
+  assert.match(c.detail, /route_normalization has no rule for ULID IDs/);
   const r = qam(qa, 'doctor');
   assert.match(r.out, /WARN +config defaults +publish\.pathDepth is 3/);
   assert.doesNotMatch(r.out, /FIX +config defaults/);

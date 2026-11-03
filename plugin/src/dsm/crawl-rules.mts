@@ -177,17 +177,22 @@ export function blocks(
 }
 
 /** What the page shows that looks like signing in (read in the browser). */
-export type LoginState = { password: boolean; userOnly: boolean; otp: boolean; message: string };
+export type LoginState = { password: boolean; passwords?: number; userOnly: boolean; otp: boolean; message: string };
 
 const SIGN_IN_ROUTE = /(^|[/#_-])(log-?in|sign-?in|auth|sso|account\/login)([/?#_-]|$)/i;
 
 /**
- * Whether a page is a sign-in page (fix 1). A visible password field is enough. A username-only or code-only form
+ * Whether a page is a sign-in page (fix 1). A visible password field is enough, unless the page has several (a
+ * change-password or registration form: current, new, confirm) and isn't on the sign-in route or a route named like
+ * one (0.3.2 T1: Toolshop's /account/profile was taken for a sign-in page). A username-only or code-only form
  * (two-step sign-in, OTP) counts only on the known sign-in route, or before that is known, on a route named like
  * one. A settings form with an email field is never a sign-in page.
  */
 export function isSignInPage(state: LoginState, route: string | null, loginRoute: string | null): boolean {
-  if (state.password) return true;
+  if (state.password) {
+    const onSignInRoute = route !== null && (route === loginRoute || SIGN_IN_ROUTE.test(route));
+    return onSignInRoute || (state.passwords ?? 1) <= 1;
+  }
   if (!state.userOnly && !state.otp) return false;
   if (route === null) return false;
   return loginRoute !== null ? route === loginRoute : SIGN_IN_ROUTE.test(route);

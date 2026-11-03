@@ -150,3 +150,23 @@ test('publish.pathDepth defaults to 4, in the schema and in the template qam set
   const template = path.resolve(import.meta.dirname, '../plugin/templates/project/config/qamaster.json');
   assert.equal(JSON.parse(fs.readFileSync(template, 'utf8')).publish.pathDepth, 4);
 });
+
+// From the Toolshop run (T2): product and invoice IDs are ULIDs, which the default rules didn't fold into :id.
+test('0.3.2 T2: the default route rules fold a ULID, a UUID and a number into :id', async () => {
+  const { readFileSync } = await import('node:fs');
+  const tpl = JSON.parse(
+    readFileSync(new URL('../plugin/templates/project/config/dsm-config.json', import.meta.url), 'utf8'),
+  );
+  const rules: { pattern: string; replace: string }[] = tpl.application.route_normalization;
+  const fold = (route: string) => rules.reduce((r, x) => r.replace(new RegExp(x.pattern, 'g'), x.replace), route);
+  assert.equal(fold('/account/invoices/01M6DMTD4XPJRKAP06CTQX2333'), '/account/invoices/:id');
+  assert.equal(fold('/product/01M6DMTD1S095QT6ATYWZ5E9MR/reviews'), '/product/:id/reviews');
+  assert.equal(fold('/order/3f2a91c0-1b2c-4d3e-8f90-a1b2c3d4e5f6'), '/order/:id');
+  assert.equal(fold('/cart/42'), '/cart/:id');
+  assert.equal(fold('/category/power-tools'), '/category/power-tools', 'a slug stays');
+  assert.equal(
+    fold('/product/ALLUPPERCASEWORDSLUGOFLENGTH'),
+    '/product/ALLUPPERCASEWORDSLUGOFLENGTH',
+    'not 26 Crockford characters',
+  );
+});

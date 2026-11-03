@@ -33,6 +33,8 @@ import { BlockedError, NoPlanError, NoProjectError } from '../shared/errors.mts'
 import { DEFAULT_PROJECT_CONFIG } from '../shared/schema.mts';
 import { automationFolder, runnerRoot } from './gate.mts';
 
+/** A character class only the ULID rule has, to tell whether a config has it. */
+const ULID_MARK = '0-9A-HJKMNP-TV-Z';
 const project = (cfg: Config) => cfg.qaProject ?? cfg.root;
 const appName = (cfg: Config, dir: string) => cfg.project.app?.name ?? path.basename(dir);
 const ctx = (cfg: Config): Context => ({
@@ -311,6 +313,13 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
     if (depth !== undefined && depth !== def)
       stale.push(
         `publish.pathDepth is ${depth}, the default is now ${def}: set it in config/qamaster.json (fine if deliberate).`,
+      );
+    // 0.3.2 T2: ULIDs (26 characters, as in /product/01M6DMTD1S095QT6ATYWZ5E9MR) became a default rule
+    const rules = (dsm.application as { route_normalization?: { pattern?: string }[] } | undefined)
+      ?.route_normalization;
+    if (Array.isArray(rules) && !rules.some((r) => r.pattern?.includes(ULID_MARK)))
+      stale.push(
+        `application.route_normalization has no rule for ULID IDs: add {"pattern": "/[0-9A-HJKMNP-TV-Z]{26}(?=/|$)", "replace": "/:id"} to config/dsm-config.json, or an app with ULID IDs gets a crawled page for every record (fine if it has none).`,
       );
     for (const r of repos as { name: string; exclude?: unknown }[]) {
       if (!Array.isArray(r.exclude)) continue;

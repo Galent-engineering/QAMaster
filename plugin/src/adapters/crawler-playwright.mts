@@ -165,7 +165,7 @@ const LOGIN_STATE = `(() => {
     otpRe.test([i.name, i.id, i.placeholder, i.getAttribute('aria-label')].join(' ')) ||
     (i.closest('form') && otpRe.test(i.closest('form').innerText || '') && i.maxLength > 0 && i.maxLength <= 8)));
   const alertEl = [...document.querySelectorAll('[role=alert], .error, .alert-danger, .text-danger, .invalid-feedback, .validation-summary-errors')].find(vis);
-  return { password: !!password, userOnly: !password && !!user && !otp, otp: !!otp && !password,
+  return { password: !!password, passwords: inputs.filter((i) => i.type === 'password').length, userOnly: !password && !!user && !otp, otp: !!otp && !password,
     message: alertEl ? alertEl.innerText.trim().replace(/\\s+/g, ' ').slice(0, 160) : '' }; })()`;
 
 type Extracted = {

@@ -165,3 +165,22 @@ test('a sign-in page without credentials or a terminal is blocked with the ways 
     message: /no username.*--login-mode manual.*DSM_APP_USERNAME/,
   });
 });
+
+// From the Toolshop run (T1): /account/profile has a change-password form, and it was taken for a sign-in page.
+test('0.3.2 T1: a page with several password fields (change password) is not a sign-in page, off the sign-in route', () => {
+  const one = { password: true, passwords: 1, userOnly: false, otp: false, message: '' };
+  const change = { ...one, passwords: 2 };
+  assert.equal(isSignInPage(change, '/account/profile', '/auth/login'), false, 'current + new password');
+  assert.equal(
+    isSignInPage({ ...one, passwords: 3 }, '/account/profile', null),
+    false,
+    'also before the route is known',
+  );
+  assert.equal(
+    isSignInPage(one, '/account/profile', '/auth/login'),
+    true,
+    'one password field: session expired, form shown in place',
+  );
+  assert.equal(isSignInPage(change, '/auth/login', '/auth/login'), true, 'on the sign-in route it still is');
+  assert.equal(isSignInPage(change, '/sign-in', null), true, 'a route named like sign-in');
+});
