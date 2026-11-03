@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QAMaster v3 setup roadmap</title>
+<style>
+:root{color-scheme:light;--bg:#f7f8fa;--card:#fff;--text:#18212b;--muted:#52606d;--border:#d9e0e7;--blue:#174f7a;--blue-bg:#e9f2f8;--gold:#805500;--gold-bg:#fff4d8;--green:#17623a;--green-bg:#e8f5ec;font:16px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif}
+@media(prefers-color-scheme:dark){:root{color-scheme:dark;--bg:#171b20;--card:#222830;--text:#edf2f7;--muted:#bac5d0;--border:#3c4652;--blue:#a8d7f5;--blue-bg:#19364a;--gold:#ffda8b;--gold-bg:#40351f;--green:#a4e1b8;--green-bg:#193b29}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.55}
+main{max-width:980px;margin:0 auto;padding:32px 20px 56px}
+h1{font-size:clamp(1.8rem,4vw,2.5rem);line-height:1.15;margin:0 0 .5rem}
+h2{font-size:1.35rem;margin:2.2rem 0 .8rem}
+h3{font-size:1.05rem;margin:.2rem 0 .45rem}
+p{margin:.5rem 0 1rem}
+a{color:var(--blue)}
+.lead{font-size:1.1rem;color:var(--muted);max-width:780px}
+.badge{display:inline-block;border-radius:999px;padding:.18rem .65rem;font-size:.78rem;font-weight:700;vertical-align:.12rem}
+.current{background:var(--green-bg);color:var(--green)}
+.planned{background:var(--gold-bg);color:var(--gold)}
+.note{padding:1rem 1.15rem;border:1px solid var(--border);border-left:5px solid var(--gold);border-radius:8px;background:var(--card);margin:1rem 0}
+.note strong{color:var(--text)}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem}
+.card p{color:var(--muted);font-size:.94rem;margin-bottom:0}
+.roadmap{padding:0;list-style:none;counter-reset:roadmap}
+.roadmap li{counter-increment:roadmap;position:relative;padding:.9rem 1rem .9rem 3.2rem;border:1px solid var(--border);border-radius:9px;background:var(--card);margin:.65rem 0}
+.roadmap li:before{content:counter(roadmap);position:absolute;left:1rem;top:.9rem;width:1.5rem;height:1.5rem;display:grid;place-items:center;border-radius:50%;background:var(--blue-bg);color:var(--blue);font-weight:700;font-size:.8rem}
+.roadmap p{color:var(--muted);margin:.25rem 0 0;font-size:.94rem}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1rem}
+code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.9em}
+footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.9rem;color:var(--muted)}
+@media(max-width:600px){main{padding:24px 14px 40px}}
+</style>
+</head>
+<body>
+<main>
+<p><span class="badge planned">Roadmap, not released</span></p>
+<h1>QAMaster v3 setup</h1>
+<p class="lead">A planning view of the product capabilities listed for v3: reuse existing automation, trace changes and tests, explain failures, measure value, and strengthen secret handling.</p>
+
+<div class="note">
+  <strong>Version status:</strong> The current plugin is <strong>0.3.1</strong>. Product v3 is a future scope in <a href="product.md">the product plan</a>, not a released plugin or an approved implementation schedule. Its setup steps and capabilities below are therefore a target, not commands you can enable today.
+</div>
+
+<h2>What works today</h2>
+<div class="grid">
+  <section class="card">
+    <h3><span class="badge current">Available</span> Web app discovery</h3>
+    <p>Scan an app repository, crawl a reachable web app with Playwright, and build a DSM. Crawl safety blocks data-changing requests by default.</p>
+  </section>
+  <section class="card">
+    <h3><span class="badge current">Available</span> Test design and publishing</h3>
+    <p>Generate evidence-grounded test cases for review, then publish to Azure DevOps Test Plans or the local file store.</p>
+  </section>
+  <section class="card">
+    <h3><span class="badge current">Available</span> Automation and gate</h3>
+    <p>Generate Playwright-BDD scripts and run them, or run an existing pytest suite. The change gate creates an approved plan and records a verdict.</p>
+  </section>
+</div>
+
+<h2>Planned v3 capabilities</h2>
+<ol class="roadmap">
+  <li>
+    <h3>Work with existing automation frameworks <span class="badge planned">Planned</span></h3>
+    <p>Detect and analyze a team's current framework and generate into it where supported. Today, Playwright-BDD is the generated framework; pytest is supported as a runner for existing tests. Cypress, Cucumber-JVM and SpecFlow generation are not currently shipped.</p>
+  </li>
+  <li>
+    <h3>Impact and traceability matrices <span class="badge planned">Planned</span></h3>
+    <p>Extend today's code-to-screen DSM impact and test selection with broader impact and traceability views linking changes, requirements, screens, cases and automation.</p>
+  </li>
+  <li>
+    <h3>Root-cause evidence <span class="badge planned">Planned</span></h3>
+    <p>Use commits and logs as evidence to help explain test failures. Failure evidence and gate verdicts exist today; the planned v3 work is the root-cause analysis layer.</p>
+  </li>
+  <li>
+    <h3>Value metrics <span class="badge planned">Planned</span></h3>
+    <p>Measure tokens, time and effort saved. QAMaster does not currently provide these product metrics.</p>
+  </li>
+  <li>
+    <h3>Secrets vault and security scan <span class="badge planned">Planned</span></h3>
+    <p>Add an encrypted secrets vault and security scanning. Today, credentials are supplied through environment variables or ignored local .env files; there is no QAMaster vault.</p>
+  </li>
+  <li>
+    <h3>Visio MCP server <span class="badge planned">Planned</span></h3>
+    <p>Add Visio as a context source through an MCP server. The QAMaster MCP server and context-source integration are also not in the current 0.3.1 release.</p>
+  </li>
+</ol>
+
+<h2>Use the current plugin</h2>
+<p>For a real setup now, use a web application with a reachable test instance and source code in Git. Node.js 24 and Git are required. Choose Azure DevOps Test Plans or the local file store; ADO credentials are needed only for ADO operations.</p>
+<pre><code># Load the plugin in Claude Code for this session
+claude --plugin-dir /path/to/QAMaster/plugin
+
+# Or use the CLI to set up a QA project
+qam setup --app &lt;AppName&gt; --url &lt;test-app-url&gt; --source &lt;app-folder-or-git-url&gt;
+qam doctor</code></pre>
+<p>Review generated test cases before publishing, and approve a gate plan before tests run. Do not use production for crawl or test runs unless the action has been explicitly reviewed and approved.</p>
+
+<h2>What must be decided before calling this a v3 setup</h2>
+<div class="grid">
+  <section class="card"><h3>Framework boundary</h3><p>Which existing frameworks are detected, analyzed, and supported for generation—and which are runner-only?</p></section>
+  <section class="card"><h3>Traceability model</h3><p>Which identifiers and evidence connect code changes, requirements, screens, test cases, and runs?</p></section>
+  <section class="card"><h3>Security model</h3><p>How vault encryption, access, rotation, scanning, and secret redaction should work.</p></section>
+  <section class="card"><h3>Evidence and metrics</h3><p>Which sources can support root-cause explanations and how effort or value is measured without overstating precision.</p></section>
+</div>
+
+<footer>
+  <p>Roadmap source: <a href="product.md">product.md, v3 scope</a>. Current release status: <a href="releases.md">releases.md</a>. Adapter and integration map: <a href="v2-plugin-setup.html">v2-plugin-setup.html</a>. This page does not commit v3 to a release date or implementation order.</p>
+</footer>
+</main>
+</body>
+</html>

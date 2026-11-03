@@ -76,6 +76,10 @@ Plan: [plans/0.3.1.md](plans/0.3.1.md). Built on `feature/0.3.1-setup-gaps`, rel
 ## 0.3.2: planned
 
 - `/qamaster:status`: each pipeline stage with its evidence and the next step, read-only (`qam pipeline status`). `docs/design.md` listed it, but no build shipped it. It's needed for the [walkthrough on an unknown app](demos/2026-11-02-0.3.2-unknown-app.md).
-- Findings from that walkthrough.
+- Findings from the [Toolshop run](demos/2026-11-02-toolshop-analysis.md), confirmed against the code:
+  - **T1:** a profile page with a change-password form is taken for a sign-in page, which cut a signed-in crawl short (`isSignInPage`).
+  - **T2:** ULID IDs aren't folded into `:id` by default, so every product and invoice page was crawled (112 screens instead of 67).
+  - **T3, T4:** `qam pipeline status` says the automation folder wasn't created (it looks for `.aut-app.json`; `qam app create` writes `app.json`) and that the script gate was never run (nothing writes `check-scripts.json`).
+  - **T5:** the optional automation stages show as pending (K10).
 
 Not in 0.3.0: Feedback, Reports and Requirements (`qam requirements fetch`), and the v1.1, v2 and v3 scope in product.md.

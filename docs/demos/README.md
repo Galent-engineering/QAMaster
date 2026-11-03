@@ -17,7 +17,7 @@ Every hands-on walkthrough of a QAMaster build, with the tester's feedback, kept
 | 2026-11-02 | 0.3.0 | CheckMasterDemo (pytest), local Juice Shop v20.3.0 (playwright-bdd) | [end to end](2026-11-02-0.3.0-end-to-end.md), run by Claude | D3 and D4 pass. 7 bugs found and fixed with tests |
 | 2026-11-02 | 0.3.0 | A clean `node:24` Docker container, with CheckMasterDemo and Juice Shop | [clean-room run](2026-11-02-0.3.0-docker-e2e.md), in a separate Claude session | Both paths pass once the prerequisites are in. 11 findings, F1–F11 |
 | *(you choose)* | 0.3.2 | Any application QAMaster has never seen | [happy path, limitations, goals](2026-11-02-0.3.2-unknown-app.md) | Not started |
-| 2026-11-02 | 0.3.2 (branch) | Practice Software Testing (Toolshop), run internally by Claude as a developer | [internal script](2026-11-02-0.3.1-toolshop.md), findings to come | In progress |
+| 2026-11-02 | 0.3.1 | Practice Software Testing (Toolshop), full loop with ADO as the store, done outside this session | [analysis of the results](2026-11-02-toolshop-analysis.md); [the script it followed](2026-11-02-0.3.1-toolshop.md) | Done. Worked end to end; 5 issues (T1–T5) went to 0.3.2 |
 | 2026-11-02 | 0.3.0 | The same two flows in a clean `node:24-bookworm-slim` container | [Docker end to end](2026-11-02-0.3.0-docker-e2e.md), run by Claude; reproduce with `scripts/docker-e2e/run.sh` | Both paths pass once the prerequisites are in. 11 findings (F1–F11), not fixed |
 
 ## Findings and where they went
@@ -46,3 +46,4 @@ Every hands-on walkthrough of a QAMaster build, with the tester's feedback, kept
 | 0.2.1 verification B5 | The TestGen manifest's `generated_at` is local time marked as UTC | 0.2.2: validator finding, and the reference says UTC |
 | 0.2.1 verification E1–E7 | Enhancements: cross-run smoke warning, remember `--skip-smoke`, `qam review` confirmation, and others | Later ([verification](2026-11-02-0.2.1-verification.md#enhancements-for-later)) |
 | 0.3.0 Docker F1–F11 | Prerequisites not checked or explained on a clean machine (setup problems as test failures, silent uv downloads, doctor gaps, a crash without git, files left in the app repo) | 0.3.1 ([plan](../plans/0.3.1.md)); decisions Q41, Q42 and a Q14 amendment |
+| Toolshop run T1–T4 | A profile page taken for a sign-in page; ULID IDs not folded; the pipeline's automation-folder and script-gate stages never turn done | 0.3.2 ([releases.md](../releases.md)) |

@@ -38,14 +38,20 @@ code{font-family:var(--mono);font-size:12px;color:var(--text)}
 .prog{display:grid;grid-template-columns:44px 1fr 150px 92px;gap:10px;align-items:center;padding:6px 12px;border:1px solid var(--border);border-radius:var(--radius);margin-bottom:4px;background:var(--card);font-size:13px}
 .prog .d{font-size:12px}.prog .b{margin-left:0;text-align:center}
 .demo{border-color:var(--acc);box-shadow:inset 3px 0 0 var(--acc)}
+.status{border:1px solid var(--border-strong);border-left:4px solid var(--acc);border-radius:var(--radius);padding:10px 12px;margin:12px 0;background:var(--card);font-size:13px;color:var(--muted)}
+.status strong{color:var(--text)}
+.planned-note{border-left-color:#b7791f;background:var(--warn-bg)}
 @media (max-width:600px){.row,.prog{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <main>
 <h1>QAMaster v2 plugin setup</h1>
-<p class="lead">The big picture after decisions Q26 to Q32: entry points as a checklist, where the code comes from and how it's read, plan selectors and model, and runners and targets that fit the framework. Every picker is a swappable adapter; swapping a part never changes the pipeline.</p>
+<p class="lead">The architecture map after decisions Q26 to Q32: entry points, code sources, plan selectors, frameworks and compatible runners. The controls illustrate the adapter design; they are not all available in the current plugin.</p>
 <p class="legend"><span class="b v1" style="margin-left:0">v1</span> in v1 <span class="b v11">v1.1</span> next release <span class="b v2">v2</span> planned for v2 <span class="b later">later</span> planned adapter</p>
+<div class="status"><strong>Current release: 0.3.1 (2026-11-02).</strong> Shipped today: DSM scan/crawl, app knowledge and test design, explicit review, ADO and local-file publishing, Playwright-BDD automation, pytest and Playwright-BDD runners, change plans and verdicts, plus the Claude Code plugin and CLI. Azure DevOps is the only remote store; the local file store is also available.</div>
+<div class="status planned-note"><strong>Not shipped in 0.3.1:</strong> requirements fetching, native reports, feedback, Jira/Xray/Zephyr, the QAMaster MCP server, PR/CI integrations, and other generated automation frameworks. In particular, <code>qam report all</code> is not implemented. See the <a href="v3-qamaster-setup.html">v3 roadmap page</a> for later product scope.</div>
+<div class="status"><strong>Latest walkthrough evidence:</strong> the internal Toolshop run had two passing 13/13 gate runs and 13 ADO cases verified live. This is not a completed general-purpose demo: the crawl logged browser-closed navigation errors, and its full-crawl counts disagreed with the pipeline summary. The walkthrough report records those caveats.</div>
 
 <div class="ph">Entry points: tick every tool your team works in (Q29). Each becomes a recorded integration (Q27)</div>
 <div class="eps" id="eps"></div>
@@ -54,10 +60,10 @@ code{font-family:var(--mono);font-size:12px;color:var(--text)}
 <div class="row"><div class="n">Code source</div><div class="d">Local folder or git URL, validated at setup (Q26)</div><div><select id="src" aria-label="Code source"><option value="local">Local folder</option><option value="url">Git URL, clone</option><option value="existing">Git URL, existing clone</option><option value="api">Host URL, no clone</option></select></div></div>
 <div class="row"><div class="n">Repository reader</div><div class="d">How the scan and the gate read the code (Q30)</div><div><select id="reader" aria-label="Repository reader"></select></div></div>
 <div class="row"><div class="n">DSM: UI crawl</div><div class="d">Robot browser maps the app, write guard on</div><div><select id="crawler" aria-label="Crawler"><option value="pw">Playwright (web)</option><option value="appium">Appium (mobile app)</option></select></div></div>
-<div class="row"><div class="n">Requirements</div><div class="d">Sprint stories and acceptance criteria</div><div><select id="req" aria-label="Requirement source"><option value="ado">Azure Boards</option><option value="jira">Jira board</option></select></div></div>
+<div class="row"><div class="n">Requirements</div><div class="d">Sprint stories and acceptance criteria; fetching is not in 0.3.1</div><div><select id="req" aria-label="Requirement source"><option value="ado">Azure Boards (planned)</option><option value="jira">Jira board (planned)</option></select></div></div>
 <div class="row"><div class="n">Test design</div><div class="d">Claude writes cases from DSM, knowledge, stories</div><div class="fixed">Claude, AI switch on/off (Q24)</div></div>
-<div class="row"><div class="n">Automation</div><div class="d">Scripts, locators, gate, @TC tag (Q25)</div><div><select id="fw" aria-label="Test framework"><option value="bdd">playwright-bdd (TS)</option><option value="pytest">pytest (Python)</option><option value="cypress">Cypress (JS)</option><option value="jvm">Cucumber-JVM (Java)</option><option value="specflow">SpecFlow (.NET)</option></select></div></div>
-<div class="row"><div class="n">Publish</div><div class="d">Reviewed cases with path: tags and links</div><div><select id="store" aria-label="Test case store"><option value="ado">Azure Test Plans</option><option value="file">Spreadsheet file</option><option value="xray">Jira + Xray / Zephyr</option></select></div></div>
+<div class="row"><div class="n">Automation</div><div class="d">Generated scripts, locators, gate, @TC tag (Q25)</div><div><select id="fw" aria-label="Test framework"><option value="bdd">playwright-bdd (generated)</option><option value="pytest">pytest (existing-suite runner)</option><option value="cypress">Cypress (planned)</option><option value="jvm">Cucumber-JVM (planned)</option><option value="specflow">SpecFlow (planned)</option></select></div></div>
+<div class="row"><div class="n">Publish</div><div class="d">Reviewed cases with path: tags and links</div><div><select id="store" aria-label="Test case store"><option value="ado">Azure Test Plans</option><option value="file">Local file store</option><option value="xray">Jira + Xray / Zephyr (planned)</option></select></div></div>
 
 <div class="ph">Gate side, from CheckMaster</div>
 <div class="row"><div class="n">Plan</div><div class="d">Which cases this change needs (Q31)<div class="sels" id="sels"></div></div><div class="stack"><select id="preset" aria-label="Selection preset"><option value="fast">Preset: fast</option><option value="standard" selected>Preset: standard</option><option value="full">Preset: full</option><option value="custom">Custom</option></select><select id="model" aria-label="Model for groups"><option value="session">Model: session's own</option><option value="opus">Model: Claude Opus 5.5</option><option value="sonnet">Model: Claude Sonnet 5.5</option><option value="haiku">Model: Claude Haiku 5.5</option></select></div></div>
@@ -65,29 +71,28 @@ code{font-family:var(--mono);font-size:12px;color:var(--text)}
 <div class="row"><div class="n">Pull request</div><div class="d">Plan comment, check result, approval (Q28)</div><div class="stack"><select id="host" aria-label="Code host"><option value="github">Host: GitHub</option><option value="azure-repos">Host: Azure Repos</option><option value="bitbucket">Host: Bitbucket</option><option value="gitlab">Host: GitLab</option></select><select id="ci" aria-label="CI system"><option value="github-actions">CI: GitHub Actions</option><option value="azure-pipelines">CI: Azure Pipelines</option><option value="bitbucket-pipelines">CI: Bitbucket Pipelines</option><option value="gitlab-ci">CI: GitLab CI</option><option value="jenkins">CI: Jenkins</option></select></div></div>
 <div class="row"><div class="n">Verdict</div><div class="d">Pass, fail or blocked; gaps, stale cases, defects</div><div><select id="res" aria-label="Results"><option value="html">HTML reports</option><option value="adorun">+ ADO Test Run (dashboards)</option></select></div></div>
 
-<div class="ph">Where the port stands (porting-step3.md, 2026-10-29). Each feature builds one row of the picture above</div>
-<div class="prog"><b>1</b><div>DSM build and render <div class="d">the matrix and its page</div></div><div class="d">DSM: UI crawl</div><span class="b v1">done</span></div>
-<div class="prog"><b>2</b><div>Repo scan <div class="d">routes, screens and owners from the code</div></div><div class="d">Code source, reader</div><span class="b v1">done</span></div>
-<div class="prog"><b>3</b><div>UI crawl and DSM refresh <div class="d">safe crawl, impact of a change</div></div><div class="d">DSM: UI crawl</div><span class="b v1">done</span></div>
-<div class="prog"><b>4</b><div>Setup and pipeline <div class="d">qam setup, doctor, onboarding stages, integrations</div></div><div class="d">Code source, entry points</div><span class="b v1">done</span></div>
-<div class="prog"><b>5</b><div>Application knowledge <div class="d">AUT_&lt;App&gt; skills from the DSM</div></div><div class="d">Test design (input)</div><span class="b v1">done</span></div>
-<div class="prog"><b>S4</b><div>ADO adapter <div class="d">porting step 4, from CheckMaster</div></div><div class="d">Requirements, Publish</div><span class="b v11">next</span></div>
-<div class="prog"><b>6</b><div>Requirements <div class="d">sprint stories from Azure Boards</div></div><div class="d">Requirements</div><span class="b later">planned</span></div>
-<div class="prog demo"><b>7</b><div>TestGen <div class="d">first QE-engine demo: app in, reviewed test cases out (built ahead of S4 and 6)</div></div><div class="d">Test design</div><span class="b v1">done</span></div>
-<div class="prog"><b>8</b><div>Automation <div class="d">playwright-bdd scripts, locators, script gate</div></div><div class="d">Automation</div><span class="b later">planned</span></div>
-<div class="prog"><b>9</b><div>Reports <div class="d">Manual Test Case Report, DSM report, summary</div></div><div class="d">Verdict (reports)</div><span class="b later">planned</span></div>
-<div class="prog"><b>S5–10</b><div>Gate side and wiring <div class="d">selection and verdict, runner, publish, feedback, hooks, end to end (tech.md steps 5–10)</div></div><div class="d">Plan, Run, Publish</div><span class="b later">planned</span></div>
+<div class="ph">Current implementation status (plugin 0.3.1, 2026-11-02). Release numbers are in releases.md; this is the shipped capability view.</div>
+<div class="prog"><b>1</b><div>Setup, doctor and pipeline status <div class="d">Node 24 CLI, project config, prerequisites and stage evidence</div></div><div class="d">Code source, entry points</div><span class="b v1">shipped</span></div>
+<div class="prog"><b>2</b><div>Code scan, safe UI crawl and DSM <div class="d">Screen map, rendered matrix, change impact</div></div><div class="d">DSM: UI crawl</div><span class="b v1">shipped</span></div>
+<div class="prog"><b>3</b><div>Application knowledge and TestGen <div class="d">AUT skills, evidence-grounded drafts, validation and explicit review</div></div><div class="d">Test design</div><span class="b v1">shipped</span></div>
+<div class="prog"><b>4</b><div>Publish <div class="d">ADO Test Plans or local file store; preview, explicit apply, tags and links</div></div><div class="d">Test case store</div><span class="b v1">shipped</span></div>
+<div class="prog"><b>5</b><div>Automation <div class="d">playwright-bdd generation, locators, quality check; pytest runs existing suites</div></div><div class="d">Framework and runners</div><span class="b v1">shipped</span></div>
+<div class="prog"><b>6</b><div>Change gate <div class="d">Plan, approve, run, verdict and evidence; Playwright-BDD and pytest runners</div></div><div class="d">Plan, Run</div><span class="b v1">shipped</span></div>
+<div class="prog"><b>7</b><div>Claude Code integration <div class="d">Plugin commands, skills and configured hooks; qam CLI is also usable in a terminal</div></div><div class="d">Entry points</div><span class="b v1">shipped</span></div>
+<div class="prog"><b>8</b><div>Requirements, feedback and reports <div class="d">Requirements fetching, feedback workflows and native HTML reports</div></div><div class="d">Requirements, Verdict</div><span class="b later">not shipped</span></div>
+<div class="prog"><b>9</b><div>PR/CI checks and other assistants <div class="d">Git pre-push integration, PR checks, MCP server and exports</div></div><div class="d">PR, other tools</div><span class="b later">planned</span></div>
+<div class="prog"><b>10</b><div>Other automation frameworks <div class="d">Cypress, Cucumber-JVM and SpecFlow adapters</div></div><div class="d">Automation</div><span class="b later">planned</span></div>
 
 <div class="out"><h2>Installed and recorded</h2><ul id="ints" style="margin:0;padding-left:18px"></ul>
 <div class="d" style="margin-top:6px">Kept in <code>.qamaster/integrations.json</code> and <code>~/.qamaster/installs.json</code>; <code>qam doctor</code> verifies each.</div></div>
 <div class="out"><h2>Your stack</h2><ul id="sum" style="margin:0;padding-left:18px"></ul></div>
-<p class="foot">Saved 2026-10-29 from docs/decisions.md (Q4, Q11, Q16, Q20, Q23 to Q32) and docs/product.md scope. It replaced the v1 page as the current picture; update it when those decisions change, and the progress rows when a feature moves.</p>
+<p class="foot">Status checked 2026-11-02 against docs/releases.md, docs/product.md and the 0.3.1 Toolshop walkthrough. The v2 controls describe planned adapter choices as well as shipped ones; check the status notes before treating any selection as available.</p>
 </main>
 <script>
 const B={v1:'<span class="b v1">v1</span>',v11:'<span class="b v11">v1.1</span>',v2:'<span class="b v2">v2</span>',later:'<span class="b later">later</span>'};
 const ORD=['v1','v11','v2','later'];const vmax=(...a)=>a.reduce((x,y)=>ORD.indexOf(y)>ORD.indexOf(x)?y:x);
-const EPS=[['claude','Claude Code','v1','claude-hooks','the plugin'],['vscode','VS Code','v11','git-hook'],['vs','Visual Studio','v11','git-hook'],['pycharm','PyCharm / IntelliJ','v11','git-hook'],['terminal','Terminal','v11','git-hook'],['pr','PR checks','v11','pr-check'],['copilot','GitHub Copilot','v2','mcp','MCP server'],['cursor','Cursor / JetBrains AI','v2','mcp','MCP server'],['panel','IDE panel (own UI)','later','extension','an IDE extension']];
-const on0=new Set(['claude','vscode','pr']);
+const EPS=[['claude','Claude Code','v1','claude-hooks','the plugin'],['terminal-cli','Terminal CLI','v1','cli','qam CLI'],['vscode','VS Code push hook','v11','git-hook'],['vs','Visual Studio push hook','v11','git-hook'],['pycharm','PyCharm / IntelliJ push hook','v11','git-hook'],['terminal-hook','Terminal push hook','v11','git-hook'],['pr','PR checks','v11','pr-check'],['copilot','GitHub Copilot','v2','mcp','MCP server'],['cursor','Cursor / JetBrains AI','v2','mcp','MCP server'],['panel','IDE panel (own UI)','later','extension','an IDE extension']];
+const on0=new Set(['claude','terminal-cli']);
 document.getElementById('eps').innerHTML=EPS.map(([id,l,v])=>`<label class="ep"><input type="checkbox" data-id="${id}" ${on0.has(id)?'checked':''}> ${l}${B[v]}</label>`).join('');
 const SELS=[['path','path: matches'],['smoke','smoke'],['groups','Claude groups'],['dsm','DSM impact']];
 const PRESET={fast:['path','smoke'],standard:['path','smoke','groups','dsm'],full:['path','smoke','groups','dsm']};
@@ -101,11 +106,11 @@ specflow:{runners:[['dotnet','dotnet test','later']],targets:[['local','Local','
 const info={
 src:{local:['v1','Local folder; branch and subfolder recorded.'],url:['v1','Clones into a folder you choose (always asked).'],existing:['v1','Checks the clone\'s origin matches.'],api:['v11','No clone: read through the host\'s API (Q30).']},
 crawler:{pw:['v1','Playwright from your QA project.'],appium:['later','A new Crawler adapter.']},
-req:{ado:['v1','<code>QAMASTER_REQUIREMENTS=ado</code>'],jira:['later','<code>QAMASTER_REQUIREMENTS=jira</code>; v1 reads Jira via MCP in test design.']},
-store:{ado:['v1','<code>QAMASTER_STORE=ado</code>'],file:['later','<code>QAMASTER_STORE=file</code> (Q23).'],xray:['later','<code>QAMASTER_STORE=xray</code> or <code>zephyr</code> (Q23).']},
+req:{ado:['later','Requirements fetching is not shipped in 0.3.1.'],jira:['later','Jira requirements adapter is planned.']},
+store:{ado:['v1','<code>QAMASTER_STORE=ado</code>'],file:['v1','<code>QAMASTER_STORE=file</code> (local CSV or JSON store).'],xray:['later','<code>QAMASTER_STORE=xray</code> or <code>zephyr</code> is not shipped.']},
 host:{github:['v11','from origin github.com'],'azure-repos':['v11','from origin dev.azure.com'],bitbucket:['later','from bitbucket.org or <code>QAMASTER_CODEHOST</code>'],gitlab:['later','from gitlab.com or <code>QAMASTER_CODEHOST</code>']},
 ci:{'github-actions':'v11','azure-pipelines':'v11','bitbucket-pipelines':'later','gitlab-ci':'later',jenkins:'later'},
-res:{html:['v1','Six HTML reports (Q17).'],adorun:['v11','ADO Test Run; ADO dashboards chart it.']}};
+res:{html:['later','Native HTML reports are not implemented in 0.3.1.'],adorun:['v11','ADO Test Run publishing is planned; dashboards are not managed by QAMaster.']}};
 const $=id=>document.getElementById(id);
 function fill(id,opts){const el=$(id),cur=el.value;el.innerHTML=opts.map(([v,l,b])=>`<option value="${v}">${l}${b==='v1'?'':' ('+(b==='v11'?'v1.1':b)+')'}</option>`).join('');if(opts.some(o=>o[0]===cur))el.value=cur;}
 function syncSels(){const p=$('preset').value;if(p==='custom')return;document.querySelectorAll('[data-sel]').forEach(c=>{c.checked=PRESET[p].includes(c.dataset.sel)});}
@@ -117,6 +122,7 @@ function draw(){
  const L=[],ides=[];
  for(const [id,l,v,kind,how] of EPS){if(!on.includes(id))continue;
   if(kind==='git-hook'){ides.push(l);continue}
+  if(kind==='cli'){L.push(`<li><code>qam</code>${B[v]}: terminal CLI</li>`);continue}
   if(kind==='pr-check'){const h=$('host').value,c=$('ci').value;L.push(`<li><code>pr-check:${c}:${h}:galent/shop</code>${B[vmax(info.host[h][0],info.ci[c])]}</li>`);continue}
   L.push(`<li><code>${kind}${kind==='mcp'?':'+id:''}</code>${B[v]}: ${l}, via ${how}</li>`);}
  if(ides.length)L.splice(1,0,`<li><code>git-hook:pre-push:shop</code>${B.v11}: one hook, recorded for ${ides.join(', ')}</li>`);
