@@ -163,8 +163,9 @@ QAMASTER_ADO_PROJECT=Shop
 # QAMASTER_ADO_PLAN=Shop Web            # only if no plan is named like app.name (else the folder)
 # QAMASTER_TEST_ROOT=../shop-qa/Shop    # only if the tests live in a QA project
 # QAMASTER_RUNNER=pytest                # runner for new links; default playwright-bdd (Q38)
-# QAMASTER_STORE=ado                    # or file: testcases.csv (or .json) in the QA project (Q34, Q36)
+# QAMASTER_STORE=ado                    # Azure DevOps Test Plans, with the QAMASTER_ADO_* lines above
 # QAMASTER_STORE=file                   # testcases/testcases.csv, or testcases.json when there is no CSV (Q34, Q36)
+#                                       # unset: the store the ledger already names, else file (Q44)
 # QAMASTER_AI=off                       # turn off every AI step for this repo (Q24, data-handling.md)
 # QAMASTER_ADO_TOKEN=…                  # or use az login
 ```

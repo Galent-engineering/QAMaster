@@ -85,5 +85,6 @@ Plan: [plans/0.3.2.md](plans/0.3.2.md), with what went well, the feedback and wh
 | Stages 10–13 are optional and never "next" (T5) | `pipeline/pipeline.mts` | Q39 |
 | `/qamaster:status` | `commands/status.md` | |
 | `scripts/package.sh`: the plugin zip (Claude desktop) and the marketplace zip (CLI), checked; [install.md](install.md) | `scripts/package.sh` | |
+| Local first: with no `QAMASTER_STORE` the store is the one the ledger names, else the local file store, not Azure DevOps | `shared/config.mts` | Q44 |
 
 Not in 0.3.0: Feedback, Reports and Requirements (`qam requirements fetch`), and the v1.1, v2 and v3 scope in product.md.

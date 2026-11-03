@@ -34,12 +34,12 @@ test('loadEnv ignores a missing file', () => {
   assert.deepEqual(env, {});
 });
 
-test('defaults: ado store and requirements, playwright-bdd runner, tests in the repo, AI on', () => {
+test('defaults: the local file store (Q44), ado requirements, playwright-bdd runner, tests in the repo, AI on', () => {
   const root = tmp();
   const c = loadConfig(root, {});
   assert.deepEqual(
     [c.store, c.requirements, c.runner, c.testRoot, c.qaProject, c.ai],
-    ['ado', 'ado', 'playwright-bdd', root, null, 'on'],
+    ['file', 'ado', 'playwright-bdd', root, null, 'on'],
   );
   assert.deepEqual(c.project, DEFAULT_PROJECT_CONFIG);
 });
@@ -169,4 +169,21 @@ test('0.3.2 T2: the default route rules fold a ULID, a UUID and a number into :i
     '/product/ALLUPPERCASEWORDSLUGOFLENGTH',
     'not 26 Crockford characters',
   );
+});
+
+// Q44: local first. A project that has published keeps the store its ledger names, so nobody switches by surprise.
+test('Q44: with no QAMASTER_STORE, a QA project that published keeps the store its ledger names', () => {
+  const qa = tmp();
+  write(path.join(qa, 'config/qamaster.json'), JSON.stringify(DEFAULT_PROJECT_CONFIG));
+  assert.equal(loadConfig(qa, {}).store, 'file', 'nothing published yet: local');
+  write(path.join(qa, '.qamaster/ledger.json'), JSON.stringify({ store: 'Azure DevOps galent/Shop', entries: [] }));
+  assert.equal(loadConfig(qa, {}).store, 'ado', 'its ledger says Azure DevOps');
+  write(
+    path.join(qa, '.qamaster/ledger.json'),
+    JSON.stringify({ store: 'File testcases/testcases.csv, plan Shop', entries: [] }),
+  );
+  assert.equal(loadConfig(qa, {}).store, 'file');
+  assert.equal(loadConfig(qa, { QAMASTER_STORE: 'ado' }).store, 'ado', 'QAMASTER_STORE always wins');
+  write(path.join(qa, '.qamaster/ledger.json'), 'not json');
+  assert.equal(loadConfig(qa, {}).store, 'file', "a broken ledger doesn't pick the store: publish reports it");
 });

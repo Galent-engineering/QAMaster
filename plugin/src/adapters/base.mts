@@ -31,7 +31,7 @@ export type WriteCheck = {
 /** A project a store would create, or did (Q35), and the plan publish then creates in it. */
 export type NewProject = { name: string; process: string; plan: string };
 
-/** Where test cases live: QAMASTER_STORE; v1 has ado (Q23). */
+/** Where test cases live: QAMASTER_STORE, else the store the ledger names, else file (Q23, Q34, Q44). */
 export interface TestCaseStore {
   /** Where the test cases come from, for `qam doctor`: "Azure DevOps galent/Shop, plan Shop Web". */
   where(): string;

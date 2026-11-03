@@ -26,7 +26,7 @@ globalThis.fetch = (async (url: string | URL | Request, init?: RequestInit) =>
 afterEach(() => {
   STORES.ado = REAL_STORE;
 });
-const ENV = { QAMASTER_ADO_ORG: 'org', QAMASTER_ADO_PROJECT: 'Shop' };
+const ENV = { QAMASTER_STORE: 'ado', QAMASTER_ADO_ORG: 'org', QAMASTER_ADO_PROJECT: 'Shop' };
 
 /** A QA project that passes every doctor check but the store ones; `ado` backs the store. */
 function project(ado: FakeAdo, env: Record<string, string> = ENV, more: Partial<AdoSettings> = {}) {
@@ -182,7 +182,7 @@ test('doctor --check-write: with no plan yet it checks the root area, and the pl
 });
 
 test('doctor --check-write: without a configured store it says so; a store that cannot check is unknown', async () => {
-  const { cfg } = project(new FakeAdo(), {});
+  const { cfg } = project(new FakeAdo(), { QAMASTER_STORE: 'ado' });
   STORES.ado = makeAdoStore; // the real factory, which needs QAMASTER_ADO_ORG and _PROJECT
   const r = await run(cfg, ['--check-write']);
   assert.equal(r.code, 2);

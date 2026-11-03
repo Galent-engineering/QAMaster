@@ -60,7 +60,7 @@ function project(ado: FakeAdo) {
     JSON.stringify({ generated_at: 'D1', page: { nodes: [{ id: '/cart', files: ['shop:src/cart/Cart.tsx'] }] } }),
   );
   STORES.ado = () => adoStore(ado);
-  const cfg = loadConfig(dir, { QAMASTER_ADO_ORG: 'org', QAMASTER_ADO_PROJECT: 'Shop' });
+  const cfg = loadConfig(dir, { QAMASTER_STORE: 'ado', QAMASTER_ADO_ORG: 'org', QAMASTER_ADO_PROJECT: 'Shop' });
   const runDir = path.join(dir, 'testgen/output', RUN);
   const writeRun = (cases: unknown[]) => {
     fs.mkdirSync(runDir, { recursive: true });

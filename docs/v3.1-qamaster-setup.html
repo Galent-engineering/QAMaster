@@ -97,7 +97,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 </head>
 <body>
 <main>
-<p><span class="b now">Plugin 0.3.2</span><span class="b v11">Decisions to Q43</span><span class="b later">Checked 2026-11-03</span></p>
+<p><span class="b now">Plugin 0.3.2</span><span class="b v11">Decisions to Q44</span><span class="b later">Checked 2026-11-03</span></p>
 <h1>QAMaster setup</h1>
 <p class="lead">How a team sets QAMaster up, step by step: what each step does, the integration it plugs into, the decisions behind it, and what arrives at that step later.</p>
 
@@ -109,7 +109,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 <h2>What works today</h2>
 <div class="grid">
   <section class="card"><h3><span class="b now">Shipped</span> App discovery</h3><p>Scan the app's code, crawl the running app with a robot browser that can't change data, and build the screen map (DSM). 0.3.2 fixed a change-password form being taken for a sign-in page, and folds ULID IDs into <code>:id</code>.</p></section>
-  <section class="card"><h3><span class="b now">Shipped</span> Test design and publish</h3><p>Claude writes test cases grounded in the screen map and app knowledge, a validator checks them, a person reviews them, and publish sends them to Azure DevOps Test Plans or a local file store. Publishing again changes nothing that hasn't changed.</p></section>
+  <section class="card"><h3><span class="b now">Shipped</span> Test design and publish</h3><p>Claude writes test cases grounded in the screen map and app knowledge, a validator checks them, a person reviews them, and publish sends them to a local CSV store by default, or to Azure DevOps Test Plans. Publishing again changes nothing that hasn't changed.</p></section>
   <section class="card"><h3><span class="b now">Shipped</span> The change gate</h3><p>For each code change: a plan of the cases it touches, scripts drafted just in time for cases that have none, a person's approval, a run on pytest or playwright-bdd, and a verdict with evidence. A push from Claude Code waits for it.</p></section>
   <section class="card"><h3><span class="b now">Shipped</span> Status and checks</h3><p><code>/qamaster:status</code> shows every stage with its evidence and the next step. <code>qam doctor</code> checks the store, the runners, the browser and the app URL, and says how to fix each.</p></section>
   <section class="card"><h3><span class="b now">Shipped</span> Install from a zip</h3><p><code>scripts/package.sh</code> builds a zip for Claude desktop and one for the Claude CLI, and checks both. <a href="install.md">install.md</a> says how to load each.</p></section>
@@ -130,7 +130,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <h3>Set up the QA project, and run doctor</h3>
     <p class="what">Setup asks two things, in order: <strong>where the app's code is</strong>, then <strong>where its working copy lives on this machine</strong>. It then links the QA project (the folder you run it in, or <code>--repo</code>) to that code and the app's URL, and <code>qam doctor</code> checks every prerequisite. A missing tool blocks with the command to fix it, and nothing is downloaded without a yes.</p>
     <div class="pick">
-      <label for="where">1. The code is on</label><select id="where"><option value="local">This machine (a local folder)</option><option value="github">GitHub</option><option value="azure">Azure Repos</option><option value="bitbucket">Bitbucket</option><option value="gitlab">GitLab</option><option value="other">Another git server</option></select>
+      <label for="where">1. The code is on</label><select id="where"><option value="local">This machine: a local folder (default)</option><option value="github">GitHub</option><option value="azure">Azure Repos</option><option value="bitbucket">Bitbucket</option><option value="gitlab">GitLab</option><option value="other">Another git server</option></select>
       <div class="pair" id="urlRow"><label for="repoUrl">Repository URL</label><input id="repoUrl" type="text" spellcheck="false"></div>
       <div class="pair" id="getRow"><label for="get">2. Get it by</label><select id="get"></select></div>
       <div class="pair" id="dirRow"><label for="dir" id="dirL">Folder</label><input id="dir" type="text" spellcheck="false" placeholder="leave empty to see what happens"></div>
@@ -141,9 +141,9 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
   </li>
   <li class="step">
     <h3>Choose the test case store</h3>
-    <p class="what">Where reviewed cases live. Once published, the store is the source of truth; a local cache keeps reads fast.</p>
-    <div class="pick"><label for="store">Store</label><select id="store"><option value="ado">Azure DevOps Test Plans</option><option value="file">Local file store (CSV or JSON)</option><option value="xray">Jira with Xray or Zephyr</option></select></div>
-    <p class="why">Q6 the store is the source of truth · Q23 a replaceable adapter · Q34 the file store and the cache · Q36 the file store's JSON form</p>
+    <p class="what">Where reviewed cases live. <strong>Local by default:</strong> a CSV in the QA project, kept in git, with no account or network needed. Choose Azure DevOps when the team is ready (<code>QAMASTER_STORE=ado</code>); a project that has already published keeps its store. Once published, the store is the source of truth, and a local cache keeps reads fast.</p>
+    <div class="pick"><label for="store">Store</label><select id="store"><option value="file">Local file store: testcases/testcases.csv (default)</option><option value="ado">Azure DevOps Test Plans</option><option value="xray">Jira with Xray or Zephyr</option></select></div>
+    <p class="why">Q6 the store is the source of truth · Q23 a replaceable adapter · Q34 the file store and the cache · Q36 the file store's JSON form · Q44 local first</p>
     <p class="next"><b>Later here:</b> a project spreadsheet, then Jira through Xray or Zephyr <span class="b later">Later</span>.</p>
   </li>
   <li class="step">
@@ -215,7 +215,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 <h2>What comes next</h2>
 <p class="sub">From <a href="plans/0.3.2.md#points-to-take-to-the-next-release-033">plans/0.3.2.md</a> and <a href="product.md#scope">product.md</a>. Only 0.3.3 has an order; the rest is scope.</p>
 <ol class="tl">
-  <li class="here"><h3>0.3.2 <span class="b now">Built 2026-11-03</span></h3><ul><li>Toolshop fixes T1–T5, <code>/qamaster:status</code>, zips for Claude desktop and the CLI.</li></ul></li>
+  <li class="here"><h3>0.3.2 <span class="b now">Built 2026-11-03</span></h3><ul><li>Toolshop fixes T1–T5, <code>/qamaster:status</code>, zips for Claude desktop and the CLI, and local first: the file store is the default (Q44).</li></ul></li>
   <li><h3>0.3.3 <span class="b todo">Next</span></h3><ul>
     <li>Forms without a <code>&lt;form&gt;</code> tag in the crawl.</li>
     <li>Faster crawls and a time estimate before running (S1–S7); re-crawl Toolshop signed in.</li>
@@ -231,7 +231,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 </ol>
 
 <h2>Latest decisions</h2>
-<p class="sub">Q37–Q42 accepted on 2026-11-02 (Q36 proposed 2026-10-30, accepted then too); Q43 accepted 2026-11-03. Full text in <a href="decisions.md">decisions.md</a>.</p>
+<p class="sub">Q37–Q42 accepted on 2026-11-02 (Q36 proposed 2026-10-30, accepted then too); Q43 and Q44 accepted 2026-11-03. Full text in <a href="decisions.md">decisions.md</a>.</p>
 <div class="tw"><table>
   <thead><tr><th>Decision</th><th>What it settles</th></tr></thead>
   <tbody>
@@ -243,6 +243,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <tr><td>Q41</td><td>A runner's setup problem blocks with the fix, writes no verdict, and nothing is downloaded without a yes.</td></tr>
     <tr><td>Q42</td><td>The gate's local files go into the app repo's <code>.git/info/exclude</code>, out of its commits.</td></tr>
     <tr><td>Q43</td><td>Ticking a tool writes its own rules or steering file, a hook where the tool has one, and later its MCP registration. Every file it creates is kept out of commits, and the method depends on where the file lives and on the code source. Moves the IDE and agent entry points from v2 to v1.1.</td></tr>
+    <tr><td>Q44</td><td>Local first: with nothing chosen, the code is a local folder and the store is the local file (a CSV). A project that already published keeps its store; Azure DevOps is <code>QAMASTER_STORE=ado</code>.</td></tr>
   </tbody>
 </table></div>
 
@@ -254,7 +255,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <tr><td>0.2.2</td><td>Stable descriptions, masked credentials, UTC dates. Shipped inside 0.3.0.</td><td>Unit tests; confirmed live on Toolshop (republish: 13 unchanged).</td></tr>
     <tr><td>0.3.0</td><td>The gate, both runners, just-in-time scripts, <code>/qamaster:check</code>, the push hook.</td><td>An end-to-end run on Juice Shop.</td></tr>
     <tr><td>0.3.1</td><td>What a clean machine needs, checked and explained (F1–F11).</td><td>A clean Docker container: 41 of 41 steps.</td></tr>
-    <tr><td>0.3.2</td><td>Toolshop fixes T1–T5, <code>/qamaster:status</code>, the zips.</td><td>449 tests; both zips installed through the CLI. Toolshop's run on 0.3.1: two gates passed 13 of 13.</td></tr>
+    <tr><td>0.3.2</td><td>Toolshop fixes T1–T5, <code>/qamaster:status</code>, the zips, the local file store as the default (Q44).</td><td>450 tests; both zips installed through the CLI. Toolshop's run on 0.3.1: two gates passed 13 of 13.</td></tr>
   </tbody>
 </table></div>
 <div class="note">
@@ -328,7 +329,7 @@ cypress:{v:'later',link:'cypress:@TC-123',runners:[['cypress','cypress run','lat
 jvm:{v:'later',link:'junit:…',runners:[['maven','Maven','later'],['gradle','Gradle','later']],targets:[['local','This machine','later'],['grid','Selenium Grid','later']]},
 specflow:{v:'later',link:'specflow:…',runners:[['dotnet','dotnet test','later']],targets:[['local','This machine','later']]}};
 const INFO={
-store:{ado:['now','Azure DevOps Test Plans (<code>QAMASTER_STORE=ado</code>)'],file:['now','the local file store (<code>QAMASTER_STORE=file</code>)'],xray:['later','Jira with Xray or Zephyr']},
+store:{file:['now','the local file store, <code>testcases/testcases.csv</code> (the default, Q44)'],ado:['now','Azure DevOps Test Plans (<code>QAMASTER_STORE=ado</code>)'],xray:['later','Jira with Xray or Zephyr']},
 crawler:{pw:['now','Playwright, with writes blocked'],appium:['later','Appium, a new crawler adapter']},
 req:{ado:['todo','Azure Boards, through <code>qam requirements fetch</code>'],jira:['later','a Jira requirements adapter']},
 host:{none:['now','the Claude Code push hook only'],github:['v11','PR checks on GitHub'],'azure-repos':['v11','PR checks on Azure Repos'],bitbucket:['later','PR checks on Bitbucket'],gitlab:['later','PR checks on GitLab']},

@@ -32,6 +32,22 @@ function findQaProject(start: string): string | null {
   }
 }
 
+/**
+ * The store a QA project already published to, from its ledger's name for it (Q44). The default is local, but a
+ * project that published to Azure DevOps keeps it without setting QAMASTER_STORE. A ledger that can't be read picks
+ * nothing here; publish reports it.
+ */
+function publishedStore(qaProject: string | null): string | null {
+  if (!qaProject) return null;
+  try {
+    const { store } = JSON.parse(fs.readFileSync(path.join(qaProject, '.qamaster', 'ledger.json'), 'utf8'));
+    if (typeof store !== 'string') return null;
+    return store.startsWith('Azure DevOps') ? 'ado' : store.startsWith('File ') ? 'file' : null;
+  } catch {
+    return null;
+  }
+}
+
 function readProjectConfig(qaProject: string | null): ProjectConfig {
   if (!qaProject) return structuredClone(DEFAULT_PROJECT_CONFIG);
   const file = path.join(qaProject, PROJECT_CONFIG);
@@ -68,7 +84,7 @@ export function loadConfig(root: string, env: Env = process.env): Config {
   }
   return {
     root,
-    store: env.QAMASTER_STORE || 'ado',
+    store: env.QAMASTER_STORE || publishedStore(qaProject) || 'file',
     requirements: env.QAMASTER_REQUIREMENTS || 'ado',
     runner: env.QAMASTER_RUNNER || 'playwright-bdd',
     testRoot,

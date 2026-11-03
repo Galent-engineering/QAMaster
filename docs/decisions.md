@@ -697,6 +697,14 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
   - One set of files the whole team shares: each developer ticks their own tools.
   - Stability. Several of these hook formats are in preview or experimental, so each one is checked against the tool's docs when it's built, and `qam doctor` checks it works.
 
+**Q44. Local first: with nothing chosen, the code is a local folder and the store is the local file** (2026-11-03, accepted 2026-11-03; amends Q23 and Q34)
+- **Decision:**
+  - With no `QAMASTER_STORE`, the store is the one the QA project's ledger already names (a project that published to Azure DevOps stays there), else the local `file` store (`testcases/testcases.csv`, or `.json`).
+  - `QAMASTER_STORE` always wins. Azure DevOps is chosen with `QAMASTER_STORE=ado` and its settings.
+  - Setup and the setup page offer a local folder first for the code, and the file store first for test cases. The remote choices (GitHub, Azure Repos, Bitbucket, GitLab; Azure DevOps Test Plans) follow.
+- **Why:** the person wants local things as the default. A first run then needs no account, token or network, and a team adds Azure DevOps when it's ready.
+- **Gave up:** a new project that publishes straight to Azure DevOps with only the ADO settings in `.env`: it now also needs `QAMASTER_STORE=ado`. `qam doctor` passes on the file store, so nothing points out the missing line; the publish preview names the store it will write to.
+
 ---
 
 ## Open questions

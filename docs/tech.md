@@ -108,7 +108,7 @@ Errors a user can fix throw `BlockedError` with a message that says what to do n
 ## Adapters (`src/adapters/base.mts`)
 
 ```ts
-interface TestCaseStore {                        // QAMASTER_STORE; v1: ado (Q23)
+interface TestCaseStore {                        // QAMASTER_STORE: ado or file; unset, the ledger's store, else file (Q44)
   where(): string;
   url(id: number): string;
   inPlan(): Promise<Map<number, TestCase>>;      // what selection needs

@@ -27,11 +27,15 @@ test('an unknown adapter names the known ones', () => {
 });
 
 test('the ADO adapters say which settings they need; the runners block until their porting step lands', () => {
+  // the store is local by default (Q44); asked for, ADO says which settings it needs, as requirements always does
   for (const build of [buildStore, buildRequirements]) {
-    assert.throws(() => build(config()), { name: 'BlockedError', message: /QAMASTER_ADO_ORG=<organization>/ });
+    assert.throws(() => build(config({ QAMASTER_STORE: 'ado' })), {
+      name: 'BlockedError',
+      message: /QAMASTER_ADO_ORG=<organization>/,
+    });
   }
   assert.ok(
-    buildStore(config({ QAMASTER_ADO_ORG: 'org', QAMASTER_ADO_PROJECT: 'Shop' }))
+    buildStore(config({ QAMASTER_STORE: 'ado', QAMASTER_ADO_ORG: 'org', QAMASTER_ADO_PROJECT: 'Shop' }))
       .where()
       .includes('org/Shop'),
   );

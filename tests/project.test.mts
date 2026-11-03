@@ -242,7 +242,12 @@ test('doctor checks config, sources, Playwright and integrations, and records th
   assert.match(r.out, /ok +integration claude-hooks:/);
   fs.mkdirSync(path.join(qa, 'node_modules/playwright'), { recursive: true });
   fs.writeFileSync(path.join(qa, 'node_modules/playwright/package.json'), '{}');
-  // without ADO settings only the test case store needs attention, and the record says why (the pipeline reads it)
+  // the store is local by default (Q44), so a new project passes
+  const local = qam(qa, 'doctor');
+  assert.equal(local.status, 0, local.out);
+  assert.match(local.out, /ok +test case store +File /);
+  // asked for Azure DevOps without its settings, only the store needs attention, and the record says why
+  fs.writeFileSync(path.join(qa, '.env'), 'QAMASTER_STORE=ado\n');
   const r2 = qam(qa, 'doctor');
   assert.equal(r2.status, 2);
   assert.match(r2.out, /ok +Playwright/);
