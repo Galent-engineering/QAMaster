@@ -1,5 +1,7 @@
 # Toolshop run: analysis of the results you brought back
 
+> **Update 2026-11-03:** the folders this analysis reads (`DemoTest-Toolshop-internal`, `DemoTest-Toolshop-app` and its local remote) were deleted in the Downloads cleanup. The findings, counts and quotes below are kept as written, but the paths no longer exist. See [plans/0.3.2.md, Cleanup](../plans/0.3.2.md#cleanup).
+
 On 2026-11-02 a full run of QAMaster 0.3.1 on Practice Software Testing ("Toolshop") was done outside this session: the QA project (`~/Downloads/DemoTest-Toolshop-internal`) and the app clone (`~/Downloads/DemoTest-Toolshop-app`), with Azure DevOps as the store. The hand-written summary is `reports/output/toolshop-walkthrough-report.html` in the QA project.
 
 Claude analysed those files without re-running anything. It read the report, the DSM files, the crawl log, `doctor.json`, the git history and `qam pipeline status` (read-only), then checked each oddity against QAMaster's code.
