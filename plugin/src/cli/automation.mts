@@ -1,13 +1,15 @@
 /**
  * The automation folder (Q25):
  *     qam app create [--app NAME] [--web-url URL]     <App>/ in the QA project from the playwright-bdd template
- *     qam check-scripts [--quick]                     the scripts' quality gate (exit 0 pass, 1 fail)
+ *     qam check-scripts [--quick]                     the scripts' quality gate (0 pass, 1 fail, 2 blocked: packages missing)
  * The app name and URL default to config/qamaster.json's app.name and app.url.
  */
+import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { playwrightBdd } from '../adapters/framework-bdd.mts';
 import { runCases } from '../gate/dsm.mts';
+import { QAMASTER_DIR } from '../integrations/integrations.mts';
 import { pascal } from '../knowledge/build.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
@@ -52,6 +54,13 @@ export function checkScripts(cfg: Config, argv: string[], json: boolean): number
   const dir = appFolder(cfg);
   const known = new Set(runCases(cfg.qaProject ?? cfg.root).map((c) => c.localId));
   const r = playwrightBdd.check(dir, { known, quick: !!v.quick });
+  // the pipeline's script-gate stage reads this record (0.3.2 T4); blocked is a setup problem, not a pass
+  const project = cfg.qaProject ?? cfg.root;
+  fs.mkdirSync(path.join(project, QAMASTER_DIR), { recursive: true });
+  fs.writeFileSync(
+    path.join(project, QAMASTER_DIR, 'check-scripts.json'),
+    `${JSON.stringify({ status: r.findings.install ? 'blocked' : r.status, at: new Date().toISOString() }, null, 1)}\n`,
+  );
   if (json) console.log(JSON.stringify(r, null, 1));
   else {
     console.log(`Script check: ${r.findings.install ? 'blocked' : r.status} (${path.basename(dir)}/)`);

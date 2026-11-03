@@ -388,3 +388,27 @@ test("0.3.1 F9: on Linux, setup says how to install Chromium's system libraries"
   assert.match(browserDepsHint('linux'), /sudo npx playwright install-deps chromium/);
   assert.equal(browserDepsHint('darwin'), '');
 });
+
+// From the Toolshop run (T3, T4, T5): the automation stages never turned done, and "next" pointed at optional stages.
+test('0.3.2 T3-T5: qam app create and qam check-scripts turn their stages done; optional stages are never "next"', () => {
+  const qa = tmp();
+  assert.equal(qam(qa, 'setup', '--no-install', '--app', 'Shop', '--url', 'https://shop.example.test/').status, 0);
+  const stage = (id: string) => json(qa, 'pipeline', 'status').stages.find((s: { stage: string }) => s.stage === id);
+  assert.equal(stage('app-folder').status, 'pending');
+  assert.equal(stage('app-folder').optional, true, 'drafted on demand by /qamaster:check (Q39)');
+  assert.equal(stage('script-gate').optional, true);
+  assert.equal(stage('requirements').optional, true);
+  assert.notEqual(json(qa, 'pipeline', 'status').next, 'requirements', '"next" skips an optional stage');
+
+  assert.equal(qam(qa, 'app', 'create').status, 0);
+  assert.equal(stage('app-folder').status, 'done', 'app.json is the marker qam app create writes (T3)');
+  assert.match(stage('app-folder').evidence, /Shop\//);
+
+  assert.equal(qam(qa, 'check-scripts', '--quick').status, 2, 'blocked: no npm install yet');
+  assert.equal(stage('script-gate').status, 'pending', "a blocked check isn't a pass");
+  assert.match(stage('script-gate').evidence, /last run (blocked|fail)/);
+  const record = read(path.join(qa, '.qamaster/check-scripts.json'));
+  assert.deepEqual(Object.keys(record).sort(), ['at', 'status']);
+  assert.match(qam(qa, 'pipeline', 'status').out, /Automation folder\s+done .*\n/);
+  assert.match(qam(qa, 'pipeline', 'status').out, /Script gate\s+pending \(optional\)/);
+});

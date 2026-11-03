@@ -56,7 +56,7 @@ function testsHead(cfg: Config): string | undefined {
   const dirty = git(cfg.testRoot, ['status', '--porcelain', '--untracked-files=all'])
     .stdout.split('\n')
     // doctor's record changes on every check and says nothing about what runs
-    .filter((l) => l.trim() && !l.endsWith(`${QAMASTER_DIR}/doctor.json`))
+    .filter((l) => l.trim() && !/\.qamaster\/(doctor|check-scripts)\.json$/.test(l))
     .filter((l) => !recordedUnchanged(drafts, path.join(top, l.slice(3).replace(/^.* -> /, ''))))
     .join('\n');
   const changedDrafts = dirty

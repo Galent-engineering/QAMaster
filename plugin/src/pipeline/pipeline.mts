@@ -232,10 +232,11 @@ export const STAGES: Stage[] = [
   {
     id: 'app-folder',
     title: 'Automation folder',
+    optional: true, // /qamaster:check drafts scripts for the cases a change touches (Q39)
     detect: (c) => {
       const dir = appFolder(c);
-      // .aut-app.json, written by qam app create (feature 8)
-      return dir && exists(path.join(dir, '.aut-app.json'))
+      // app.json, written by qam app create (.aut-app.json is Autonomous-QE's marker for the same folder)
+      return dir && (exists(path.join(dir, 'app.json')) || exists(path.join(dir, '.aut-app.json')))
         ? { done: true, detail: `${c.app}/` }
         : { done: false, detail: c.app ? `${c.app}/ not created` : 'no app name yet' };
     },
@@ -244,6 +245,7 @@ export const STAGES: Stage[] = [
   {
     id: 'locators',
     title: 'UI locators',
+    optional: true,
     detect: (c) => {
       const dir = appFolder(c);
       const locs = dir ? files(path.join(dir, 'src', 'web', 'locators'), /\.locators\.ts$/) : [];
@@ -256,6 +258,7 @@ export const STAGES: Stage[] = [
   {
     id: 'scripts',
     title: 'Scripts',
+    optional: true,
     detect: (c) => {
       const dir = appFolder(c);
       const feats = dir ? files(path.join(dir, 'features'), /\.feature$/) : [];
@@ -270,6 +273,7 @@ export const STAGES: Stage[] = [
   {
     id: 'script-gate',
     title: 'Script gate',
+    optional: true,
     detect: (c) => {
       // written by qam check-scripts (feature 8)
       const gate = readJson<{ status: string; at: string }>(path.join(c.project, QAMASTER_DIR, 'check-scripts.json'));
@@ -314,6 +318,8 @@ export type StageStatus = {
   status: string;
   evidence: string;
   note?: string;
+  /** Not needed for the pipeline to be complete, and never the "next" stage. */
+  optional?: boolean;
   how: string;
 };
 export type PipelineStatus = {
@@ -363,13 +369,14 @@ export function status(project: string, appRepo: string, app: string | null): Pi
       stage: s.id,
       title: s.title,
       status: st,
+      ...(s.optional ? { optional: true } : {}),
       // a deliberate skip, not the last failed check it stopped (a skipped store kept showing doctor's old 404)
       evidence: st === 'skipped' && mark?.status === 'skipped' ? 'marked skipped' : ev.detail,
       ...(mark?.note ? { note: mark.note } : {}),
       how: s.how(c),
     };
   });
-  const next = stages.find((r) => !['done', 'skipped'].includes(r.status)) ?? null;
+  const next = stages.find((r) => !r.optional && !['done', 'skipped'].includes(r.status)) ?? null;
   return { project, app: name, complete: !next, next: next?.stage ?? null, inputs: state.inputs, stages };
 }
 
@@ -442,7 +449,7 @@ export function table(st: PipelineStatus): string {
     st.stages
       .map(
         (r, i) =>
-          `  ${String(i + 1).padStart(2)}. ${r.title.padEnd(w)}  ${r.status.padEnd(11)} ${r.evidence}${r.note ? ` (note: ${r.note})` : ''}`,
+          `  ${String(i + 1).padStart(2)}. ${r.title.padEnd(w)}  ${(r.optional && r.status === 'pending' ? 'pending (optional)' : r.status).padEnd(11)} ${r.evidence}${r.note ? ` (note: ${r.note})` : ''}`,
       )
       .join('\n') +
     '\n'
