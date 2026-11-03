@@ -719,7 +719,7 @@ test('publish: ensurePlan creates the plan named like the repo once; ensureSuite
 test('qam ado call: a write needs --apply, and missing settings are named', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-ado-'));
   const qam = (...args: string[]) =>
-    spawnSync(path.join(import.meta.dirname, '../plugin/bin/qam'), ['--repo', dir, ...args], { encoding: 'utf8' });
+    spawnSync(path.join(import.meta.dirname, '../bin/qam'), ['--repo', dir, ...args], { encoding: 'utf8' });
   try {
     const write = qam('ado', 'call', 'POST', 'testplan/plans');
     assert.equal(write.status, 2);
@@ -789,7 +789,7 @@ test('review C: qam ado call drops a leading slash from the route', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-ado-'));
   try {
     const r = spawnSync(
-      path.join(import.meta.dirname, '../plugin/bin/qam'),
+      path.join(import.meta.dirname, '../bin/qam'),
       ['--repo', dir, 'ado', 'call', 'POST', '/testplan/plans'],
       {
         encoding: 'utf8',

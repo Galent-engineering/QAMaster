@@ -29,6 +29,12 @@ claude plugin list
 
 From a checkout of this repository: `claude --plugin-dir ./plugin`. Changes to the plugin's TypeScript apply on the next call; changes to commands, skills, hooks or `plugin.json` apply after restarting `claude`.
 
+## Running `qam` in a terminal
+
+The plugin ships no `bin/`: Claude desktop refuses a hosted plugin that ships executables (Q45). So installing it doesn't put `qam` on the PATH. Use the slash commands in Claude, or in a terminal:
+- in a QA project, `node .qamaster/bin/qam.mjs <command>`, which `qam setup` writes;
+- in a checkout of this repository, `bin/qam <command>`.
+
 ## What it needs on the machine
 
 QAMaster itself needs only Node.js 24 and git. `qam doctor` checks the rest and says how to fix it: the runner a test case uses (uv and pytest, or the automation folder's npm packages), Playwright's browser, and the app's URL. See [the prerequisites table](demos/2026-11-02-0.3.2-unknown-app.md#part-0-prerequisites).

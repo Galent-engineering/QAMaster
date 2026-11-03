@@ -32,6 +32,11 @@ test -f "$tmp/plugin/qamaster-$version/.claude-plugin/plugin.json" || { echo "$p
 test -f "$tmp/market/qamaster-$version/.claude-plugin/marketplace.json" || { echo "$market_zip: no .claude-plugin/marketplace.json" >&2; exit 1; }
 claude plugin validate "$tmp/plugin/qamaster-$version" >/dev/null || { echo "$plugin_zip failed claude plugin validate" >&2; exit 1; }
 claude plugin validate "$tmp/market/qamaster-$version" >/dev/null || { echo "$market_zip failed claude plugin validate" >&2; exit 1; }
+# Claude desktop's upload refuses a hosted plugin with a top-level bin/ (executables it can't show for approval, Q45)
+if unzip -Z1 "$plugin_zip" | grep -E "^qamaster-$version/bin/" >/dev/null || unzip -Z1 "$market_zip" | grep -E "^qamaster-$version/plugin/bin/" >/dev/null; then
+  echo "a zip has the plugin's bin/: Claude desktop refuses hosted plugins that ship executables. Keep wrappers in the repo-root bin/." >&2
+  exit 1
+fi
 if unzip -l "$plugin_zip" "$market_zip" | grep -E '/(\.env|node_modules|\.git)(/|$)' >/dev/null; then
   echo "a zip contains .env, node_modules or .git" >&2
   exit 1

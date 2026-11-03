@@ -13,7 +13,7 @@ import { buildSkills, CURATED_END } from '../plugin/src/knowledge/build.mts';
 import { tmpDir } from './tmp.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
-const QAM = path.join(ROOT, 'plugin/bin/qam');
+const QAM = path.join(ROOT, 'bin/qam');
 const FIX = path.join(ROOT, 'tests/fixtures/knowledge');
 const AQE_NOW = '2026-10-29 11:16 UTC'; // when AQE built the fixtures
 const dsmOf = (name: string): Dsm =>

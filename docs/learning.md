@@ -201,8 +201,8 @@ Both were found only because we ran AQE on a realistic app before porting. That'
 Try it on the fixture:
 
 ```bash
-plugin/bin/qam --repo <copy of a QA project> dsm build
-plugin/bin/qam --repo <copy of a QA project> dsm render
+bin/qam --repo <copy of a QA project> dsm build
+bin/qam --repo <copy of a QA project> dsm render
 ```
 
 ### Check yourself

@@ -705,6 +705,13 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Why:** the person wants local things as the default. A first run then needs no account, token or network, and a team adds Azure DevOps when it's ready.
 - **Gave up:** a new project that publishes straight to Azure DevOps with only the ADO settings in `.env`: it now also needs `QAMASTER_STORE=ado`. `qam doctor` passes on the file store, so nothing points out the missing line; the publish preview names the store it will write to.
 
+**Q45. `plugin/` ships no `bin/`, and is ready to zip at any time** (2026-11-03, accepted 2026-11-03; amends Q2)
+- **Decision:**
+  - The `qam` wrappers move from `plugin/bin/` to the repo root's `bin/`, for development only. The plugin is reached through its commands, hooks and skills, which call `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`. In a terminal, use `qam setup`'s launcher, `.qamaster/bin/qam.mjs`.
+  - `plugin/` holds only what ships. `tests/plugin-ship.test.mts` fails on a top-level `bin/`, on `node_modules/`, `.env*`, `.DS_Store`, logs, a `.qamaster/` folder, or any git-ignored file inside it. `scripts/package.sh` refuses to zip a plugin with `bin/`.
+- **Why:** Claude desktop's "Upload a plugin" refused the 0.3.2 zip: "claude.ai-hosted plugins may not ship bin/ executables", because they go on the PATH without appearing on the admin approval screen. `claude plugin validate` doesn't run that check. The person wants the plugin code clean and ready to zip at all times.
+- **Gave up:** `qam` on the PATH after a CLI plugin install.
+
 ---
 
 ## Open questions

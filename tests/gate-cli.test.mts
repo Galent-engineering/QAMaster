@@ -12,7 +12,7 @@ import { buildStore } from '../plugin/src/adapters/registry.mts';
 import { loadConfig } from '../plugin/src/shared/config.mts';
 import { tmpDir } from './tmp.mts';
 
-const QAM = path.resolve(import.meta.dirname, '..', 'plugin/bin/qam');
+const QAM = path.resolve(import.meta.dirname, '..', 'bin/qam');
 const HOME = tmpDir('qam-home-');
 
 function sh(dir: string, cmd: string, ...args: string[]) {

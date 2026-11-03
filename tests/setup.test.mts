@@ -10,7 +10,7 @@ import { test } from 'node:test';
 import { tmpDir } from './tmp.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
-const QAM = path.join(ROOT, 'plugin/bin/qam');
+const QAM = path.join(ROOT, 'bin/qam');
 const FIX = path.join(ROOT, 'tests/fixtures/setup');
 const tmp = () => tmpDir('qam-setup-');
 const HOME = tmp();

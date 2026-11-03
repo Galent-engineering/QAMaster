@@ -7,7 +7,7 @@ import { sameRemote } from '../plugin/src/pipeline/sources.mts';
 import { tmpDir } from './tmp.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
-const QAM = path.join(ROOT, 'plugin/bin/qam');
+const QAM = path.join(ROOT, 'bin/qam');
 const tmp = (p = 'qam-project-') => tmpDir(p);
 const HOME = tmp('qam-home-');
 

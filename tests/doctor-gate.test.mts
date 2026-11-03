@@ -17,7 +17,7 @@ import { loadConfig } from '../plugin/src/shared/config.mts';
 import { tmpDir } from './tmp.mts';
 
 const run = promisify(execFile);
-const QAM = path.resolve(import.meta.dirname, '..', 'plugin/bin/qam');
+const QAM = path.resolve(import.meta.dirname, '..', 'bin/qam');
 const HOME = tmpDir('qam-home-');
 const PYPROJECT =
   '[project]\nname = "p"\nversion = "0"\nrequires-python = ">=3.14"\ndependencies = ["pytest==9.1.1"]\n';

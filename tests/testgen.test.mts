@@ -164,7 +164,7 @@ test('fix 6: a CSV cell that would run as a formula is neutralised', () => {
 
 // ---- the commands, on a QA project set up as qam setup leaves it
 
-const QAM = path.join(ROOT, 'plugin/bin/qam');
+const QAM = path.join(ROOT, 'bin/qam');
 const HOME = tmpDir('qam-home-');
 function qam(dir: string, ...args: string[]) {
   const r = spawnSync(QAM, ['--repo', dir, ...args], {

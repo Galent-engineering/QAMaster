@@ -10,7 +10,7 @@ import { test } from 'node:test';
 import { runHash } from '../plugin/src/testgen/run.mts';
 import { tmpDir } from './tmp.mts';
 
-const QAM = path.resolve(import.meta.dirname, '..', 'plugin/bin/qam');
+const QAM = path.resolve(import.meta.dirname, '..', 'bin/qam');
 const HOME = tmpDir('qam-home-');
 const CSV = 'testcases/testcases.csv';
 const LEDGER = '.qamaster/ledger.json';

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Runs the QAMaster CLI from this checkout, in the caller's directory (development only: the plugin ships no bin/, Q45).
+exec node "$(dirname "$0")/../plugin/src/cli/main.mts" "$@"

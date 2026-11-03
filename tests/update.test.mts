@@ -9,7 +9,7 @@ import { FakeCrawler } from './fakes.mts';
 import { tmpDir } from './tmp.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
-const QAM = path.join(ROOT, 'plugin/bin/qam');
+const QAM = path.join(ROOT, 'bin/qam');
 const POLYGLOT = path.join(ROOT, 'tests/fixtures/scan/polyglot');
 
 function gitIn(dir: string, ...args: string[]) {

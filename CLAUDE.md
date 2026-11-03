@@ -22,13 +22,13 @@ Layout (Q2). `plugin/` is everything an install copies. The repo root is the mar
 ```
 plugin/
   .claude-plugin/plugin.json
-  bin/qam, qam.cmd       # wrappers: node ../src/cli/main.mts
   src/                   # the engine and CLI (TypeScript, run directly by Node 24, no build)
     cli/main.mts         # qam: global flags, dispatch, exit codes
     shared/              # models, errors, schema guards
     adapters/            # TestCaseStore, RequirementSource, Runner, RepoReader, Crawler behind interfaces in base.mts
   commands/ skills/ agents/ hooks/ runners/ framework/ templates/ reports/
 .claude-plugin/          # marketplace.json (source "./plugin")
+bin/qam, qam.cmd         # dev wrappers: node ../plugin/src/cli/main.mts (the plugin ships no bin/, Q45)
 package.json             # dev only: typescript, @biomejs/biome, @types/node, playwright (crawler tests)
 tests/                   # node:test; fakes.mts has a fake for every adapter, contracts.mts a suite per store interface
 scripts/                 # dev tooling: seed ADO, live connection check
@@ -106,6 +106,7 @@ For multi-step work, state a short plan first:
 - **Descriptions are the trigger.** Claude picks a skill from its `description` alone. Write it in the third person with the phrases a user would type.
 - **Progressive disclosure.** Keep `SKILL.md` short. Put long reference material in `references/` next to it.
 - **Portable paths.** Use `${CLAUDE_PLUGIN_ROOT}` in commands, hooks and `.mcp.json`, never an absolute or cwd-relative path. Call the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`: hosted plugins may not put `bin/` on the PATH.
+- **`plugin/` is ready to ship at all times** (Q45). No top-level `bin/` (Claude desktop's upload refuses it), and nothing local, generated, ignored or secret inside it. `tests/plugin-ship.test.mts` fails the moment it isn't, and `scripts/package.sh` refuses to zip it.
 - **Hooks are fast and quiet.** Exit 0 to allow. Exit 2 to block, with the reason on stderr. Repos QAMaster has never planned in (no `.qamaster/`) are never blocked (Q14).
 - **Approval is the user's.** Commands never review a run, approve a plan or apply a publish without the user's explicit reply.
 - **Least privilege.** Give commands only the `allowed-tools` they need.
@@ -126,8 +127,8 @@ npm run typecheck
 npm run lint                             # npm run format to fix formatting
 
 node plugin/src/cli/main.mts help        # the CLI
-plugin/bin/qam --repo <qa-project> setup --no-install --url <URL> --source <folder|git URL>   # then pipeline next, doctor
-plugin/bin/qam --repo <qa-project> dsm run     # scan, crawl, build, render; dsm refresh | changes | impact <files…>
+bin/qam --repo <qa-project> setup --no-install --url <URL> --source <folder|git URL>   # then pipeline next, doctor
+bin/qam --repo <qa-project> dsm run     # scan, crawl, build, render; dsm refresh | changes | impact <files…>
 claude plugin validate .                 # check manifests, commands, skills, hooks
 claude --plugin-dir ./plugin             # run Claude Code with the plugin, no install
 scripts/package.sh                       # dist/: the plugin zip (Claude desktop) and the marketplace zip (CLI), checked; docs/install.md

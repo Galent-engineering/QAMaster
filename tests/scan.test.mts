@@ -170,7 +170,7 @@ test('fix 5: a route component is found through the router file imports, whateve
 
 // ---- through git and the CLI
 
-const QAM = path.resolve(import.meta.dirname, '../plugin/bin/qam');
+const QAM = path.resolve(import.meta.dirname, '../bin/qam');
 const tmp = () => tmpDir('qam-scan-');
 const DATE = { GIT_AUTHOR_DATE: '2026-10-29T00:00:00Z', GIT_COMMITTER_DATE: '2026-10-29T00:00:00Z' };
 

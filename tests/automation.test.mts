@@ -12,7 +12,7 @@ import { playwrightBdd } from '../plugin/src/adapters/framework-bdd.mts';
 import { reuseFindings, staticFindings } from '../plugin/src/automation/quality.mts';
 import { tmpDir } from './tmp.mts';
 
-const QAM = path.resolve(import.meta.dirname, '..', 'plugin/bin/qam');
+const QAM = path.resolve(import.meta.dirname, '..', 'bin/qam');
 const HOME = tmpDir('qam-home-');
 const qam = (dir: string, ...args: string[]) => {
   const r = spawnSync(QAM, ['--repo', dir, ...args], {

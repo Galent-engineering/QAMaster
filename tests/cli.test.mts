@@ -4,7 +4,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { BLOCKED, COMMANDS, PASS } from '../plugin/src/cli/main.mts';
 
-const QAM = path.resolve(import.meta.dirname, '../plugin/bin/qam');
+const QAM = path.resolve(import.meta.dirname, '../bin/qam');
 
 function qam(...args: string[]) {
   const r = spawnSync(QAM, args, { encoding: 'utf8' });

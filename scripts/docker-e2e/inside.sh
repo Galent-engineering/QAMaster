@@ -2,7 +2,7 @@
 # Runs in the container as the user `node`, started by run.sh. Each step states the exit code QAMaster 0.3.1 gives
 # (findings F1–F11 of the 0.3.0 report, fixed in 0.3.1; docs/plans/0.3.1.md).
 set -u
-Q=/opt/qamaster/plugin/bin/qam
+Q="node /opt/qamaster/plugin/src/cli/main.mts"   # the plugin ships no bin/ (Q45)
 E2E=/opt/e2e
 NOUV=/usr/local/bin:/usr/bin:/bin   # everything but uv
 NOGIT=$HOME/nogit-bin               # node, npm and the shell tools, but no git, python3 or uv

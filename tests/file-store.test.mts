@@ -242,7 +242,7 @@ test('file store: QAMASTER_STORE=file builds it in the QA project, named after t
 });
 
 test('file store: qam doctor checks it, --check-write answers, and the pipeline store stage turns done', () => {
-  const QAM = path.resolve(import.meta.dirname, '..', 'plugin/bin/qam');
+  const QAM = path.resolve(import.meta.dirname, '..', 'bin/qam');
   const dir = tmpDir('qam-file-doctor-');
   const env = { ...process.env, QAMASTER_HOME: tmpDir('qam-home-'), QAMASTER_STORE: 'file' };
   const qam = (...args: string[]) => spawnSync(QAM, ['--repo', dir, '--json', ...args], { encoding: 'utf8', env });

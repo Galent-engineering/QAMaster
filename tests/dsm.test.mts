@@ -128,7 +128,7 @@ test('render escapes screen text that would end the script, and the project name
   assert.equal((splitPage(html)[1] as Dsm).page.nodes[0].title, '</script><b>');
 });
 
-const QAM = path.resolve(import.meta.dirname, '../plugin/bin/qam');
+const QAM = path.resolve(import.meta.dirname, '../bin/qam');
 const qam = (...args: string[]) => spawnSync(QAM, args, { encoding: 'utf8' });
 
 test('qam dsm build, then render, in a QA project', () => {

@@ -56,7 +56,7 @@ docs/
 CLAUDE.md
 ```
 
-The CLI wrapper is `plugin/bin/qam` (`exec node "$(dirname "$0")/../src/cli/main.mts" "$@"`) plus `qam.cmd`. Commands and hooks call `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`, because hosted plugins may not put executables on the PATH (as in AQE). `qam setup` writes a project launcher, `.qamaster/bin/qam.mjs`, for terminals and CI.
+The plugin ships no `bin/` (Q45): Claude desktop refuses hosted plugins with executables there. For development, the repo-root `bin/qam` (`exec node "$(dirname "$0")/../plugin/src/cli/main.mts" "$@"`) plus `qam.cmd` run the CLI from a checkout. Commands and hooks call `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`, because hosted plugins may not put executables on the PATH (as in AQE). `qam setup` writes a project launcher, `.qamaster/bin/qam.mjs`, for terminals and CI.
 
 ## Models (`src/shared/models.mts`)
 
