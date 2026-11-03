@@ -44,6 +44,7 @@ Plugin releases inside this scope, and the next one's plan: [releases.md](releas
 
 ### v1.1
 - git pre-push hook (`qam install-hooks`), so pushes from any terminal are gated.
+- Each IDE and agent set up by ticking it (Q43): Kiro, Cursor, GitHub Copilot, Visual Studio, JetBrains, Gemini CLI and Codex CLI get their own rules or steering file and a hook where the tool has one, kept out of commits. Their MCP registration waits for the MCP server in v2.
 - PR checks with one plan comment per PR and approval by comment, behind a replaceable code host (Q28): GitHub and Azure Repos first, run from GitHub Actions or Azure Pipelines.
 - After v1.1: Bitbucket and GitLab hosts, and Bitbucket Pipelines, GitLab CI and Jenkins.
 - In CI, run the QA project branch named like the app branch, else `main` (Q22).

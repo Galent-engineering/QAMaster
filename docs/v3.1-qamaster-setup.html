@@ -1,0 +1,405 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>QAMaster setup</title>
+<style>
+:root{color-scheme:light;--bg:#f7f8fa;--card:#fff;--text:#18212b;--muted:#52606d;--hint:#7b8794;--border:#d9e0e7;--border-strong:#b8c3ce;
+--blue:#174f7a;--blue-bg:#e9f2f8;--gold:#805500;--gold-bg:#fff4d8;--green:#17623a;--green-bg:#e8f5ec;--plum:#6b2f7a;--plum-bg:#f5ebf8;
+--sans:system-ui,-apple-system,"Segoe UI",sans-serif;--mono:ui-monospace,SFMono-Regular,Menlo,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#171b20;--card:#222830;--text:#edf2f7;--muted:#bac5d0;--hint:#8a96a3;
+--border:#3c4652;--border-strong:#556170;--blue:#a8d7f5;--blue-bg:#19364a;--gold:#ffda8b;--gold-bg:#40351f;--green:#a4e1b8;--green-bg:#193b29;--plum:#e3b8ef;--plum-bg:#3a2442}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#171b20;--card:#222830;--text:#edf2f7;--muted:#bac5d0;--hint:#8a96a3;
+--border:#3c4652;--border-strong:#556170;--blue:#a8d7f5;--blue-bg:#19364a;--gold:#ffda8b;--gold-bg:#40351f;--green:#a4e1b8;--green-bg:#193b29;--plum:#e3b8ef;--plum-bg:#3a2442}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:16px/1.55 var(--sans)}
+main{max-width:980px;margin:0 auto;padding:32px 20px 56px}
+h1{font-size:clamp(1.8rem,4vw,2.5rem);line-height:1.15;margin:.4rem 0 .5rem}
+h2{font-size:1.35rem;margin:2.4rem 0 .4rem}
+h2+.sub{color:var(--muted);margin:0 0 1rem;font-size:.95rem}
+h3{font-size:1.05rem;margin:.1rem 0 .4rem}
+p{margin:.5rem 0 1rem}
+a{color:var(--blue)}
+code{font-family:var(--mono);font-size:.86em}
+.lead{font-size:1.1rem;color:var(--muted);max-width:800px}
+.b{display:inline-block;border-radius:999px;padding:.12rem .6rem;font-size:.74rem;font-weight:700;white-space:nowrap;vertical-align:.1rem;margin-left:.35rem}
+.b:first-child{margin-left:0}
+.now{background:var(--green-bg);color:var(--green)}
+.todo{background:var(--gold-bg);color:var(--gold)}
+.prop{background:var(--gold-bg);color:var(--gold);outline:1px dashed var(--gold)}
+.v11{background:var(--blue-bg);color:var(--blue)}
+.v2{background:var(--plum-bg);color:var(--plum)}
+.v3{background:var(--plum-bg);color:var(--plum);outline:1px dashed var(--plum)}
+.later{background:var(--bg);color:var(--hint);border:1px solid var(--border)}
+.legend{font-size:.85rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:.4rem .9rem;margin:.6rem 0 0}
+.note{padding:1rem 1.15rem;border:1px solid var(--border);border-left:5px solid var(--gold);border-radius:8px;background:var(--card);margin:1rem 0}
+.note.ok{border-left-color:var(--green)}
+.note p{margin:.3rem 0}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem}
+.card p{color:var(--muted);font-size:.94rem;margin:0}
+/* the setup steps: v3's numbered list, each step carrying v2's integration choice */
+.steps{list-style:none;padding:0;margin:0;counter-reset:s}
+.step{counter-increment:s;position:relative;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:1rem 1rem 1rem 3.4rem;margin:.7rem 0}
+.step:before{content:counter(s);position:absolute;left:1rem;top:1rem;width:1.6rem;height:1.6rem;display:grid;place-items:center;border-radius:50%;background:var(--blue-bg);color:var(--blue);font-weight:700;font-size:.82rem}
+.step.gap:before{background:var(--gold-bg);color:var(--gold)}
+.step .what{color:var(--muted);font-size:.94rem;margin:0 0 .6rem}
+.pick{display:grid;grid-template-columns:150px 1fr;gap:.45rem .8rem;align-items:center;font-size:.9rem;margin:.5rem 0}
+.pick label,.pick .k{color:var(--muted)}
+select{width:100%;max-width:360px;font:.9rem var(--sans);padding:.3rem .45rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--card);color:var(--text)}
+.fixed{font-size:.9rem}
+.pair{display:contents}
+.pair[hidden]{display:none}
+input[type=text]{width:100%;max-width:360px;font:.88rem var(--mono);padding:.3rem .45rem;border-radius:6px;border:1px solid var(--border-strong);background:var(--card);color:var(--text)}
+.flow{border:1px solid var(--border);border-radius:8px;padding:.6rem .75rem;font-size:.9rem;margin:.4rem 0 0}
+.flow ol{margin:.2rem 0 .4rem;padding-left:1.2rem}.flow li{margin-bottom:.25rem}
+.flow pre{margin:.3rem 0 0;padding:.5rem .6rem;font-size:.82rem}
+.checks{display:flex;flex-wrap:wrap;gap:.35rem .9rem}
+.checks label{display:flex;align-items:center;gap:.35rem;color:var(--text);cursor:pointer}
+.eps{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:6px;margin:.4rem 0}
+.ep{display:flex;align-items:center;gap:6px;font-size:.88rem;padding:.4rem .6rem;border:1px solid var(--border);border-radius:7px;cursor:pointer}
+.files{margin:.6rem 0 0;display:grid;gap:6px}
+.tool{border:1px solid var(--border);border-radius:8px;padding:.55rem .7rem;font-size:.86rem}
+.tool h4{margin:0 0 .3rem;font-size:.9rem}
+.tool ul{margin:0;padding:0;list-style:none}
+.tool li{text-align:left;display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) 13.5rem;gap:.6rem;align-items:baseline;padding:.15rem 0;border-top:1px dashed var(--border)}
+.tool li:first-child{border-top:0}
+.tool li code{overflow-wrap:anywhere}
+.tool .w{color:var(--muted)}
+.ig{font-size:.75rem;color:var(--muted)}
+.ig.ex{color:var(--green)}
+.excl{border:1px solid var(--border-strong);border-radius:8px;padding:.55rem .7rem;font-size:.86rem}
+.excl pre{margin:.3rem 0 0;padding:.5rem .6rem;font-size:.82rem}
+@media(max-width:600px){.tool li{grid-template-columns:1fr}}
+.why{font-size:.82rem;color:var(--hint);margin:.5rem 0 0}
+.next{font-size:.88rem;margin:.55rem 0 0;padding:.5rem .7rem;border-radius:7px;background:var(--bg);border:1px dashed var(--border-strong)}
+.next b{font-weight:600}
+.out{border:1px solid var(--border-strong);border-radius:12px;padding:1rem 1.15rem;background:var(--card)}
+.out ul{margin:.3rem 0 0;padding-left:1.1rem}.out li{font-size:.92rem;color:var(--muted);margin-bottom:.3rem}.out li b{color:var(--text)}
+/* what comes next: a timeline */
+.tl{list-style:none;padding:0;margin:0;border-left:3px solid var(--border);margin-left:.6rem}
+.tl>li{position:relative;padding:0 0 1.2rem 1.4rem}
+.tl>li:before{content:"";position:absolute;left:-.55rem;top:.35rem;width:.8rem;height:.8rem;border-radius:50%;background:var(--card);border:3px solid var(--border-strong)}
+.tl>li.here:before{border-color:var(--green);background:var(--green)}
+.tl ul{margin:.3rem 0 0;padding-left:1.1rem;color:var(--muted);font-size:.93rem}
+.tl li li{margin-bottom:.2rem}
+table{width:100%;border-collapse:collapse;font-size:.92rem;background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:.55rem .7rem;border-bottom:1px solid var(--border);vertical-align:top}
+th{font-size:.8rem;color:var(--muted);font-weight:600}
+td:first-child{white-space:nowrap;font-weight:600}
+tr:last-child td{border-bottom:0}
+.tw{overflow-x:auto}
+pre{white-space:pre-wrap;overflow-wrap:anywhere;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:.88rem}
+footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);font-size:.88rem;color:var(--muted)}
+@media(max-width:600px){input[type=text]{max-width:none}main{padding:24px 16px 40px}.step{padding-left:1rem;padding-top:2.9rem}.pick{grid-template-columns:1fr}select{max-width:none}td:first-child{white-space:normal}}
+</style>
+</head>
+<body>
+<main>
+<p><span class="b now">Plugin 0.3.2</span><span class="b v11">Decisions to Q43</span><span class="b later">Checked 2026-11-03</span></p>
+<h1>QAMaster setup</h1>
+<p class="lead">How a team sets QAMaster up, step by step: what each step does, the integration it plugs into, the decisions behind it, and what arrives at that step later.</p>
+
+<div class="note">
+  <p><strong>Where it stands.</strong> The plugin is <strong>0.3.2</strong>, built and tested on the branch <code>feature/0.3.2-toolshop-fixes</code>. It isn't on <code>main</code> or GitHub yet. Product v1 isn't complete: <strong>requirements fetching, feedback and the HTML reports</strong> aren't built. Everything after v1 below is planned scope from <a href="product.md#scope">product.md</a>, not a schedule.</p>
+</div>
+<p class="legend"><span class="b now">Shipped</span><span class="b prop">Proposed</span><span class="b todo">Decided, not built</span><span class="b v11">v1.1</span><span class="b v2">v2</span><span class="b v3">v3</span><span class="b later">Later</span></p>
+
+<h2>What works today</h2>
+<div class="grid">
+  <section class="card"><h3><span class="b now">Shipped</span> App discovery</h3><p>Scan the app's code, crawl the running app with a robot browser that can't change data, and build the screen map (DSM). 0.3.2 fixed a change-password form being taken for a sign-in page, and folds ULID IDs into <code>:id</code>.</p></section>
+  <section class="card"><h3><span class="b now">Shipped</span> Test design and publish</h3><p>Claude writes test cases grounded in the screen map and app knowledge, a validator checks them, a person reviews them, and publish sends them to Azure DevOps Test Plans or a local file store. Publishing again changes nothing that hasn't changed.</p></section>
+  <section class="card"><h3><span class="b now">Shipped</span> The change gate</h3><p>For each code change: a plan of the cases it touches, scripts drafted just in time for cases that have none, a person's approval, a run on pytest or playwright-bdd, and a verdict with evidence. A push from Claude Code waits for it.</p></section>
+  <section class="card"><h3><span class="b now">Shipped</span> Status and checks</h3><p><code>/qamaster:status</code> shows every stage with its evidence and the next step. <code>qam doctor</code> checks the store, the runners, the browser and the app URL, and says how to fix each.</p></section>
+  <section class="card"><h3><span class="b now">Shipped</span> Install from a zip</h3><p><code>scripts/package.sh</code> builds a zip for Claude desktop and one for the Claude CLI, and checks both. <a href="install.md">install.md</a> says how to load each.</p></section>
+</div>
+
+<h2>Setup, step by step</h2>
+<p class="sub">Each step's choice defaults to what ships today. Pick another to see where it's planned; the two boxes after the steps follow your picks.</p>
+<ol class="steps">
+  <li class="step">
+    <h3>Install, and pick your entry points</h3>
+    <p class="what">Tick every tool you work in. <strong>Each tick sets QAMaster up inside that tool:</strong> it writes the tool's own rules or steering file, a hook where the tool has one (the same push check Claude Code runs), and later its MCP registration, all in your working copy of the app repo. Every file it creates is kept out of commits, and <code>qam integrations remove</code> takes it all back out. Ticking Kiro, for example, creates <code>.kiro/steering/qamaster.md</code> and <code>.kiro/hooks/qamaster.json</code> and lists both in <code>.git/info/exclude</code>.</p>
+    <div class="eps" id="eps"></div>
+    <div class="files" id="files"></div>
+    <p class="why">Q3 one CLI behind every surface · Q27 every install recorded · Q29 entry points are a checklist · <strong>Q43</strong> each tool gets its own files, hooks included, kept out of commits</p>
+    <p class="next"><b>Later here:</b> each tool's files and the git pre-push hook for any terminal or IDE <span class="b v11">v1.1</span>, PR checks <span class="b v11">v1.1</span>, MCP registration through the QAMaster MCP server <span class="b v2">v2</span>, an IDE extension <span class="b later">Later</span>.</p>
+  </li>
+  <li class="step">
+    <h3>Set up the QA project, and run doctor</h3>
+    <p class="what">Setup asks two things, in order: <strong>where the app's code is</strong>, then <strong>where its working copy lives on this machine</strong>. It then links the QA project (the folder you run it in, or <code>--repo</code>) to that code and the app's URL, and <code>qam doctor</code> checks every prerequisite. A missing tool blocks with the command to fix it, and nothing is downloaded without a yes.</p>
+    <div class="pick">
+      <label for="where">1. The code is on</label><select id="where"><option value="local">This machine (a local folder)</option><option value="github">GitHub</option><option value="azure">Azure Repos</option><option value="bitbucket">Bitbucket</option><option value="gitlab">GitLab</option><option value="other">Another git server</option></select>
+      <div class="pair" id="urlRow"><label for="repoUrl">Repository URL</label><input id="repoUrl" type="text" spellcheck="false"></div>
+      <div class="pair" id="getRow"><label for="get">2. Get it by</label><select id="get"></select></div>
+      <div class="pair" id="dirRow"><label for="dir" id="dirL">Folder</label><input id="dir" type="text" spellcheck="false" placeholder="leave empty to see what happens"></div>
+    </div>
+    <div class="flow" id="flow"></div>
+    <p class="why">Q26 a local folder or git URL, validated, and a clone goes where you choose · Q28 the host decides which PR checks fit · Q30 read through the host's API · Q41 setup problems block, no downloads without a yes</p>
+    <p class="next"><b>Proposed here:</b> when no folder is given, use the folder you're in if it's a git repo, or a clone of the URL <span class="b prop">Proposed</span>. <b>Later:</b> reading the code through the GitHub or Azure Repos API, with no clone <span class="b v11">v1.1</span>; Bitbucket, GitLab and other servers <span class="b later">Later</span>.</p>
+  </li>
+  <li class="step">
+    <h3>Choose the test case store</h3>
+    <p class="what">Where reviewed cases live. Once published, the store is the source of truth; a local cache keeps reads fast.</p>
+    <div class="pick"><label for="store">Store</label><select id="store"><option value="ado">Azure DevOps Test Plans</option><option value="file">Local file store (CSV or JSON)</option><option value="xray">Jira with Xray or Zephyr</option></select></div>
+    <p class="why">Q6 the store is the source of truth · Q23 a replaceable adapter · Q34 the file store and the cache · Q36 the file store's JSON form</p>
+    <p class="next"><b>Later here:</b> a project spreadsheet, then Jira through Xray or Zephyr <span class="b later">Later</span>.</p>
+  </li>
+  <li class="step">
+    <h3>Map the app (DSM)</h3>
+    <p class="what">Scan the code's routes, crawl the running app (signed in if needed), and build the screen map that test design and the gate both use. Every write request is blocked during the crawl.</p>
+    <div class="pick"><label for="crawler">Crawler</label><select id="crawler"><option value="pw">Playwright (web)</option><option value="appium">Appium (mobile app)</option></select></div>
+    <p class="why">Q15 read-only toward the app · 0.3.2 T1 sign-in detection · T2 ULID IDs</p>
+    <p class="next"><b>Next here:</b> faster crawls and a time estimate before running (S1–S7), forms without a <code>&lt;form&gt;</code> tag <span class="b todo">0.3.3</span>. <b>Later:</b> locators from the crawl, API discovery <span class="b v2">v2</span>; Appium <span class="b later">Later</span>.</p>
+  </li>
+  <li class="step">
+    <h3>Build the app knowledge</h3>
+    <p class="what">Claude Code skills that describe the app (its screens, flows and words), built from the screen map and kept in step with it.</p>
+    <div class="pick"><span class="k">Built by</span><span class="fixed">The AUT-Skill-Builder skill <span class="b now">Shipped</span></span></div>
+    <p class="next"><b>Later here:</b> context from Jira, Confluence, GitLab, Figma and Visio through MCP <span class="b v2">v2</span>; a Visio MCP server <span class="b v3">v3</span>.</p>
+  </li>
+  <li class="step gap">
+    <h3>Fetch the requirements</h3>
+    <p class="what">Sprint stories and acceptance criteria, so cases trace to them. <strong>Not built:</strong> today this stage is marked skipped and test design works from the screen map and knowledge.</p>
+    <div class="pick"><label for="req">Source</label><select id="req"><option value="ado">Azure Boards</option><option value="jira">Jira</option></select></div>
+    <p class="next"><b>Next here:</b> <code>qam requirements fetch</code> <span class="b todo">v1</span>. <b>Later:</b> importing existing cases (Excel, HP ALM, Test Plans) and gap analysis <span class="b v2">v2</span>.</p>
+  </li>
+  <li class="step">
+    <h3>Design and review the test cases</h3>
+    <p class="what">Claude drafts cases with hallucination tolerance 0: every step points at evidence. A validator checks them, and a person approves the run before anything is published.</p>
+    <div class="pick"><span class="k">Written by</span><span class="fixed">Claude, with one switch to turn all AI off (<code>QAMASTER_AI=off</code>) <span class="b now">Shipped</span></span></div>
+    <p class="why">Q10 tolerance 0 · Q12 a person decides · Q24 AI on by default, one switch</p>
+    <p class="next"><b>Later here:</b> a revision mode and the coverage report <span class="b v2">v2</span>.</p>
+  </li>
+  <li class="step">
+    <h3>Publish</h3>
+    <p class="what">A dry run first; <code>--apply</code> writes, and only after a yes. Tags are derived from facts, a script link is added only once the script is pushed, and nothing is ever deleted.</p>
+    <div class="pick"><span class="k">Publishes to</span><span class="fixed" id="pubTo"></span></div>
+    <p class="why">Q7 dry run until apply, never deletes · Q8 derived tags · Q35 can create a missing ADO project · Q37 every <code>path:</code> tag kept · Q40 a <code>Script:</code> line pinned to a commit</p>
+    <p class="next"><b>Later here:</b> gate results published back to ADO as a Test Run <span class="b v11">v1.1</span>.</p>
+  </li>
+  <li class="step">
+    <h3>Check each change: plan, automate, approve, run, verdict</h3>
+    <p class="what">The gate picks the cases a change needs and says why, drafts scripts just in time for cases that have none, waits for approval, runs each case on the runner its link names, and records a verdict with evidence. Its local files stay out of the app's commits.</p>
+    <div class="pick"><span class="k">Selected by</span><div><div class="checks" id="sels"></div></div>
+    <label for="model">Groups chosen by</label><select id="model"><option value="session">This session's model</option><option value="opus">Claude Opus 5.5</option><option value="sonnet">Claude Sonnet 5.5</option><option value="haiku">Claude Haiku 5.5</option></select>
+    <label for="fw">Scripts written in</label><select id="fw"><option value="bdd">playwright-bdd (drafted just in time)</option><option value="pytest">pytest (your existing suite)</option><option value="cypress">Cypress</option><option value="jvm">Cucumber-JVM</option><option value="specflow">SpecFlow</option></select>
+    <label for="runner">Runner</label><select id="runner"></select>
+    <label for="target">Runs on</label><select id="target"></select></div>
+    <p class="why">Q11 rules decide the plan, Claude adds groups · Q13 verdicts, retries, evidence · Q31 switchable selectors and model · Q38 a runner per case · Q39 just-in-time scripts · Q41 setup problems block · Q42 local files kept out of commits</p>
+    <p class="next"><b>Decided, not built:</b> switching selectors off and choosing the model (Q31) <span class="b todo">decided</span>. <b>Later:</b> Docker and cloud browsers, other frameworks <span class="b later">Later</span>; generating into your existing framework <span class="b v3">v3</span>.</p>
+  </li>
+  <li class="step">
+    <h3>Hold the push until the gate passes</h3>
+    <p class="what">In Claude Code, a push waits for a passing verdict on the current commit. Repos QAMaster has never planned in are never blocked.</p>
+    <div class="pick"><label for="host">Code host</label><select id="host"><option value="none">None: the Claude Code push hook</option><option value="github">GitHub</option><option value="azure-repos">Azure Repos</option><option value="bitbucket">Bitbucket</option><option value="gitlab">GitLab</option></select>
+    <label for="ci">CI</label><select id="ci"><option value="none">None</option><option value="github-actions">GitHub Actions</option><option value="azure-pipelines">Azure Pipelines</option><option value="bitbucket-pipelines">Bitbucket Pipelines</option><option value="gitlab-ci">GitLab CI</option><option value="jenkins">Jenkins</option></select></div>
+    <p class="why">Q14 hooks are fast and quiet · Q28 the code host is a replaceable adapter</p>
+    <p class="next"><b>Next here:</b> evidence from a real desktop push, not only a test event <span class="b todo">0.3.3</span>. <b>Later:</b> PR checks with one plan comment and approval by comment <span class="b v11">v1.1</span>.</p>
+  </li>
+  <li class="step gap">
+    <h3>Report and feed back</h3>
+    <p class="what">Self-contained HTML reports fed by the gate, and feedback that proposes new or stale cases, broken links and defect drafts for a person to act on. <strong>Not built:</strong> <code>qam report</code> blocks today.</p>
+    <div class="pick"><label for="res">Results go to</label><select id="res"><option value="html">HTML reports</option><option value="adorun">HTML reports + an ADO Test Run</option></select></div>
+    <p class="why">Q17 reports are self-contained HTML · Q19 feedback proposes, never generates on its own</p>
+    <p class="next"><b>Next here:</b> the six reports and feedback <span class="b todo">v1</span>. <b>Later:</b> root-cause evidence from commits and logs, value metrics <span class="b v3">v3</span>.</p>
+  </li>
+</ol>
+
+<div class="grid" style="margin-top:1rem">
+  <div class="out"><h3>Installed and recorded</h3><ul id="ints"></ul><p class="why">Kept in <code>.qamaster/integrations.json</code> and <code>~/.qamaster/installs.json</code>; <code>qam doctor</code> checks each.</p></div>
+  <div class="out"><h3>Your stack</h3><ul id="sum"></ul></div>
+</div>
+
+<h2>What comes next</h2>
+<p class="sub">From <a href="plans/0.3.2.md#points-to-take-to-the-next-release-033">plans/0.3.2.md</a> and <a href="product.md#scope">product.md</a>. Only 0.3.3 has an order; the rest is scope.</p>
+<ol class="tl">
+  <li class="here"><h3>0.3.2 <span class="b now">Built 2026-11-03</span></h3><ul><li>Toolshop fixes T1–T5, <code>/qamaster:status</code>, zips for Claude desktop and the CLI.</li></ul></li>
+  <li><h3>0.3.3 <span class="b todo">Next</span></h3><ul>
+    <li>Forms without a <code>&lt;form&gt;</code> tag in the crawl.</li>
+    <li>Faster crawls and a time estimate before running (S1–S7); re-crawl Toolshop signed in.</li>
+    <li>Reports and feedback; requirements fetch; clearer store conflicts.</li>
+    <li>Push-hook evidence from a real desktop session; check the Toolshop cases in ADO by eye.</li>
+    <li>The generic walkthrough on a second unknown app (Restful Booker Platform).</li>
+    <li>Bring the Docker check's three inputs into the repo.</li></ul></li>
+  <li><h3>Rest of v1 <span class="b todo">v1</span></h3><ul><li>Requirements, feedback and the six HTML reports; scripts for Mobile Web, API, Android and iOS.</li></ul></li>
+  <li><h3>v1.1 <span class="b v11">v1.1</span></h3><ul><li>A git pre-push hook for any terminal; each IDE and agent set up by ticking it: Kiro, Cursor, Copilot, Visual Studio, JetBrains, Gemini CLI, Codex CLI (Q43); PR checks on GitHub and Azure Repos; results published back as an ADO Test Run.</li></ul></li>
+  <li><h3>v2 <span class="b v2">v2</span></h3><ul><li>Context sources through MCP; the QAMaster MCP server and exports to other AI tools; importing existing cases and gap analysis; locators from the crawl; API discovery.</li></ul></li>
+  <li><h3>v3 <span class="b v3">v3</span></h3><ul><li>Generate into a team's existing framework; impact and traceability matrices; root-cause evidence; value metrics; an encrypted secrets vault and security scan; a Visio MCP server.</li></ul></li>
+  <li><h3>Later <span class="b later">Later</span></h3><ul><li>A spreadsheet store, then Jira with Xray or Zephyr; Cypress and other runners; a VS Code extension; learning which tests fail for which files.</li></ul></li>
+</ol>
+
+<h2>Latest decisions</h2>
+<p class="sub">Q37–Q42 accepted on 2026-11-02 (Q36 proposed 2026-10-30, accepted then too); Q43 accepted 2026-11-03. Full text in <a href="decisions.md">decisions.md</a>.</p>
+<div class="tw"><table>
+  <thead><tr><th>Decision</th><th>What it settles</th></tr></thead>
+  <tbody>
+    <tr><td>Q36</td><td>The <code>file</code> store also reads and writes a JSON form, and blocks when a CSV and a JSON both exist.</td></tr>
+    <tr><td>Q37</td><td>Every <code>path:</code> tag is kept; a file in a shallow folder is tagged <code>dir/*</code>; the gate decides when a shared file selects a case.</td></tr>
+    <tr><td>Q38</td><td>The runner is picked for each case from its automation link's prefix; a missing runner blocks.</td></tr>
+    <tr><td>Q39</td><td>Scripts are drafted just in time, inside the gate, for the cases a change needs; a case with no script stays manual.</td></tr>
+    <tr><td>Q40</td><td>Each case links to its script in the QA repo, pinned to a commit, once it's pushed.</td></tr>
+    <tr><td>Q41</td><td>A runner's setup problem blocks with the fix, writes no verdict, and nothing is downloaded without a yes.</td></tr>
+    <tr><td>Q42</td><td>The gate's local files go into the app repo's <code>.git/info/exclude</code>, out of its commits.</td></tr>
+    <tr><td>Q43</td><td>Ticking a tool writes its own rules or steering file, a hook where the tool has one, and later its MCP registration. Every file it creates is kept out of commits, and the method depends on where the file lives and on the code source. Moves the IDE and agent entry points from v2 to v1.1.</td></tr>
+  </tbody>
+</table></div>
+
+<h2>Steps taken</h2>
+<div class="tw"><table>
+  <thead><tr><th>Release</th><th>What it added</th><th>How it was checked</th></tr></thead>
+  <tbody>
+    <tr><td>0.2.1</td><td>Fixes the gate depends on: explicit review, plan names, <code>dir/*</code> tags, plan-wide smoke, credential checks.</td><td>The 0.2.1 verification (B1–B5 found, fixed in 0.2.2).</td></tr>
+    <tr><td>0.2.2</td><td>Stable descriptions, masked credentials, UTC dates. Shipped inside 0.3.0.</td><td>Unit tests; confirmed live on Toolshop (republish: 13 unchanged).</td></tr>
+    <tr><td>0.3.0</td><td>The gate, both runners, just-in-time scripts, <code>/qamaster:check</code>, the push hook.</td><td>An end-to-end run on Juice Shop.</td></tr>
+    <tr><td>0.3.1</td><td>What a clean machine needs, checked and explained (F1–F11).</td><td>A clean Docker container: 41 of 41 steps.</td></tr>
+    <tr><td>0.3.2</td><td>Toolshop fixes T1–T5, <code>/qamaster:status</code>, the zips.</td><td>449 tests; both zips installed through the CLI. Toolshop's run on 0.3.1: two gates passed 13 of 13.</td></tr>
+  </tbody>
+</table></div>
+<div class="note">
+  <p><strong>Caveats.</strong> The 13 Toolshop cases in Azure DevOps rest on doctor's count and a dry run; nobody has checked them by eye. The walkthrough QA projects and the Toolshop app were deleted on 2026-11-03, so their ledgers and scripts are gone: publishing those apps again from a new project creates the cases again.</p>
+</div>
+
+<h2>Use it now</h2>
+<p>You need Node.js 24 and git, a web app with a reachable test instance, and its code in git. Azure DevOps credentials are needed only for the ADO store. Install from a zip (<a href="install.md">install.md</a>) or from a checkout:</p>
+<pre><code># In Claude Code, from a checkout of this repo
+claude --plugin-dir ./plugin
+
+# Then, in the QA project
+/qamaster:status                      # every stage, its evidence, and the next step
+qam setup --app &lt;AppName&gt; --url &lt;test-app-url&gt; --source &lt;app-folder-or-git-url&gt;
+qam doctor                            # what's missing, and how to fix it
+/qamaster:check                       # before a push: plan, scripts, approval, run, verdict</code></pre>
+<p>Review cases before publishing, and approve a plan before tests run. Never crawl or run tests against production unless that's been explicitly reviewed and approved.</p>
+
+<h2>Decide before v3</h2>
+<div class="grid">
+  <section class="card"><h3>Framework boundary</h3><p>Which existing frameworks are detected and generated into, and which are runner-only.</p></section>
+  <section class="card"><h3>Traceability model</h3><p>Which identifiers tie code changes, requirements, screens, cases and runs together.</p></section>
+  <section class="card"><h3>Security model</h3><p>Vault encryption, access, rotation, scanning and redaction.</p></section>
+  <section class="card"><h3>Evidence and metrics</h3><p>Which sources can support a root-cause explanation, and how value is measured without overstating it.</p></section>
+</div>
+
+<footer>
+  <p>Combines <a href="v3-qamaster-setup.html">v3-qamaster-setup.html</a> (the opening and roadmap) and <a href="v2-plugin-setup.html">v2-plugin-setup.html</a> (an integration at each step). Sources: <a href="product.md#scope">product.md</a>, <a href="decisions.md">decisions.md</a>, <a href="releases.md">releases.md</a>, <a href="plans/0.3.2.md">plans/0.3.2.md</a>, <a href="demos/2026-11-02-toolshop-analysis.md">the Toolshop analysis</a>. Nothing here commits a later version to a date.</p>
+</footer>
+</main>
+<script>
+const LBL={now:'Shipped',todo:'Decided, not built',prop:'Proposed',v11:'v1.1',v2:'v2',v3:'v3',later:'Later'};
+const ORD=['now','prop','todo','v11','v2','v3','later'];
+const B=v=>`<span class="b ${v}">${LBL[v]}</span>`;
+const worst=(...a)=>a.reduce((x,y)=>ORD.indexOf(y)>ORD.indexOf(x)?y:x);
+const $=id=>document.getElementById(id);
+
+// entry points (Q29), and what ticking each one writes in the working copy (Q43).
+// A file: [path, what it does, how it's kept out of commits, the version it arrives in if not the tool's own].
+// ex: listed in .git/info/exclude · absent: written only when the file doesn't exist, then excluded ·
+// priv: already private to git or the tool · commit: the team commits it (Q27) · none: nothing in the repo
+const PUSH=['.git/hooks/pre-push','the push check before any git push, from any terminal or IDE','priv'];
+const TOOLS=[
+ {id:'claude',label:'Claude Code',v:'now',rec:'claude-hooks',files:[['the qamaster plugin','commands, skills and the push hook, installed by Claude Code','none'],['.qamaster/integrations.json','records each integration','commit']]},
+ {id:'cli',label:'Terminal CLI',v:'now',rec:'cli',files:[['nothing','run qam in any terminal','none']]},
+ {id:'kiro',label:'Kiro',v:'v11',rec:'ide:kiro',files:[['.kiro/steering/qamaster.md','steering: how to call qam, and to wait for approval','ex'],['.kiro/hooks/qamaster.json','hook: the push check before the agent pushes (trigger to confirm)','ex'],['.kiro/settings/mcp.json','MCP registration','absent','v2']]},
+ {id:'cursor',label:'Cursor',v:'v11',rec:'ide:cursor',files:[['.cursor/rules/qamaster.mdc','rules: how to call qam','ex'],['.cursor/hooks.json','hook: beforeShellExecution runs the push check','absent'],['.cursor/mcp.json','MCP registration','absent','v2']]},
+ {id:'copilot',label:'GitHub Copilot (VS Code)',v:'v11',rec:'ide:copilot',files:[['.github/instructions/qamaster.instructions.md','instructions: how to call qam','ex'],['.github/hooks/qamaster.json','hook: the push check (VS Code hooks are in preview)','ex'],['.vscode/mcp.json','MCP registration','absent','v2']]},
+ {id:'vs',label:'Visual Studio',v:'v11',rec:'ide:visual-studio',git:true,files:[['.github/instructions/qamaster.instructions.md','Copilot instructions: how to call qam','ex'],['.vs/mcp.json','MCP registration (path to confirm)','priv','v2']]},
+ {id:'jetbrains',label:'JetBrains (AI Assistant, Junie)',v:'v11',rec:'ide:jetbrains',git:true,files:[['.aiassistant/rules/qamaster.md','AI Assistant rules: how to call qam','ex'],['.junie/guidelines.md','Junie guidelines','absent']]},
+ {id:'gemini',label:'Gemini CLI',v:'v11',rec:'ide:gemini',files:[['GEMINI.md','instructions: how to call qam','absent'],['.gemini/settings.json','hook: BeforeTool runs the push check (experimental)','absent']]},
+ {id:'codex',label:'Codex CLI',v:'v11',rec:'ide:codex',files:[['AGENTS.md','instructions: how to call qam','absent'],['.codex/hooks.json','hook: the push check (in a trusted project)','absent'],['.codex/config.toml','MCP registration','absent','v2']]},
+ {id:'git',label:'Any terminal or IDE (git push)',v:'v11',rec:'git-hook:pre-push',files:[PUSH]},
+ {id:'pr',label:'PR checks',v:'v11',rec:'pr-check',files:[['nothing here','set up in CI against the code host (Q28)','none']]},
+ {id:'panel',label:'IDE panel',v:'later',rec:'extension',files:[['nothing here','an extension from the IDE\'s marketplace','none']]}];
+const IG={ex:['.git/info/exclude','ex'],absent:['only if absent; then .git/info/exclude','ex'],priv:['already private',''],commit:['committed (Q27)',''],none:['','']};
+$('eps').innerHTML=TOOLS.map(t=>`<label class="ep"><input type="checkbox" data-ep="${t.id}" > ${t.label} ${B(t.v)}</label>`).join('');
+
+// the plan's selectors (Q11, Q31): all four run today; switching one off is decided, not built
+const SELS=[['path','path: tags'],['smoke','smoke'],['dsm','DSM impact'],['groups','Claude groups']];
+$('sels').innerHTML=SELS.map(([id,l])=>`<label><input type="checkbox" data-sel="${id}" checked> ${l}</label>`).join('');
+
+// step 2: where the code is, how to get it, and where its working copy goes
+const HOSTS={local:['this machine',''],github:['GitHub','https://github.com/your-org/your-app.git'],azure:['Azure Repos','https://dev.azure.com/your-org/your-project/_git/your-app'],
+ bitbucket:['Bitbucket','https://bitbucket.org/your-org/your-app.git'],gitlab:['GitLab','https://gitlab.com/your-org/your-app.git'],other:['your git server','https://git.example.com/your-app.git']};
+const GET=h=>[['clone','Cloning it to this machine','now'],['existing','A clone I already have','now'],['api','Reading it through the host, no clone',['github','azure'].includes(h)?'v11':'later']];
+const FW={
+bdd:{v:'now',link:'bdd:@TC-123',runners:[['playwright-bdd','playwright-bdd','now']],targets:[['local','This machine','now'],['docker','Docker','later'],['azure-pw','Azure Playwright Testing','later'],['browserstack','BrowserStack','later']]},
+pytest:{v:'now',link:'pytest:tests/x.py::test_y',runners:[['pytest','pytest (via uv)','now']],targets:[['local','This machine','now'],['docker','Docker','later']]},
+cypress:{v:'later',link:'cypress:@TC-123',runners:[['cypress','cypress run','later']],targets:[['local','This machine','later']]},
+jvm:{v:'later',link:'junit:…',runners:[['maven','Maven','later'],['gradle','Gradle','later']],targets:[['local','This machine','later'],['grid','Selenium Grid','later']]},
+specflow:{v:'later',link:'specflow:…',runners:[['dotnet','dotnet test','later']],targets:[['local','This machine','later']]}};
+const INFO={
+store:{ado:['now','Azure DevOps Test Plans (<code>QAMASTER_STORE=ado</code>)'],file:['now','the local file store (<code>QAMASTER_STORE=file</code>)'],xray:['later','Jira with Xray or Zephyr']},
+crawler:{pw:['now','Playwright, with writes blocked'],appium:['later','Appium, a new crawler adapter']},
+req:{ado:['todo','Azure Boards, through <code>qam requirements fetch</code>'],jira:['later','a Jira requirements adapter']},
+host:{none:['now','the Claude Code push hook only'],github:['v11','PR checks on GitHub'],'azure-repos':['v11','PR checks on Azure Repos'],bitbucket:['later','PR checks on Bitbucket'],gitlab:['later','PR checks on GitLab']},
+ci:{none:'now','github-actions':'v11','azure-pipelines':'v11','bitbucket-pipelines':'later','gitlab-ci':'later',jenkins:'later'},
+res:{html:['todo','the six HTML reports (<code>qam report</code> blocks today)'],adorun:['v11','HTML reports plus an ADO Test Run']}};
+
+function fill(id,opts){const el=$(id),cur=el.value;el.innerHTML=opts.map(([v,l,b])=>`<option value="${v}">${l}${b==='now'?'':' ('+LBL[b]+')'}</option>`).join('');if(opts.some(o=>o[0]===cur))el.value=cur;}
+const pick=(id,list)=>list.find(r=>r[0]===$(id).value);
+
+function code1(where,get,dir,url){
+  const host=HOSTS[where][0], here='No folder given: if the folder you\'re in';
+  if(where==='local')return dir
+    ?{v:'now',summary:`the local folder <code>${dir}</code>, read with git`,cmd:`qam setup --source ${dir}`,steps:[[`Checks <code>${dir}</code> is a git working copy; a subfolder of a monorepo works, and its branch and subfolder are recorded.`,'now'],['Reads it with local git (fetch, ls-tree, cat-file); nothing is written there.','now']]}
+    :{v:'prop',summary:"the folder you're in, if it's a git repo (proposed)",cmd:'qam setup --source &lt;folder&gt;     # today the folder is required',steps:[[`${here} is a git repo, setup uses it.`,'prop'],['Otherwise Claude asks for the folder; the CLI stops and asks for --source.','now']]};
+  if(get==='api'){const v=['github','azure'].includes(where)?'v11':'later';
+    return{v,summary:`read through the ${host} API, no clone (Q30)`,cmd:`qam setup --source ${url}     # no clone: ${LBL[v]}`,steps:[[`Reads the code through the ${host} API, with a sign-in to ${host}; no working copy on this machine.`,v],["Each IDE's files (step 1) then go into the working copy you name when you tick it.",v]]};}
+  if(get==='clone')return dir
+    ?{v:'now',summary:`cloned from ${host} into <code>${dir}</code>`,cmd:`qam setup --source ${url} --clone-to ${dir}`,steps:[[`Checks the URL answers and you can read it.`,'now'],[`Clones it into <code>${dir}</code>, which must be new or empty, once the other setup steps have passed.`,'now']]}
+    :{v:'prop',summary:`from ${host}; where to clone it is asked`,cmd:`qam setup --source ${url} --clone-to &lt;new folder&gt;`,steps:[[`${here} is already a clone of this URL, setup uses it.`,'prop'],['Otherwise Claude asks where to clone it, and the CLI stops and names --clone-to or --use-clone.','now']]};
+  return dir
+    ?{v:'now',summary:`the existing clone <code>${dir}</code> of the ${host} repo`,cmd:`qam setup --source ${url} --use-clone ${dir}`,steps:[[`Checks <code>${dir}</code> is a clone whose origin is this URL.`,'now'],['Reads it with local git; nothing is cloned.','now']]}
+    :{v:'prop',summary:`an existing clone of the ${host} repo, asked for`,cmd:`qam setup --source ${url} --use-clone &lt;folder&gt;`,steps:[[`${here} is a clone of this URL, setup uses it.`,'prop'],['Otherwise Claude asks which folder; the CLI stops and names --use-clone.','now']]};
+}
+function draw(){
+  const where=$('where').value, local=where==='local';
+  if(!local)fill('get',GET(where));
+  const get=local?'':$('get').value, api=get==='api';
+  $('urlRow').hidden=local; $('getRow').hidden=local; $('dirRow').hidden=api;
+  $('repoUrl').placeholder=HOSTS[where][1];
+  $('dirL').textContent=local?'3. Folder':get==='clone'?'3. Clone into':'3. Existing clone';
+  const code=code1(where,get,$('dir').value.trim(),$('repoUrl').value.trim()||HOSTS[where][1]);
+  $('flow').innerHTML=`<ol>${code.steps.map(([t,v])=>`<li>${t} ${B(v)}</li>`).join('')}</ol><pre>${code.cmd}</pre>`;
+  const fw=FW[$('fw').value];fill('runner',fw.runners);fill('target',fw.targets);
+  const store=INFO.store[$('store').value];
+  $('pubTo').innerHTML=`${store[1]} ${B(store[0])}`;
+
+  const on=TOOLS.filter(t=>document.querySelector(`[data-ep="${t.id}"]`).checked);
+  // Visual Studio and JetBrains have no agent hook of their own: the push goes through the git hook
+  const needsGit=on.some(t=>t.git)&&!on.some(t=>t.id==='git');
+  const shown=needsGit?[...on,{...TOOLS.find(t=>t.id==='git'),label:'Git pre-push hook (for '+on.filter(t=>t.git).map(t=>t.label.split(' (')[0]).join(', ')+')'}]:on;
+  $('files').innerHTML=shown.length?'':'<p class="why">Tick a tool to see every file it creates.</p>';
+  $('files').innerHTML+=shown.map(t=>`<div class="tool"><h4>${t.label} ${B(t.v)}</h4><ul>${t.files.map(([p,w,g,v])=>
+    `<li><code>${p}</code><span class="w">${w}${v?' '+B(v):''}</span><span class="ig ${IG[g][1]}">${IG[g][0]}</span></li>`).join('')}</ul></div>`).join('');
+  const excluded=[...new Set(shown.flatMap(t=>t.files.filter(f=>['ex','absent'].includes(f[2])).map(f=>f[0])))];
+  const wc=api?'the working copy you name when you tick (there is no clone when the code is read through the host)':"the app's working copy";
+  if(excluded.length)$('files').innerHTML+=`<div class="excl"><b>Kept out of commits:</b> these lines go into <code>.git/info/exclude</code> in ${wc}. It's local to the clone and never committed. QAMaster never edits <code>.gitignore</code>; in a folder with no git it lists these files instead.<pre>${excluded.join('\n')}</pre></div>`;
+  const L=shown.map(t=>t.id==='pr'
+    ?(()=>{const h=$('host').value==='none'?'github':$('host').value,c=$('ci').value==='none'?'github-actions':$('ci').value;return `<li><code>pr-check:${c}:${h}</code> ${B(worst(INFO.host[h][0],INFO.ci[c]))}</li>`})()
+    :`<li><code>${t.rec}</code> ${B(t.v)}: ${t.label}</li>`);
+  $('ints').innerHTML=L.join('')||'<li>Nothing ticked.</li>';
+
+  const sels=[...document.querySelectorAll('[data-sel]:checked')].map(c=>c.dataset.sel);
+  const allSels=sels.length===SELS.length, model=$('model').value;
+  const ru=pick('runner',fw.runners),tg=pick('target',fw.targets);
+  const host=INFO.host[$('host').value];
+  const rows=[
+    ['Code',code.v,code.summary],
+    ['Store',...INFO.store[$('store').value]],
+    ['Crawl',...INFO.crawler[$('crawler').value]],
+    ['Requirements',...INFO.req[$('req').value]],
+    ['Plan',allSels&&model==='session'?'now':'todo',`${sels.length?sels.join(', '):'nothing selected'}${sels.includes('groups')?`; groups by ${$('model').selectedOptions[0].text}`:''}${allSels&&model==='session'?'':' (switching selectors or the model is decided in Q31, not built)'}`],
+    ['Scripts',fw.v,`${$('fw').selectedOptions[0].text}; link <code>${fw.link}</code>`],
+    ['Run',worst(ru[2],tg[2]),`${ru[1]} on ${tg[1]}; a missing runner or browser blocks with the fix (Q41)`],
+    ['Push',worst(host[0],INFO.ci[$('ci').value]),`${host[1]}${$('ci').value==='none'?'':', run from '+$('ci').selectedOptions[0].text}`],
+    ['Results',...INFO.res[$('res').value]]];
+  $('sum').innerHTML=rows.map(([l,v,t])=>`<li><b>${l}</b> ${B(v)}: ${t}</li>`).join('')+
+    '<li><b>Everywhere</b>: every entry point calls the same <code>qam</code> CLI; the plan records why each case was picked, and the verdict records the runner.</li>';
+}
+document.addEventListener('change',draw);
+document.addEventListener('input',e=>{if(e.target.matches('#dir,#repoUrl'))draw()});
+draw();
+</script>
+</body>
+</html>

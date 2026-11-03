@@ -665,6 +665,38 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Why:** the clean Docker run (F7). With a separate QA project, plans, verdicts, screenshots, videos and the developer's `.env` sat untracked in the app repo, and `git add -A` would have committed them.
 - **Gave up:** strict read-only toward the app repo. The alternative, a warning that asks the developer to edit `.gitignore` by hand, was rejected as easy to miss.
 
+**Q43. Ticking a tool writes its own files, hooks included, and keeps them out of commits** (2026-11-03, accepted 2026-11-03; amends Q18 and Q29, extends Q42)
+- **Decision:**
+  - Ticking an entry point (Q29), in `qam setup` or `qam integrations add <tool>`, writes that tool's files in the developer's working copy of the app repo, so QAMaster works the same way in every IDE and agent.
+  - Each tool gets what it supports, nothing more:
+    - **its rules or steering file**, telling the agent how to call `qam` (plan, check, status) and to wait for approval;
+    - **a hook, where the tool has one**, that runs the same push check as the Claude Code hook before the agent's `git push`. This amends Q18, which ported no hooks;
+    - **its MCP registration**, once `qam mcp-serve` exists (still v2, Q18).
+  - The files QAMaster writes are its own (`qamaster.md`, `qamaster.mdc`, `qamaster.json`), never a file the team already has. A shared file such as `AGENTS.md` or `GEMINI.md` is written only when it doesn't exist. When it exists, QAMaster leaves it alone and says what to add.
+  - **How each file is kept out of commits depends on where it lives and on the code source (Q26):**
+    - In a git working copy, every file QAMaster creates is listed in `.git/info/exclude`, as in Q42. These files hold machine paths and per-developer choices, so each developer ticks their own tools.
+    - A file in a place git or the tool already keeps private (`.git/hooks/`, Visual Studio's `.vs/`) needs no line.
+    - A plain folder with no git has nothing to exclude through: QAMaster lists the files it wrote and says so.
+    - With a host URL and no clone (Q30), QAMaster asks which working copy the IDE opens, and writes there.
+    - `.gitignore` is never edited: it's a tracked file (Q15).
+  - Each tool's files are recorded with its integration (Q27), so `qam doctor` checks them and `qam integrations remove` deletes them, exclude lines included.
+  - Paths come from each tool's docs at build time. As of 2026-11-03:
+    | Tool | Rules or steering | Hook | MCP (v2) |
+    |---|---|---|---|
+    | Kiro | `.kiro/steering/qamaster.md` | `.kiro/hooks/qamaster.json` (the trigger before a shell command is to be confirmed) | `.kiro/settings/mcp.json` |
+    | Cursor | `.cursor/rules/qamaster.mdc` | `.cursor/hooks.json`, `beforeShellExecution` | `.cursor/mcp.json` |
+    | GitHub Copilot in VS Code | `.github/instructions/qamaster.instructions.md` | `.github/hooks/qamaster.json` (preview) | `.vscode/mcp.json` |
+    | Visual Studio (Copilot) | the same instructions file | none: the git pre-push hook | `.vs/mcp.json` (to confirm) |
+    | JetBrains AI Assistant, Junie | `.aiassistant/rules/qamaster.md`; `.junie/guidelines.md` when absent | none: the git pre-push hook | set in the IDE's settings |
+    | Gemini CLI | `GEMINI.md` when absent | `.gemini/settings.json` (experimental) | the same file |
+    | Codex CLI | `AGENTS.md` when absent | `.codex/hooks.json` (needs a trusted project) | `.codex/config.toml` |
+    | Any terminal or IDE | none | `.git/hooks/pre-push` | none |
+- **Timing:** v1.1, with the git pre-push hook, instead of v2 (amends Q29). The MCP registration still waits for `qam mcp-serve` in v2.
+- **Why:** the person wants teams to work in any IDE and have QAMaster set up for that IDE by ticking a box, with nothing new landing in a commit.
+- **Gave up:**
+  - One set of files the whole team shares: each developer ticks their own tools.
+  - Stability. Several of these hook formats are in preview or experimental, so each one is checked against the tool's docs when it's built, and `qam doctor` checks it works.
+
 ---
 
 ## Open questions
