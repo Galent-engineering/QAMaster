@@ -12,6 +12,7 @@ Read before working on a feature:
 - [docs/releases.md](docs/releases.md): what each plugin version holds, and the next one's plan
 - [docs/plans/](docs/plans/README.md): one versioned plan per release, the working source of truth for that release. A change of scope adds a revision row
 - [docs/demos/](docs/demos/README.md): every walkthrough with the tester's feedback, and where each finding went
+- [docs/install.md](docs/install.md): load a release as a zip in Claude desktop or the Claude CLI
 - [docs/learning.md](docs/learning.md): concepts and design explained, one lesson per ported feature. Add a lesson when a feature finishes Learn
 
 Sources being ported, next to this repo: `../CheckMasterPlugin` (Python; port its tests before its code), `../autonomous-qe-0.2.0` (TypeScript, `tools/`), demos in `../CheckMasterDemo` and `../autonomousQeDemo`.
@@ -129,6 +130,7 @@ plugin/bin/qam --repo <qa-project> setup --no-install --url <URL> --source <fold
 plugin/bin/qam --repo <qa-project> dsm run     # scan, crawl, build, render; dsm refresh | changes | impact <files…>
 claude plugin validate .                 # check manifests, commands, skills, hooks
 claude --plugin-dir ./plugin             # run Claude Code with the plugin, no install
+scripts/package.sh                       # dist/: the plugin zip (Claude desktop) and the marketplace zip (CLI), checked; docs/install.md
 ```
 
 ## Verification
