@@ -1,8 +1,9 @@
 #!/bin/sh
 # QAMaster end to end in a clean container (docs/demos/2026-11-02-0.3.0-docker-e2e.md).
 # Usage: scripts/docker-e2e/run.sh [release zip]
-# Reads, never changes: CheckMasterDemo next to the repo, ~/Desktop/Workspace/juice-shop, ~/Downloads/DemoTestv0.2.1 (override with
-# CHECKMASTER_DEMO, JUICE_SHOP, QA_SOURCE). Downloads: the image layers, Python 3.12 and the demo's wheels (uv sync),
+# Reads, never changes: a pytest demo repo, ~/Desktop/Workspace/juice-shop, ~/Downloads/DemoTestv0.2.1 (override with
+# CHECKMASTER_DEMO, JUICE_SHOP, QA_SOURCE). The CheckMasterDemo this was written against was deleted on 2026-11-03: set
+# CHECKMASTER_DEMO to a git repo with site/ (coupon.js, cart.js), tests/ (pytest-playwright) and a uv.lock, as it had. Downloads: the image layers, Python 3.12 and the demo's wheels (uv sync),
 # Chromium, and the automation folder's npm packages. Juice Shop runs from bkimminich/juice-shop:v20.3.0.
 set -eu
 here=$(cd "$(dirname "$0")" && pwd)
