@@ -6,3 +6,9 @@ node_modules/
 .DS_Store
 .claude/launch.json
 .claude/settings.local.json
+# release zips built by scripts/package.sh
+dist/
+# local leftovers: the autonomous-qe plugin recreates these whenever it runs here, and Claude Code's worktrees
+.autonomous-qe/
+.testgen/
+.claude/worktrees/
