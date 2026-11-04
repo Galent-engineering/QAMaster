@@ -19,6 +19,16 @@ expect() {
 }
 newest_plan() { ls -t .qamaster/plans | head -1 | sed 's/\.json$//'; }
 ID='-c user.email=dev@example.test -c user.name=Dev'
+# git_repo <source> <dest>: a clone of the source when it is a git repo (a full one, with its history). A plain folder, as
+# the fixtures are, first becomes a repo with one commit, then is cloned the same way, so `origin` exists in both cases.
+git_repo() {
+  if [ ! -e "$1/.git" ]; then
+    mkdir -p "$2.seed" && cp -r "$1"/. "$2.seed"/ && git -C "$2.seed" init -q -b main
+    git -C "$2.seed" $ID add -A && git -C "$2.seed" $ID commit -qm 'Initial commit'
+    set -- "$2.seed" "$2"
+  fi
+  git clone -q "$1" "$2"
+}
 
 # ---------- pytest path: a clone of CheckMasterDemo, tests in the app repo ----------
 step 'Without git: setup and plan both name it (F1)'
@@ -28,7 +38,12 @@ expect 2 env PATH=$NOGIT $Q setup --no-install --app CheckMasterDemo
 expect 2 env PATH=$NOGIT QAMASTER_STORE=file $Q plan
 
 step 'Setup in the demo clone, with the claude-code entry point'
-git clone -q /src/CheckMasterDemo ~/demo && cd ~/demo
+git_repo /src/CheckMasterDemo ~/demo && cd ~/demo
+# a lock can't be made offline, so the fixture has none: made here, from the image's python3 (no Python is downloaded)
+if [ ! -e uv.lock ]; then
+  UV_PYTHON_DOWNLOADS=never uv lock -q && git $ID add uv.lock && git $ID commit -qm 'uv.lock' ||
+    { echo '-> uv lock failed (it needs PyPI and a Python of 3.11 or later)'; mismatches=$((mismatches + 1)); }
+fi
 expect 0 $Q setup --no-install --app CheckMasterDemo --entry claude-code
 export QAMASTER_STORE=file
 node $E2E/seed-checkmaster.mts
@@ -51,7 +66,7 @@ cd ~/demo
 step 'plan with uv but no environment: blocked with uv sync, nothing downloaded (F5)'
 expect 2 $Q plan
 expect 0 test ! -e ~/.local/share/uv/python
-uv sync -q # the person's step: downloads Python 3.12 and the test dependencies
+uv sync -q # the person's step: downloads the test dependencies (the image's Python 3.11 is enough: no Python download)
 expect 3 $Q plan
 P=$(newest_plan)
 
@@ -86,13 +101,14 @@ unset QAMASTER_STORE
 step 'Wait for Juice Shop on the shared network'
 expect 0 node -e "(async()=>{for(let i=0;i<60;i++){try{if((await fetch('http://juice-shop:3000')).ok)return}catch{}await new Promise(r=>setTimeout(r,2000))}process.exit(1)})()"
 
-step 'QA project from DemoTestv0.2.1 (config, DSM, skills, CatalogEngagement run)'
-git clone -q /src/juice-shop ~/juice-shop
+step 'QA project from /src/qa (config, DSM, a reviewed TestGen run; .claude, package.json and .gitignore if it has them)'
+git_repo /src/juice-shop ~/juice-shop
 mkdir ~/qa && cd ~/qa && git init -q -b main
-cp -r /src/qa/config /src/qa/dsm /src/qa/.claude /src/qa/package.json /src/qa/.gitignore .
-mkdir -p testgen/output && cp -r /src/qa/testgen/output/20261030-1854-CatalogEngagement testgen/output/
+cp -r /src/qa/config /src/qa/dsm .
+for f in .claude package.json .gitignore; do if [ -e /src/qa/$f ]; then cp -r /src/qa/$f .; fi; done
+mkdir -p testgen/output && cp -r /src/qa/testgen/output/. testgen/output/
 export QAMASTER_STORE=file
-R=testgen/output/20261030-1854-CatalogEngagement
+R=testgen/output/$(ls testgen/output | head -1)
 expect 2 $Q doctor
 expect 0 $Q setup --no-install --url http://juice-shop:3000 --source ~/juice-shop --name juiceshop-online
 expect 0 $Q publish $R --apply
