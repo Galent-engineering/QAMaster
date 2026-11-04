@@ -193,6 +193,18 @@ test('publish: smoke is suggested and ticked, written only on apply, and --skip-
   assert.doesNotMatch(row(p.read(CSV), '1001'), /smoke/);
 });
 
+// 0.2.1 verification E2: a case unticked with --skip-smoke was offered again on every later preview
+test('E2: --skip-smoke is remembered in the ledger, so the case is not suggested again', () => {
+  const p = project();
+  p.writeRun([kase('TC-CART-001'), kase('TC-CART-002')]);
+  p.qam('publish', RUN, '--apply', '--skip-smoke', 'TC-CART-002');
+  const ledger = JSON.parse(p.read(LEDGER)).entries;
+  assert.equal(ledger.find((e: { localId: string }) => e.localId === 'TC-CART-002').smokeDeclined, true);
+  assert.equal(ledger.find((e: { localId: string }) => e.localId === 'TC-CART-001').smokeDeclined, false);
+  const again = p.qam('publish', RUN).out;
+  assert.doesNotMatch(again, /\[[x ]\] TC-CART-002/, 'no longer offered');
+});
+
 test('publish: smoke QA removes in the store is not suggested again', () => {
   const p = project();
   p.writeRun([kase('TC-CART-001')]);
