@@ -721,6 +721,14 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Why:** 0.3.1 and 0.3.2 each mixed fixes and features, so the number didn't say what changed. The person wants a feature release and a fix release to look different, and 1.0.0 to mean something.
 - **Gave up:** a single counter that rises with every release.
 
+**Q47. With no code folder given, setup asks where, with three suggestions** (2026-11-04, accepted 2026-11-04; amends Q26)
+- **Decision:**
+  - When `qam setup` has no `--source`, `--clone-to` or `--use-clone`, it asks where the app's code is (or where to clone it), and offers three choices: **this folder** (where setup was run), **the usual folder** (the one chosen most often in past setups on this machine), and **a path you type**.
+  - Past choices are counted in `~/.qamaster/`, next to the install index (Q27), as folder paths only. With no history the usual folder isn't offered.
+  - Claude asks in a session; a terminal shows the same three choices. A script or CI call with no folder still stops and names the flag to add (exit 2, as today). A folder is never chosen without being shown.
+- **Why:** the person wants setup to ask for a location, with the likely answers one keypress away, instead of failing and asking for a flag.
+- **Gave up:** a fully silent setup. It always asks when no folder is given.
+
 ---
 
 ## Open questions
