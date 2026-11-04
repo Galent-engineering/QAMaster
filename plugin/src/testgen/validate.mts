@@ -211,11 +211,15 @@ export function validate(
   const genericValue =
     /^(valid|invalid|test|testing|dummy|sample|xyz|abc|abc123|asdf|qwerty|value|data|n\/a|na|tbd|todo|something|anything|x+)$/i;
   const components = facts.model.components;
-  const isVague = (text: unknown) => {
+  // A3: a quoted string or a test_data value is data (`{"status": "ok"}`), not a vague word
+  const isVague = (text: unknown, data: unknown = {}) => {
     const t = String(text || '')
       .trim()
       .toLowerCase();
-    return Array.from(t).length < minLen || Boolean(vagueRe?.test(t));
+    let rest = t.replace(/"[^"]*"|'[^']*'|`[^`]*`/g, ' ');
+    for (const v of Object.values((data ?? {}) as Record<string, unknown>).map((x) => String(x).toLowerCase()))
+      if (v) rest = rest.split(v).join(' ');
+    return Array.from(t).length < minLen || Boolean(vagueRe?.test(rest));
   };
   const checkEvidence = (where: string, refs: unknown) => {
     if (!Array.isArray(refs) || !refs.length) {
@@ -312,7 +316,7 @@ export function validate(
           `${w}: test_data ${k} = "${v}" is generic: give the concrete value the application accepts or rejects (from the DSM field rules, code or requirement)`,
         );
     }
-    if (tc.expected_result && isVague(tc.expected_result))
+    if (tc.expected_result && isVague(tc.expected_result, tc.test_data))
       errors.push(`${w}: vague or too short expected_result "${s(tc.expected_result)}" (state the observable outcome)`);
     const steps = tc.steps ?? [];
     if (!steps.length) {
@@ -344,7 +348,7 @@ export function validate(
       if (!st.screen) errors.push(`${sw}: no screen`);
       else if (!route) errors.push(`${sw}: screen ${s(st.screen)} is not in the DSM`);
       for (const field of ['action', 'expected']) if (!st[field]) errors.push(`${sw}: missing ${field}`);
-      if (st.expected && isVague(st.expected))
+      if (st.expected && isVague(st.expected, tc.test_data))
         errors.push(`${sw}: vague or too short expected "${s(st.expected)}" (state what is shown or stored)`);
       if (st.element && route && !facts.hasElement(route, st.element))
         errors.push(`${sw}: element "${s(st.element)}" is not on ${route} in the DSM (invented UI element?)`);
