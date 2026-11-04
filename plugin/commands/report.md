@@ -19,3 +19,5 @@ node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" report ${ARGUMENTS:-all}
 ```
 
 Show the paths it wrote under `reports/output/`, and any report it skipped with the reason. Exit 2 means no input exists for what was asked (no verdict, no TestGen run, no DSM): say which and what builds it. Defect drafts are for a person to file; never file them.
+
+Once `qam setup` has written `.qamaster/bin/qam.mjs`, run `node .qamaster/bin/qam.mjs` with the same arguments instead of the plugin path above (it follows plugin updates, and nothing long is retyped).

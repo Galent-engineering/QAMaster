@@ -97,3 +97,20 @@ A list of cases:
 - **Scenario:** every other case.
 
 The automation (feature 8) and the gate find each case by its `@TC-<id>` tag.
+
+## Names to copy exactly
+
+Copy every name from `qam testgen context` as printed. A paraphrase is a validator finding and a retry.
+
+- **Elements.** The context lists each as `kind: label`, for example `field: Registry URL` or `link: Products`. A step's `element` is the label (`Registry URL`) and never the `kind: label` text or a reworded one.
+- **Screens** are the `route` values (`/cart`), forms are `forms[].name`, and a journey is cited by its `n`.
+- **AUT headings.** Cite `aut:<Skill>#<heading>` with a heading that is in that skill's file. The generated AUT skills use headings such as `## Business understanding` and `## Screen details`; open the skill and copy the heading. Don't invent a `#Business rules`.
+- **Routes marked `kind: api`** are server endpoints, not screens (Q48). They have no DSM screen to cite, so write no UI case for them; API cases come with the API channel (0.7.0).
+
+## One component at a time
+
+A whole module in one `testcases.json` runs out of output and context. Per component:
+
+1. `qam testgen context --component <Name>`, then write only that component's cases.
+2. Add them to `testcases.json`, run `qam testgen validate <run>`, and fix the findings before the next component.
+3. Keep the earlier components' cases as they are; the final validate covers the whole run.

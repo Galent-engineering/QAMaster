@@ -7,7 +7,7 @@ description: Generates contextual, domain-aware manual test cases for a module o
 
 Test cases come only from facts QAMaster can check, and they aren't shown as done until `qam testgen validate` reports **0 findings and 0 coverage gaps** (decision Q10; there's no setting to loosen it). Then a person reviews them (Q12).
 
-Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from the QA project.
+Once `qam setup` has written the project launcher, run it as `node .qamaster/bin/qam.mjs <command>` from the QA project (it follows plugin updates, and avoids retyping a long plugin path); before setup, use `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>`.
 
 ## Procedure
 
@@ -18,7 +18,7 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
    - requirements: fetching sprint stories isn't built yet, so leave `manifest.requirements_scope` out and use no `req:` evidence.
 3. **Domain.** Use `Domain_Test_Design_Skill` to find the domain and load its sub-skills: `-Domain-<Domain>`, `-App-<Type>`, `-Test-<Type>` and `-Core-Techniques`. Record `manifest.domain` and `manifest.domain_evidence`.
 4. **Facts.** `qam testgen context --component <Name>` prints the only screens, elements, forms, navigations, journeys and source files you may use. Read the source files it lists in the local clone (`config/dsm-config.json` `repositories`) for business rules. The clones are read-only.
-5. **Write** `manifest.json` and `testcases.json` in the run folder; the format is in [references/cases.md](references/cases.md). Per component, cover:
+5. **Write** `manifest.json` and `testcases.json` in the run folder; the format is in [references/cases.md](references/cases.md). Work **one component at a time**: write its cases, validate, fix, then the next (never every case in one go). Copy element, screen and heading names exactly as `qam testgen context` prints them (see "Names to copy exactly" there). Per component, cover:
    - every required category and type;
    - every screen;
    - a positive and a negative or boundary test for every form;
@@ -30,6 +30,7 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
 ## Rules
 
 - **No fact without evidence.** If something isn't in the context pack, an AUT skill, code you read or a fetched requirement, it doesn't go in a test case. Ask, or record the gap.
+- **API routes aren't screens.** A route the DSM marks `kind: api` gets no UI case and isn't a screen to cover; API cases come with the API channel (0.7.0, Q48).
 - **Name the exact element.** Every step that clicks, types, selects or opens names its `element`, exactly as the DSM recorded it. UI named in the action text ("the Apply button", `"Apply"`) is checked too, so don't mention controls that aren't there.
 - **Cite rules precisely.** A business rule (a limit, calculation or validation) cites the line or heading where it's written: `code:<repo>:<path>:<line>`, `aut:<Skill>#<heading>` or `req:<id>`. A whole file or skill isn't enough.
 - **Requirements come from `requirements/<scope>/`.** Never cite a requirement that wasn't fetched.

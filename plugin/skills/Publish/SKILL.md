@@ -7,7 +7,7 @@ description: Publishes reviewed test cases to the team's test case store (Azure 
 
 Publishing writes to the place the team keeps its test cases, so it is always two steps: a dry run the person reads, then `--apply` only after their yes (decision Q7). Nothing is deleted: a case that is no longer generated is closed, and only when the person asks.
 
-Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from the QA project.
+Once `qam setup` has written the project launcher, run it as `node .qamaster/bin/qam.mjs <command>` from the QA project (it follows plugin updates, and avoids retyping a long plugin path); before setup, use `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>`.
 
 ## Procedure
 

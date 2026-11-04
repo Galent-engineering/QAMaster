@@ -15,3 +15,5 @@ Show the output exactly as printed, in a code block. Then say in one or two sent
 - any stage that's stale (older than its inputs), and why that matters.
 
 If the output says there's no QA project here, say so, and that `qam setup` (or "set up QAMaster for <app>") starts one. To check settings, credentials and the test runners, offer `qam doctor`. It writes its result to `.qamaster/doctor.json`, so run it only if the person says yes.
+
+Once `qam setup` has written `.qamaster/bin/qam.mjs`, run `node .qamaster/bin/qam.mjs` with the same arguments instead of the plugin path above (it follows plugin updates, and nothing long is retyped).

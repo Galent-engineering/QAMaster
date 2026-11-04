@@ -7,7 +7,7 @@ description: Checks a code change against the team's test cases before it's push
 
 The gate reads the app repo's diff, picks the test cases in the test case store that the change touches, and runs them after a person approves. A `git push` from Claude Code is blocked until the verdict for HEAD passes, in repos set up with `qam setup --entry claude-code` (the QA project itself is never gated). To act, use `/qamaster:check`.
 
-Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from the app repo: `plan [--base REF] [--tag GROUP=WHY]`, `approve <id> [--add …] [--remove …]`, `run <id>`.
+Once `qam setup` has written the project launcher, run it as `node .qamaster/bin/qam.mjs <command>` from the repo (it follows plugin updates, and avoids retyping a long plugin path); before setup, use `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>`. Commands, from the app repo: `plan [--base REF] [--tag GROUP=WHY]`, `approve <id> [--add …] [--remove …]`, `run <id>`.
 
 ## How it decides
 

@@ -7,7 +7,7 @@ description: Builds and keeps up to date the interactive UI Design Structure Mat
 
 The DSM shows every screen and how users move between them. QAMaster also uses it to decide which screens a code change touches, so the gate can choose tests.
 
-All work goes through the `qam` CLI. Run it as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from the QA project.
+All work goes through the `qam` CLI. Once `qam setup` has written the project launcher, run it as `node .qamaster/bin/qam.mjs <command>` from the QA project (it follows plugin updates, and avoids retyping a long plugin path); before setup, use `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>`.
 
 ## Commands
 

@@ -18,7 +18,7 @@ Each `SKILL.md` has two blocks:
 - **generated** (`<!-- generated:start -->` … `<!-- generated:end -->`): facts from `dsm/dsm.json`, rewritten by `qam aut-skills`. Never edit it.
 - **curated** (`<!-- curated:start -->` … `<!-- curated:end -->`): business understanding and business cases you write from the code. `qam aut-skills` keeps it as it is, and copies its `Summary:` line into the skill's description.
 
-Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from the QA project.
+Once `qam setup` has written the project launcher, run it as `node .qamaster/bin/qam.mjs <command>` from the QA project (it follows plugin updates, and avoids retyping a long plugin path); before setup, use `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>`.
 
 ## Procedure
 

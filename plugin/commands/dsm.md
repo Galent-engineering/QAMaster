@@ -17,3 +17,5 @@ from the QA project, then report as the skill describes. Exit 2 is blocked:
 - if it's about missing settings, ask the user for the app's URL and repository, then run `qam setup` with their answers.
 
 For `render`, show the user `dsm/index.html`.
+
+Once `qam setup` has written `.qamaster/bin/qam.mjs`, run `node .qamaster/bin/qam.mjs` with the same arguments instead of the plugin path above (it follows plugin updates, and nothing long is retyped).
