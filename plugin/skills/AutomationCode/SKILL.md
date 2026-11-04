@@ -7,12 +7,12 @@ description: Writes playwright-bdd automation scripts (feature files, step defin
 
 Scripts are written only from **reviewed test cases** (a TestGen run under `testgen/output/<run>/`), only for the cases `qam automate <plan-id>` lists as **draft** or **update**, and only into the QA project's automation folder (`<App>/`, made by `qam app create`). Never into the app's repository, and never into the plugin's template.
 
-Once `qam setup` has written the project launcher, run it as `node .qamaster/bin/qam.mjs <command>` from the QA project (it follows plugin updates, and avoids retyping a long plugin path); before setup, use `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>`.
+Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from the QA project. When you hand the person a command to run in their own terminal, give one they can paste: every value (run name, plan id, path) filled in, never a `<placeholder>`, and the launcher by its absolute path, `node <absolute path of the QA project>/.qamaster/bin/qam.mjs <command>` (the launcher exists only in the QA project, written by `qam setup`). If `qam doctor` shows `WARN launcher`, hand over the plugin path instead and suggest running setup again from the plugin.
 
 ## Inputs (hallucination tolerance 0)
 
 - **The test case**: its steps, expected results, test data, `screen` and `leads_to`, from the run's `testcases.json`. Automate exactly these; add no checks of your own.
-- **Elements**: from the DSM and the application's front-end code (`config/dsm-config.json` → `repositories`). Prefer test ids, then role and name, then label or text, then stable ids, then CSS. Never guess a selector. If the source can't give a reliable one, ask, or mark it `// custom: <why>`.
+- **Elements**: from the DSM and the application's front-end code (`config/dsm-config.json` → `repositories`). Prefer test ids, then role and name, then label or text, then stable ids, then CSS. Never guess a selector. If the source can't give a reliable one, ask, or mark it `// custom: <why>`. Copy the crawl's `test_id`, or its `aria_label`, or its role and name; never the DSM's CSS selector path, and never a positional locator (`:nth-of-type`, `:nth-child`) or a bare `form` (`qam check-scripts` flags them).
 - **The folder's step catalogue**: `steps/shared/` and `steps/pages/`. Reuse a step word for word before adding one.
 
 ## Layers

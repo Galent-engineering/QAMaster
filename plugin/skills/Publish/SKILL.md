@@ -7,7 +7,7 @@ description: Publishes reviewed test cases to the team's test case store (Azure 
 
 Publishing writes to the place the team keeps its test cases, so it is always two steps: a dry run the person reads, then `--apply` only after their yes (decision Q7). Nothing is deleted: a case that is no longer generated is closed, and only when the person asks.
 
-Once `qam setup` has written the project launcher, run it as `node .qamaster/bin/qam.mjs <command>` from the QA project (it follows plugin updates, and avoids retyping a long plugin path); before setup, use `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>`.
+Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from the QA project. When you hand the person a command to run in their own terminal, give one they can paste: every value (run name, plan id, path) filled in, never a `<placeholder>`, and the launcher by its absolute path, `node <absolute path of the QA project>/.qamaster/bin/qam.mjs <command>` (the launcher exists only in the QA project, written by `qam setup`). If `qam doctor` shows `WARN launcher`, hand over the plugin path instead and suggest running setup again from the plugin.
 
 ## Procedure
 

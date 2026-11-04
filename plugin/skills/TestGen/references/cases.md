@@ -106,6 +106,7 @@ Copy every name from `qam testgen context` as printed. A paraphrase is a validat
 - **Screens** are the `route` values (`/cart`), forms are `forms[].name`, and a journey is cited by its `n`.
 - **AUT headings.** Cite `aut:<Skill>#<heading>` with a heading that is in that skill's file. The generated AUT skills use headings such as `## Business understanding` and `## Screen details`; open the skill and copy the heading. Don't invent a `#Business rules`.
 - **Routes marked `kind: api`** are server endpoints, not screens (Q48). They have no DSM screen to cite, so write no UI case for them; API cases come with the API channel (0.7.0).
+- **API request bodies.** A step whose action calls an endpoint (`POST /workflows`) types the request model's fields: open the model (a Pydantic `BaseModel` in `schemas.py`), use its field names exactly in `test_data`, include the required ones, add none the model does not have (`extra="forbid"` rejects them), and cite `code:<repo>:<path>:<line of the class>`. A `test_data` key found in no cited file, or an API step with no `code:` evidence, is a validator finding.
 
 ## One component at a time
 

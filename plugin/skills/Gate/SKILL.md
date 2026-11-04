@@ -7,7 +7,7 @@ description: Checks a code change against the team's test cases before it's push
 
 The gate reads the app repo's diff, picks the test cases in the test case store that the change touches, and runs them after a person approves. A `git push` from Claude Code is blocked until the verdict for HEAD passes, in repos set up with `qam setup --entry claude-code` (the QA project itself is never gated). To act, use `/qamaster:check`.
 
-Once `qam setup` has written the project launcher, run it as `node .qamaster/bin/qam.mjs <command>` from the repo (it follows plugin updates, and avoids retyping a long plugin path); before setup, use `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>`. Commands, from the app repo: `plan [--base REF] [--tag GROUP=WHY]`, `approve <id> [--add …] [--remove …]`, `run <id>`.
+Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from the app repo: `plan [--base REF] [--tag GROUP=WHY]`, `approve <id> [--add …] [--remove …]`, `run <id>`. When you hand the person a command to run in their own terminal, give one they can paste: every value (run name, plan id, path) filled in, never a `<placeholder>`, and the launcher by its absolute path, `node <absolute path of the QA project>/.qamaster/bin/qam.mjs <command>` (the launcher exists only in the QA project, written by `qam setup`). If `qam doctor` shows `WARN launcher`, hand over the plugin path instead and suggest running setup again from the plugin. The app repo has no launcher, so a command for the person's terminal always names the QA project.
 
 ## How it decides
 

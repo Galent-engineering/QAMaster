@@ -18,4 +18,4 @@ from the QA project, then report as the skill describes. Exit 2 is blocked:
 
 For `render`, show the user `dsm/index.html`.
 
-Once `qam setup` has written `.qamaster/bin/qam.mjs`, run `node .qamaster/bin/qam.mjs` with the same arguments instead of the plugin path above (it follows plugin updates, and nothing long is retyped).
+When you hand the person a command to run in their own terminal, give one they can paste: every value (run name, plan id, path) filled in, never a `<placeholder>`, and the launcher by its absolute path, `node <absolute path of the QA project>/.qamaster/bin/qam.mjs <command>` (the launcher exists only in the QA project, written by `qam setup`). If `qam doctor` shows `WARN launcher`, hand over the plugin path instead and suggest running setup again from the plugin.
