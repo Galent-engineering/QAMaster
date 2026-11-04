@@ -99,7 +99,7 @@
       "stage": "first-gate",
       "title": "First gate run",
       "status": "pending",
-      "evidence": "no verdict yet",
+      "evidence": "no test case has run yet",
       "how": "Run qam check --all."
     },
     {

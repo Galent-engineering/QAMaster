@@ -89,8 +89,43 @@ export function sameRemote(a: string, b: string): boolean {
 const nameOf = (s: string) =>
   path.basename(s.replace(/\.git$/, '').replace(/\/+$/, '')).replace(/[^\w.-]+/g, '-') || 'app';
 
-/** The folders QAMaster itself writes in a QA project (the automation folder, named after app.name, is passed in). */
-const OWN_FOLDERS = ['dsm', 'testgen', 'testcases', 'reports', '.qamaster', 'config'];
+/** The folders and files QAMaster itself writes in a QA project (the automation folder, named after app.name, is passed in). */
+const OWN_FOLDERS = [
+  'dsm',
+  'testgen',
+  'testcases',
+  'reports',
+  '.qamaster',
+  'config/qamaster.json',
+  'config/dsm-config.json',
+  'config/testgen.json',
+  'config/aut-skills.json',
+];
+
+/** 0.4.1 A11: everything QAMaster writes in this QA project, including the AUT skills (AUT_* under the skills folder). */
+export function ownPaths(project: string, extra: string[] = []): string[] {
+  let skills = '.claude/skills';
+  try {
+    const dir = JSON.parse(fs.readFileSync(path.join(project, 'config', 'aut-skills.json'), 'utf8')).skills_dir;
+    if (typeof dir === 'string' && dir) skills = dir.replace(/\/+$/, '');
+  } catch {} // no config: the default folder
+  return [...OWN_FOLDERS, ...extra, `${skills}/AUT_`];
+}
+
+/** A file is own when it is one of the paths, inside one, or starts with one that is an AUT_ prefix. */
+export const isOwn = (file: string, own: string[]) =>
+  own.some((o) => file === o || file.startsWith(`${o}/`) || (o.endsWith('AUT_') && file.startsWith(o)));
+
+/** True when every file changed from `from` to `to` is QAMaster's own. A commit git can't find means stale (false). */
+export function onlyOwnChanges(dir: string, from: string, to: string, own: string[]): boolean {
+  const d = git(['diff', '--name-only', from, to], dir);
+  if (!d.ok) return false;
+  const prefix = git(['rev-parse', '--show-prefix'], dir).out;
+  return d.out
+    .split('\n')
+    .filter(Boolean)
+    .every((f) => isOwn(f.slice(prefix.length), own));
+}
 
 /** Checks a local folder;`branch` defaults to the folder's current branch. */
 function checkFolder(dir: string, spec: SourceSpec, project: string, ownExtra: string[] = []): CheckedSource {
@@ -134,8 +169,8 @@ function checkFolder(dir: string, spec: SourceSpec, project: string, ownExtra: s
       `${rel} is the folder ${prefix.replace(/\/$/, '')} of a bigger repository; routes start at this folder.`,
     );
   // when the QA project is the app repo, QAMaster's own output is the uncommitted change (0.4.1 A11)
-  const own = path.resolve(dir) === path.resolve(project) ? [...OWN_FOLDERS, ...ownExtra] : [];
-  const dirty = git(['status', '--porcelain'], dir)
+  const own = path.resolve(dir) === path.resolve(project) ? ownPaths(project, ownExtra) : [];
+  const dirty = git(['status', '--porcelain', '--untracked-files=all'], dir)
     .out.split('\n')
     .filter((l) => l.trim())
     .filter((l) => {
@@ -147,7 +182,7 @@ function checkFolder(dir: string, spec: SourceSpec, project: string, ownExtra: s
           .split(' -> ')
           .pop() ?? ''
       ).slice(prefix.length);
-      return !own.some((o) => file === o || file.startsWith(`${o}/`));
+      return !isOwn(file, own);
     });
   if (dirty.length) {
     warnings.push(`${rel} has uncommitted changes. The scan reads committed code, so they won't show until committed.`);

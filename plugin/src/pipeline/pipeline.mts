@@ -13,7 +13,7 @@ import { QAMASTER_DIR } from '../integrations/integrations.mts';
 import { pascal } from '../knowledge/build.mts';
 import { BlockedError } from '../shared/errors.mts';
 import { readRunRecord, runHash, validationProblem } from '../testgen/run.mts';
-import { isGitUrl } from './sources.mts';
+import { isGitUrl, onlyOwnChanges, ownPaths } from './sources.mts';
 
 export const STATUSES = ['pending', 'in_progress', 'done', 'failed', 'skipped'] as const;
 export const CHANNELS = ['web', 'mobile-web', 'android', 'ios', 'api'];
@@ -134,7 +134,17 @@ export const STAGES: Stage[] = [
         seen: state?.repos?.[r.name]?.commit,
         now: resolveRef(path.resolve(c.project, r.path), r.branch ?? 'main')?.[1],
       }));
-      const behind = repos.filter((r) => r.seen && r.now && r.seen !== r.now);
+      // 0.4.1 A11: when the QA project is the app repo, commits of QAMaster's own files are not new app code
+      const own = ownPaths(c.project, c.app ? [c.app] : []);
+      const behind = repos.filter(
+        (r) =>
+          r.seen &&
+          r.now &&
+          r.seen !== r.now &&
+          !(
+            path.resolve(c.project, r.path) === path.resolve(c.project) && onlyOwnChanges(c.project, r.seen, r.now, own)
+          ),
+      );
       // AQE swallowed this: a repository that can't be read leaves freshness unknown, so it's said, not hidden
       const unread = repos.filter((r) => r.seen && !r.now);
       return {
@@ -296,10 +306,23 @@ export const STAGES: Stage[] = [
     title: 'First gate run',
     detect: (c) => {
       // the gate's verdicts (step 5), in the app repo (Q22)
-      const verdicts = files(path.join(c.appRepo, QAMASTER_DIR, 'verdicts'), /\.json$/);
-      return verdicts.length
-        ? { done: true, detail: `${verdicts.length} verdict(s)` }
-        : { done: false, detail: 'no verdict yet' };
+      // 0.4.1 A14: a verdict counts once it ran test cases; a pass over 0 of 0 is not a first gate run
+      type V = { head: string; result: string; results: { status: string }[] };
+      const verdicts = files(path.join(c.appRepo, QAMASTER_DIR, 'verdicts'), /\.json$/)
+        .map((f) => ({ v: readJson<V>(f), t: mtime(f) }))
+        .filter((x): x is { v: V; t: number } => !!x.v?.head && Array.isArray(x.v.results))
+        .sort((a, b) => b.t - a.t)
+        .map((x) => x.v);
+      const latest = verdicts.find((v) => v.results.length > 0);
+      if (!latest) {
+        const zero = verdicts.length ? ` (${verdicts.length} verdict(s) ran 0 test cases)` : '';
+        return { done: false, detail: `no test case has run yet${zero}` };
+      }
+      const passed = latest.results.filter((r) => r.status === 'passed' || r.status === 'flaky').length;
+      return {
+        done: true,
+        detail: `latest: ${latest.result}, ${passed} of ${latest.results.length} passed (${latest.head.slice(0, 8)})`,
+      };
     },
     how: () => 'Run qam check --all.',
   },
