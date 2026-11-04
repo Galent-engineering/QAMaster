@@ -8,6 +8,7 @@
 import http from 'node:http';
 
 const writes = [];
+const flaky = {};
 const page = (title, body) =>
   `<!doctype html><html><head><title>${title}</title></head><body>
 <nav><a href="/">Home</a> <a href="/orders">Orders</a> <a href="/settings">Settings</a>
@@ -32,6 +33,16 @@ function ui(api) {
       return send(200, `<!doctype html><title>Sign in</title><h1>Sign in</h1><form method="post" action="/login">
 <input name="username" autocomplete="username"><input name="password" type="password"><button type="submit">Sign in</button></form>`);
     }
+    // reachable without signing in: links to a page that needs it (0.4.0 K1 warning)
+    if (url.pathname === '/public') return send(200, page('Public', '<a href="/orders">Orders</a>'));
+    // answers 503 until it has been asked ?ok=<n> times (0.4.0 back-off); counted per ?key=
+    if (url.pathname === '/flaky') {
+      const key = url.searchParams.get('key') || '';
+      flaky[key] = (flaky[key] || 0) + 1;
+      return flaky[key] <= Number(url.searchParams.get('fail') || 2)
+        ? send(503, page('Busy', '<p>Try again later</p>'))
+        : send(200, page('Flaky', '<p>Here now</p>'));
+    }
     if (!signedIn(req)) return send(302, '', { location: '/login' });
     switch (url.pathname) {
       case '/':
@@ -40,6 +51,10 @@ function ui(api) {
 <dialog id="dlg"><h2>Filter orders</h2><input name="status"><button onclick="this.closest('dialog').close()">Close</button></dialog>
 <button onclick="fetch('${api}orders', {method: 'DELETE'})">Delete all orders</button>
 <div id="help"></div><script>if (location.hash === '#/help') document.getElementById('help').textContent = 'Help';</script>`));
+      case '/loose':
+        // Angular/React style: fields with no <form> around them (0.4.0 K1)
+        return send(200, page('Loose', `<label>Search <input name="q"></label><input placeholder="Quantity" type="number">
+<select name="sort"><option>a</option></select><button>Go</button><a href="/orders">Orders</a>`));
       case '/orders':
         return send(200, page('Orders', `<a href="/orders/101">Order 101</a> <a href="/orders/102">Order 102</a> <a href="/old-orders">Old</a>
 <script>fetch('${api}orders').then((r) => r.json())</script>`));

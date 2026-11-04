@@ -537,7 +537,10 @@ export function build(
     base_url: config.application?.base_url ?? null,
     convention: CONVENTION,
     repos: code?.repos ?? [],
-    crawl: Object.fromEntries(['generated_at', 'mode', 'truncated', 'pending_routes'].map((k) => [k, ui?.[k] ?? null])),
+    crawl: {
+      ...Object.fromEntries(['generated_at', 'mode', 'truncated', 'pending_routes'].map((k) => [k, ui?.[k] ?? null])),
+      ...(ui?.browser_restarts ? { browser_restarts: ui.browser_restarts } : {}),
+    },
     stats: {
       pages: n,
       page_relations: cells.size,

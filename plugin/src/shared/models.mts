@@ -283,6 +283,7 @@ export type UiModel = {
   base_url: string;
   mode: 'full' | 'incremental';
   truncated: boolean;
+  browser_restarts?: number; // times the browser closed mid-crawl and was started again
   pending_routes?: string[];
   pages: UiPage[];
   edges: UiEdge[];

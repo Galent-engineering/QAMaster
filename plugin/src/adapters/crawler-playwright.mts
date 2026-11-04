@@ -21,9 +21,14 @@ import {
   DEFAULT_DENY,
   dedupeEdges,
   type GuardPhase,
+  isBrowserClosedError,
   isSignInPage,
+  isSignInRoute,
   type LoginState,
+  MAX_BROWSER_RESTARTS,
   mergeIncremental,
+  progressLine,
+  RETRY_503_MS,
   Routes,
   slug,
 } from '../dsm/crawl-rules.mts';
@@ -38,6 +43,7 @@ export type CrawlerSettings = {
   credentials: { username?: string; password?: string };
   ask?: (question: string, hidden: boolean) => Promise<string>; // prompts in a terminal, when there is one
   log?: (line: string) => void;
+  retry503Ms?: number[]; // waits between retries of a 503 page; tests shorten them
 };
 
 type Playwright = { chromium: { launch(o: { headless: boolean }): Promise<Browser> } };
@@ -224,7 +230,8 @@ export class PlaywrightCrawler implements Crawler {
     let phase: GuardPhase = 'signing-in';
     let loginRoute: string | null = configuredLoginRoute;
     const blocked: { method: string; url: string }[] = [];
-    const browser = await pw.chromium.launch({ headless: app.headless !== false });
+    const launch = () => pw.chromium.launch({ headless: app.headless !== false });
+    let browser = await launch();
 
     const settle = async (page: Page) => {
       await page.waitForLoadState('networkidle', { timeout: Math.min(timeout, 10000) }).catch(() => {});
@@ -269,9 +276,24 @@ export class PlaywrightCrawler implements Crawler {
       );
       loginRoute = info.login_route ?? loginRoute;
       phase = 'crawling';
+      let current = context;
       return await this.explore(context, opts, routes, info, {
         settle,
         signInHere,
+        // the browser closed: start a new one, with the saved session if there is one. When the session is gone, the
+        // next page lands on the sign-in page and reSignIn signs in again.
+        restart: async () => {
+          await browser.close().catch(() => {});
+          browser = await launch();
+          let saved: StorageState | undefined;
+          try {
+            saved = authFile && fs.existsSync(authFile) ? JSON.parse(fs.readFileSync(authFile, 'utf8')) : undefined;
+          } catch {
+            saved = undefined;
+          }
+          current = await makeContext(saved);
+          return current;
+        },
         reSignIn: async (page: Page) => {
           phase = 're-signing-in';
           try {
@@ -279,7 +301,7 @@ export class PlaywrightCrawler implements Crawler {
           } finally {
             phase = 'crawling'; // fix 2: back on even when signing in fails
           }
-          if (authFile) this.saveSession(authFile, await context.storageState());
+          if (authFile) this.saveSession(authFile, await current.storageState());
         },
         blocked,
       });
@@ -497,6 +519,7 @@ export class PlaywrightCrawler implements Crawler {
       settle: (p: Page) => Promise<void>;
       signInHere: (p: Page) => Promise<boolean>;
       reSignIn: (p: Page) => Promise<void>;
+      restart: () => Promise<BrowserContext>;
       blocked: { method: string; url: string }[];
     },
   ): Promise<UiModel> {
@@ -504,6 +527,7 @@ export class PlaywrightCrawler implements Crawler {
     const timeout = app.page_timeout_ms ?? 30000;
     const maxPages = app.max_pages ?? 300;
     const maxDepth = app.max_depth ?? 8;
+    const login = app.login ?? {};
     const explore = app.explore_clicks ?? {};
     const deny = (explore.deny_text_patterns ?? DEFAULT_DENY).map((p) => new RegExp(`\\b${p}\\b`, 'i'));
     const apiHosts = new Set(app.api_hosts ?? []);
@@ -511,42 +535,44 @@ export class PlaywrightCrawler implements Crawler {
     // API calls the UI makes: method, path, statuses and response keys, never values
     let currentRoute: string | null = null;
     const apiCalls = new Map<string, ApiCall>();
-    context.on('response', async (resp: Response) => {
-      try {
-        const req = resp.request();
-        if (!['xhr', 'fetch'].includes(req.resourceType())) return;
-        const u = new URL(req.url());
-        if (!routes.isAppHost(u.host) && !apiHosts.has(u.host)) return;
-        const pathNorm = u.pathname
-          .replace(/\/\d+(?=\/|$)/g, '/{id}')
-          .replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,}(?=\/|$)/gi, '/{id}');
-        const key = `${req.method()} ${u.host}${pathNorm}`;
-        const rec: ApiCall = apiCalls.get(key) ?? {
-          method: req.method(),
-          host: u.host,
-          path: pathNorm,
-          query_keys: [],
-          statuses: [],
-          pages: [],
-          content_type: null,
-          response_keys: [],
-        };
-        for (const k of u.searchParams.keys()) if (!rec.query_keys.includes(k)) rec.query_keys.push(k);
-        if (!rec.statuses.includes(resp.status())) rec.statuses.push(resp.status());
-        if (currentRoute && !rec.pages.includes(currentRoute) && rec.pages.length < 20) rec.pages.push(currentRoute);
-        const ct = resp.headers()['content-type'] || '';
-        rec.content_type = ct.split(';')[0] || rec.content_type;
-        if (/json/.test(ct) && !(rec.response_keys as string[]).length) {
-          const body = await resp.json().catch(() => null);
-          const sample = Array.isArray(body) ? body[0] : body;
-          if (sample && typeof sample === 'object') rec.response_keys = Object.keys(sample).slice(0, 40);
-          if (Array.isArray(body)) rec.response_is_array = true;
+    const observe = (ctx: BrowserContext) =>
+      ctx.on('response', async (resp: Response) => {
+        try {
+          const req = resp.request();
+          if (!['xhr', 'fetch'].includes(req.resourceType())) return;
+          const u = new URL(req.url());
+          if (!routes.isAppHost(u.host) && !apiHosts.has(u.host)) return;
+          const pathNorm = u.pathname
+            .replace(/\/\d+(?=\/|$)/g, '/{id}')
+            .replace(/\/[0-9a-f]{8}-[0-9a-f-]{27,}(?=\/|$)/gi, '/{id}');
+          const key = `${req.method()} ${u.host}${pathNorm}`;
+          const rec: ApiCall = apiCalls.get(key) ?? {
+            method: req.method(),
+            host: u.host,
+            path: pathNorm,
+            query_keys: [],
+            statuses: [],
+            pages: [],
+            content_type: null,
+            response_keys: [],
+          };
+          for (const k of u.searchParams.keys()) if (!rec.query_keys.includes(k)) rec.query_keys.push(k);
+          if (!rec.statuses.includes(resp.status())) rec.statuses.push(resp.status());
+          if (currentRoute && !rec.pages.includes(currentRoute) && rec.pages.length < 20) rec.pages.push(currentRoute);
+          const ct = resp.headers()['content-type'] || '';
+          rec.content_type = ct.split(';')[0] || rec.content_type;
+          if (/json/.test(ct) && !(rec.response_keys as string[]).length) {
+            const body = await resp.json().catch(() => null);
+            const sample = Array.isArray(body) ? body[0] : body;
+            if (sample && typeof sample === 'object') rec.response_keys = Object.keys(sample).slice(0, 40);
+            if (Array.isArray(body)) rec.response_is_array = true;
+          }
+          apiCalls.set(key, rec);
+        } catch {
+          // observing must never break the crawl
         }
-        apiCalls.set(key, rec);
-      } catch {
-        // observing must never break the crawl
-      }
-    });
+      });
+    observe(context);
 
     const previous = opts.previous ?? null;
     const onlyRoutes = opts.routes?.length ? opts.routes : null;
@@ -579,9 +605,46 @@ export class PlaywrightCrawler implements Crawler {
     }
     for (const s of opts.seeds ?? []) if (!s.includes(':')) enqueue(abs(s), 1, null, 'code-seed');
 
-    const page = await context.newPage();
-    page.on('dialog', (d) => (app.safety?.dismiss_dialogs === false ? d.accept() : d.dismiss()).catch(() => {}));
+    const newPage = async () => {
+      const p = await context.newPage();
+      p.on('dialog', (d) => (app.safety?.dismiss_dialogs === false ? d.accept() : d.dismiss()).catch(() => {}));
+      return p;
+    };
+    let page = await newPage();
     let relogins = 0;
+    let restarts = 0;
+    let warnedSignIn = false;
+    const started = Date.now();
+    const retry503 = this.s.retry503Ms ?? RETRY_503_MS;
+    // a page that answers 503 (a rate-limited demo) gets a short, growing wait and another GET, a few times
+    const open = async (url: string, route: string) => {
+      let resp = await page.goto(url, { timeout, waitUntil: 'domcontentloaded' });
+      for (let i = 0; resp?.status() === 503 && i < retry503.length; i++) {
+        this.log(`${route} 503, retry ${i + 1}/${retry503.length} in ${retry503[i] / 1000}s`);
+        await page.waitForTimeout(retry503[i]);
+        resp = await page.goto(url, { timeout, waitUntil: 'domcontentloaded' });
+      }
+      return resp;
+    };
+    const progress = (route: string, detail: string) =>
+      this.log(
+        progressLine({
+          done: pages.size,
+          queued: pages.size + queue.length,
+          maxPages,
+          elapsedMs: Date.now() - started,
+          route,
+          detail,
+        }),
+      );
+    const warnSignIn = (target: string | null) => {
+      if (warnedSignIn || info.required || this.s.credentials.username || !target) return;
+      if (target !== info.login_route && !isSignInRoute(target)) return;
+      warnedSignIn = true;
+      this.log(
+        `warning: pages need sign-in and there's no ${app.secrets_file || '.env.dsm'} (or ${login.username_env || 'DSM_APP_USERNAME'} / ${login.password_env || 'DSM_APP_PASSWORD'}): forms behind the sign-in won't be crawled`,
+      );
+    };
 
     while (queue.length && pages.size < maxPages) {
       const item = queue.shift() as (typeof queue)[number];
@@ -602,13 +665,13 @@ export class PlaywrightCrawler implements Crawler {
         error: null,
       };
       try {
-        let resp = await page.goto(item.url, { timeout, waitUntil: 'domcontentloaded' });
+        let resp = await open(item.url, item.route);
         rec.status = resp ? resp.status() : null;
         await h.settle(page);
         if (info.required && info.mode === 'auto' && relogins < 2 && (await h.signInHere(page))) {
           relogins++; // the session ended mid-crawl: sign in again, then reload the page
           await h.reSignIn(page);
-          resp = await page.goto(item.url, { timeout, waitUntil: 'domcontentloaded' });
+          resp = await open(item.url, item.route);
           rec.status = resp ? resp.status() : null;
           await h.settle(page);
         }
@@ -616,6 +679,7 @@ export class PlaywrightCrawler implements Crawler {
         if (info.login_route && finalRoute === info.login_route && item.route !== finalRoute) {
           rec.redirect_to = finalRoute;
           rec.error = 'redirected to the sign-in page (session lost or no access)';
+          warnSignIn(finalRoute);
           pages.set(item.route, rec);
           continue;
         }
@@ -624,18 +688,29 @@ export class PlaywrightCrawler implements Crawler {
           edges.push({ from: item.route, to: finalRoute, type: 'redirect', via: null, label: 'redirect' });
           if (!visited.has(finalRoute) && routes.allowed(page.url()))
             enqueue(page.url(), item.depth, item.route, 'redirect');
+          warnSignIn(finalRoute);
           pages.set(item.route, rec);
-          this.log(`${pages.size}/${maxPages} ${item.route} -> ${finalRoute}`);
+          progress(item.route, `-> ${finalRoute}`);
           continue;
         }
         await this.recordPage(page, item, rec, edges, routes, enqueue, maxDepth, h.settle, explore, deny);
       } catch (err) {
+        if (isBrowserClosedError(err) && restarts < MAX_BROWSER_RESTARTS) {
+          restarts++;
+          this.log(`browser closed on ${item.route}: starting a new one (restart ${restarts}/${MAX_BROWSER_RESTARTS})`);
+          context = await h.restart();
+          observe(context);
+          page = await newPage();
+          relogins = 0;
+          queue.unshift(item); // crawl it again in the new browser
+          continue;
+        }
         rec.error = String((err as Error).message ?? err)
           .split('\n')[0]
           .slice(0, 300);
       }
       pages.set(item.route, rec);
-      this.log(`${pages.size}/${maxPages} ${item.route} ${rec.status ?? ''}${rec.error ? ` ERROR ${rec.error}` : ''}`);
+      progress(item.route, `${rec.status ?? ''}${rec.error ? ` ERROR ${rec.error}` : ''}`);
     }
 
     let outPages = [...pages.values()];
@@ -656,6 +731,7 @@ export class PlaywrightCrawler implements Crawler {
       mode: onlyRoutes ? 'incremental' : 'full',
       recrawled_routes: [...pages.keys()],
       login: info,
+      browser_restarts: restarts,
       truncated: queue.length > 0,
       pending_routes: queue.map((q) => q.route),
       blocked_requests: h.blocked.slice(0, 200),

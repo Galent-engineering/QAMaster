@@ -198,6 +198,37 @@ export function isSignInPage(state: LoginState, route: string | null, loginRoute
   return loginRoute !== null ? route === loginRoute : SIGN_IN_ROUTE.test(route);
 }
 
+/** Playwright's error when the page, context or browser it was using is gone. */
+export const isBrowserClosedError = (err: unknown) =>
+  /has been closed|Target closed|browser has disconnected/i.test(String((err as Error)?.message ?? err));
+
+/** Waits before each retry of a page that answers 503: short and doubling, three retries at most. */
+export const RETRY_503_MS = [2000, 4000, 8000];
+
+/** Browser restarts allowed in one crawl. */
+export const MAX_BROWSER_RESTARTS = 2;
+
+/**
+ * The progress line: pages crawled out of pages queued so far (never past max_pages), and the minutes left from the
+ * average time per page so far. Nothing is left to estimate once the queue is done.
+ */
+export function progressLine(p: {
+  done: number;
+  queued: number;
+  maxPages: number;
+  elapsedMs: number;
+  route: string;
+  detail: string;
+}): string {
+  const total = Math.min(p.queued, p.maxPages);
+  const left = total - p.done;
+  const minutes = left > 0 && p.done > 0 ? Math.max(1, Math.ceil(((p.elapsedMs / p.done) * left) / 60000)) : 0;
+  return `${p.done}/${total} queued${minutes ? `, ~${minutes} min left` : ''} ${p.route} ${p.detail}`.trimEnd();
+}
+
+/** A route named like a sign-in page. */
+export const isSignInRoute = (route: string) => SIGN_IN_ROUTE.test(route);
+
 export const slug = (s: string | null | undefined) =>
   (s ?? '')
     .toLowerCase()
