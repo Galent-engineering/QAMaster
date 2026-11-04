@@ -82,7 +82,10 @@ test('Q47: on a terminal, setup asks, uses the chosen folder, and records it', (
   try {
     const code = setup(loadConfig(qa), ['--no-install', '--url', 'https://shop.example.test/'], false, {
       tty: true,
-      ask: (p) => (prompts.push(p), '2'),
+      ask: (p) => {
+        prompts.push(p);
+        return '2';
+      },
     });
     assert.equal(code, 0);
   } finally {
