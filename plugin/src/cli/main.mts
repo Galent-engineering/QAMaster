@@ -18,6 +18,7 @@ import { gate } from './gate.mts';
 import { autSkills } from './knowledge.mts';
 import { doctor, integrations, pipeline, setup } from './project.mts';
 import { publish } from './publish.mts';
+import { feedback, report } from './reports.mts';
 import { review, testgen } from './testgen.mts';
 
 export const PASS = 0;
@@ -77,6 +78,8 @@ const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promi
   automate: (opts, args) => gate(loadConfig(opts.repo), 'automate', args, opts.json),
   run: (opts, args) => gate(loadConfig(opts.repo), 'run', args, opts.json),
   check: (opts, args) => gate(loadConfig(opts.repo), 'check', args, opts.json),
+  feedback: (opts, args) => feedback(loadConfig(opts.repo), args, opts.json),
+  report: (opts, args) => report(loadConfig(opts.repo), args, opts.json),
 };
 
 export function pluginVersion(): string {

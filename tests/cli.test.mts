@@ -30,9 +30,9 @@ test('version prints the plugin manifest version', () => {
 });
 
 test('a command not built yet is blocked with a reason', () => {
-  const r = qam('--repo', '.', 'feedback');
+  const r = qam('--repo', '.', 'export');
   assert.equal(r.code, BLOCKED);
-  assert.equal(r.err.trim(), "Blocked: qam feedback isn't built yet.");
+  assert.equal(r.err.trim(), "Blocked: qam export isn't built yet.");
 });
 
 test('an unknown command is blocked and points to help', () => {
@@ -42,9 +42,9 @@ test('an unknown command is blocked and points to help', () => {
 });
 
 test('--json reports blocked as JSON on stdout', () => {
-  const r = qam('--json', 'report');
+  const r = qam('--json', 'export');
   assert.equal(r.code, BLOCKED);
-  assert.deepEqual(JSON.parse(r.out), { result: 'blocked', reasons: ["qam report isn't built yet."] });
+  assert.deepEqual(JSON.parse(r.out), { result: 'blocked', reasons: ["qam export isn't built yet."] });
 });
 
 test('--repo without a path is blocked', () => {
