@@ -1604,3 +1604,33 @@ test('0.2.1 A2: the default plan name is app.name, else the folder name', () => 
   fs.writeFileSync(path.join(dir, 'config/qamaster.json'), JSON.stringify({ app: { name: 'JuiceShopOnline' } }));
   assert.equal(adoSettings(loadConfig(dir, { ...env })).repoName, 'JuiceShopOnline');
 });
+
+// 0.4.1 A1: the org's URL pasted into QAMASTER_ADO_ORG broke every call with a 400 about ':' in the path
+test('0.4.1 A1: QAMASTER_ADO_ORG takes the name or the organization URL', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-org-url-'));
+  const org = (v: string) =>
+    adoSettings(loadConfig(dir, { QAMASTER_ADO_ORG: v, QAMASTER_ADO_PROJECT: 'Shop' })).organization;
+  for (const v of [
+    'sarvagyameel',
+    ' sarvagyameel ',
+    'https://dev.azure.com/sarvagyameel',
+    'https://dev.azure.com/sarvagyameel/',
+    'https://dev.azure.com/sarvagyameel/Toolshop/_testPlans',
+    'http://dev.azure.com/sarvagyameel/',
+    'https://sarvagyameel@dev.azure.com/sarvagyameel',
+    'dev.azure.com/sarvagyameel',
+    'https://sarvagyameel.visualstudio.com',
+    'https://sarvagyameel.visualstudio.com/',
+    'https://sarvagyameel.visualstudio.com/DefaultCollection/Toolshop',
+    'sarvagyameel/',
+  ])
+    assert.equal(org(v), 'sarvagyameel', v);
+});
+
+test('0.4.1 A1: the hint for a missing setting shows the organization name form', () => {
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-org-hint-'));
+  assert.throws(
+    () => adoSettings(loadConfig(dir, { QAMASTER_ADO_ORG: 'org' })),
+    /QAMASTER_ADO_ORG=<organization> \(its name, as in dev\.azure\.com\/<name>\)/,
+  );
+});

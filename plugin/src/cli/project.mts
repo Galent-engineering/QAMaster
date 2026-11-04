@@ -11,6 +11,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
+import { noProjectError } from '../adapters/ado.mts';
 import type { TestCaseStore, WriteCheck } from '../adapters/base.mts';
 import { withCache } from '../adapters/cache.mts';
 import { buildStore, RUNNERS } from '../adapters/registry.mts';
@@ -26,7 +27,7 @@ import {
   verify,
 } from '../integrations/integrations.mts';
 import { mark, reset, start, status, table } from '../pipeline/pipeline.mts';
-import { pluginVersion, type SetupOptions, type Step, setupProject } from '../pipeline/setup.mts';
+import { PLUGIN_ROOT, pluginVersion, type SetupOptions, type Step, setupProject } from '../pipeline/setup.mts';
 import {
   checkSource,
   DEFAULT_EXCLUDE,
@@ -368,7 +369,12 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
   const noApp = !!dsm && !app.base_url && !repos.length;
   for (const r of repos) {
     try {
-      const c = checkSource({ source: r.path, branch: r.branch, name: r.name }, dir);
+      const auto = automationFolder(cfg);
+      const c = checkSource(
+        { source: r.path, branch: r.branch, name: r.name },
+        dir,
+        auto ? [path.relative(dir, auto)] : [],
+      );
       checks.push({
         check: `source ${r.name}`,
         ok: true,
@@ -378,6 +384,29 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
       if (!(e instanceof BlockedError)) throw e;
       checks.push({ check: `source ${r.name}`, ok: false, detail: e.message });
     }
+  }
+  // 0.4.1 A8: .qamaster/bin/qam runs the plugin recorded in .qamaster/plugin.json; another one than this is a second copy
+  let recorded: unknown;
+  try {
+    recorded = JSON.parse(fs.readFileSync(path.join(dir, QAMASTER_DIR, 'plugin.json'), 'utf8')).plugin_root;
+  } catch {} // no launcher written yet: nothing to compare
+  if (typeof recorded === 'string') {
+    const real = (p: string) => {
+      try {
+        return fs.realpathSync(p);
+      } catch {
+        return path.resolve(p);
+      }
+    };
+    const other = real(recorded) !== real(PLUGIN_ROOT);
+    checks.push({
+      check: 'launcher',
+      ok: true,
+      detail: other
+        ? `${QAMASTER_DIR}/bin/qam runs ${recorded}, not the plugin running now (${PLUGIN_ROOT}): run qam setup again from the installed plugin.`
+        : 'runs this plugin',
+      ...(other ? { state: 'unknown' as const } : {}),
+    });
   }
   // a config written by an older QAMaster keeps its values (setup never overwrites), so say which defaults moved on
   const qamFile = path.join(dir, 'config', 'qamaster.json');
@@ -433,8 +462,11 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
       at: new Date().toISOString(),
       detail: `${built.where()}: ${cases.size} test case(s) in the plan`,
     };
-  } catch (e) {
-    if (!(e instanceof BlockedError)) throw e;
+  } catch (caught) {
+    if (!(caught instanceof BlockedError)) throw caught;
+    const e: BlockedError =
+      !(caught instanceof NoProjectError) && cfg.store === 'ado' ? ((await noProjectError(cfg)) ?? caught) : caught;
+    // the organization and a token but no project (0.4.1 A2): list the projects, pick none
     store = { ok: false, at: new Date().toISOString(), detail: e.message.replace(/\s+/g, ' ') };
     // the numbered plan choices and the project list keep their lines, and are also data for --json
     if (e instanceof NoPlanError) Object.assign(storeCheck, { plans: e.plans, createName: e.createName });

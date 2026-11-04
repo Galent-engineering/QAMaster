@@ -360,14 +360,22 @@ export class AdoClient {
   listProjects = () => this.pages('projects', {}, true);
 
   /** The error for a missing project: the organization's projects, closest to the configured name first, and the fixes. */
-  private async noProject(): Promise<NoProjectError> {
+  async noProject(): Promise<NoProjectError> {
+    // no project set at all (0.4.1 A2): the same listing, sorted, with nothing offered as "closest"
+    const unset = !this.project;
     // ADO answers TF200016 for a project the token can't see as well as for a missing one
-    const head = `Azure DevOps project '${this.project}' doesn't exist in ${this.organization}, or this token has no access to it.`;
+    const head = unset
+      ? `QAMASTER_ADO_PROJECT isn't set (organization ${this.organization}).`
+      : `Azure DevOps project '${this.project}' doesn't exist in ${this.organization}, or this token has no access to it.`;
     const fixes = (which: string) =>
       [
-        `  - set QAMASTER_ADO_PROJECT=<${which}, or a new name> in the repo's .env;`,
+        `  - set QAMASTER_ADO_PROJECT=<${which}${unset ? '' : ', or a new name'}> in the repo's .env;`,
         "  - or set QAMASTER_STORE=file in the repo's .env to keep test cases in a local file, with no Azure DevOps (Q34);",
-        '  - or, to create a project with this name, run `qam publish <run>`: its preview shows what --apply would create.',
+        ...(unset
+          ? []
+          : [
+              '  - or, to create a project with this name, run `qam publish <run>`: its preview shows what --apply would create.',
+            ]),
       ].join('\n');
     let projects: string[];
     try {
@@ -384,13 +392,14 @@ export class AdoClient {
     const wanted = this.project.toLowerCase();
     const rank = (n: string) => [n.toLowerCase().includes(wanted) ? 0 : 1, distance(n, wanted)];
     const sorted = [...projects].sort((a, b) => {
+      if (unset) return a.localeCompare(b);
       const [ra, rb] = [rank(a), rank(b)];
       return ra[0] - rb[0] || ra[1] - rb[1];
     });
     const suggestions = sorted.slice(0, MAX_PROJECT_CHOICES);
     const more = sorted.length - suggestions.length;
     const listed = suggestions.length
-      ? `Existing projects, closest first:\n${suggestions.map((n) => `  ${n}`).join('\n')}${more > 0 ? `\n  ... and ${more} more` : ''}`
+      ? `Existing projects${unset ? '' : ', closest first'}:\n${suggestions.map((n) => `  ${n}`).join('\n')}${more > 0 ? `\n  ... and ${more} more` : ''}`
       : 'The organization has no projects yet.';
     return new NoProjectError(`${head} ${listed}\nEither:\n${fixes('one of them')}`, projects, suggestions);
   }
@@ -1220,13 +1229,40 @@ export class AdoRequirements extends AdoItems implements RequirementSource {
   }
 }
 
+/**
+ * The organization's name from what was typed: the name, or its URL (https://dev.azure.com/<name>[/…] or
+ * https://<name>.visualstudio.com[/…]). A URL left as it was reaches the API path as 'https%3A…' and ADO answers 400 (0.4.1 A1).
+ */
+export function orgName(value: string | undefined): string | undefined {
+  let s = (value ?? '').trim();
+  const vs = /^(?:https?:\/\/)?([^/@.]+)\.visualstudio\.com(?:[/?#]|$)/i.exec(s);
+  if (vs) return vs[1];
+  s = s.replace(/^(?:https?:\/\/)?(?:[^/@]+@)?dev\.azure\.com\//i, '');
+  return s.split(/[/?#]/)[0] || undefined;
+}
+
+/**
+ * The missing-project error for an organization and token with no QAMASTER_ADO_PROJECT: the projects to choose from.
+ * null when it can't be asked (no organization, or no credentials), so the plain message stands.
+ */
+export async function noProjectError(config: Config): Promise<NoProjectError | null> {
+  const organization = orgName(config.env.QAMASTER_ADO_ORG);
+  if (!organization || config.env.QAMASTER_ADO_PROJECT) return null;
+  try {
+    authHeader(config.env);
+  } catch {
+    return null;
+  }
+  return new AdoClient(organization, '', () => authHeader(config.env)).noProject();
+}
+
 /** The settings for QAMASTER_STORE=ado and QAMASTER_REQUIREMENTS=ado. */
 export function adoSettings(config: Config): AdoSettings {
-  const organization = config.env.QAMASTER_ADO_ORG;
+  const organization = orgName(config.env.QAMASTER_ADO_ORG);
   const project = config.env.QAMASTER_ADO_PROJECT;
   if (!organization || !project)
     throw new BlockedError(
-      `Don't know which Azure DevOps project to use. Add these lines to ${config.root}/.env:\n  QAMASTER_ADO_ORG=<organization>\n  QAMASTER_ADO_PROJECT=<project>`,
+      `Don't know which Azure DevOps project to use. Add these lines to ${config.root}/.env:\n  QAMASTER_ADO_ORG=<organization> (its name, as in dev.azure.com/<name>)\n  QAMASTER_ADO_PROJECT=<project>`,
     );
   return {
     organization,

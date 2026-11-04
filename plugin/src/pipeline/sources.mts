@@ -89,8 +89,11 @@ export function sameRemote(a: string, b: string): boolean {
 const nameOf = (s: string) =>
   path.basename(s.replace(/\.git$/, '').replace(/\/+$/, '')).replace(/[^\w.-]+/g, '-') || 'app';
 
-/** Checks a local folder; `branch` defaults to the folder's current branch. */
-function checkFolder(dir: string, spec: SourceSpec, project: string): CheckedSource {
+/** The folders QAMaster itself writes in a QA project (the automation folder, named after app.name, is passed in). */
+const OWN_FOLDERS = ['dsm', 'testgen', 'testcases', 'reports', '.qamaster', 'config'];
+
+/** Checks a local folder;`branch` defaults to the folder's current branch. */
+function checkFolder(dir: string, spec: SourceSpec, project: string, ownExtra: string[] = []): CheckedSource {
   const notes: string[] = [];
   const warnings: string[] = [];
   if (!fs.existsSync(dir) || !fs.statSync(dir).isDirectory()) {
@@ -130,17 +133,33 @@ function checkFolder(dir: string, spec: SourceSpec, project: string): CheckedSou
     notes.push(
       `${rel} is the folder ${prefix.replace(/\/$/, '')} of a bigger repository; routes start at this folder.`,
     );
-  if (git(['status', '--porcelain'], dir).out) {
+  // when the QA project is the app repo, QAMaster's own output is the uncommitted change (0.4.1 A11)
+  const own = path.resolve(dir) === path.resolve(project) ? [...OWN_FOLDERS, ...ownExtra] : [];
+  const dirty = git(['status', '--porcelain'], dir)
+    .out.split('\n')
+    .filter((l) => l.trim())
+    .filter((l) => {
+      // paths are relative to the repository's root: take off the folder this one is in
+      const file = (
+        l
+          .replace(/^\S+\s+/, '')
+          .replace(/^"|"$/g, '')
+          .split(' -> ')
+          .pop() ?? ''
+      ).slice(prefix.length);
+      return !own.some((o) => file === o || file.startsWith(`${o}/`));
+    });
+  if (dirty.length) {
     warnings.push(`${rel} has uncommitted changes. The scan reads committed code, so they won't show until committed.`);
   }
   return { repo, notes, warnings, cloned: false };
 }
 
 /** Checks a source and returns its entry for dsm-config.json. A URL with `cloneTo` is cloned (the one write). */
-export function checkSource(spec: SourceSpec, project: string): CheckedSource {
+export function checkSource(spec: SourceSpec, project: string, ownExtra: string[] = []): CheckedSource {
   const v = gitVersion();
   if (v.problem) throw new BlockedError(v.problem);
-  if (!isGitUrl(spec.source)) return checkFolder(path.resolve(project, spec.source), spec, project);
+  if (!isGitUrl(spec.source)) return checkFolder(path.resolve(project, spec.source), spec, project, ownExtra);
 
   const url = spec.source;
   if (!spec.cloneTo === !spec.useClone) {

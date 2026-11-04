@@ -110,7 +110,7 @@ export const STAGES: Stage[] = [
       };
     },
     how: () =>
-      'Set QAMASTER_ADO_ORG and QAMASTER_ADO_PROJECT in the app repo .env (token: QAMASTER_ADO_TOKEN or az login), then run qam doctor.',
+      'Set QAMASTER_ADO_ORG (the organization name, as in dev.azure.com/<name>) and QAMASTER_ADO_PROJECT in the app repo .env (token: QAMASTER_ADO_TOKEN or az login), then run qam doctor.',
   },
   {
     id: 'context',
