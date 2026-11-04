@@ -265,10 +265,9 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
       }
     }
     if (unchanged.length) save(unchanged.map((change) => ({ change })));
-    if (!heldBack) {
-      const record = { publishedAt: now, store: where, ...applied, unchanged: unchanged.length };
-      fs.writeFileSync(path.join(run.dir, 'published.json'), `${JSON.stringify(record, null, 1)}\n`);
-    }
+    // recorded even when cases were held back, so the pipeline can say so (E7)
+    const published = { publishedAt: now, store: where, ...applied, unchanged: unchanged.length, heldBack };
+    fs.writeFileSync(path.join(run.dir, 'published.json'), `${JSON.stringify(published, null, 1)}\n`);
     lines.push(
       `Created ${applied.created}, updated ${applied.updated}, retired ${applied.retired}, unchanged ${unchanged.length}; ${heldBack} held back by a conflict; smoke in the plan: ${smokeInStore + smokeWritten} of max ${max}.`,
     );

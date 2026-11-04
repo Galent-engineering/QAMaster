@@ -319,15 +319,21 @@ test('publish: --refresh is accepted, and a clean apply marks the run published 
   assert.equal(stage().status, 'done');
 });
 
-test('publish: a run with a conflict left is not marked published', () => {
+// 0.2.1 verification E7: an apply that held cases back left the stage at "nothing published yet"
+test('E7: an apply with a conflict left records it, and the status says done with the cases held back', () => {
   const p = project();
   p.writeRun([kase('TC-CART-001')]);
   p.qam('publish', RUN, '--apply');
   fs.rmSync(path.join(p.dir, `testgen/output/${RUN}/published.json`));
   fs.writeFileSync(path.join(p.dir, CSV), p.read(CSV).replace('Case TC-CART-001', 'Edited by hand'));
   p.writeRun([kase('TC-CART-001', { title: 'Mine' })]);
-  assert.equal(p.qam('publish', RUN, '--apply').status, 1);
-  assert.equal(p.exists(`testgen/output/${RUN}/published.json`), false);
+  assert.equal(p.qam('publish', RUN, '--apply').status, 1, 'a conflict left is still exit 1');
+  const rec = JSON.parse(p.read(`testgen/output/${RUN}/published.json`));
+  assert.equal(rec.heldBack, 1);
+  const st = p.json('pipeline', 'status');
+  const stage = (st.stages ?? st).find((s: { stage: string }) => s.stage === 'publish');
+  assert.equal(stage.status, 'done');
+  assert.match(stage.evidence, /1 published run\(s\); 1 held back by a conflict/);
 });
 
 // From the 0.2.0 publish walkthrough: 4 previews promised 38 smoke cases, the plan-wide cap let 20 through, unannounced.

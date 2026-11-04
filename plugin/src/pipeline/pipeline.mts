@@ -221,10 +221,14 @@ export const STAGES: Stage[] = [
     id: 'publish',
     title: 'Publish',
     detect: (c) => {
-      // published.json, written by qam publish --apply (feature 7)
+      // published.json, written by qam publish --apply (feature 7), with the cases a conflict held back (E7)
       const ok = runs(c, 'published.json', () => true);
+      const held = ok.reduce((n, d) => {
+        const rec = readJson<{ heldBack?: number }>(path.join(c.project, 'testgen', 'output', d, 'published.json'));
+        return n + (rec?.heldBack ?? 0);
+      }, 0);
       return ok.length
-        ? { done: true, detail: `${ok.length} published run(s)` }
+        ? { done: true, detail: `${ok.length} published run(s)${held ? `; ${held} held back by a conflict` : ''}` }
         : { done: false, detail: 'nothing published yet' };
     },
     how: () => 'Run qam publish <run> to preview, and qam publish <run> --apply after the person agrees.',
