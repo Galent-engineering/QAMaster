@@ -55,6 +55,14 @@ function load(cfg: Config): Project {
   const ls = (d: string) => (fs.existsSync(d) ? fs.readdirSync(d) : []);
   const repos = new Map((dsmCfg?.repositories ?? []).map((r) => [r.name, path.resolve(dir, r.path)]));
   const commits = new Map(((dsm.repos ?? []) as { name: string; commit?: string }[]).map((r) => [r.name, r.commit]));
+  const show = (file: string): string | null => {
+    const [repo, ...rest] = file.split(':');
+    const at = repos.get(repo);
+    const commit = commits.get(repo);
+    if (!at || !commit) return null;
+    const r = git(at, ['show', `${commit}:./${rest.join(':')}`]);
+    return r.ok ? r.stdout.toString('utf8') : null;
+  };
   const facts = new Facts({
     dsm,
     codeFiles: Object.keys(codeModel?.files ?? {}),
@@ -71,15 +79,11 @@ function load(cfg: Config): Project {
     },
     // the file at the commit the DSM scanned, read-only (Q15); paths are relative to the configured folder
     lines: (file) => {
-      const [repo, ...rest] = file.split(':');
-      const at = repos.get(repo);
-      const commit = commits.get(repo);
-      if (!at || !commit) return null;
-      const r = git(at, ['show', `${commit}:./${rest.join(':')}`]);
-      if (!r.ok) return null;
-      const t = r.stdout.toString('utf8'); // a final newline ends the last line; it doesn't start another
-      return t === '' ? 0 : t.split('\n').length - (t.endsWith('\n') ? 1 : 0);
+      const t = show(file);
+      if (t === null) return null;
+      return t === '' ? 0 : t.split('\n').length - (t.endsWith('\n') ? 1 : 0); // a final newline ends the last line; it doesn't start another
     },
+    text: show,
     requirements: (scope) => {
       const saved = readJson<{ requirements?: { id: string }[] }>(
         path.join(dir, 'requirements', scope, 'requirements.json'),

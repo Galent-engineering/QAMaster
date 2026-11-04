@@ -180,6 +180,8 @@ const hintFor = (text: unknown) => {
   return `name the test data instead (e.g. "the registered user's ${what}"); the value belongs in test_data only`;
 };
 
+const API_VERB = /\b(GET|POST|PUT|PATCH|DELETE)\b/;
+
 export function validate(
   manifest: Manifest | null,
   cases: TestCase[] | null,
@@ -221,6 +223,17 @@ export function validate(
       if (v) rest = rest.split(v).join(' ');
     return Array.from(t).length < minLen || Boolean(vagueRe?.test(rest));
   };
+  // the files a case cites as code: evidence (its own and its steps'), without the line
+  const cites = (tc: TestCase) =>
+    [
+      ...new Set(
+        [tc.evidence ?? [], ...(tc.steps ?? []).map((st) => st.evidence ?? [])]
+          .flat()
+          .map(String)
+          .filter((r) => r.startsWith('code:'))
+          .map((r) => r.slice(5).split(':').slice(0, 2).join(':')),
+      ),
+    ].sort();
   const checkEvidence = (where: string, refs: unknown) => {
     if (!Array.isArray(refs) || !refs.length) {
       errors.push(`${where}: no evidence`);
@@ -369,6 +382,26 @@ export function validate(
         }
       }
       checkEvidence(sw, st.evidence);
+      // A12: an API step's request body uses the field names of the request model the case cites
+      if (API_VERB.test(s(st.action))) {
+        const keys = Object.keys(tc.test_data ?? {});
+        const cited = cites(tc);
+        if (!cited.length) errors.push(`${sw}: an API step's request body needs code: evidence for its request model`);
+        else {
+          const texts = cited.flatMap((f) => {
+            const t = facts.input.text?.(f);
+            return typeof t === 'string' ? [[f, t] as const] : [];
+          });
+          if (texts.length)
+            for (const k of keys) {
+              const re = new RegExp(`(^|[^A-Za-z0-9_])${escapeRe(k)}([^A-Za-z0-9_]|$)`);
+              if (!texts.some(([, t]) => re.test(t)))
+                errors.push(
+                  `${sw}: test_data key "${k}" isn't in the cited code (${cited.join(', ')}): cite the request model's file and use its field names`,
+                );
+            }
+        }
+      }
       if (!route) return;
       if (prev === null) {
         if (!facts.entries.has(route) && tc.start_via !== 'deep-link') {

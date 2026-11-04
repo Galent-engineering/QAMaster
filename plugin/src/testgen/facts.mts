@@ -59,6 +59,7 @@ export type FactsInput = {
   domainSkills: string[]; // Domain_Test_Design_Skill and its sub-skills
   skill: (name: string) => string | null; // the SKILL.md text of an AUT or domain skill
   lines: (file: string) => number | null; // lines in "<repo>:<path>" at the scanned commit; null if it can't be read
+  text?: (file: string) => string | null; // the text of "<repo>:<path>" at the scanned commit; null if it can't be read
   requirements: (scope: string) => string[] | null; // IDs saved under requirements/<scope>/; null if none
 };
 
