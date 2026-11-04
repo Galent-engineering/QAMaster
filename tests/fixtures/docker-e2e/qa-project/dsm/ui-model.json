@@ -1,0 +1,151 @@
+{
+ "generated_at": "2026-11-04T07:00:00.000Z",
+ "base_url": "http://juice-shop:3000",
+ "mode": "full",
+ "truncated": false,
+ "pending_routes": [],
+ "api_calls": [],
+ "edges": [
+  {
+   "from": "/",
+   "to": "/about",
+   "type": "link",
+   "via": "/::link:about-us",
+   "label": "About Us"
+  },
+  {
+   "from": "/",
+   "to": "/search",
+   "type": "link",
+   "via": "/::link:search",
+   "label": "Search"
+  },
+  {
+   "from": "/about",
+   "to": "/",
+   "type": "link",
+   "via": "/about::link:home",
+   "label": "Home"
+  },
+  {
+   "from": "/search",
+   "to": "/",
+   "type": "link",
+   "via": "/search::link:home",
+   "label": "Home"
+  }
+ ],
+ "pages": [
+  {
+   "route": "/",
+   "url": "http://juice-shop:3000/#/",
+   "depth": 0,
+   "discovered_by": "start",
+   "status": 200,
+   "title": "OWASP Juice Shop",
+   "headings": [
+    "OWASP Juice Shop"
+   ],
+   "elements": [
+    {
+     "key": "/::link:about-us",
+     "kind": "link",
+     "text": "About Us",
+     "visible": true,
+     "selector": "#about-us",
+     "href": "/about"
+    },
+    {
+     "key": "/::link:search",
+     "kind": "link",
+     "text": "Search",
+     "visible": true,
+     "selector": "#search",
+     "href": "/search"
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/about",
+   "url": "http://juice-shop:3000/#/about",
+   "depth": 1,
+   "discovered_by": "link",
+   "status": 200,
+   "title": "About Us",
+   "headings": [
+    "About Us"
+   ],
+   "elements": [
+    {
+     "key": "/about::link:terms-of-use",
+     "kind": "link",
+     "text": "Terms of Use",
+     "visible": true,
+     "selector": "#terms-of-use",
+     "href": null
+    },
+    {
+     "key": "/about::link:home",
+     "kind": "link",
+     "text": "Home",
+     "visible": true,
+     "selector": "#home",
+     "href": "/"
+    }
+   ],
+   "forms": [],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  },
+  {
+   "route": "/search",
+   "url": "http://juice-shop:3000/#/search",
+   "depth": 1,
+   "discovered_by": "link",
+   "status": 200,
+   "title": "Search Results",
+   "headings": [
+    "Search Results"
+   ],
+   "elements": [
+    {
+     "key": "/search::link:home",
+     "kind": "link",
+     "text": "Home",
+     "visible": true,
+     "selector": "#home",
+     "href": "/"
+    }
+   ],
+   "forms": [
+    {
+     "key": "/search::form:search",
+     "id": "search",
+     "name": "search",
+     "method": "get",
+     "target": null,
+     "fields": [
+      {
+       "key": "/search::field:search",
+       "label": "Search",
+       "name": "q",
+       "type": "text",
+       "required": false
+      }
+     ],
+     "submits": [
+      "Search"
+     ]
+    }
+   ],
+   "tables": [],
+   "dialogs": [],
+   "error": null
+  }
+ ]
+}

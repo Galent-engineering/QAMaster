@@ -1,0 +1,21 @@
+{
+ "status": "pass",
+ "hallucination_tolerance": 0,
+ "cases": 6,
+ "errors": [],
+ "gaps": [],
+ "by_category": {
+  "Positive": 5,
+  "Negative": 0,
+  "Boundary": 0,
+  "E2E": 0,
+  "Business": 0,
+  "Edge": 1
+ },
+ "by_type": {
+  "Functional": 6
+ },
+ "dsm_generated_at": "2026-11-04T07:00:00+00:00",
+ "run_hash": "2ce0e029679cdd4f255ec51f8be315e484f6685aa387d984ed8ed116aea4f5ff",
+ "validated_at": "2026-11-04T08:08:44.223Z"
+}

@@ -1,0 +1,13 @@
+[project]
+name = "checkmaster-demo"
+version = "0.1.0"
+description = "A tiny shop page with pytest-playwright tests, for QAMaster's Docker check"
+# 3.11 is what the container's python3 is, so uv never downloads a Python (the check asserts that)
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8", "pytest-playwright>=0.7"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

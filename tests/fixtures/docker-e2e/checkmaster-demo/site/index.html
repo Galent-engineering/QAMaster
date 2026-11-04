@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Demo shop</title>
+</head>
+<body>
+  <h1>Demo shop</h1>
+
+  <section id="cart">
+    <h2>Cart</h2>
+    <button id="add-item">Add item (20.00)</button>
+    <p>Total: <span id="total">0.00</span></p>
+    <input id="coupon" placeholder="Coupon">
+    <button id="apply-coupon">Apply</button>
+    <p id="coupon-message"></p>
+  </section>
+
+  <section id="login">
+    <h2>Login</h2>
+    <input id="username" placeholder="Username">
+    <input id="password" type="password" placeholder="Password">
+    <button id="sign-in">Log in</button>
+    <p id="greeting"></p>
+    <p id="login-error"></p>
+  </section>
+
+  <script src="cart.js"></script>
+  <script src="coupon.js"></script>
+  <script src="login.js"></script>
+</body>
+</html>

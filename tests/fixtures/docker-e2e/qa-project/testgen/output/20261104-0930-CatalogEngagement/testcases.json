@@ -1,0 +1,248 @@
+[
+ {
+  "id": "TC-ABOUT-001",
+  "title": "About Us link on the home page opens the /about screen",
+  "component": "About",
+  "type": "Functional",
+  "category": "Positive",
+  "priority": "P1",
+  "objective": "Open the /about screen from the home page through the About Us link",
+  "preconditions": [],
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Click the About Us link",
+    "element": "About Us",
+    "leads_to": "/about",
+    "expected": "The /about screen opens with its Terms of Use link",
+    "evidence": [
+     "dsm:relation:/->/about"
+    ]
+   }
+  ],
+  "expected_result": "The /about screen opens from the home page",
+  "evidence": [
+   "code:juiceshop-online:frontend/src/app/app.routing.ts:8"
+  ],
+  "severity": "Medium",
+  "sub_module": "AUT_JuiceShopOnline-About",
+  "feature": "About",
+  "channel": "Web",
+  "coverage": [
+   "Functional",
+   "Navigation"
+  ],
+  "test_data": {}
+ },
+ {
+  "id": "TC-ABOUT-002",
+  "title": "Home link on /about returns to the home page",
+  "component": "About",
+  "type": "Functional",
+  "category": "Edge",
+  "priority": "P3",
+  "objective": "Leave the /about screen through its Home link",
+  "preconditions": [],
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Click the About Us link",
+    "element": "About Us",
+    "leads_to": "/about",
+    "expected": "The /about screen opens with its Terms of Use link",
+    "evidence": [
+     "dsm:relation:/->/about"
+    ]
+   },
+   {
+    "screen": "/about",
+    "action": "Click the Home link",
+    "element": "Home",
+    "leads_to": "/",
+    "expected": "The home page opens again from the /about screen",
+    "evidence": [
+     "dsm:relation:/about->/"
+    ]
+   }
+  ],
+  "expected_result": "The home page opens from /about through the Home link",
+  "evidence": [
+   "code:juiceshop-online:frontend/src/app/app.routing.ts:8"
+  ],
+  "severity": "Medium",
+  "sub_module": "AUT_JuiceShopOnline-About",
+  "feature": "Navigation",
+  "channel": "Web",
+  "coverage": [
+   "Navigation"
+  ],
+  "test_data": {}
+ },
+ {
+  "id": "TC-ABOUT-003",
+  "title": "About screen shows the Home link beside the Terms of Use link",
+  "component": "About",
+  "type": "Functional",
+  "category": "Positive",
+  "priority": "P2",
+  "objective": "Look at the links on the /about screen after opening it",
+  "preconditions": [],
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Click the About Us link",
+    "element": "About Us",
+    "leads_to": "/about",
+    "expected": "The /about screen opens with its Terms of Use link",
+    "evidence": [
+     "dsm:relation:/->/about"
+    ]
+   },
+   {
+    "screen": "/about",
+    "action": "Look at the Home link",
+    "element": "Home",
+    "expected": "The /about screen shows the Home link",
+    "evidence": [
+     "dsm:element:/about:Home"
+    ]
+   }
+  ],
+  "expected_result": "The /about screen shows the Home link next to Terms of Use",
+  "evidence": [
+   "code:juiceshop-online:frontend/src/app/app.routing.ts:8"
+  ],
+  "severity": "Medium",
+  "sub_module": "AUT_JuiceShopOnline-About",
+  "feature": "Links",
+  "channel": "Web",
+  "coverage": [
+   "Functional"
+  ],
+  "test_data": {}
+ },
+ {
+  "id": "TC-ABOUT-004",
+  "title": "Terms of Use link on /about leads to the terms document",
+  "component": "About",
+  "type": "Functional",
+  "category": "Positive",
+  "priority": "P2",
+  "objective": "Find the Terms of Use link on the /about screen",
+  "preconditions": [],
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Click the About Us link",
+    "element": "About Us",
+    "leads_to": "/about",
+    "expected": "The /about screen opens with its Terms of Use link",
+    "evidence": [
+     "dsm:relation:/->/about"
+    ]
+   },
+   {
+    "screen": "/about",
+    "action": "Look at the Terms of Use link",
+    "element": "Terms of Use",
+    "expected": "The /about screen shows the Terms of Use link",
+    "evidence": [
+     "dsm:element:/about:Terms of Use"
+    ]
+   }
+  ],
+  "expected_result": "The /about screen shows the Terms of Use link to the terms document",
+  "evidence": [
+   "code:juiceshop-online:frontend/src/app/app.routing.ts:8"
+  ],
+  "severity": "Medium",
+  "sub_module": "AUT_JuiceShopOnline-About",
+  "feature": "Terms",
+  "channel": "Web",
+  "coverage": [
+   "Functional"
+  ],
+  "test_data": {}
+ },
+ {
+  "id": "TC-SEARCH-001",
+  "title": "Search link on the home page opens the /search screen",
+  "component": "Search",
+  "type": "Functional",
+  "category": "Positive",
+  "priority": "P1",
+  "objective": "Open the /search screen from the home page through the Search link",
+  "preconditions": [],
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Click the Search link",
+    "element": "Search",
+    "leads_to": "/search",
+    "expected": "The /search screen opens with its Search field",
+    "evidence": [
+     "dsm:relation:/->/search"
+    ]
+   }
+  ],
+  "expected_result": "The /search screen opens from the home page",
+  "evidence": [
+   "code:juiceshop-online:frontend/src/app/app.routing.ts:9"
+  ],
+  "severity": "Medium",
+  "sub_module": "AUT_JuiceShopOnline-Search",
+  "feature": "Search",
+  "channel": "Web",
+  "coverage": [
+   "Functional",
+   "Navigation"
+  ],
+  "test_data": {}
+ },
+ {
+  "id": "TC-SEARCH-002",
+  "title": "Search field accepts the word Banana and the Search form submits it",
+  "component": "Search",
+  "type": "Functional",
+  "category": "Positive",
+  "priority": "P1",
+  "objective": "Type Banana in the Search field of the /search screen and submit the Search form",
+  "preconditions": [],
+  "steps": [
+   {
+    "screen": "/",
+    "action": "Click the Search link",
+    "element": "Search",
+    "leads_to": "/search",
+    "expected": "The /search screen opens with its Search field",
+    "evidence": [
+     "dsm:relation:/->/search"
+    ]
+   },
+   {
+    "screen": "/search",
+    "action": "Type Banana in the Search field",
+    "element": "Search",
+    "data": "Banana",
+    "expected": "The Search field shows the word Banana",
+    "evidence": [
+     "dsm:element:/search:Search"
+    ]
+   }
+  ],
+  "expected_result": "The Search field holds the word Banana ready to submit",
+  "evidence": [
+   "code:juiceshop-online:frontend/src/app/app.routing.ts:9"
+  ],
+  "severity": "Medium",
+  "sub_module": "AUT_JuiceShopOnline-Search",
+  "feature": "Search",
+  "channel": "Web",
+  "coverage": [
+   "Functional"
+  ],
+  "test_data": {
+   "query": "Banana"
+  }
+ }
+]

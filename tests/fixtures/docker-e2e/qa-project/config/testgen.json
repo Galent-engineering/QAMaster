@@ -1,0 +1,32 @@
+{
+  "_comment": "TestGen settings (qam testgen, skill TestGen). There is no hallucination tolerance to set: it is 0 (decision Q10).",
+  "required_categories": ["Positive", "Negative", "Boundary", "E2E", "Business", "Edge"],
+  "require_every_screen_covered": true,
+  "require_every_form_positive_and_negative": true,
+  "require_every_journey_covered": true,
+  "vague_expected_phrases": [
+    "works fine",
+    "works as expected",
+    "as expected",
+    "should work",
+    "is correct",
+    "correctly",
+    "properly",
+    "successfully completes",
+    "no issues",
+    "behaves normally",
+    "appropriate",
+    "appropriately",
+    "etc",
+    "done",
+    "ok",
+    "fine",
+    "verified",
+    "pass",
+    "passes",
+    "valid result"
+  ],
+  "min_expected_length": 15,
+  "require_report_fields": true,
+  "_comment_require_report_fields": "When true, every test case carries the Manual Test Case Report fields: severity, sub_module, one-word feature, channel, coverage and test_data."
+}

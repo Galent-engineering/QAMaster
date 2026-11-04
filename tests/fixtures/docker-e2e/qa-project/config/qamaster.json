@@ -1,0 +1,20 @@
+{
+  "publish": {
+    "pathDepth": 4,
+    "suiteBy": "module"
+  },
+  "smoke": {
+    "max": 20,
+    "priorities": ["P1"],
+    "categories": ["Positive", "E2E"]
+  },
+  "ai": "on",
+  "owners": {},
+  "gate": {
+    "retries": 1,
+    "noMatch": "pass-with-warning"
+  },
+  "app": {
+    "name": "JuiceShopOnline"
+  }
+}

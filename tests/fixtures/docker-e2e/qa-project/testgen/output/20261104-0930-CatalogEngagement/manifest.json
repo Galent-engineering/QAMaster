@@ -1,0 +1,91 @@
+{
+ "app": "JuiceShopOnline",
+ "scope": {
+  "module": "CatalogEngagement",
+  "sub_module": ""
+ },
+ "components": [
+  "About",
+  "Search"
+ ],
+ "test_types": [
+  "Functional"
+ ],
+ "required_types": [
+  "Functional"
+ ],
+ "channels": [
+  "Web"
+ ],
+ "domain": "Retail",
+ "domain_evidence": [
+  "domain:Domain_Test_Design_Skill-Domain-Retail#Detection signals"
+ ],
+ "techniques": [
+  "Equivalence partitioning"
+ ],
+ "requirements": {},
+ "generated_at": "2026-11-04T08:00:00Z",
+ "coverage_exclusions": [
+  {
+   "component": "About",
+   "item": "category:Negative",
+   "reason": "The About screen has no input to reject or bound and no business rule: this recorded run only exercises navigation and links"
+  },
+  {
+   "component": "About",
+   "item": "category:Boundary",
+   "reason": "The About screen has no input to reject or bound and no business rule: this recorded run only exercises navigation and links"
+  },
+  {
+   "component": "About",
+   "item": "category:E2E",
+   "reason": "The About screen has no input to reject or bound and no business rule: this recorded run only exercises navigation and links"
+  },
+  {
+   "component": "About",
+   "item": "category:Business",
+   "reason": "The About screen has no input to reject or bound and no business rule: this recorded run only exercises navigation and links"
+  },
+  {
+   "component": "About",
+   "item": "journey:2",
+   "reason": "The recorded run covers the single navigation of this journey with Positive cases"
+  },
+  {
+   "component": "Search",
+   "item": "category:Negative",
+   "reason": "A minimal recorded run for the Docker check: it covers navigation to /search and one search term only"
+  },
+  {
+   "component": "Search",
+   "item": "category:Boundary",
+   "reason": "A minimal recorded run for the Docker check: it covers navigation to /search and one search term only"
+  },
+  {
+   "component": "Search",
+   "item": "category:E2E",
+   "reason": "A minimal recorded run for the Docker check: it covers navigation to /search and one search term only"
+  },
+  {
+   "component": "Search",
+   "item": "category:Business",
+   "reason": "A minimal recorded run for the Docker check: it covers navigation to /search and one search term only"
+  },
+  {
+   "component": "Search",
+   "item": "category:Edge",
+   "reason": "A minimal recorded run for the Docker check: it covers navigation to /search and one search term only"
+  },
+  {
+   "component": "Search",
+   "item": "form:/search:search:negative",
+   "reason": "A minimal recorded run: only the accepted search term is covered"
+  },
+  {
+   "component": "Search",
+   "item": "journey:1",
+   "reason": "The recorded run covers the single navigation of this journey with Positive cases"
+  }
+ ]
+}

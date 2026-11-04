@@ -1,0 +1,108 @@
+{
+ "generated_at": "2026-11-04T07:00:00+00:00",
+ "repos": [
+  {
+   "name": "juiceshop-online",
+   "path": "../juice-shop",
+   "ref": "main",
+   "commit": "0e5d93532df0ec686eff9d7908cc474efdfdf99a",
+   "files_scanned": 9,
+   "frameworks": [
+    "angular"
+   ]
+  }
+ ],
+ "routes": [
+  {
+   "route": "/about",
+   "repo": "juiceshop-online",
+   "file": "frontend/src/app/app.routing.ts",
+   "line": 8,
+   "kind": "route",
+   "framework": "angular",
+   "component": "AboutComponent"
+  },
+  {
+   "route": "/search",
+   "repo": "juiceshop-online",
+   "file": "frontend/src/app/app.routing.ts",
+   "line": 9,
+   "kind": "route",
+   "framework": "angular",
+   "component": "SearchResultComponent"
+  },
+  {
+   "route": "/login",
+   "repo": "juiceshop-online",
+   "file": "frontend/src/app/app.routing.ts",
+   "line": 10,
+   "kind": "route",
+   "framework": "angular",
+   "component": "LoginComponent"
+  },
+  {
+   "route": "/contact",
+   "repo": "juiceshop-online",
+   "file": "frontend/src/app/app.routing.ts",
+   "line": 11,
+   "kind": "route",
+   "framework": "angular",
+   "component": "ContactComponent"
+  }
+ ],
+ "files": {
+  "juiceshop-online:frontend/src/app/about/about.component.html": {
+   "owners": [
+    "/about"
+   ],
+   "confidence": "direct"
+  },
+  "juiceshop-online:frontend/src/app/about/about.component.ts": {
+   "owners": [
+    "/about"
+   ],
+   "confidence": "direct"
+  },
+  "juiceshop-online:frontend/src/app/app.routing.ts": {
+   "owners": [],
+   "confidence": "shared"
+  },
+  "juiceshop-online:frontend/src/app/contact/contact.component.html": {
+   "owners": [
+    "/contact"
+   ],
+   "confidence": "direct"
+  },
+  "juiceshop-online:frontend/src/app/contact/contact.component.ts": {
+   "owners": [
+    "/contact"
+   ],
+   "confidence": "direct"
+  },
+  "juiceshop-online:frontend/src/app/login/login.component.html": {
+   "owners": [
+    "/login"
+   ],
+   "confidence": "direct"
+  },
+  "juiceshop-online:frontend/src/app/login/login.component.ts": {
+   "owners": [
+    "/login"
+   ],
+   "confidence": "direct"
+  },
+  "juiceshop-online:frontend/src/app/search-result/search-result.component.html": {
+   "owners": [
+    "/search"
+   ],
+   "confidence": "direct"
+  },
+  "juiceshop-online:frontend/src/app/search-result/search-result.component.ts": {
+   "owners": [
+    "/search"
+   ],
+   "confidence": "direct"
+  }
+ },
+ "edges": []
+}
