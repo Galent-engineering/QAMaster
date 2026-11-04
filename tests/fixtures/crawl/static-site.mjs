@@ -1,15 +1,16 @@
-// A static site: every page has the same nav menu but its own title, heading and text (0.4.2 W3).
+// A static site as dummy-static-website is: every page has the same menu, the same empty title and the same h1;
+// only the paragraph and the images differ (0.4.2 W3).
 //
 //   node tests/fixtures/crawl/static-site.mjs      prints {"ui": "http://localhost:<port>/"}
 import http from 'node:http';
 
-const nav = '<nav><a href="/">Home</a> <a href="/cats.html">Cats</a> <a href="/landscapes.html">Landscapes</a></nav>';
-const page = (title, body) =>
-  `<!doctype html><html><head><title>${title}</title></head><body>${nav}<h1>${title}</h1><p>${body}</p></body></html>`;
+const menu = '<div id="menu"><a href="/">Home</a> <a href="/cats.html">Cats</a> <a href="/landscapes.html">Landscapes</a></div>';
+const page = (body) =>
+  `<!doctype html><html><head><title></title></head><body>${menu}<h1>Dummy static website</h1><p>${body}</p></body></html>`;
 const pages = {
-  '/': page('Home', 'Welcome.'),
-  '/cats.html': page('Cats', 'Pictures of cats.'),
-  '/landscapes.html': page('Landscapes', 'Pictures of landscapes.'),
+  '/': page('Welcome.'),
+  '/cats.html': page('Here, have your daily dose of kittens'),
+  '/landscapes.html': page('Here, have some landscapes'),
 };
 
 const server = http.createServer((req, res) => {

@@ -133,7 +133,12 @@ const EXTRACT = `(() => {
   const headings = [...document.querySelectorAll('h1, h2')].slice(0, 5).map((h) => text(h)).filter(Boolean);
   const tables = [...document.querySelectorAll('table, [role=grid]')].map((t) => ({ selector: cssPath(t),
     columns: [...t.querySelectorAll('th, [role=columnheader]')].slice(0, 40).map(text).filter(Boolean) }));
-  return { title: document.title, headings, links, forms, looseFields, buttons, tabs, menus, tables };
+  // what the page says, as a short hash: a single-page app's shell says the same on every path, a static site's pages don't
+  const body = (document.body ? document.body.innerText : '').replace(/\\s+/g, ' ').trim();
+  let h = 5381;
+  for (let i = 0; i < body.length; i++) h = ((h * 33) ^ body.charCodeAt(i)) >>> 0;
+  const textHash = body ? h.toString(36) + ':' + body.length : '';
+  return { title: document.title, headings, textHash, links, forms, looseFields, buttons, tabs, menus, tables };
 })()`;
 
 /** Clickable elements without a link, to find menus, dialogs and JavaScript navigation. */
@@ -177,6 +182,7 @@ const LOGIN_STATE = `(() => {
 type Extracted = {
   title: string;
   headings: string[];
+  textHash: string;
   links: {
     text: string;
     href: string;
@@ -213,12 +219,15 @@ function pageSignature(p: UiPage): string {
   return [...new Set(parts)].sort().join('\n');
 }
 
-/** A page's title and headings: pages that share a nav menu (the same elements) still differ here (0.4.2 W3). */
-const pageHeading = (p: UiPage) => [p.title ?? '', ...(p.headings ?? [])].join('\n');
+/**
+ * A page's title, headings and a hash of its visible text: pages that share a menu (the same elements) still differ
+ * here, even when the title and the site-wide h1 are the same too (0.4.2 W3, found on dummy-static-website).
+ */
+const pageHeading = (p: UiPage) => [p.title ?? '', ...(p.headings ?? []), String(p.text_hash ?? '')].join('\n');
 
 /**
  * A single-page app answers 200 with the same shell for any path, so a code-seeded route that shows exactly the start
- * page's elements, title and headings is not a screen. Drops those pages and their edges. Pages found by a link, errors and redirects stay.
+ * page's elements, title, headings and text is not a screen. Drops those pages and their edges. Pages found by a link, errors and redirects stay.
  */
 export function dropShellPages(
   pages: UiPage[],
@@ -808,6 +817,7 @@ export class PlaywrightCrawler implements Crawler {
     const data = (await page.evaluate(EXTRACT)) as Extracted;
     rec.title = data.title;
     rec.headings = data.headings;
+    rec.text_hash = data.textHash;
     rec.tables = data.tables;
     const elements = rec.elements as UiElement[];
     const keys = new Set<string>();

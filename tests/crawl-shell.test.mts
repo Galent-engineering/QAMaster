@@ -63,13 +63,15 @@ test('dropShellPages compares form field labels, and never an empty signature', 
   assert.deepEqual(dropShellPages(empty, [], '/').dropped, []);
 });
 
-test('dropShellPages keeps a page with the same elements but its own title or heading (0.4.2 W3)', () => {
+test('dropShellPages keeps a page with the same elements but its own title, heading or text (0.4.2 W3)', () => {
   const nav = ['Home', 'Cats', 'Landscapes'];
+  const same = { title: 'Home', headings: ['Home'], text_hash: 'h-home' };
   const pages = [
-    page('/', 'start', nav, { title: 'Home', headings: ['Home'] }),
-    page('/cats.html', 'code-seed', nav, { title: 'Cats', headings: ['Cats'] }),
-    page('/landscapes.html', 'code-seed', nav, { title: 'Home', headings: ['Landscapes'] }),
-    page('/shell', 'code-seed', nav, { title: 'Home', headings: ['Home'] }),
+    page('/', 'start', nav, same),
+    page('/cats.html', 'code-seed', nav, { ...same, title: 'Cats' }),
+    page('/landscapes.html', 'code-seed', nav, { ...same, headings: ['Landscapes'] }),
+    page('/videogames.html', 'code-seed', nav, { ...same, text_hash: 'h-games' }), // same title and h1: only the text differs
+    page('/shell', 'code-seed', nav, same),
   ];
   assert.deepEqual(dropShellPages(pages, [], '/').dropped, ['/shell']);
 });
