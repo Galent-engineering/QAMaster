@@ -280,7 +280,9 @@ async function updateLocked(
     code,
   );
   const previousRoutes = new Set((previousCode?.routes ?? []).map((r) => r.route));
-  const newRoutes = sorted((code.routes ?? []).map((r) => r.route).filter((r) => !previousRoutes.has(r)));
+  // Q48: an API route has no screen, so it is neither a crawl seed nor a "new route"
+  const screenRoutes = (code.routes ?? []).filter((r) => r.kind !== 'api').map((r) => r.route);
+  const newRoutes = sorted(screenRoutes.filter((r) => !previousRoutes.has(r)));
   const baseUrl = config.application?.base_url || null;
   const plan = planCrawl({
     baseUrl,
@@ -297,7 +299,7 @@ async function updateLocked(
   if (!baseUrl) warnings.push(why);
 
   if (plan.crawl && baseUrl) {
-    const codeSeeds = sorted((code.routes ?? []).map((r) => r.route).filter((r) => !r.includes(':'))).slice(0, 500);
+    const codeSeeds = sorted(screenRoutes.filter((r) => !r.includes(':'))).slice(0, 500);
     const incremental = plan.crawl === 'incremental';
     try {
       const ui = await crawler().crawl({
