@@ -61,3 +61,18 @@ test('a source that is another folder keeps every change as uncommitted', () => 
   fs.writeFileSync(path.join(app, 'dsm/a'), 'x');
   assert.match(checkSource({ source: app }, qa, ['shop-web']).warnings.join(), /uncommitted changes/);
 });
+
+test('tracked own files that were changed are not uncommitted changes either', () => {
+  const qa = tmpDir('qam-own-');
+  const files = ['dsm/state.json', 'dsm/index.html', '.claude/skills/AUT_X/SKILL.md', 'config/qamaster.json'];
+  for (const f of files) {
+    fs.mkdirSync(path.dirname(path.join(qa, f)), { recursive: true });
+    fs.writeFileSync(path.join(qa, f), 'one');
+  }
+  gitRepo(qa);
+  for (const f of files) fs.writeFileSync(path.join(qa, f), 'two');
+  const warn = () => checkSource({ source: '.' }, qa, []).warnings.join();
+  assert.doesNotMatch(warn(), /uncommitted/);
+  fs.writeFileSync(path.join(qa, 'src/App.jsx'), 'changed');
+  assert.match(warn(), /uncommitted changes/);
+});

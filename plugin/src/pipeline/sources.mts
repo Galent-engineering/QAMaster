@@ -53,7 +53,12 @@ const GIT_ENV = { ...process.env, GIT_TERMINAL_PROMPT: '0' }; // never prompt fo
 
 function git(args: string[], cwd?: string) {
   const r = spawnSync('git', cwd ? ['-C', cwd, ...args] : args, { encoding: 'utf8', env: GIT_ENV, timeout: 120_000 });
-  return { ok: r.status === 0, out: (r.stdout ?? '').trim(), err: (r.stderr ?? r.error?.message ?? '').trim() };
+  return {
+    ok: r.status === 0,
+    raw: r.stdout ?? '',
+    out: (r.stdout ?? '').trim(),
+    err: (r.stderr ?? r.error?.message ?? '').trim(),
+  };
 }
 
 export const isGitUrl = (s: string) => /^(https?:\/\/|ssh:\/\/|git@|file:\/\/)/.test(s);
@@ -124,7 +129,7 @@ export function onlyOwnChanges(dir: string, from: string, to: string, own: strin
   return d.out
     .split('\n')
     .filter(Boolean)
-    .every((f) => isOwn(f.slice(prefix.length), own));
+    .every((f) => f.startsWith(prefix) && isOwn(f.slice(prefix.length), own));
 }
 
 /** Checks a local folder;`branch` defaults to the folder's current branch. */
@@ -171,18 +176,13 @@ function checkFolder(dir: string, spec: SourceSpec, project: string, ownExtra: s
   // when the QA project is the app repo, QAMaster's own output is the uncommitted change (0.4.1 A11)
   const own = path.resolve(dir) === path.resolve(project) ? ownPaths(project, ownExtra) : [];
   const dirty = git(['status', '--porcelain', '--untracked-files=all'], dir)
-    .out.split('\n')
+    .raw.split('\n')
     .filter((l) => l.trim())
     .filter((l) => {
-      // paths are relative to the repository's root: take off the folder this one is in
-      const file = (
-        l
-          .replace(/^\S+\s+/, '')
-          .replace(/^"|"$/g, '')
-          .split(' -> ')
-          .pop() ?? ''
-      ).slice(prefix.length);
-      return !isOwn(file, own);
+      // 'XY path': two status characters and a space (the output is not trimmed, so ' M' keeps its space).
+      // Paths are relative to the repository's root: a path outside this folder is not its own file.
+      const file = l.slice(3).replace(/^"|"$/g, '').split(' -> ').pop() ?? '';
+      return !(file.startsWith(prefix) && isOwn(file.slice(prefix.length), own));
     });
   if (dirty.length) {
     warnings.push(`${rel} has uncommitted changes. The scan reads committed code, so they won't show until committed.`);
