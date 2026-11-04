@@ -1,5 +1,5 @@
 # A clean machine for QAMaster's end-to-end run, with each prerequisite the 0.3.0 run found, in the order it was needed.
-# Build and run it with run.sh. The report: docs/demos/2026-11-02-0.3.0-docker-e2e.md.
+# Build and run it with run.sh. Its findings: docs/plans/0.3.1.md.
 FROM node:24-bookworm-slim
 
 # git: setup, plan, approve and the hook all call it. python3: the pytest runner without uv.lock (Debian 12 gives 3.11).

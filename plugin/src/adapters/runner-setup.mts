@@ -2,7 +2,7 @@
  * A runner's setup problem, told apart from a test failure (Q41): a browser that isn't installed, a browser that can't
  * load its system libraries, or an app that doesn't answer at its base URL. The runners block on these with the
  * command that fixes them, instead of reporting every case as failed. The patterns are Playwright's own messages, as
- * seen on a clean machine (docs/demos/2026-11-02-0.3.0-docker-e2e.md, F2).
+ * seen on a clean machine (the clean-room Docker run, finding F2, docs/plans/0.3.1.md).
  */
 export type Tooling = 'python' | 'node';
 

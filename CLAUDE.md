@@ -11,11 +11,12 @@ Read before working on a feature:
 - [docs/data-handling.md](docs/data-handling.md): what goes to Claude, and `QAMASTER_AI=off`
 - [docs/releases.md](docs/releases.md): what each plugin version holds, and the next one's plan
 - [docs/plans/](docs/plans/README.md): one versioned plan per release, the working source of truth for that release. A change of scope adds a revision row. [docs/plans/backlog.md](docs/plans/backlog.md) lists every open fix and to-do with its target release
-- [docs/demos/](docs/demos/README.md): every walkthrough with the tester's feedback, and where each finding went
-- [docs/install.md](docs/install.md): load a release as a zip in Claude desktop or the Claude CLI
+- [docs/demos/](docs/demos/README.md): the live runs, their findings, and where each finding went. Keep a record until its findings are in a plan
+- [docs/install.md](docs/install.md): load a release as a zip in Claude desktop or the Claude CLI, and what the machine needs
+- [docs/v0.4.2-setup-guide.html](docs/v0.4.2-setup-guide.html): the setup guide, roadmap and latest decisions on one page. Rename it and update it with each release (`v<version>-setup-guide.html`)
 - [docs/learning.md](docs/learning.md): concepts and design explained, one lesson per ported feature. Add a lesson when a feature finishes Learn
 
-Sources being ported, next to this repo: `../CheckMasterPlugin` (Python; port its tests before its code), `../autonomous-qe-0.2.0` (TypeScript, `tools/`). The old demos `../CheckMasterDemo` and `../autonomousQeDemo` were deleted on 2026-11-03 (they had no remote); the fixtures copied from them are under `tests/fixtures/`. The Docker check (`scripts/docker-e2e/`) runs from checked-in fixtures under `tests/fixtures/docker-e2e/` (0.4.1); override them with `CHECKMASTER_DEMO`, `JUICE_SHOP` and `QA_SOURCE`. The container has never been run: it needs Docker and network access.
+Sources the port came from, next to this repo: `../CheckMasterPlugin` (Python) and `../autonomous-qe-0.2.0` (TypeScript, `tools/`). They are read-only; don't change them. The old demo projects are gone, and the fixtures copied from them are under `tests/fixtures/`. The Docker check (`scripts/docker-e2e/`) runs from checked-in fixtures under `tests/fixtures/docker-e2e/`; override them with `CHECKMASTER_DEMO`, `JUICE_SHOP` and `QA_SOURCE`. The container has never been run: it needs Docker and network access.
 
 Layout (Q2). `plugin/` is everything an install copies. The repo root is the marketplace plus dev tooling:
 

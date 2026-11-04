@@ -1,5 +1,5 @@
 #!/bin/sh
-# QAMaster end to end in a clean container (docs/demos/2026-11-02-0.3.0-docker-e2e.md).
+# QAMaster end to end in a clean container (findings in docs/plans/0.3.1.md).
 # Usage: scripts/docker-e2e/run.sh [release zip]
 # With no zip it runs this checkout's plugin/ folder. With one (the plugin zip or the marketplace zip that
 # scripts/package.sh builds) it runs what the zip holds.

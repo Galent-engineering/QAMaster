@@ -37,4 +37,13 @@ The plugin ships no `bin/`: Claude desktop refuses a hosted plugin that ships ex
 
 ## What it needs on the machine
 
-QAMaster itself needs only Node.js 24 and git. `qam doctor` checks the rest and says how to fix it: the runner a test case uses (uv and pytest, or the automation folder's npm packages), Playwright's browser, and the app's URL. See [the prerequisites table](demos/2026-11-02-0.3.2-unknown-app.md#part-0-prerequisites).
+QAMaster checks each of these and says how to fix it. Install only what you already know you need, and note whether QAMaster's messages were enough for the rest.
+
+| For | What | QAMaster checks it in |
+|---|---|---|
+| Everything | Node.js 24 or later, npm, git 2.20+, `git config user.email` | `qam setup` (git, Node), `qam approve` (email), each gate command (git) |
+| Running the app | Whatever its README needs (Docker, a database, seed data) | not QAMaster's |
+| Mapping the app | Playwright and Chromium in the QA project; on Linux also `sudo npx playwright install-deps chromium` | `qam setup` installs them; `qam doctor` |
+| Running drafted scripts | `npm install` in the automation folder (it downloads `@playwright/test` and `playwright-bdd`) | `qam check-scripts`; `qam doctor`, the `runner playwright-bdd` lines |
+| The app's own pytest tests, if any | uv (or python3 with pytest), and `uv sync` in the test folder | `qam doctor`, `runner pytest`; the gate blocks with the command |
+| The app answering | Running at its URL | `qam doctor`, `app URL`; a run that can't reach it is blocked, not failed |

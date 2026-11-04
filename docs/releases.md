@@ -32,7 +32,7 @@ Publish (Q33, Q34), plus the fixes the 0.1.0 walkthrough turned up (WALKTHROUGH-
 
 ## 0.2.1: fixes from the publish walkthrough that the gate depends on
 
-Plan: [plans/0.2.1.md](plans/0.2.1.md). Built on `feature/0.2.1-fixes`, released 2026-11-02. Findings from the [0.2.0 publish walkthrough](demos/2026-10-30-0.2.0-publish-feedback.md).
+Plan: [plans/0.2.1.md](plans/0.2.1.md). Built on `feature/0.2.1-fixes`, released 2026-11-02. Findings from the 0.2.0 publish walkthrough.
 
 | Change | Where | Decision |
 |---|---|---|
@@ -48,7 +48,7 @@ The other findings, and the earlier 0.2.1 backlog, are in that plan's [Later](pl
 
 ## 0.2.2: fixes from the 0.2.1 verification
 
-Plan: [plans/0.2.2.md](plans/0.2.2.md). Built on `feature/0.2.2-fixes` and released inside 0.3.0 (2026-11-02): there's no separate 0.2.2 package. Findings from the [0.2.1 verification](demos/2026-11-02-0.2.1-verification.md).
+Plan: [plans/0.2.2.md](plans/0.2.2.md). Built on `feature/0.2.2-fixes` and released inside 0.3.0 (2026-11-02): there's no separate 0.2.2 package. Findings from the 0.2.1 verification.
 
 | Change | Where | Decision |
 |---|---|---|
@@ -59,7 +59,7 @@ Plan: [plans/0.2.2.md](plans/0.2.2.md). Built on `feature/0.2.2-fixes` and relea
 
 ## 0.3.0: the first full working plugin
 
-Plan: [plans/0.3.0.md](plans/0.3.0.md). Built on `feature/0.3.0-gate`, tested end to end ([report](demos/2026-11-02-0.3.0-end-to-end.md)), released 2026-11-02.
+Plan: [plans/0.3.0.md](plans/0.3.0.md). Built on `feature/0.3.0-gate`, tested end to end (report), released 2026-11-02.
 
 | Change | Where | Decision |
 |---|---|---|
@@ -74,7 +74,7 @@ Plan: [plans/0.3.0.md](plans/0.3.0.md). Built on `feature/0.3.0-gate`, tested en
 
 ## 0.3.1: prerequisites a clean machine needs, checked and explained
 
-Plan: [plans/0.3.1.md](plans/0.3.1.md). Built on `feature/0.3.1-setup-gaps`, released 2026-11-02, and checked in a clean container ([re-run](demos/2026-11-02-0.3.0-docker-e2e.md#031-re-run-2026-11-02): 41 of 41 steps). It holds the prerequisites a clean machine needs, checked and explained, from the [clean Docker run](demos/2026-11-02-0.3.0-docker-e2e.md) (F1–F11):
+Plan: [plans/0.3.1.md](plans/0.3.1.md). Built on `feature/0.3.1-setup-gaps`, released 2026-11-02, and checked in a clean container (re-run: 41 of 41 steps). It holds the prerequisites a clean machine needs, checked and explained, from the clean Docker run (F1–F11):
 - runner setup problems block instead of failing, and pytest never downloads without a yes (Q41);
 - the gate's local files are kept out of the app repo's commits (Q42);
 - `qam doctor` checks the gate's prerequisites;
@@ -83,7 +83,7 @@ Plan: [plans/0.3.1.md](plans/0.3.1.md). Built on `feature/0.3.1-setup-gaps`, rel
 
 ## 0.3.2: fixes from the Toolshop run, `/qamaster:status`, and an installable zip
 
-Plan: [plans/0.3.2.md](plans/0.3.2.md), with what went well, the feedback and what goes to the next release. Built on `feature/0.3.2-toolshop-fixes`, released 2026-11-03. Findings from the [Toolshop run](demos/2026-11-02-toolshop-analysis.md).
+Plan: [plans/0.3.2.md](plans/0.3.2.md), with what went well, the feedback and what goes to the next release. Built and released 2026-11-03. Findings from the [Toolshop run](demos/2026-11-02-toolshop-analysis.md).
 
 | Change | Where | Decision |
 |---|---|---|
@@ -100,7 +100,7 @@ Not in 0.3.0: Feedback, Reports and Requirements (`qam requirements fetch`), and
 
 ## 0.4.0: the 0.3.3 fixes and the demo's missing pieces, with reports and feedback
 
-Plan: [plans/0.4.0.md](plans/0.4.0.md). Built on `feature/0.3.2-toolshop-fixes` on 2026-11-04. The fixes and features shipped as one minor release (Q46), so there is no 0.3.3.
+Plan: [plans/0.4.0.md](plans/0.4.0.md). Built on 2026-11-04. The fixes and features shipped as one minor release (Q46), so there is no 0.3.3.
 
 | Change | Where | Decision |
 |---|---|---|
@@ -114,7 +114,7 @@ Plan: [plans/0.4.0.md](plans/0.4.0.md). Built on `feature/0.3.2-toolshop-fixes` 
 
 ## 0.4.1: fixes from the AgentMesh run
 
-Plan: [plans/0.4.1.md](plans/0.4.1.md). Built on `feature/0.3.2-toolshop-fixes` on 2026-11-04. Findings from the [AgentMesh run](demos/2026-11-04-0.3.2-agentmesh-feedback.md) (A1–A17). Fixes only, so a patch release (Q46).
+Plan: [plans/0.4.1.md](plans/0.4.1.md). Built on 2026-11-04. Findings from the [AgentMesh run](demos/2026-11-04-0.3.2-agentmesh-feedback.md) (A1–A17). Fixes only, so a patch release (Q46).
 
 | Change | Where | Decision |
 |---|---|---|
@@ -127,13 +127,26 @@ Plan: [plans/0.4.1.md](plans/0.4.1.md). Built on `feature/0.3.2-toolshop-fixes` 
 | Skills hand you paste-ready commands; TestGen works one component at a time | `plugin/skills/`, `plugin/commands/` | |
 | The Docker check runs from a plain checkout (fixtures; container not run) | `scripts/docker-e2e/`, `tests/fixtures/docker-e2e/` | |
 
+## 0.4.2: fixes from the dummy-static-website run
+
+Plan: [plans/0.4.2.md](plans/0.4.2.md). Built on `release/0.4.2` on 2026-11-04. Findings W1–W20 from the [dummy-static-website run](demos/2026-11-04-0.4.1-dummy-static-website.md). Fixes only, so a patch release (Q46); the crawl records one new field, `text_hash`, in `ui-model.json`.
+
+| Change | Where | Decision |
+|---|---|---|
+| A page isn't a single-page app's shell unless its text, title and headings match the start page too | `adapters/crawler-playwright.mts` | Q15 |
+| The blocked-writes warning names the requests; `code:` evidence takes a line range | `dsm/update.mts`, `testgen/` | |
+| The pipeline finds the automation folder under its PascalCase name; the gate reads settings from the QA project | `pipeline/pipeline.mts`, `shared/config.mts` | |
+| Clear messages: no git repo, the app URL to start, binding a script; a code folder not in git warns | `adapters/git.mts`, `cli/gate.mts`, `gate/gate.mts`, `pipeline/sources.mts` | |
+| Skills ask where the QA project goes; Publish offers the ADO project list | `plugin/skills/`, `plugin/commands/` | |
+
+Not yet run on the real site after the last fix; see the plan's "How it was checked".
+
 ## Planned
 
 Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.4.2 | Fixes | The dummy-static-website findings (W1–W20): real pages kept when they share a menu, one automation folder name, the gate's settings from the QA project, clearer blocked messages | [plans/0.4.2.md](plans/0.4.2.md) |
 | 0.5.0 | Features | Requirements fetch: completes the demo's step 6 | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
 | 0.6.0 | Features | Daily-use features: conflicts that show their fields, a review confirmation, selection presets, faster DSM, the local store first with several publish destinations (Q50), a gate run with no git change | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
 | 0.7.0 | Features | Scripts for Mobile Web, API, Android and iOS | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |

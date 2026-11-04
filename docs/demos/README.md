@@ -4,23 +4,23 @@ Every hands-on walkthrough of a QAMaster build, with the tester's feedback, kept
 
 **How a demo feeds a release:**
 1. Before the demo, add the walkthrough here as `<date>-<version>-<topic>.md`, with empty feedback boxes.
-2. After each step, copy the tester's feedback into this file: words, scores, screenshots (next to the file, linked).
+2. After each step, copy the tester's feedback into this file: words, scores, screenshots (next to the file, linked). Keep the record that holds findings; once its findings are in a plan, the walkthrough script can go.
 3. Triage each finding into [releases.md](../releases.md) (effort, impact, what has to be decided first), and record below where it went.
 
 ## Demos
 
-| Date | Build | App | Walkthrough | Status |
+| Date | Build | App | Result | Record |
 |---|---|---|---|---|
-| 2026-10-30 | 0.1.0 | OWASP Juice Shop v20.3.0 | [setup to reviewed test cases](2026-10-30-0.1.0-juice-shop.md) | Done through step 9. Feedback written for steps 1 and 4 |
-| 2026-10-30 | 0.2.0 | Juice Shop online demo, app `JuiceShopOnline`, 243 cases in ADO | [publish](2026-10-30-0.2.0-publish.md), [feedback](2026-10-30-0.2.0-publish-feedback.md) | Steps 0–5 and 8 done, step 6 part 1, step 7 not run. Score 3/5 |
-| 2026-11-02 | 0.2.1 | Copies of the 0.2.0 project (ADO read-only, plus the file store) | [verification](2026-11-02-0.2.1-verification.md), run by Claude | All 7 fixes pass. 5 bugs (B1–B5) and 7 enhancements noted. Score 4/5 |
-| 2026-11-02 | 0.3.0 | CheckMasterDemo (pytest), local Juice Shop v20.3.0 (playwright-bdd) | [end to end](2026-11-02-0.3.0-end-to-end.md), run by Claude | D3 and D4 pass. 7 bugs found and fixed with tests |
-| 2026-11-02 | 0.3.0 | A clean `node:24` Docker container, with CheckMasterDemo and Juice Shop | [clean-room run](2026-11-02-0.3.0-docker-e2e.md), in a separate Claude session | Both paths pass once the prerequisites are in. 11 findings, F1–F11 |
-| 2026-11-04 | 0.3.2 | AgentMesh (FastAPI + Streamlit), your manual run with Azure DevOps | [analysis](2026-11-04-0.3.2-agentmesh-feedback.md) | Done. 11 issues (A1–A11): A7 already fixed in 0.4.0; most go to 0.4.1; A5 needs a decision |
-| 2026-11-04 | 0.4.1 | dummy-static-website (static HTML), your run in Claude desktop with Azure DevOps | [findings](2026-11-04-0.4.1-dummy-static-website.md) | Done. PASS 36 of 36; 20 findings (W1–W20), most to 0.4.2, W9 proposed as Q50 |
-| *(you choose)* | 0.3.2 | Any application QAMaster has never seen (this build: [install from a zip](../install.md)) | [happy path, limitations, goals](2026-11-02-0.3.2-unknown-app.md) | Not started |
-| 2026-11-02 | 0.3.1 | Practice Software Testing (Toolshop), full loop with ADO as the store, done outside this session | [analysis of the results](2026-11-02-toolshop-analysis.md); [the script it followed](2026-11-02-0.3.1-toolshop.md) | Done. Worked end to end; 5 issues (T1–T5) went to 0.3.2 |
-| 2026-11-02 | 0.3.0 | The same two flows in a clean `node:24-bookworm-slim` container | [Docker end to end](2026-11-02-0.3.0-docker-e2e.md), run by Claude; reproduce with `scripts/docker-e2e/run.sh` | Both paths pass once the prerequisites are in. 11 findings (F1–F11), not fixed |
+| 2026-10-30 | 0.1.0 | OWASP Juice Shop v20.3.0 | Walked to reviewed test cases; findings went to 0.2.0 | Removed 2026-11-04 (git history) |
+| 2026-10-30 | 0.2.0 | Juice Shop online demo, 243 cases in ADO | Publish walkthrough, 3/5; findings went to 0.2.1 | Removed 2026-11-04 |
+| 2026-11-02 | 0.2.1 | Copies of the 0.2.0 project | All 7 fixes pass; B1–B5 and E1–E7 found | Removed 2026-11-04 |
+| 2026-11-02 | 0.3.0 | CheckMasterDemo (pytest) and Juice Shop (playwright-bdd) | Both flows pass; 7 bugs fixed | Removed 2026-11-04 |
+| 2026-11-02 | 0.3.0 | A clean `node:24` Docker container | Both paths pass once prerequisites are in; F1–F11 went to 0.3.1 | Removed 2026-11-04 |
+| 2026-11-02 | 0.3.1 | Practice Software Testing (Toolshop), ADO store | Worked end to end; T1–T5 went to 0.3.2 | [analysis](2026-11-02-toolshop-analysis.md) |
+| 2026-11-04 | 0.3.2 | AgentMesh (FastAPI + Streamlit), ADO store | A1–A17 went to 0.4.1; A12 needs a re-run | [analysis](2026-11-04-0.3.2-agentmesh-feedback.md) |
+| 2026-11-04 | 0.4.1 | dummy-static-website, ADO store | PASS 36 of 36; W1–W20 went to 0.4.2 | [findings](2026-11-04-0.4.1-dummy-static-website.md) |
+
+The walkthrough scripts and run logs of the older demos were removed on 2026-11-04. Their findings are in the table below and in each release's plan; the full text is in git history before that date.
 
 ## Findings and where they went
 
@@ -46,7 +46,7 @@ Every hands-on walkthrough of a QAMaster build, with the tester's feedback, kept
 | 0.2.1 verification B2–B3 | The credential check flags emails, hyphenated words and step `data`, and reports only the first value per text | 0.2.2 |
 | 0.2.1 verification B4 | Passwords in `test_data` still reach ADO through the description | 0.2.2: masked as "(kept in the run's test data, not published)" |
 | 0.2.1 verification B5 | The TestGen manifest's `generated_at` is local time marked as UTC | 0.2.2: validator finding, and the reference says UTC |
-| 0.2.1 verification E1–E7 | Enhancements: cross-run smoke warning, remember `--skip-smoke`, `qam review` confirmation, and others | Later ([verification](2026-11-02-0.2.1-verification.md#enhancements-for-later)) |
+| 0.2.1 verification E1–E7 | Enhancements: cross-run smoke warning, remember `--skip-smoke`, `qam review` confirmation, and others | Later (verification) |
 | 0.3.0 Docker F1–F11 | Prerequisites not checked or explained on a clean machine (setup problems as test failures, silent uv downloads, doctor gaps, a crash without git, files left in the app repo) | 0.3.1 ([plan](../plans/0.3.1.md)); decisions Q41, Q42 and a Q14 amendment |
 | Toolshop run T1–T4 | A profile page taken for a sign-in page; ULID IDs not folded; the pipeline's automation-folder and script-gate stages never turn done | 0.3.2 ([releases.md](../releases.md)) |
 | 0.4.1 dummy-static-website W1–W20 | Real pages dropped as a single-page app's shell, two names for the automation folder, gate settings read from the clone, messages without a next step; requests for a local store first, several destinations and a no-diff gate run | 0.4.2 items 1–10 ([plan](../plans/0.4.2.md)); Q50 proposed and the features in 0.6.0; W16 and W19 to Q49. Per finding: [the record](2026-11-04-0.4.1-dummy-static-website.md#where-each-went) |

@@ -9,7 +9,7 @@ Each entry says where the choice came from:
 
 Format: **Q<n>. Title** (date, status, source): decision, why, what we gave up.
 
-All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new entry that supersedes it. All [open questions](#open-questions) are resolved.
+Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 is **proposed**. Q49 (linking local scripts without a push) is open and has no entry yet; see the [AgentMesh analysis](demos/2026-11-04-0.3.2-agentmesh-feedback.md). To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
 
 ---
 

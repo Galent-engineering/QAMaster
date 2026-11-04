@@ -29,27 +29,22 @@ Ten steps from install to report. After 0.4.0 every step is built except require
 
 The AgentMesh fixes A1–A16 (A7 and A17 were already fixed in 0.4.0) and the Docker check's fixtures. See [0.4.1.md](0.4.1.md#what-shipped).
 
-## Next: 0.4.2 (fixes), from the dummy-static-website run
+## Shipped in 0.4.2 (2026-11-04)
 
-Plan: [0.4.2.md](0.4.2.md). Findings W1–W20 from the [dummy-static-website run](../demos/2026-11-04-0.4.1-dummy-static-website.md).
+The dummy-static-website fixes, items 1–10 of [0.4.2.md](0.4.2.md#what-shipped), from [W1–W20](../demos/2026-11-04-0.4.1-dummy-static-website.md). Built on `release/0.4.2`; not yet run on a live application at 0.4.2.
+
+## Next: run 0.4.2 live, then release it
 
 | # | Item | Source |
 |---|---|---|
-| 1 | The shell drop compares title, heading and text, not only elements | W3, W7 |
-| 2 | The blocked-writes warning names the URLs | W4 |
-| 3 | `code:` evidence takes a line range | W6 |
-| 4 | One name for the automation folder in the pipeline | W12 |
-| 5 | The gate reads settings from the QA project, not the clone | W14 |
-| 6 | `qam plan` with no git repo or base commit says what to do | W10, W13, W15 |
-| 7 | The approve hint names the app URL that must be running | W17 |
-| 8 | `approve --add` with no bound script says how to bind it | W19 |
-| 9 | Setup warns about a code folder with no `.git`; the skills ask where the QA project goes | W2, W5 |
-| 10 | The Publish skill offers the ADO project list | W8 |
-| 11 | Re-run AgentMesh on 0.4.1: regenerate the 13 published cases with the wrong request body and re-publish (yours) | A12 |
-| 12 | Run the Docker check once, with Docker and network (the container was never run) | 0.4.1 item 11 |
-| 13 | A signed-in crawl on a data-heavy app, and the reports read by a person | 0.4.0, 0.4.1 |
-| 14 | `/qamaster:status` and `/qamaster:report` in Claude desktop on the uploaded zip; the push hook from a normal desktop push (K8) | 0.4.0, 0.3.2 |
-| 15 | Q49: linking local scripts without a push, and keeping a script's binding per test case across plans, needs a decision (a flag or setting makes it a minor release) | A15, W16, W19 |
+| 1 | Run 0.4.2 end to end on a live application, in a new session, and fix what it finds (the crawl fix failed once on the real site and was corrected) | 0.4.2 |
+| 2 | Re-run dummy-static-website's DSM on 0.4.2; check cats, landscapes and videogames are kept | W3 |
+| 3 | Re-run AgentMesh on 0.4.1 or later: regenerate the 13 published cases with the wrong request body and re-publish (yours) | A12 |
+| 4 | Run the Docker check once, with Docker and network (the container was never run) | 0.4.1 item 11 |
+| 5 | A signed-in crawl on a data-heavy app, and the reports read by a person | 0.4.0, 0.4.1 |
+| 6 | `/qamaster:status` and `/qamaster:report` in Claude desktop on the uploaded zip; the push hook from a normal desktop push (K8) | 0.4.0, 0.3.2 |
+| 7 | Bump to 0.4.2, build the zips with `scripts/package.sh`, and load the plugin zip in Claude desktop | 0.4.2 |
+| 8 | Q49: linking local scripts without a push, and keeping a script's binding per test case across plans, needs a decision (a flag or setting makes it a minor release) | A15, W16, W19 |
 
 ## 0.5.0 to 0.7.0: the rest of product v1 (minor)
 
@@ -92,7 +87,7 @@ Signed-in crawls need your `.env.dsm` and block writes (K3, Q15) · a file count
 1. ~~**The order of 0.5.0 to 0.8.0.**~~ Accepted 2026-11-04 (requirements, reports, feedback, scripts), then **reordered the same day around the demo path:** the test summary report in 0.4.0, then requirements, the other reports with feedback, the daily-use features, and scripts for the other channels.
 2. ~~**The Toolshop cases in Azure DevOps.**~~ **Decided 2026-11-04: leave them as they are.** Project Toolshop holds 13 cases from a QA project that has since been deleted, so no ledger links them, and publishing Toolshop again would create 13 more. QAMaster never deletes. Revisit when a new Toolshop QA project exists: relink them, or retire them by hand in ADO.
 3. ~~**Setup using the folder you're in.**~~ **Accepted 2026-11-04 as Q47:** three suggestions (this folder, the usual folder, a path you type).
-4. **Merge and push, after your agentmesh testing and its fixes (your call, 2026-11-04).** `feature/0.3.2-toolshop-fixes` is not on `main` or GitHub. Then: update `main`, and push or keep it local.
+4. ~~**Merge and push.**~~ `main` was fast-forwarded to 0.4.2 on 2026-11-04. **Still open:** push it, or keep it local (local `main` is ahead of GitHub).
 
 ## Sessions reviewed
 

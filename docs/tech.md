@@ -1,6 +1,6 @@
 # QAMaster: Technical design
 
-> Status: draft v0.1 (2026-10-28). The diagrams are in [architecture.md](architecture.md); the reasons are in [decisions.md](decisions.md).
+> Status: current at 0.4.2 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.4.2-setup-guide.html). The diagrams are in [architecture.md](architecture.md); the reasons are in [decisions.md](decisions.md).
 
 ## Tech stack
 
@@ -349,4 +349,4 @@ All hooks use only the standard library and stay quiet when they allow (Q14).
 | 10 | End to end against a demo app and a sandbox ADO project | — | M |
 | 11 (v1.1) | git pre-push hook, `CodeHost` (github, azure-repos) and PR check integrations (GitHub Actions, Azure Pipelines), PR comment, QA branch matching in CI (Q28) | CM design + New | M |
 
-Where it stands (2026-11-02): steps 1, 2, 4 and 7 are done; step 3 has features 1–5 and 7 done, and 6, 8 and 9 open. Steps 5, 6 (pytest and playwright-bdd), the push hook from 9, and 10 are planned in [plans/0.3.0.md](plans/0.3.0.md), which also brings in AQE feature 8 (Automation). Step 8 and the rest of 9 come after 0.3.0.
+Where it stands (2026-11-04, 0.4.2): steps 1–10 are done, with the demo apps and Azure DevOps as the store; step 3 has every feature except 6, requirements (0.5.0). Step 11 (v1.1) and the scripts for the other channels (0.7.0) are planned; see [plans/backlog.md](plans/backlog.md).

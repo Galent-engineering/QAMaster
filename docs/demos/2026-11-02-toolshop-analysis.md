@@ -57,4 +57,4 @@ A subagent that was also running Toolshop in scratch was stopped. It had not got
 
 - The hand-written report: `reports/output/toolshop-walkthrough-report.html` in the QA project.
 - The crawl logs it kept: `reports/evidence/dsm-run2.log` there.
-- The generic walkthrough: [2026-11-02-0.3.2-unknown-app.md](2026-11-02-0.3.2-unknown-app.md).
+- The generic walkthrough (removed 2026-11-04; git history).
