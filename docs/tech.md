@@ -37,7 +37,8 @@ plugin/                          # everything an install copies
   .claude-plugin/plugin.json
   commands/                      # onboard, setup, status, dsm, publish, plan, check, report
   skills/                        # TestGen, Design-Structure-Matrix, AUT-Skill-Builder, UI-Locator-Sync,
-                                 # QAMaster (plans, verdicts), work-items, QE-Reports-*, Domain_Test_Design_Skill-*
+                                 # QAMaster (plans, verdicts), work-items, QE-Reports-*, Domain_Test_Design_Skill
+                                 # (its 39 sub-skills are files in references/, Q51)
   agents/                        # mcp-config-agent, ui-dsm-agent
   hooks/hooks.json + *.mts       # session context, push gate, review gate, script gate
   src/                           # the engine (see the module map in architecture.md)

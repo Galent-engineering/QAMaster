@@ -17,12 +17,14 @@ import type { Dsm, DsmConfig } from '../dsm/build.mts';
 import { type KnowledgeSettings, pascal } from '../knowledge/build.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
-import { DOMAIN_SKILL, Facts } from '../testgen/facts.mts';
+import { domainRefs } from '../testgen/domain-refs.mts';
+import { Facts } from '../testgen/facts.mts';
 import { render } from '../testgen/render.mts';
 import { readRunRecord, runHash, type Validation, validationProblem } from '../testgen/run.mts';
 import { type Manifest, type TestCase, type TestGenSettings, validate } from '../testgen/validate.mts';
 
 const PLUGIN_SKILLS = path.resolve(import.meta.dirname, '../../skills');
+const DOMAIN = domainRefs(PLUGIN_SKILLS);
 
 function readJson<T>(file: string): T | null {
   if (!fs.existsSync(file)) return null;
@@ -75,8 +77,10 @@ function load(cfg: Config): Project {
     settings,
     app,
     autSkills: ls(skillsDir),
-    domainSkills: ls(PLUGIN_SKILLS).filter((d) => d === DOMAIN_SKILL || d.startsWith(`${DOMAIN_SKILL}-`)),
+    domainSkills: DOMAIN.names,
     skill: (skill) => {
+      const domain = DOMAIN.read(skill);
+      if (domain !== null) return domain;
       for (const d of [skillsDir, PLUGIN_SKILLS]) {
         const f = path.join(d, skill, 'SKILL.md');
         if (fs.existsSync(f)) return fs.readFileSync(f, 'utf8');

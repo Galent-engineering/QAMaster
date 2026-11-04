@@ -45,6 +45,7 @@ The dummy-static-website fixes, items 1–10 of [0.4.2.md](0.4.2.md#what-shipped
 | 6 | `/qamaster:status` and `/qamaster:report` in Claude desktop on the uploaded zip; the push hook from a normal desktop push (K8) | 0.4.0, 0.3.2 |
 | 7 | Load the 0.4.2 plugin zip in Claude desktop (bumped and built 2026-11-04) and re-run setup in a QA project so its launcher points at it | 0.4.2 |
 | 8 | Q49: linking local scripts without a push, and keeping a script's binding per test case across plans, needs a decision (a flag or setting makes it a minor release) | A15, W16, W19 |
+| 9 | Q51: ship the domain sub-skills as reference files of `Domain_Test_Design_Skill` (built on `refactor/domain-references`; goes in the next release) | Q51 |
 
 ## 0.5.0 to 0.7.0: the rest of product v1 (minor)
 

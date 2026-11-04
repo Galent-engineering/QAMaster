@@ -23,7 +23,7 @@ Turn *"here is an application, in this domain, on this platform"* into a structu
 
 ## 2. Sub-skill index
 
-Load each sub-skill with the Skill tool by its exact name.
+Each sub-skill is a reference file next to this skill: `Domain_Test_Design_Skill-<X>` is `references/<X>.md`, for example `Domain_Test_Design_Skill-Test-UIUX` is `references/Test-UIUX.md`. Read only the ones the AUT needs.
 
 ### 2.1 Core (method — use on every task)
 | Sub-skill | Holds |
@@ -218,6 +218,6 @@ See `Domain_Test_Design_Skill-Core-Techniques` → *Category × technique map*.
 Before delivering: AUT profile complete with assumptions; domain, app type and test-type sub-skills named; every key workflow covered in all six categories (or reason given); rules have independently computed expected values; valid and invalid transitions; allowed and denied access per role; integration failure modes; observable expected results; navigation steps present; priorities by risk; traceability to a source. Full checklist: `Domain_Test_Design_Skill-Core-OutputAndQuality`.
 
 ## 9. Adding a sub-skill
-- **New domain:** create `skills/Domain_Test_Design_Skill-Domain-<Name>/SKILL.md` with frontmatter `name` = folder name and the 13 domain headings listed in 2.4 (in that order); add a row to 2.4, section 5 and 7.2.
-- **New test type:** `Domain_Test_Design_Skill-Test-<Name>` with the 10 test-type headings; add to 2.3, 7.1 and 7.2, and to `TYPES` in `tools/testgen/testgen.mts` if TestGen should accept it.
-- **New application type:** `Domain_Test_Design_Skill-App-<Name>` (Detection signals, Focus areas, Checklist, Scenario patterns, Test-type applicability, Tools and automation, Common pitfalls, Related sub-skills); add to 2.2, 6 and 7.1.
+- **New domain:** create `references/Domain-<Name>.md` (no frontmatter) with the 13 domain headings listed in 2.4 (in that order); add a row to 2.4, section 5 and 7.2.
+- **New test type:** `references/Test-<Name>.md` with the 10 test-type headings; add to 2.3, 7.1 and 7.2, and to `TYPES` in `tools/testgen/testgen.mts` if TestGen should accept it.
+- **New application type:** `references/App-<Name>.md` (Detection signals, Focus areas, Checklist, Scenario patterns, Test-type applicability, Tools and automation, Common pitfalls, Related sub-skills); add to 2.2, 6 and 7.1.

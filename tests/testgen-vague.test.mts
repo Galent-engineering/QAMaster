@@ -7,13 +7,15 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import type { Dsm } from '../plugin/src/dsm/build.mts';
-import { DOMAIN_SKILL, Facts } from '../plugin/src/testgen/facts.mts';
+import { domainRefs } from '../plugin/src/testgen/domain-refs.mts';
+import { Facts } from '../plugin/src/testgen/facts.mts';
 import { type Manifest, type TestCase, type TestGenSettings, validate } from '../plugin/src/testgen/validate.mts';
 
 const ROOT = path.resolve(import.meta.dirname, '..');
 const FIX = path.join(ROOT, 'tests/fixtures/testgen');
 const AUT = path.join(ROOT, 'tests/fixtures/knowledge/shop/aqe');
 const PLUGIN_SKILLS = path.join(ROOT, 'plugin/skills');
+const DOMAIN = domainRefs(PLUGIN_SKILLS);
 const read = (f: string) => JSON.parse(fs.readFileSync(f, 'utf8'));
 const text = (f: string) => fs.readFileSync(f, 'utf8');
 
@@ -25,8 +27,10 @@ function facts(): Facts {
     settings: {},
     app: 'Shop',
     autSkills: fs.readdirSync(AUT),
-    domainSkills: fs.readdirSync(PLUGIN_SKILLS).filter((d) => d === DOMAIN_SKILL || d.startsWith(`${DOMAIN_SKILL}-`)),
+    domainSkills: DOMAIN.names,
     skill: (name) => {
+      const domain = DOMAIN.read(name);
+      if (domain !== null) return domain;
       for (const dir of [AUT, PLUGIN_SKILLS]) {
         const f = path.join(dir, name, 'SKILL.md');
         if (fs.existsSync(f)) return text(f);

@@ -9,7 +9,7 @@ Each entry says where the choice came from:
 
 Format: **Q<n>. Title** (date, status, source): decision, why, what we gave up.
 
-Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 is **proposed**. Q49 (linking local scripts without a push) is open and has no entry yet; see the [AgentMesh analysis](demos/2026-11-04-0.3.2-agentmesh-feedback.md). To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
+Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 is **proposed**; Q51 was accepted on 2026-11-04. Q49 (linking local scripts without a push) is open and has no entry yet; see the [AgentMesh analysis](demos/2026-11-04-0.3.2-agentmesh-feedback.md). To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
 
 ---
 
@@ -744,6 +744,14 @@ Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in ea
   - When every check passes, publish asks for a final apply, and that ends it.
 - **Why:** on dummy-static-website (W9) the store was chosen at setup, before any test case existed, the ADO details were set by hand in `.env`, and only one destination was possible.
 - **Gave up (if accepted):** choosing the store at setup. Built in 0.6.0.
+
+**Q51. The 39 `Domain_Test_Design_Skill` sub-skills are reference files, not skills** (2026-11-04, accepted 2026-11-04; amends the 0.4.0 menu fix)
+- **Decision:**
+  - The sub-skills move from `plugin/skills/Domain_Test_Design_Skill-<X>/SKILL.md` to `plugin/skills/Domain_Test_Design_Skill/references/<X>.md`, with no frontmatter. Their content is unchanged from Autonomous-QE.
+  - Their names stay as they were: TestGen still lists `Domain_Test_Design_Skill-<X>` in its fact pack, and `domain:<X>#<heading>` evidence resolves to `references/<X>.md`. Existing runs and citations keep working.
+  - The router skill and TestGen tell Claude to read the file instead of loading a skill.
+- **Why:** an uploaded plugin's catalog lists every skill, hidden or not, so 39 internal knowledge files showed as 39 skills next to QAMaster's own 8. They're a reference book TestGen reads, not something a person picks.
+- **Gave up:** loading a sub-skill by name with the Skill tool. Generating them per project at first start was rejected: they're TestGen's ground truth and must be the same reviewed text everywhere.
 
 ---
 
