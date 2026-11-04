@@ -43,7 +43,7 @@ The dummy-static-website fixes, items 1–10 of [0.4.2.md](0.4.2.md#what-shipped
 | 4 | Run the Docker check once, with Docker and network (the container was never run) | 0.4.1 item 11 |
 | 5 | A signed-in crawl on a data-heavy app, and the reports read by a person | 0.4.0, 0.4.1 |
 | 6 | `/qamaster:status` and `/qamaster:report` in Claude desktop on the uploaded zip; the push hook from a normal desktop push (K8) | 0.4.0, 0.3.2 |
-| 7 | Bump to 0.4.2, build the zips with `scripts/package.sh`, and load the plugin zip in Claude desktop | 0.4.2 |
+| 7 | Load the 0.4.2 plugin zip in Claude desktop (bumped and built 2026-11-04) and re-run setup in a QA project so its launcher points at it | 0.4.2 |
 | 8 | Q49: linking local scripts without a push, and keeping a script's binding per test case across plans, needs a decision (a flag or setting makes it a minor release) | A15, W16, W19 |
 
 ## 0.5.0 to 0.7.0: the rest of product v1 (minor)
