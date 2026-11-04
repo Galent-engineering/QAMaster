@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { checkSource } from '../plugin/src/pipeline/sources.mts';
+import { checkSource, onlyOwnChanges, ownPaths } from '../plugin/src/pipeline/sources.mts';
 import { tmpDir } from './tmp.mts';
 
 function gitRepo(dir: string) {
@@ -60,6 +60,40 @@ test('a source that is another folder keeps every change as uncommitted', () => 
   fs.mkdirSync(path.join(app, 'dsm'));
   fs.writeFileSync(path.join(app, 'dsm/a'), 'x');
   assert.match(checkSource({ source: app }, qa, ['shop-web']).warnings.join(), /uncommitted changes/);
+});
+
+test('a configured dsm output_dir is not an uncommitted change', () => {
+  const qa = tmpDir('qam-own-');
+  gitRepo(qa);
+  fs.mkdirSync(path.join(qa, 'config'), { recursive: true });
+  fs.writeFileSync(path.join(qa, 'config/dsm-config.json'), JSON.stringify({ output_dir: 'maps' }));
+  fs.mkdirSync(path.join(qa, 'maps'), { recursive: true });
+  fs.writeFileSync(path.join(qa, 'maps/index.html'), 'x');
+  assert.doesNotMatch(checkSource({ source: '.' }, qa, []).warnings.join(), /uncommitted/);
+});
+
+test('a renamed own file and a non-ASCII own path are not uncommitted changes', () => {
+  const qa = tmpDir('qam-own-');
+  fs.mkdirSync(path.join(qa, 'dsm'), { recursive: true });
+  fs.writeFileSync(path.join(qa, 'dsm/old name.html'), 'one');
+  gitRepo(qa);
+  spawnSync('git', ['-C', qa, 'mv', 'dsm/old name.html', 'dsm/new name.html']);
+  fs.mkdirSync(path.join(qa, 'testcases'), { recursive: true });
+  fs.writeFileSync(path.join(qa, 'testcases/café.csv'), 'x');
+  assert.doesNotMatch(checkSource({ source: '.' }, qa, []).warnings.join(), /uncommitted/);
+});
+
+test('onlyOwnChanges reads a non-ASCII own path', () => {
+  const qa = tmpDir('qam-own-');
+  gitRepo(qa);
+  const g = (...a: string[]) =>
+    spawnSync('git', ['-C', qa, '-c', 'user.name=t', '-c', 'user.email=t@example.test', ...a], { encoding: 'utf8' });
+  const from = g('rev-parse', 'HEAD').stdout.trim();
+  fs.mkdirSync(path.join(qa, 'testcases'), { recursive: true });
+  fs.writeFileSync(path.join(qa, 'testcases/café.csv'), 'x');
+  g('add', '-A');
+  g('commit', '-qm', 'c');
+  assert.equal(onlyOwnChanges(qa, from, 'HEAD', ownPaths(qa)), true);
 });
 
 test('tracked own files that were changed are not uncommitted changes either', () => {

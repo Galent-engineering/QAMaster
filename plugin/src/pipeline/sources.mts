@@ -114,7 +114,12 @@ export function ownPaths(project: string, extra: string[] = []): string[] {
     const dir = JSON.parse(fs.readFileSync(path.join(project, 'config', 'aut-skills.json'), 'utf8')).skills_dir;
     if (typeof dir === 'string' && dir) skills = dir.replace(/\/+$/, '');
   } catch {} // no config: the default folder
-  return [...OWN_FOLDERS, ...extra, `${skills}/AUT_`];
+  let output: string[] = [];
+  try {
+    const out = JSON.parse(fs.readFileSync(path.join(project, 'config', 'dsm-config.json'), 'utf8')).output_dir;
+    if (typeof out === 'string' && out) output = [out.replace(/\/+$/, '')]; // the DSM's configured folder
+  } catch {} // no config: the default 'dsm'
+  return [...OWN_FOLDERS, ...output, ...extra, `${skills}/AUT_`];
 }
 
 /** A file is own when it is one of the paths, inside one, or starts with one that is an AUT_ prefix. */
@@ -123,11 +128,11 @@ export const isOwn = (file: string, own: string[]) =>
 
 /** True when every file changed from `from` to `to` is QAMaster's own. A commit git can't find means stale (false). */
 export function onlyOwnChanges(dir: string, from: string, to: string, own: string[]): boolean {
-  const d = git(['diff', '--name-only', from, to], dir);
+  const d = git(['diff', '--name-only', '-z', from, to], dir); // NUL-separated: git quotes non-ASCII paths otherwise
   if (!d.ok) return false;
   const prefix = git(['rev-parse', '--show-prefix'], dir).out;
-  return d.out
-    .split('\n')
+  return d.raw
+    .split('\0')
     .filter(Boolean)
     .every((f) => f.startsWith(prefix) && isOwn(f.slice(prefix.length), own));
 }
@@ -175,15 +180,18 @@ function checkFolder(dir: string, spec: SourceSpec, project: string, ownExtra: s
     );
   // when the QA project is the app repo, QAMaster's own output is the uncommitted change (0.4.1 A11)
   const own = path.resolve(dir) === path.resolve(project) ? ownPaths(project, ownExtra) : [];
-  const dirty = git(['status', '--porcelain', '--untracked-files=all'], dir)
-    .raw.split('\n')
-    .filter((l) => l.trim())
-    .filter((l) => {
-      // 'XY path': two status characters and a space (the output is not trimmed, so ' M' keeps its space).
-      // Paths are relative to the repository's root: a path outside this folder is not its own file.
-      const file = l.slice(3).replace(/^"|"$/g, '').split(' -> ').pop() ?? '';
-      return !(file.startsWith(prefix) && isOwn(file.slice(prefix.length), own));
-    });
+  // -z: NUL-separated records 'XY path', no quoting; a rename or copy is followed by a second record, the old path
+  const records = git(['status', '--porcelain', '-z', '--untracked-files=all'], dir).raw.split('\0').filter(Boolean);
+  const entries: string[][] = [];
+  for (let i = 0; i < records.length; i++) {
+    const paths = [records[i].slice(3)];
+    if (/[RC]/.test(records[i].slice(0, 2)) && i + 1 < records.length) paths.push(records[++i]);
+    entries.push(paths);
+  }
+  // paths are relative to the repository's root: a path outside this folder is not its own file
+  const dirty = entries.filter(
+    (paths) => !paths.every((f) => f.startsWith(prefix) && isOwn(f.slice(prefix.length), own)),
+  );
   if (dirty.length) {
     warnings.push(`${rel} has uncommitted changes. The scan reads committed code, so they won't show until committed.`);
   }
