@@ -192,6 +192,16 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
       ...suggestion.ids.map((id) => `  [${skipSmoke.has(id) ? ' ' : 'x'}] ${id}  ${title.get(id)}`),
     );
   }
+  // other runs previewed but not applied hold smoke suggestions of their own (E1)
+  const others = otherPreviews(path.dirname(previewFile), previewFile);
+  const heldElsewhere = others.reduce((n, o) => n + o.length, 0);
+  if (!v.apply && heldElsewhere) {
+    const exceeds = smokeInStore + confirmed.size + heldElsewhere > max;
+    lines.push(
+      '',
+      `${heldElsewhere} more smoke case${heldElsewhere > 1 ? 's are' : ' is'} suggested by ${others.length} other previewed run${others.length > 1 ? 's' : ''} not applied yet${exceeds ? `: with them the plan could pass its max of ${max}` : ''}.`,
+    );
+  }
   if (suggestion.notOffered) {
     lines.push(
       '',
@@ -327,6 +337,19 @@ function readPreview(file: string): string[] | null {
     return Array.isArray(data.smoke) ? data.smoke.filter((x): x is string => typeof x === 'string') : null;
   } catch {
     return null; // no dry run recorded (or an unreadable one): apply decides from the live store alone
+  }
+}
+
+/** The smoke each other run's dry run offered and nobody applied yet: an applied run removes its preview. */
+function otherPreviews(dir: string, own: string): string[][] {
+  try {
+    return fs
+      .readdirSync(dir)
+      .filter((f) => /^preview-.*\.json$/.test(f) && path.join(dir, f) !== own)
+      .map((f) => readPreview(path.join(dir, f)) ?? [])
+      .filter((ids) => ids.length);
+  } catch {
+    return [];
   }
 }
 

@@ -381,3 +381,23 @@ test('0.2.1 A5: smoke is counted across the plan; apply refuses when the cap cha
   assert.equal(applied.status, 0, applied.out);
   assert.match(applied.out, /smoke in the plan: 2 of max 2/);
 });
+
+// 0.2.1 verification E1: the dry run promised smoke other previewed runs would also take, and apply refused later
+test('E1: the dry run says how much smoke other previewed runs are also holding', () => {
+  const p = project();
+  fs.writeFileSync(
+    path.join(p.dir, 'config/qamaster.json'),
+    JSON.stringify({ app: { name: 'Shop' }, smoke: { max: 3 } }),
+  );
+  const B = '20261030-1300-cart';
+  p.writeRun([kase('TC-CART-001'), kase('TC-CART-002')]);
+  p.writeRun([kase('TC-CART-101'), kase('TC-CART-102')], { name: B });
+  assert.doesNotMatch(p.qam('publish', RUN).out, /other run/, 'nothing else is previewed yet');
+  const second = p.qam('publish', B).out;
+  assert.match(
+    second,
+    /2 more smoke cases are suggested by 1 other previewed run not applied yet: with them the plan could pass its max of 3/,
+  );
+  assert.equal(p.qam('publish', RUN, '--apply').status, 0);
+  assert.doesNotMatch(p.qam('publish', B).out, /other previewed run/, 'an applied run no longer holds a preview');
+});
