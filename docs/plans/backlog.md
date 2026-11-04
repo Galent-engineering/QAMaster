@@ -40,9 +40,9 @@ Plan: [0.4.0.md](0.4.0.md).
 | 7 | An ETA in the crawl's progress line, and `qam dsm run --estimate` | S6, S7 | XS–S + S |
 | 8 | Setup uses the folder you're in when it's the app's git repo or a clone of the URL. Needs a decision first (shown as Proposed on the setup page) | v3.1 step 2 | S |
 
-## 0.5.0 to 0.8.0: the rest of product v1 (minor, order proposed)
+## 0.5.0 to 0.8.0: the rest of product v1 (minor)
 
-Product v1 isn't complete until these exist. The order below is a proposal for you to set.
+Product v1 isn't complete until these exist. The order was accepted on 2026-11-04.
 
 | Release | Feature | Source | Effort |
 |---|---|---|---|
@@ -81,8 +81,8 @@ Signed-in crawls need your `.env.dsm` and block writes (K3, Q15) · a file count
 
 ## Needs your answer
 
-1. **The order of 0.5.0 to 0.8.0.**
-2. **The Toolshop cases in Azure DevOps.** Project Toolshop holds 13 cases created from a QA project that has since been deleted, so there's no ledger linking them. Publishing Toolshop again would create 13 more. QAMaster never deletes: leave them, retire them by hand in ADO, or relink them once a new QA project exists.
+1. ~~**The order of 0.5.0 to 0.8.0.**~~ **Accepted 2026-11-04:** requirements, reports, feedback, then scripts for the other channels.
+2. ~~**The Toolshop cases in Azure DevOps.**~~ **Decided 2026-11-04: leave them as they are.** Project Toolshop holds 13 cases from a QA project that has since been deleted, so no ledger links them, and publishing Toolshop again would create 13 more. QAMaster never deletes. Revisit when a new Toolshop QA project exists: relink them, or retire them by hand in ADO.
 3. **Setup using the folder you're in** (0.4.0 item 8): accept it as a decision, or drop it.
 4. **`feature/0.3.2-toolshop-fixes` is not on `main` or GitHub.** Update `main` and push, or keep it local.
 
