@@ -38,4 +38,14 @@ test('only a literal that is exactly form is guessed: role and attribute locator
   assert.deepEqual(selectors('  loginForm: \'[data-testid="form"]\','), []);
   assert.deepEqual(selectors('  loginForm: \'input[name="form"]\','), []);
   assert.equal(selectors("  loginForm: page.locator('form'),").length, 1);
+  assert.deepEqual(selectors("  loginForm: page.getByRole('form', { name: 'Login' }),"), []);
+  assert.deepEqual(selectors("  loginForm: { role: 'form', name: 'Log in' }, // the labelled form"), []);
+  assert.deepEqual(selectors("  loginForm: 'form#login', // the login form"), []);
+});
+
+test('a bare form literal is flagged before a trailing comment or as const', () => {
+  assert.equal(selectors('  f: "form" // comment').length, 1);
+  assert.equal(selectors("  f: 'form' as const").length, 1);
+  assert.equal(selectors("  f: 'form', // the form").length, 1);
+  assert.equal(selectors("  f: `form`;").length, 1);
 });

@@ -101,10 +101,10 @@ export function outlineFindings(feature: string, text: string): string[] {
 
 /** The static gates; `known` is every TC ID of the TestGen runs. */
 // a string literal that is exactly 'form': it opens after : , ( [ or a space (not inside a longer selector after =),
-// closes before , ) ] } ; or the end, and is not the value of role:
+// closes before , ) ] } ; // as const or the end of the line, and is not a role (role: 'form', getByRole('form', ...))
 const bareForm = (line: string): boolean =>
-  [...line.matchAll(/(?:^|[:,([\s])(['"`])form\1\s*(?:[,)\]};]|$)/g)].some(
-    (m) => !/\brole\s*:\s*$/.test(line.slice(0, m.index + m[0].indexOf(m[1]))),
+  [...line.matchAll(/(?:^|[:,([\s])(['"`])form\1\s*(?:[,)\]};]|\/\/|as\s+const\b|$)/g)].some(
+    (m) => !/(?:\brole\s*:|getByRole\s*\()\s*$/.test(line.slice(0, m.index + m[0].indexOf(m[1]))),
   );
 
 export function staticFindings(root: string, known: Set<string>): Record<string, string[]> {
