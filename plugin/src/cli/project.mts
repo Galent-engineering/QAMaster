@@ -367,9 +367,9 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
   const repos = (dsm?.repositories as { name: string; path: string; branch?: string }[] | undefined) ?? [];
   // pushed once the store says whether this project gates (a gate-only project needs no app URL or source)
   const noApp = !!dsm && !app.base_url && !repos.length;
+  const auto = automationFolder(cfg);
   for (const r of repos) {
     try {
-      const auto = automationFolder(cfg);
       const c = checkSource(
         { source: r.path, branch: r.branch, name: r.name },
         dir,
