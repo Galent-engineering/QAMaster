@@ -9,8 +9,8 @@ There's one plan per plugin release. Each plan is the working source of truth fo
 | 0.3.0 | [0.3.0.md](0.3.0.md): the first full working plugin (gate, just-in-time automation, pytest and playwright-bdd runners) | Released 2026-11-02, r9 |
 | 0.3.1 | [0.3.1.md](0.3.1.md): prerequisites a clean machine needs, checked and explained (Docker findings F1–F11) | Released 2026-11-02, r5 |
 | 0.3.2 | [0.3.2.md](0.3.2.md): fixes from the Toolshop run, `/qamaster:status`, an installable zip, local first, a plugin with no `bin/` | Built 2026-11-03, loads in Claude desktop, r3 |
-| 0.3.3 | [0.3.3.md](0.3.3.md): fixes only (patch) | Planned |
-| 0.4.0 | [0.4.0.md](0.4.0.md): features (minor) | Planned |
+| 0.3.3 | [0.3.3.md](0.3.3.md): fixes only | Folded into 0.4.0 (no 0.3.3 release) |
+| 0.4.0 | [0.4.0.md](0.4.0.md): the 0.3.3 fixes, setup folder suggestions, the crawl ETA, the six reports and feedback | Built 2026-11-04, r4 |
 | — | [backlog.md](backlog.md): every open fix and to-do, with its source and target release, up to 1.0.0 and after | Kept current |
 
 **Version numbers: MAJOR.MINOR.PATCH** ([Q46](../decisions.md), 2026-11-03).

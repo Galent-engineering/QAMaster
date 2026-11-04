@@ -98,14 +98,29 @@ Plan: [plans/0.3.2.md](plans/0.3.2.md), with what went well, the feedback and wh
 
 Not in 0.3.0: Feedback, Reports and Requirements (`qam requirements fetch`), and the v1.1, v2 and v3 scope in product.md.
 
+## 0.4.0: the 0.3.3 fixes and the demo's missing pieces, with reports and feedback
+
+Plan: [plans/0.4.0.md](plans/0.4.0.md). Built on `feature/0.3.2-toolshop-fixes` on 2026-11-04. The fixes and features shipped as one minor release (Q46), so there is no 0.3.3.
+
+| Change | Where | Decision |
+|---|---|---|
+| Six self-contained HTML reports, `qam report`, `/qamaster:report`; `qam feedback` | `reports/`, `feedback/`, `cli/reports.mts` | Q17, Q19 |
+| Setup asks where, with three suggestions, when no code folder is given | `cli/project.mts`, `pipeline/sources.mts` | Q47 |
+| Doctor warns on ADO settings with the local file store; a new `--app` replaces the old hooks record | `cli/project.mts`, `integrations/` | Q44, Q27 |
+| Crawler: forms without `<form>`, a closed browser restarts, a 503 backs off, an ETA in the progress line | `adapters/crawler-playwright.mts`, `dsm/` | Q15 |
+| Publish: held-back status (E7), skip-smoke remembered (E2), other runs' smoke counted (E1), the retire note (E5), the credential hint (E6) | `cli/publish.mts`, `pipeline/`, `testgen/` | |
+| The `Domain_Test_Design_Skill` sub-skills hidden from the `/` menu | `plugin/skills/` | |
+
+
 ## Planned
 
 Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.3.3 | Fixes | Demo-path fixes first: forms without `<form>` in the DSM, a crawl that survives a closed browser and a 503, a doctor warning for the new store default, clearer publish status, a tidy `/` menu. Then the small publish fixes, the Docker check from a plain checkout, and the agentmesh test's fixes | [0.3.3.md](plans/0.3.3.md) |
-| 0.4.0 | Features | The demo's missing pieces: the test summary report and `qam report`, setup's folder suggestions (Q47), an ETA in the crawl | [0.4.0.md](plans/0.4.0.md) |
-| 0.5.0 – 0.8.0 | Features | The rest of product v1, ordered around the demo path (2026-11-04): requirements fetch; the other five reports with feedback; daily-use features (conflicts, review confirmation, presets, DSM speed); scripts for the other channels | [backlog](plans/backlog.md#050-to-080-the-rest-of-product-v1-minor) |
+| 0.4.1 | Fixes | The Docker check from a plain checkout, and fixes from running 0.4.0 on a live app (agentmesh) | [backlog](plans/backlog.md#041-fixes-patch) |
+| 0.5.0 | Features | Requirements fetch: completes the demo's step 6 | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
+| 0.6.0 | Features | Daily-use features: conflicts that show their fields, a review confirmation, selection presets, faster DSM | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
+| 0.7.0 | Features | Scripts for Mobile Web, API, Android and iOS | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
 | **1.0.0** | **Major** | Product v1 complete, a clean-room Docker run, and a walkthrough on a second unknown app | [backlog](plans/backlog.md#100-the-major-release) |
 | 1.1.0 | Features | The git pre-push hook, each IDE and agent set up by ticking it (Q43), PR checks, ADO Test Run | [backlog](plans/backlog.md#after-100) |

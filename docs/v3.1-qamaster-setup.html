@@ -97,18 +97,18 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 </head>
 <body>
 <main>
-<p><span class="b now">Plugin 0.3.2</span><span class="b v11">Decisions to Q47</span><span class="b later">Checked 2026-11-03</span></p>
+<p><span class="b now">Plugin 0.4.0</span><span class="b v11">Decisions to Q47</span><span class="b later">Checked 2026-11-04</span></p>
 <h1>QAMaster setup</h1>
 <p class="lead">How a team sets QAMaster up, step by step: what each step does, the integration it plugs into, the decisions behind it, and what arrives at that step later.</p>
 
 <div class="note">
-  <p><strong>Where it stands.</strong> The plugin is <strong>0.3.2</strong>, built and tested on the branch <code>feature/0.3.2-toolshop-fixes</code>. It isn't on <code>main</code> or GitHub yet. Product v1 isn't complete: <strong>requirements fetching, feedback and the HTML reports</strong> aren't built. Everything after v1 below is planned scope from <a href="product.md#scope">product.md</a>, not a schedule.</p>
+  <p><strong>Where it stands.</strong> The plugin is <strong>0.4.0</strong>, built and tested on the branch <code>feature/0.3.2-toolshop-fixes</code>. It isn't on <code>main</code> or GitHub yet. Product v1 isn't complete: <strong>requirements fetching and scripts for the other channels</strong> aren't built. Reports and feedback are, but have only run on test data, not on a live app. Everything after v1 below is planned scope from <a href="product.md#scope">product.md</a>, not a schedule.</p>
 </div>
 <p class="legend"><span class="b now">Shipped</span><span class="b prop">Proposed</span><span class="b todo">Decided, not built</span><span class="b v11">v1.1</span><span class="b v2">v2</span><span class="b v3">v3</span><span class="b later">Later</span></p>
 
 <h2>What works today</h2>
 <div class="grid">
-  <section class="card"><h3><span class="b now">Shipped</span> App discovery</h3><p>Scan the app's code, crawl the running app with a robot browser that can't change data, and build the screen map (DSM). 0.3.2 fixed a change-password form being taken for a sign-in page, and folds ULID IDs into <code>:id</code>.</p></section>
+  <section class="card"><h3><span class="b now">Shipped</span> App discovery</h3><p>Scan the app's code, crawl the running app with a robot browser that can't change data, and build the screen map (DSM). The crawl keeps forms without a <code>&lt;form&gt;</code> tag, restarts a closed browser, backs off on a 503, shows time left, and folds ULID IDs into <code>:id</code>.</p></section>
   <section class="card"><h3><span class="b now">Shipped</span> Test design and publish</h3><p>Claude writes test cases grounded in the screen map and app knowledge, a validator checks them, a person reviews them, and publish sends them to a local CSV store by default, or to Azure DevOps Test Plans. Publishing again changes nothing that hasn't changed.</p></section>
   <section class="card"><h3><span class="b now">Shipped</span> The change gate</h3><p>For each code change: a plan of the cases it touches, scripts drafted just in time for cases that have none, a person's approval, a run on pytest or playwright-bdd, and a verdict with evidence. A push from Claude Code waits for it.</p></section>
   <section class="card"><h3><span class="b now">Shipped</span> Status and checks</h3><p><code>/qamaster:status</code> shows every stage with its evidence and the next step. <code>qam doctor</code> checks the store, the runners, the browser and the app URL, and says how to fix each.</p></section>
@@ -137,7 +137,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     </div>
     <div class="flow" id="flow"></div>
     <p class="why">Q26 a local folder or git URL, validated, and a clone goes where you choose · Q28 the host decides which PR checks fit · Q30 read through the host's API · Q41 setup problems block, no downloads without a yes</p>
-    <p class="next"><b>Next here:</b> when no folder is given, setup asks with three suggestions: this folder, the folder you've used most before, or a path you type (Q47, built in 0.4.0) <span class="b prop">Accepted, not built</span>. <b>Later:</b> reading the code through the GitHub or Azure Repos API, with no clone <span class="b v11">v1.1</span>; Bitbucket, GitLab and other servers <span class="b later">Later</span>.</p>
+    <p class="next"><b>Next here:</b> when no folder is given, setup asks with three suggestions: this folder, the folder you've used most before, or a path you type (Q47) <span class="b now">Shipped in 0.4.0</span>. <b>Later:</b> reading the code through the GitHub or Azure Repos API, with no clone <span class="b v11">v1.1</span>; Bitbucket, GitLab and other servers <span class="b later">Later</span>.</p>
   </li>
   <li class="step">
     <h3>Choose the test case store</h3>
@@ -151,7 +151,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <p class="what">Scan the code's routes, crawl the running app (signed in if needed), and build the screen map that test design and the gate both use. Every write request is blocked during the crawl.</p>
     <div class="pick"><label for="crawler">Crawler</label><select id="crawler"><option value="pw">Playwright (web)</option><option value="appium">Appium (mobile app)</option></select></div>
     <p class="why">Q15 read-only toward the app · 0.3.2 T1 sign-in detection · T2 ULID IDs</p>
-    <p class="next"><b>Next here:</b> faster crawls and a time estimate before running (S1–S7), forms without a <code>&lt;form&gt;</code> tag <span class="b todo">0.3.3</span>. <b>Later:</b> locators from the crawl, API discovery <span class="b v2">v2</span>; Appium <span class="b later">Later</span>.</p>
+    <p class="next">Forms without a <code>&lt;form&gt;</code> tag, a browser that restarts when it closes, a 503 back-off and a time-left estimate in the progress line are shipped in 0.4.0. <b>Next here:</b> faster crawls and an estimate before running (S1–S4, S7) <span class="b todo">0.6.0</span>. <b>Later:</b> locators from the crawl, API discovery <span class="b v2">v2</span>; Appium <span class="b later">Later</span>.</p>
   </li>
   <li class="step">
     <h3>Build the app knowledge</h3>
@@ -196,14 +196,14 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <div class="pick"><label for="host">Code host</label><select id="host"><option value="none">None: the Claude Code push hook</option><option value="github">GitHub</option><option value="azure-repos">Azure Repos</option><option value="bitbucket">Bitbucket</option><option value="gitlab">GitLab</option></select>
     <label for="ci">CI</label><select id="ci"><option value="none">None</option><option value="github-actions">GitHub Actions</option><option value="azure-pipelines">Azure Pipelines</option><option value="bitbucket-pipelines">Bitbucket Pipelines</option><option value="gitlab-ci">GitLab CI</option><option value="jenkins">Jenkins</option></select></div>
     <p class="why">Q14 hooks are fast and quiet · Q28 the code host is a replaceable adapter</p>
-    <p class="next"><b>Next here:</b> evidence from a real desktop push, not only a test event <span class="b todo">0.3.3</span>. <b>Later:</b> PR checks with one plan comment and approval by comment <span class="b v11">v1.1</span>.</p>
+    <p class="next"><b>Next here:</b> evidence from a real desktop push, not only a test event <span class="b todo">0.4.1</span>. <b>Later:</b> PR checks with one plan comment and approval by comment <span class="b v11">v1.1</span>.</p>
   </li>
   <li class="step gap">
     <h3>Report and feed back</h3>
-    <p class="what">Self-contained HTML reports fed by the gate, and feedback that proposes new or stale cases, broken links and defect drafts for a person to act on. <strong>Not built:</strong> <code>qam report</code> blocks today.</p>
+    <p class="what">Self-contained HTML reports fed by the gate, and feedback that proposes new or stale cases, broken links and defect drafts for a person to act on. <strong>Built in 0.4.0:</strong> <code>qam report all | manual | &lt;type&gt;</code> writes six reports (test summary, test cases, execution, defects, root cause analysis, DSM) into <code>reports/output/</code>, and <code>qam feedback [&lt;sha&gt;]</code> proposes gaps, stale cases, BROKEN links and defect drafts into <code>reports/data/</code>. A report with no input says which one is missing. They have run on test data only.</p>
     <div class="pick"><label for="res">Results go to</label><select id="res"><option value="html">HTML reports</option><option value="adorun">HTML reports + an ADO Test Run</option></select></div>
     <p class="why">Q17 reports are self-contained HTML · Q19 feedback proposes, never generates on its own</p>
-    <p class="next"><b>Next here:</b> the six reports and feedback <span class="b todo">v1</span>. <b>Later:</b> root-cause evidence from commits and logs, value metrics <span class="b v3">v3</span>.</p>
+    <p class="next"><b>Later:</b> reports from a live run, checked by a person <span class="b todo">0.4.1</span>;  root-cause evidence from commits and logs, value metrics <span class="b v3">v3</span>.</p>
   </li>
 </ol>
 
@@ -215,13 +215,13 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 <h2>What comes next</h2>
 <p class="sub">Version numbers: a new feature raises the minor, fixes only raise the patch, and 1.0.0 is the major release, product v1 complete (<a href="decisions.md">Q46</a>). Every open item is in <a href="plans/backlog.md">plans/backlog.md</a>. Only 0.3.3 and 0.4.0 are planned in detail.</p>
 <ol class="tl">
-  <li class="here"><h3>0.3.2 <span class="b now">Built 2026-11-03</span></h3><ul><li>Toolshop fixes T1–T5, <code>/qamaster:status</code>, zips for Claude desktop and the CLI, local first (Q44), a plugin with no <code>bin/</code> (Q45). Loads in Claude desktop.</li></ul></li>
-  <li><h3>0.3.3 <span class="b todo">Next: fixes only</span></h3><ul>
-    <li>Demo-path fixes first: forms without a <code>&lt;form&gt;</code> tag in the DSM; a crawl that survives a closed browser and a 503; a doctor warning for the new store default; clearer publish status; a tidy <code>/</code> menu.</li>
-    <li>Then the small publish fixes, the Docker check from a plain checkout, and fixes from the agentmesh test.</li></ul></li>
-  <li><h3>0.4.0 <span class="b todo">The demo's missing pieces</span></h3><ul>
-    <li>The test summary report and <code>qam report</code>; setup's three folder suggestions (Q47); an ETA in the crawl. After this the demo runs from install to report.</li></ul></li>
-  <li><h3>0.5.0 – 0.8.0 <span class="b todo">Rest of v1</span></h3><ul><li>Requirements fetch; the other five reports with feedback; daily-use features (conflicts, review confirmation, presets, DSM speed); scripts for Mobile Web, API, Android and iOS.</li></ul></li>
+  <li><h3>0.3.2 <span class="b now">Built 2026-11-03</span></h3><ul><li>Toolshop fixes T1–T5, <code>/qamaster:status</code>, zips for Claude desktop and the CLI, local first (Q44), a plugin with no <code>bin/</code> (Q45).</li></ul></li>
+  <li class="here"><h3>0.4.0 <span class="b now">Built 2026-11-04</span></h3><ul>
+    <li>The six reports, <code>qam report</code> and <code>qam feedback</code>; setup's three folder suggestions (Q47); a crawl that keeps loose forms, restarts and backs off, with an ETA.</li>
+    <li>Clearer publish status, skip-smoke remembered, a tidy <code>/</code> menu, and a doctor warning for the store default.</li>
+    <li>The demo runs from install to report, except requirements.</li></ul></li>
+  <li><h3>0.4.1 <span class="b todo">Next: fixes only</span></h3><ul><li>Fixes from running 0.4.0 on a live app (agentmesh), reports read by a person, and the Docker check from a plain checkout.</li></ul></li>
+  <li><h3>0.5.0 – 0.7.0 <span class="b todo">Rest of v1</span></h3><ul><li>0.5.0 requirements fetch, which completes the demo; 0.6.0 daily-use features (conflicts, review confirmation, presets, faster DSM); 0.7.0 scripts for Mobile Web, API, Android and iOS.</li></ul></li>
   <li><h3>1.0.0 <span class="b now">Major release</span></h3><ul><li>Product v1 complete, a clean-room Docker run, and the walkthrough passing on a second unknown app.</li></ul></li>
   <li><h3>1.1.0 <span class="b v11">v1.1</span></h3><ul><li>A git pre-push hook for any terminal; each IDE and agent set up by ticking it (Q43); PR checks on GitHub and Azure Repos; results published back as an ADO Test Run.</li></ul></li>
   <li><h3>2.0.0 <span class="b v2">v2</span></h3><ul><li>Context sources through MCP; the QAMaster MCP server and exports to other AI tools; importing existing cases and gap analysis; locators from the crawl; API discovery.</li></ul></li>
@@ -258,6 +258,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <tr><td>0.3.0</td><td>The gate, both runners, just-in-time scripts, <code>/qamaster:check</code>, the push hook.</td><td>An end-to-end run on Juice Shop.</td></tr>
     <tr><td>0.3.1</td><td>What a clean machine needs, checked and explained (F1–F11).</td><td>A clean Docker container: 41 of 41 steps.</td></tr>
     <tr><td>0.3.2</td><td>Toolshop fixes T1–T5, <code>/qamaster:status</code>, the zips, the local file store as the default (Q44).</td><td>450 tests; both zips installed through the CLI. Toolshop's run on 0.3.1: two gates passed 13 of 13.</td></tr>
+    <tr><td>0.4.0</td><td>Reports and feedback, setup's folder suggestions (Q47), crawler fixes and an ETA, publish fixes.</td><td>477 tests; typecheck, lint and plugin validation clean. Not run on a live app.</td></tr>
   </tbody>
 </table></div>
 <div class="note">
@@ -336,7 +337,7 @@ crawler:{pw:['now','Playwright, with writes blocked'],appium:['later','Appium, a
 req:{ado:['todo','Azure Boards, through <code>qam requirements fetch</code>'],jira:['later','a Jira requirements adapter']},
 host:{none:['now','the Claude Code push hook only'],github:['v11','PR checks on GitHub'],'azure-repos':['v11','PR checks on Azure Repos'],bitbucket:['later','PR checks on Bitbucket'],gitlab:['later','PR checks on GitLab']},
 ci:{none:'now','github-actions':'v11','azure-pipelines':'v11','bitbucket-pipelines':'later','gitlab-ci':'later',jenkins:'later'},
-res:{html:['todo','the six HTML reports (<code>qam report</code> blocks today)'],adorun:['v11','HTML reports plus an ADO Test Run']}};
+res:{html:['now','the six HTML reports (<code>qam report</code>, 0.4.0)'],adorun:['v11','HTML reports plus an ADO Test Run']}};
 
 function fill(id,opts){const el=$(id),cur=el.value;el.innerHTML=opts.map(([v,l,b])=>`<option value="${v}">${l}${b==='now'?'':' ('+LBL[b]+')'}</option>`).join('');if(opts.some(o=>o[0]===cur))el.value=cur;}
 const pick=(id,list)=>list.find(r=>r[0]===$(id).value);
