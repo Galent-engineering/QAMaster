@@ -117,6 +117,19 @@ export function staticFindings(root: string, known: Set<string>): Record<string,
           add('selectors', `${f}:${i + 1}: inline selector \`${t.slice(0, 110)}\`; move it to the page's locator file`);
       });
 
+  // A13: a positional or bare-tag locator breaks when the page changes; a test id or label from the crawl doesn't
+  for (const f of files(root, 'src/web/locators', /\.locators\.ts$/))
+    read(root, f)
+      .split('\n')
+      .forEach((line, i) => {
+        if (line.includes('// custom:')) return;
+        if (/:nth-(?:of-type|child)\(/.test(line) || /(['"`])form\1/.test(line))
+          add(
+            'selectors',
+            `${f}:${i + 1}: positional or guessed locator \`${line.trim().slice(0, 110)}\`: copy a test id or label from the crawl, or mark it // custom: <why>`,
+          );
+      });
+
   const used = new Set<string>();
   for (const f of files(root, 'src/web/pages', /\.ts$/)) {
     const text = read(root, f);
