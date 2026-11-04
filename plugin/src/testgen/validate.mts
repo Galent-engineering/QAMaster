@@ -339,6 +339,7 @@ export function validate(
     let prev: string | null = null;
     // the values a case types or selects; quoted in an action they are data, not element names
     const caseValues = Object.values(tc.test_data ?? {}).map(String);
+    let apiChecked = false;
     steps.forEach((st, idx) => {
       const values = new Set([...caseValues, ...(typeof st.data === 'string' ? [st.data] : [])]);
       const sw = `${w} step ${idx + 1}`;
@@ -383,7 +384,8 @@ export function validate(
       }
       checkEvidence(sw, st.evidence);
       // A12: an API step's request body uses the field names of the request model the case cites
-      if (API_VERB.test(s(st.action))) {
+      if (!apiChecked && API_VERB.test(s(st.action))) {
+        apiChecked = true; // the keys belong to the case, so check them once, at its first API step
         const keys = Object.keys(tc.test_data ?? {});
         const cited = cites(tc);
         if (!cited.length) errors.push(`${sw}: an API step's request body needs code: evidence for its request model`);

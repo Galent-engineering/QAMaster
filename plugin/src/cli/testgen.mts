@@ -55,13 +55,19 @@ function load(cfg: Config): Project {
   const ls = (d: string) => (fs.existsSync(d) ? fs.readdirSync(d) : []);
   const repos = new Map((dsmCfg?.repositories ?? []).map((r) => [r.name, path.resolve(dir, r.path)]));
   const commits = new Map(((dsm.repos ?? []) as { name: string; commit?: string }[]).map((r) => [r.name, r.commit]));
+  const shown = new Map<string, string | null>();
   const show = (file: string): string | null => {
+    if (shown.has(file)) return shown.get(file) ?? null;
     const [repo, ...rest] = file.split(':');
     const at = repos.get(repo);
     const commit = commits.get(repo);
-    if (!at || !commit) return null;
-    const r = git(at, ['show', `${commit}:./${rest.join(':')}`]);
-    return r.ok ? r.stdout.toString('utf8') : null;
+    let out: string | null = null;
+    if (at && commit) {
+      const r = git(at, ['show', `${commit}:./${rest.join(':')}`]);
+      out = r.ok ? r.stdout.toString('utf8') : null;
+    }
+    shown.set(file, out); // lines and text read the same file; one git call each
+    return out;
   };
   const facts = new Facts({
     dsm,
