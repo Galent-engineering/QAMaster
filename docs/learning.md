@@ -36,7 +36,7 @@ code ───┤ scan ──┘                (AUT skills)   (TestGen)        
 
 The important idea: **the DSM connects the two halves**. It knows which screens exist (from the crawl) and which code files belong to which screen (from the scan). That lets QAMaster tag each test case with the files it covers (`path:src/checkout/**`), so when those files change, the gate knows which tests to run.
 
-**Try it:** open [v0.4.2-setup-guide.html](v0.4.2-setup-guide.html), the setup guide. It walks the setup step by step with the integration at each step, the roadmap and the latest decisions; options marked planned or proposed are not built yet.
+**Try it:** open [v0.4.3-setup-guide.html](v0.4.3-setup-guide.html), the setup guide. It walks the setup step by step with the integration at each step, the roadmap and the latest decisions; options marked planned or proposed are not built yet.
 
 **The current picture:** the setup guide also shows decisions Q26 to Q32:
 - the entry-point checklist;

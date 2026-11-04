@@ -1,6 +1,6 @@
 # QAMaster: Design
 
-> Status: current at 0.4.2 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.4.2-setup-guide.html). How QAMaster looks and behaves for each user. For the why, see [product.md](product.md). For how it's built, see [tech.md](tech.md).
+> Status: current at 0.4.3 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.4.3-setup-guide.html). How QAMaster looks and behaves for each user. For the why, see [product.md](product.md). For how it's built, see [tech.md](tech.md).
 
 ## Principles
 

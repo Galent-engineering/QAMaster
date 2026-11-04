@@ -33,19 +33,22 @@ The AgentMesh fixes A1–A16 (A7 and A17 were already fixed in 0.4.0) and the Do
 
 The dummy-static-website fixes, items 1–10 of [0.4.2.md](0.4.2.md#what-shipped), from [W1–W20](../demos/2026-11-04-0.4.1-dummy-static-website.md). Built on `release/0.4.2`; not yet run on a live application at 0.4.2.
 
-## Next: run 0.4.2 live, then release it
+## Shipped in 0.4.3 (2026-11-04)
+
+The 39 domain sub-skills as reference files (Q51). See [0.4.3.md](0.4.3.md#what-shipped).
+
+## Next: run 0.4.3 live
 
 | # | Item | Source |
 |---|---|---|
-| 1 | Run 0.4.2 end to end on a live application, in a new session, and fix what it finds (the crawl fix failed once on the real site and was corrected) | 0.4.2 |
+| 1 | Run 0.4.3 end to end on a live application, in a new session, and fix what it finds (the crawl fix failed once on the real site and was corrected) | 0.4.2 |
 | 2 | Re-run dummy-static-website's DSM on 0.4.2; check cats, landscapes and videogames are kept | W3 |
 | 3 | Re-run AgentMesh on 0.4.1 or later: regenerate the 13 published cases with the wrong request body and re-publish (yours) | A12 |
 | 4 | Run the Docker check once, with Docker and network (the container was never run) | 0.4.1 item 11 |
 | 5 | A signed-in crawl on a data-heavy app, and the reports read by a person | 0.4.0, 0.4.1 |
 | 6 | `/qamaster:status` and `/qamaster:report` in Claude desktop on the uploaded zip; the push hook from a normal desktop push (K8) | 0.4.0, 0.3.2 |
-| 7 | Load the 0.4.2 plugin zip in Claude desktop (bumped and built 2026-11-04) and re-run setup in a QA project so its launcher points at it | 0.4.2 |
+| 7 | Load the 0.4.3 plugin zip in Claude desktop (built 2026-11-04), check the catalog lists 8 skills, and re-run setup in a QA project so its launcher points at it | 0.4.2, 0.4.3 |
 | 8 | Q49: linking local scripts without a push, and keeping a script's binding per test case across plans, needs a decision (a flag or setting makes it a minor release) | A15, W16, W19 |
-| 9 | Q51: ship the domain sub-skills as reference files of `Domain_Test_Design_Skill` (built on `refactor/domain-references`; goes in the next release) | Q51 |
 
 ## 0.5.0 to 0.7.0: the rest of product v1 (minor)
 

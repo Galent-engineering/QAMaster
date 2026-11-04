@@ -1,6 +1,6 @@
 # QAMaster: Data handling
 
-> Status: current at 0.4.2 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.4.2-setup-guide.html). Written for customers, security reviewers and Galent legal. Decisions: [Q24](decisions.md) (AI switch), [Q16](decisions.md) (secrets), [Q15](decisions.md) (read-only), [Q7](decisions.md) (publishing).
+> Status: current at 0.4.3 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.4.3-setup-guide.html). Written for customers, security reviewers and Galent legal. Decisions: [Q24](decisions.md) (AI switch), [Q16](decisions.md) (secrets), [Q15](decisions.md) (read-only), [Q7](decisions.md) (publishing).
 
 ## In short
 

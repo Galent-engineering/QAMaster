@@ -10,7 +10,7 @@
     {
       "name": "qamaster",
       "source": "./plugin",
-      "description": "Build test cases and automation from the application, publish them to Azure DevOps Test Plans, and check every code change against them."
+      "description": "QA for your app, built from its code and a safe crawl of the running app: maps every screen (/qamaster:dsm), writes traceable test cases and Playwright-BDD or pytest scripts, publishes them to Azure DevOps Test Plans or a local file (/qamaster:publish), and runs the tests a change touches before git push (/qamaster:check). Start with /qamaster:status; reports with /qamaster:report."
     }
   ]
 }

@@ -1,6 +1,6 @@
 # QAMaster: Product
 
-> Status: current at 0.4.2 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.4.2-setup-guide.html). Decisions are in [decisions.md](decisions.md); open questions are at the end of that file.
+> Status: current at 0.4.3 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.4.3-setup-guide.html). Decisions are in [decisions.md](decisions.md); open questions are at the end of that file.
 
 ## One line
 

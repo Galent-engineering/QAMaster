@@ -141,6 +141,17 @@ Plan: [plans/0.4.2.md](plans/0.4.2.md). Built on `release/0.4.2` on 2026-11-04. 
 
 Not yet run on the real site after the last fix; see the plan's "How it was checked".
 
+## 0.4.3: the domain sub-skills as reference files
+
+Plan: [plans/0.4.3.md](plans/0.4.3.md). Released 2026-11-04. Fixes only, so a patch release (Q46).
+
+| Change | Where | Decision |
+|---|---|---|
+| The 39 `Domain_Test_Design_Skill` sub-skills are reference files of the router skill, not skills, so an uploaded plugin's catalog lists QAMaster's 8 skills instead of 47. Their text, names and `domain:` citations are unchanged | `plugin/skills/Domain_Test_Design_Skill/references/`, `testgen/domain-refs.mts` | Q51 |
+| The plugin description says what you get and how to start, with the `/qamaster:` commands, for the IDE and desktop plugin lists | `plugin/.claude-plugin/plugin.json`, `.claude-plugin/marketplace.json` | |
+
+Not yet run in a live session.
+
 ## Planned
 
 Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
