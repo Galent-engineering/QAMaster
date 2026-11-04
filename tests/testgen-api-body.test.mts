@@ -103,6 +103,17 @@ test('A12: a UI-only case with test_data is not checked', () => {
   );
 });
 
+test('A12: three API steps citing the same file give one finding per key, naming the steps', () => {
+  const f = run((tc) => {
+    api(tc, { workflow_type: 'x' }, ['code:shop:app/schemas.py:11']);
+    const steps = tc.steps ?? [];
+    for (const st of steps.slice(1, 3)) st.action = 'Send GET /workflows/1 and read the status';
+    assert.ok(steps.length >= 3);
+  });
+  assert.equal(f.length, 1, f.join('\n'));
+  assert.match(f[0], /API steps 1, 2, 3/);
+});
+
 test('A12: an API step that cites no code gets a finding', () => {
   const f = run((tc) => {
     api(tc, { goal: 'g' }, []);

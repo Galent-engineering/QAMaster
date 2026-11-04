@@ -342,7 +342,7 @@ export function validate(
     let prev: string | null = null;
     // the values a case types or selects; quoted in an action they are data, not element names
     const caseValues = Object.values(tc.test_data ?? {}).map(String);
-    let apiChecked = false;
+    const apiSteps: number[] = [];
     steps.forEach((st, idx) => {
       const values = new Set([...caseValues, ...(typeof st.data === 'string' ? [st.data] : [])]);
       const sw = `${w} step ${idx + 1}`;
@@ -387,26 +387,7 @@ export function validate(
       }
       checkEvidence(sw, st.evidence);
       // A12: an API step's request body uses the field names of the request model the case cites
-      if (!apiChecked && API_VERB.test(s(st.action))) {
-        apiChecked = true; // the keys belong to the case, so check them once, at its first API step
-        const keys = Object.keys(tc.test_data ?? {});
-        const cited = cites(tc);
-        if (!cited.length) errors.push(`${sw}: an API step's request body needs code: evidence for its request model`);
-        else {
-          const texts = cited.flatMap((f) => {
-            const t = facts.input.text?.(f);
-            return typeof t === 'string' ? [[f, t] as const] : [];
-          });
-          if (texts.length)
-            for (const k of keys) {
-              const re = new RegExp(`(^|[^A-Za-z0-9_])${escapeRe(k)}([^A-Za-z0-9_]|$)`);
-              if (!texts.some(([, t]) => re.test(t)))
-                errors.push(
-                  `${sw}: test_data key "${k}" isn't in the cited code (${cited.join(', ')}): cite the request model's file and use its field names`,
-                );
-            }
-        }
-      }
+      if (API_VERB.test(s(st.action))) apiSteps.push(idx + 1);
       if (!route) return;
       if (prev === null) {
         if (!facts.entries.has(route) && tc.start_via !== 'deep-link') {
@@ -429,6 +410,27 @@ export function validate(
         else prev = target;
       }
     });
+    // A12: an API step's request body uses the field names of the request model the case cites; the keys belong to
+    // the case, so they are checked once, naming every API step
+    if (apiSteps.length) {
+      const where = `${w} (API step${apiSteps.length > 1 ? 's' : ''} ${apiSteps.join(', ')})`;
+      const cited = cites(tc);
+      if (!cited.length) errors.push(`${where}: an API step's request body needs code: evidence for its request model`);
+      else {
+        const texts = cited.flatMap((f) => {
+          const t = facts.input.text?.(f);
+          return typeof t === 'string' ? [t] : [];
+        });
+        if (texts.length)
+          for (const k of Object.keys(tc.test_data ?? {})) {
+            const re = new RegExp(`(^|[^A-Za-z0-9_])${escapeRe(k)}([^A-Za-z0-9_]|$)`);
+            if (!texts.some((t) => re.test(t)))
+              errors.push(
+                `${where}: test_data key "${k}" isn't in the cited code (${cited.join(', ')}): cite the request model's file and use its field names`,
+              );
+          }
+      }
+    }
   }
 
   // ---- coverage review (domain and AUT perspective)
