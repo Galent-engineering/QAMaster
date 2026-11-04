@@ -34,17 +34,29 @@ test('A9: the skills still call the CLI by the plugin path (CLAUDE.md portable-p
     assert.ok(read(f).includes(`node "$\{CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`), f);
 });
 
-test('A9: every launcher mention names the absolute path of the QA project; Gate and /qamaster:check say the app repo has none', () => {
-  for (const f of FILES) {
-    for (const line of read(f)
-      .split('\n')
-      .filter((l) => l.includes('qam.mjs'))) {
-      assert.match(line, /absolute path of the QA project/, `${f}: ${line.slice(0, 80)}`);
-      assert.doesNotMatch(line, /from the repo\b/, f);
-    }
-  }
-  for (const f of ['skills/Gate/SKILL.md', 'commands/check.md'])
-    assert.match(read(f), /has no launcher[^.]*always names? the QA project/, f);
+/** What is wrong with the lines of one skill or command that mention the launcher (qam.mjs). */
+function launcherProblems(text: string): string[] {
+  const lines = text.split('\n').filter((l) => l.includes('qam.mjs'));
+  if (!lines.length) return ['no line mentions the launcher'];
+  return lines.flatMap((l) => [
+    ...(/node <absolute path of the QA project>\/\.qamaster\/bin\/qam\.mjs/.test(l)
+      ? []
+      : ["the launcher isn't named by the QA project's absolute path"]),
+    ...(/node \.qamaster\/bin\/qam\.mjs|from the repo\b/.test(l) ? ['a launcher instruction runs from the repo'] : []),
+  ]);
+}
+
+test("A9: Gate and /qamaster:check name the QA project's absolute launcher path, not one from the repo", () => {
+  for (const f of ['skills/Gate/SKILL.md', 'commands/check.md']) assert.deepEqual(launcherProblems(read(f)), [], f);
+});
+
+test('A9: the launcher check fails on the text that ran the launcher from the repo (dd6b975)', () => {
+  const gate =
+    'Once `qam setup` has written the project launcher, run it as `node .qamaster/bin/qam.mjs <command>` from the repo (it follows plugin updates).';
+  const check =
+    'Once `qam setup` has written `.qamaster/bin/qam.mjs`, run `node .qamaster/bin/qam.mjs` with the same arguments.';
+  assert.ok(launcherProblems(gate).length >= 2);
+  assert.ok(launcherProblems(check).length >= 1);
 });
 
 test('A12 and A13: TestGen cites the request model for API steps, AutomationCode copies the crawl locator', () => {
