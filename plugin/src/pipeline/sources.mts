@@ -117,7 +117,8 @@ export function ownPaths(project: string, extra: string[] = []): string[] {
   let output: string[] = [];
   try {
     const out = JSON.parse(fs.readFileSync(path.join(project, 'config', 'dsm-config.json'), 'utf8')).output_dir;
-    if (typeof out === 'string' && out) output = [out.replace(/\/+$/, '')]; // the DSM's configured folder
+    // the DSM's configured folder, as written or as './maps/' (the same folder, so the same path)
+    if (typeof out === 'string' && out) output = [path.posix.normalize(out).replace(/\/+$/, '')];
   } catch {} // no config: the default 'dsm'
   return [...OWN_FOLDERS, ...output, ...extra, `${skills}/AUT_`];
 }

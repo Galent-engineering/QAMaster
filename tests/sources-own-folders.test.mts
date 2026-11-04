@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { checkSource, onlyOwnChanges, ownPaths } from '../plugin/src/pipeline/sources.mts';
+import { checkSource, isOwn, onlyOwnChanges, ownPaths } from '../plugin/src/pipeline/sources.mts';
 import { tmpDir } from './tmp.mts';
 
 function gitRepo(dir: string) {
@@ -109,4 +109,12 @@ test('tracked own files that were changed are not uncommitted changes either', (
   assert.doesNotMatch(warn(), /uncommitted/);
   fs.writeFileSync(path.join(qa, 'src/App.jsx'), 'changed');
   assert.match(warn(), /uncommitted changes/);
+});
+
+test('0.4.1 review: a configured output_dir written as ./maps/ is the same own folder as maps', () => {
+  const qa = tmpDir('qam-own-');
+  fs.mkdirSync(path.join(qa, 'config'), { recursive: true });
+  fs.writeFileSync(path.join(qa, 'config', 'dsm-config.json'), JSON.stringify({ output_dir: './maps/' }));
+  const own = ownPaths(qa, []);
+  assert.ok(isOwn('maps/index.html', own), 'maps is own when written as ./maps/');
 });
