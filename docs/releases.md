@@ -104,8 +104,8 @@ Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.3.3 | Fixes | Forms without `<form>` in the DSM, a crawl that survives a closed browser and a 503, the small publish and setup fixes (E1, E2, E4–E7), a doctor warning for the new store default, and the Docker check from a plain checkout | [0.3.3.md](plans/0.3.3.md) |
-| 0.4.0 | Features | Conflicts that show their fields and can take the store's version, a confirmation in `qam review`, selection presets and a model choice, faster crawls with an ETA | [0.4.0.md](plans/0.4.0.md) |
-| 0.5.0 – 0.8.0 | Features | The rest of product v1, in this order (accepted 2026-11-04): requirements fetch, the six reports, feedback, scripts for the other channels | [backlog](plans/backlog.md#050-to-080-the-rest-of-product-v1-minor-order-proposed) |
+| 0.3.3 | Fixes | Demo-path fixes first: forms without `<form>` in the DSM, a crawl that survives a closed browser and a 503, a doctor warning for the new store default, clearer publish status, a tidy `/` menu. Then the small publish fixes, the Docker check from a plain checkout, and the agentmesh test's fixes | [0.3.3.md](plans/0.3.3.md) |
+| 0.4.0 | Features | The demo's missing pieces: the test summary report and `qam report`, setup's folder suggestions (Q47), an ETA in the crawl | [0.4.0.md](plans/0.4.0.md) |
+| 0.5.0 – 0.8.0 | Features | The rest of product v1, ordered around the demo path (2026-11-04): requirements fetch; the other five reports with feedback; daily-use features (conflicts, review confirmation, presets, DSM speed); scripts for the other channels | [backlog](plans/backlog.md#050-to-080-the-rest-of-product-v1-minor) |
 | **1.0.0** | **Major** | Product v1 complete, a clean-room Docker run, and a walkthrough on a second unknown app | [backlog](plans/backlog.md#100-the-major-release) |
 | 1.1.0 | Features | The git pre-push hook, each IDE and agent set up by ticking it (Q43), PR checks, ADO Test Run | [backlog](plans/backlog.md#after-100) |

@@ -4,51 +4,65 @@ Compiled on 2026-11-04 from the plans (0.2.1 Later, 0.3.0–0.3.2), the demo fin
 
 Versions follow [Q46](../decisions.md): a fix-only release raises the patch (0.3.3), a release with a feature raises the minor (0.4.0), and 1.0.0 is the major release, product v1 complete. Effort: XS < 30 min · S ~1 h · M half a day · L a day or more.
 
+## The demo path (priority since 2026-11-04)
+
+The order below serves one goal first: a demo that runs end to end, from install to a report, on an app QAMaster hasn't seen. Each step shows what's shipped and what the demo still needs.
+
+| # | Demo step | What the audience sees | Today | Still needed, and where |
+|---|---|---|---|---|
+| 1 | Install | The plugin uploaded in Claude desktop; `/qamaster:status` lists the stages | Shipped (0.3.2) | — |
+| 2 | Setup | Pick the app's code and URL; setup suggests the folder | Works with flags | The three folder suggestions (Q47): 0.4.0 |
+| 3 | Doctor | Every prerequisite checked, with the fix for each | Shipped | A warning when ADO settings exist but the store is local: 0.3.3 |
+| 4 | Map the app (DSM) | The crawl runs with progress, then the screen map | Shipped | Forms without `<form>` (K1), a crawl that survives a closed browser and a 503: 0.3.3. An ETA in the progress line (S6): 0.4.0 |
+| 5 | App knowledge | Skills that describe the app | Shipped | — |
+| 6 | Requirements | Stories from Azure Boards, traced to cases | Not built | Requirements fetch: 0.5.0. Until then the demo skips this step |
+| 7 | Test design and review | Cases with evidence, validated, then approved | Shipped | — |
+| 8 | Publish | A preview, then the cases in the local CSV or Azure DevOps | Shipped | Status that says when cases were held back (E7): 0.3.3 |
+| 9 | Gate a change | A diff, the plan, drafted scripts, approval, the run, the verdict, the push allowed | Shipped | — |
+| 10 | Report | The test summary report in a browser | Not built | The test summary report and `qam report`: 0.4.0 |
+
 ## 0.3.3: fixes only (patch)
 
-Plan: [0.3.3.md](0.3.3.md). No new command, flag, config key or file format.
+Plan: [0.3.3.md](0.3.3.md). No new command, flag, config key or file format. Demo-path fixes first.
 
-| # | Item | Source | Effort |
-|---|---|---|---|
-| 1 | Forms without a `<form>` tag reach the DSM: the crawler collects `looseFields` but `dsm/build.mts` drops them. Also warn when there's no `.env.dsm` (forms behind login aren't crawled) | K1, 0.2.1 Later | M + XS |
-| 2 | Restart the browser when it closes mid-crawl, and find why it closed (seen on Toolshop after T1) | S5, T1 follow-up | S |
-| 3 | Crawl backs off on a 503 (public demos rate-limit) | 0.2.1 Later | S–M |
-| 4 | Hide the `Domain_Test_Design_Skill*` sub-skills from the `/` menu | 0.2.1 Later | XS |
-| 5 | `--skip-smoke` is remembered in the ledger, so the "not offered" note stops repeating | E2 | XS |
-| 6 | Setup with a new `--app` replaces the old `claude-hooks:` record instead of adding a second | E4 | XS |
-| 7 | The Publish skill explains retiring a required case: add a coverage exclusion first | E5 | XS |
-| 8 | The credential hint adapts to the value (an email is "the registered user's email", not "password") | E6 | XS |
-| 9 | Pipeline status says "done, 1 held back by a conflict" when the last apply held cases back | E7 | S |
-| 10 | The dry run counts smoke offered by other previewed, unapplied runs | E1 | S |
-| 11 | `qam doctor` warns when Azure DevOps settings exist but the store is the local file (Q44's cost: `QAMASTER_STORE=ado` is now needed) | Q44 | XS |
-| 12 | The Docker check runs from a plain checkout: a small pytest demo, a Juice Shop reference and a recorded QA project under `tests/fixtures/` | 0.3.2 point 9 | M |
+| # | Item | Source | Effort | Demo step |
+|---|---|---|---|---|
+| 1 | Forms without a `<form>` tag reach the DSM: the crawler collects `looseFields` but `dsm/build.mts` drops them. Also warn when there's no `.env.dsm` (forms behind login aren't crawled) | K1, 0.2.1 Later | M + XS | 4 |
+| 2 | Restart the browser when it closes mid-crawl, and find why it closed (seen on Toolshop after T1) | S5, T1 follow-up | S | 4 |
+| 3 | Crawl backs off on a 503 (public demos rate-limit) | 0.2.1 Later | S–M | 4 |
+| 4 | `qam doctor` warns when Azure DevOps settings exist but the store is the local file (Q44's cost: `QAMASTER_STORE=ado` is now needed) | Q44 | XS | 3 |
+| 5 | Pipeline status says "done, 1 held back by a conflict" when the last apply held cases back | E7 | S | 8 |
+| 6 | Hide the `Domain_Test_Design_Skill*` sub-skills from the `/` menu, so the menu shows QAMaster's own commands | 0.2.1 Later | XS | 1 |
+| 7 | Setup with a new `--app` replaces the old `claude-hooks:` record instead of adding a second | E4 | XS | 2 |
+| 8 | `--skip-smoke` is remembered in the ledger, so the "not offered" note stops repeating | E2 | XS | — |
+| 9 | The Publish skill explains retiring a required case: add a coverage exclusion first | E5 | XS | — |
+| 10 | The credential hint adapts to the value (an email is "the registered user's email", not "password") | E6 | XS | — |
+| 11 | The dry run counts smoke offered by other previewed, unapplied runs | E1 | S | — |
+| 12 | The Docker check runs from a plain checkout: a small pytest demo, a Juice Shop reference and a recorded QA project under `tests/fixtures/` | 0.3.2 point 9 | M | — |
+
+Fixes from your agentmesh test join this list, demo-path ones first.
 
 **Verify, with no code:** `/qamaster:status` in Claude desktop on the uploaded zip · the push hook from a normal desktop push, not a test event (K8) · a signed-in re-crawl on a data-heavy app, for time per page and whether the browser still closes (T1, T2).
 
-## 0.4.0: features (minor)
+## 0.4.0: the demo's missing pieces (minor)
 
-Plan: [0.4.0.md](0.4.0.md).
+Plan: [0.4.0.md](0.4.0.md). After this release the demo runs end to end, except requirements (step 6).
 
-| # | Item | Source | Effort |
-|---|---|---|---|
-| 1 | A conflict shows which fields differ | K7, 0.2.1 Later | S |
-| 2 | An edit made only in the store is reported ("1 case edited in the store since publish (kept)") | K7 | S |
-| 3 | Accept the store's version of a conflicted case: `--take-store <TC-ID…>`, with your yes | K7 | M |
-| 4 | `qam review` prints the run's counts and asks to confirm on a terminal (`--yes` for scripts) | E3 | S |
-| 5 | Selection presets `fast`, `standard`, `full`, switchable selectors and a model choice | K6, Q31 | M |
-| 6 | DSM speed: a hint for ID shapes other than ULIDs, smarter waiting, parallel tabs, a crawl scope option | S1 (rest), S2, S3, S4 | S + S + M + S |
-| 7 | An ETA in the crawl's progress line, and `qam dsm run --estimate` | S6, S7 | XS–S + S |
-| 8 | With no code folder, setup asks where, with three suggestions: this folder, the usual folder (most used in past setups), or a path you type (Q47, accepted 2026-11-04) | v3.1 step 2, Q47 | S |
+| # | Item | Source | Effort | Demo step |
+|---|---|---|---|---|
+| 1 | The test summary report from the gate's verdicts and the published cases, and `qam report`: the first of the six HTML reports | K9, Q17, product v1 | L | 10 |
+| 2 | With no code folder, setup asks where, with three suggestions: this folder, the usual folder (most used in past setups), or a path you type | Q47 | S | 2 |
+| 3 | An ETA in the crawl's progress line | S6 | XS–S | 4 |
 
 ## 0.5.0 to 0.8.0: the rest of product v1 (minor)
 
-Product v1 isn't complete until these exist. The order was accepted on 2026-11-04.
+Product v1 isn't complete until these exist. Reordered on 2026-11-04 for the demo path: the test summary report moved up to 0.4.0, and the features that don't change the demo moved last.
 
 | Release | Feature | Source | Effort |
 |---|---|---|---|
-| 0.5.0 | Requirements fetch (`qam requirements fetch`, stage 6) from Azure Boards, then Jira | K4, product v1 | L |
-| 0.6.0 | The six HTML reports and `qam report` | K9, product v1 | L |
-| 0.7.0 | Feedback: coverage gaps, stale cases, BROKEN links, defect drafts a person files | K9, Q19 | L |
+| 0.5.0 | Requirements fetch (`qam requirements fetch`, stage 6) from Azure Boards, then Jira: completes demo step 6 | K4, product v1 | L |
+| 0.6.0 | The other five HTML reports, and Feedback: coverage gaps, stale cases, BROKEN links, defect drafts a person files | K9, Q19, product v1 | L |
+| 0.7.0 | Daily-use features: a conflict shows its fields (S); a store-only edit is reported (S); `--take-store <TC-ID…>`, which needs a decision (M); `qam review` confirms on a terminal (E3, S); selection presets and a model choice (Q31, M); DSM speed: an ID-shape hint, smarter waiting, parallel tabs, a scope option, `--estimate` (S1–S4, S7) | K7, E3, K6, S1–S4, S7 | L in all |
 | 0.8.0 | Scripts for the other channels in v1: Mobile Web, API, Android, iOS | product v1, K5 | L |
 
 ## 1.0.0: the major release
@@ -81,7 +95,7 @@ Signed-in crawls need your `.env.dsm` and block writes (K3, Q15) · a file count
 
 ## Needs your answer
 
-1. ~~**The order of 0.5.0 to 0.8.0.**~~ **Accepted 2026-11-04:** requirements, reports, feedback, then scripts for the other channels.
+1. ~~**The order of 0.5.0 to 0.8.0.**~~ Accepted 2026-11-04 (requirements, reports, feedback, scripts), then **reordered the same day around the demo path:** the test summary report in 0.4.0, then requirements, the other reports with feedback, the daily-use features, and scripts for the other channels.
 2. ~~**The Toolshop cases in Azure DevOps.**~~ **Decided 2026-11-04: leave them as they are.** Project Toolshop holds 13 cases from a QA project that has since been deleted, so no ledger links them, and publishing Toolshop again would create 13 more. QAMaster never deletes. Revisit when a new Toolshop QA project exists: relink them, or retire them by hand in ADO.
 3. ~~**Setup using the folder you're in.**~~ **Accepted 2026-11-04 as Q47:** three suggestions (this folder, the usual folder, a path you type).
 4. **Merge and push, after your agentmesh testing and its fixes (your call, 2026-11-04).** `feature/0.3.2-toolshop-fixes` is not on `main` or GitHub. Then: update `main`, and push or keep it local.
