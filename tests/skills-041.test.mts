@@ -34,8 +34,17 @@ test('A9: the skills still call the CLI by the plugin path (CLAUDE.md portable-p
     assert.ok(read(f).includes(`node "$\{CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`), f);
 });
 
-test('A9: Gate and /qamaster:check run from the app repo, so they name the QA project with the launcher', () => {
-  for (const f of ['skills/Gate/SKILL.md', 'commands/check.md']) assert.match(read(f), /QA project/, f);
+test('A9: every launcher mention names the absolute path of the QA project; Gate and /qamaster:check say the app repo has none', () => {
+  for (const f of FILES) {
+    for (const line of read(f)
+      .split('\n')
+      .filter((l) => l.includes('qam.mjs'))) {
+      assert.match(line, /absolute path of the QA project/, `${f}: ${line.slice(0, 80)}`);
+      assert.doesNotMatch(line, /from the repo\b/, f);
+    }
+  }
+  for (const f of ['skills/Gate/SKILL.md', 'commands/check.md'])
+    assert.match(read(f), /has no launcher[^.]*always names? the QA project/, f);
 });
 
 test('A12 and A13: TestGen cites the request model for API steps, AutomationCode copies the crawl locator', () => {

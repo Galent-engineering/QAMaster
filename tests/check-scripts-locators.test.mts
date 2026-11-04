@@ -32,3 +32,10 @@ test('a bare form locator is a finding; a specific one is not', () => {
   assert.equal(selectors('  pageInputsForm: `form`,').length, 1);
   assert.deepEqual(selectors("  pageInputsForm: 'form#login',"), []);
 });
+
+test('only a literal that is exactly form is guessed: role and attribute locators are not', () => {
+  assert.deepEqual(selectors("  loginForm: { role: 'form', name: 'Log in' },"), []);
+  assert.deepEqual(selectors('  loginForm: \'[data-testid="form"]\','), []);
+  assert.deepEqual(selectors('  loginForm: \'input[name="form"]\','), []);
+  assert.equal(selectors("  loginForm: page.locator('form'),").length, 1);
+});

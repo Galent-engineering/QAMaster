@@ -100,6 +100,13 @@ export function outlineFindings(feature: string, text: string): string[] {
 }
 
 /** The static gates; `known` is every TC ID of the TestGen runs. */
+// a string literal that is exactly 'form': it opens after : , ( [ or a space (not inside a longer selector after =),
+// closes before , ) ] } ; or the end, and is not the value of role:
+const bareForm = (line: string): boolean =>
+  [...line.matchAll(/(?:^|[:,([\s])(['"`])form\1\s*(?:[,)\]};]|$)/g)].some(
+    (m) => !/\brole\s*:\s*$/.test(line.slice(0, m.index + m[0].indexOf(m[1]))),
+  );
+
 export function staticFindings(root: string, known: Set<string>): Record<string, string[]> {
   const findings: Record<string, string[]> = {};
   const add = (k: string, msg: string) => {
@@ -123,7 +130,7 @@ export function staticFindings(root: string, known: Set<string>): Record<string,
       .split('\n')
       .forEach((line, i) => {
         if (line.includes('// custom:')) return;
-        if (/:nth-(?:of-type|child)\(/.test(line) || /(['"`])form\1/.test(line))
+        if (/:nth-(?:of-type|child)\(/.test(line) || bareForm(line))
           add(
             'selectors',
             `${f}:${i + 1}: positional or guessed locator \`${line.trim().slice(0, 110)}\`: copy a test id or label from the crawl, or mark it // custom: <why>`,

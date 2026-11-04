@@ -112,3 +112,11 @@ test('A12: an API step that cites no code gets a finding', () => {
   assert.equal(f.length, 1, f.join('\n'));
   assert.match(f[0], /an API step's request body needs code: evidence for its request model/);
 });
+
+test('A12: several API steps report an invented key once, not once per step', () => {
+  const f = run((tc) => {
+    api(tc, { workflow_type: 'x' }, ['code:shop:app/schemas.py:11']);
+    for (const st of (tc.steps ?? []).slice(1)) st.action = 'Send GET /workflows/1 and read the status';
+  });
+  assert.equal(f.length, 1, f.join('\n'));
+});
