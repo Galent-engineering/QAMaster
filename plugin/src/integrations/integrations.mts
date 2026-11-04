@@ -130,7 +130,9 @@ export const claudeHooks: Integration = {
 export const KINDS: Record<string, Integration> = { 'claude-hooks': claudeHooks };
 
 const recordFile = (appRepo: string) => path.join(appRepo, QAMASTER_DIR, 'integrations.json');
-const homeIndex = () => path.join(process.env.QAMASTER_HOME || path.join(os.homedir(), QAMASTER_DIR), 'installs.json');
+/** The per-user folder: QAMASTER_HOME, or ~/.qamaster. */
+export const homeDir = () => process.env.QAMASTER_HOME || path.join(os.homedir(), QAMASTER_DIR);
+const homeIndex = () => path.join(homeDir(), 'installs.json');
 
 function readJson<T>(file: string, fallback: T): T {
   try {
@@ -192,6 +194,14 @@ export function add(ctx: Context, entryIds: string[]): AddResult {
   for (const e of picked.filter((x) => KINDS[x.kind])) byKind.set(e.kind, [...(byKind.get(e.kind) ?? []), e.id]);
   for (const [kind, entries] of byKind) {
     const rec = KINDS[kind].install(ctx, entries);
+    // a new --app renames the record (E4): a claude-hooks record of another app name is replaced, not kept beside it
+    if (kind === 'claude-hooks') {
+      for (let j = records.length - 1; j >= 0; j--)
+        if (records[j].kind === kind && records[j].id !== rec.id) {
+          rec.entries = [...new Set([...records[j].entries, ...rec.entries])];
+          records.splice(j, 1);
+        }
+    }
     const i = records.findIndex((r) => r.id === rec.id);
     if (i >= 0) {
       already.push(rec.id);

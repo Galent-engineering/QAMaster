@@ -9,6 +9,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import type { RepoConfig } from '../dsm/scan.mts';
+import { homeDir } from '../integrations/integrations.mts';
 import { BlockedError } from '../shared/errors.mts';
 
 /** The oldest git QAMaster supports: every git command it runs (ls-tree -z, cat-file --batch, diff --relative) is older. */
@@ -180,3 +181,39 @@ export function checkSource(spec: SourceSpec, project: string): CheckedSource {
   checked.notes.unshift(`cloned ${url} into ${checked.repo.path}`);
   return { ...checked, cloned: true };
 }
+
+export type FolderChoice = { key: 'here' | 'usual' | 'type'; label: string; path?: string };
+
+const historyFile = () => path.join(homeDir(), 'folders.json');
+
+/** How often each folder was chosen in past setups on this machine (paths only). */
+export function folderHistory(): Record<string, number> {
+  try {
+    const { counts } = JSON.parse(fs.readFileSync(historyFile(), 'utf8'));
+    return counts && typeof counts === 'object' ? counts : {};
+  } catch {
+    return {};
+  }
+}
+
+/** Counts one more setup that chose this folder. */
+export function recordFolder(folder: string) {
+  const counts = folderHistory();
+  const key = path.resolve(folder);
+  counts[key] = (counts[key] ?? 0) + 1;
+  fs.mkdirSync(path.dirname(historyFile()), { recursive: true });
+  fs.writeFileSync(historyFile(), `${JSON.stringify({ counts }, null, 2)}\n`);
+}
+
+/** Q47: this folder, the folder chosen most often before (when there is one), and a path to type. */
+export function folderChoices(here: string): FolderChoice[] {
+  const top = Object.entries(folderHistory()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))[0];
+  return [
+    { key: 'here', label: `this folder (${here})`, path: here },
+    ...(top ? [{ key: 'usual' as const, label: `the usual folder (${top[0]})`, path: top[0] }] : []),
+    { key: 'type', label: 'a path you type' },
+  ];
+}
+
+/** The choices as numbered lines. */
+export const showChoices = (choices: FolderChoice[]) => choices.map((c, i) => `  ${i + 1}. ${c.label}`).join('\n');

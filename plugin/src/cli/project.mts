@@ -27,7 +27,15 @@ import {
 } from '../integrations/integrations.mts';
 import { mark, reset, start, status, table } from '../pipeline/pipeline.mts';
 import { pluginVersion, type SetupOptions, type Step, setupProject } from '../pipeline/setup.mts';
-import { checkSource, DEFAULT_EXCLUDE } from '../pipeline/sources.mts';
+import {
+  checkSource,
+  DEFAULT_EXCLUDE,
+  type FolderChoice,
+  folderChoices,
+  isGitUrl,
+  recordFolder,
+  showChoices,
+} from '../pipeline/sources.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError, NoPlanError, NoProjectError } from '../shared/errors.mts';
 import { DEFAULT_PROJECT_CONFIG } from '../shared/schema.mts';
@@ -73,7 +81,30 @@ function printSteps(title: string, steps: Step[]) {
   console.log(`${title}\n${steps.map((s) => `  ${s.status.padEnd(8)} ${s.step.padEnd(w)}  ${s.detail}`).join('\n')}`);
 }
 
-export function setup(cfg: Config, argv: string[], json: boolean): number {
+/** One line from stdin, read synchronously (setup is synchronous). */
+function readLine(prompt: string): string {
+  process.stderr.write(prompt);
+  const buf = Buffer.alloc(1);
+  let line = '';
+  while (fs.readSync(0, buf, 0, 1, null) === 1 && buf[0] !== 10) line += String.fromCharCode(buf[0]);
+  return line.trim();
+}
+
+export type SetupIo = { tty: boolean; ask: (prompt: string) => string };
+const REAL_IO: SetupIo = { tty: !!process.stdin.isTTY, ask: readLine };
+
+/** Q47: asks which folder, showing the choices; a number picks one, anything else is taken as a typed path. */
+function askFolder(io: SetupIo, choices: FolderChoice[], what: string): string {
+  const answer = io.ask(`${what}\n${showChoices(choices)}\nChoose 1-${choices.length}, or type a path: `);
+  const picked = /^\d+$/.test(answer) ? choices[Number(answer) - 1] : undefined;
+  if (picked?.path) return picked.path;
+  if (picked) return io.ask('Path to the code folder: ');
+  if (!answer || /^\d+$/.test(answer))
+    throw new BlockedError(`"${answer}" isn't one of the choices. Run qam setup again.`);
+  return answer;
+}
+
+export function setup(cfg: Config, argv: string[], json: boolean, io: SetupIo = REAL_IO): number {
   type V = {
     check?: boolean;
     'no-install'?: boolean;
@@ -111,6 +142,36 @@ export function setup(cfg: Config, argv: string[], json: boolean): number {
   if ((v['clone-to'] || v['use-clone'] || v.branch || v.name) && !v.source)
     throw new BlockedError('--branch, --name, --clone-to and --use-clone go with --source.');
   const dir = project(cfg);
+  // Q47: no folder for the app's code. A git URL with no place for it, or an app URL with no code source yet, asks where
+  // (three choices); a script gets today's block, naming the flag, with the choices in the message and in --json
+  const dsmPath = path.join(dir, 'config', 'dsm-config.json');
+  let recorded = false;
+  try {
+    recorded = !!(JSON.parse(fs.readFileSync(dsmPath, 'utf8')).repositories ?? []).length;
+  } catch {}
+  const urlNoPlace = !!v.source && isGitUrl(v.source) && !v['clone-to'] && !v['use-clone'];
+  const noFolder = !v.source && !!v.url && !recorded;
+  let pending: FolderChoice[] | null = null;
+  let chosen: string | null = null;
+  if ((urlNoPlace || noFolder) && !v.check) {
+    const choices = folderChoices(process.cwd());
+    if (io.tty) {
+      chosen = askFolder(
+        io,
+        choices,
+        urlNoPlace ? `Where is the code of ${v.source}, or where should it be cloned?` : "Where is the app's code?",
+      );
+      if (urlNoPlace) {
+        if (fs.existsSync(chosen) && fs.readdirSync(chosen).length) v['use-clone'] = chosen;
+        else v['clone-to'] = chosen;
+      } else v.source = chosen;
+    } else if (urlNoPlace) {
+      const message = `${v.source} is a git URL. Choose where its code is: --clone-to <new folder> to clone it, or --use-clone <folder> for an existing clone. Suggested folders:\n${showChoices(choices)}`;
+      if (json) console.log(JSON.stringify({ result: 'blocked', reasons: [message], choices }));
+      else console.error(`Blocked: ${message}`);
+      return 2;
+    } else pending = choices;
+  }
   const opts: SetupOptions = {
     check: !!v.check,
     install: !v['no-install'],
@@ -189,12 +250,26 @@ export function setup(cfg: Config, argv: string[], json: boolean): number {
         .filter(Boolean),
     );
 
+  if (pending)
+    notes.push(`No code folder was given. Add --source <folder>, for example one of:\n${showChoices(pending)}`);
   const failed = steps.some((s) => s.status === 'failed');
   const missing = steps.some((s) => s.status === 'missing');
   // ready only when Playwright is really there: --no-install leaves it out (AQE said ready)
   const skipped = steps.some((s) => s.step === 'npm install' && s.status === 'skipped');
   const result = failed ? 'blocked' : missing || skipped ? 'incomplete' : 'ready';
-  if (json) console.log(JSON.stringify({ result, project: dir, steps, notes, warnings, entries }));
+  if (!failed && !opts.check && chosen) recordFolder(chosen);
+  if (json)
+    console.log(
+      JSON.stringify({
+        result,
+        project: dir,
+        steps,
+        notes,
+        warnings,
+        entries,
+        ...(pending ? { choices: pending } : {}),
+      }),
+    );
   else {
     printSteps(`QAMaster setup: ${result}\nProject: ${dir}\n`, steps);
     for (const n of notes) console.log(`Note: ${n}`);
@@ -369,6 +444,19 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
   storeCheck.ok = store.ok;
   storeCheck.detail ||= store.detail;
   checks.push(storeCheck);
+  // Q44: ADO settings with the local file store means test cases never reach Azure DevOps, which is easy to miss
+  if (
+    (process.env.QAMASTER_ADO_ORG || process.env.QAMASTER_ADO_PROJECT) &&
+    !process.env.QAMASTER_STORE &&
+    cfg.store === 'file'
+  )
+    checks.push({
+      check: 'store setting',
+      ok: true,
+      detail:
+        'Azure DevOps settings are set, but test cases go to the local CSV file. Add QAMASTER_STORE=ado to .env to publish to Azure DevOps.',
+      state: 'unknown',
+    });
   // the gate's prerequisites (F4): each runner the plan's links use, then the app the tests open
   const runners = new Set(linked.map((l) => linkRunner(l)).filter((n): n is string => !!n));
   if (automationFolder(cfg)) runners.add('playwright-bdd');
