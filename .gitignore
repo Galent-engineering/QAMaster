@@ -1,4 +1,4 @@
-node_modules/
+node_modules
 .qamaster/
 # test fixtures hold QA projects, and their .qamaster/ is part of the fixture
 !tests/fixtures/**/.qamaster/

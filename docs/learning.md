@@ -692,3 +692,24 @@ The gate answers "is this change safe to push?" with evidence. It reads the diff
 | 2026-10-30 | Publish (steps 7-8) | A cache that never decides: reads may be stale, writes check the live store. Running publish on an ADO with no plan found a check that blocked `--apply` from creating it |
 | 2026-10-30 | 0.2.0 fixes | An error is a menu, not a dead end: a missing project lists the real ones and the ways forward. An org-level write (creating a project) goes through the same preview and yes as any other write; reviewers caught a fix text that skipped the preview |
 | 2026-11-02 | Gate and just-in-time automation (0.3.0) | Bind approval to what will run (HEAD, QA commit, script hash). The link's prefix picks the runner. A new script is labelled until it passes once. Real runs found five design bugs that unit tests didn't |
+
+## Lesson: building a release with parallel sessions (2026-11-04)
+
+What worked for 0.4.0 and 0.4.1, and what cost time.
+
+**The pattern**
+- **Split by file, not by feature.** Give each session a list of files it owns. Two sessions never edit the same file, so replaying their branches onto one is conflict-free. Shared docs, the version, `releases.md` and CLAUDE.md belong to the main session.
+- **Each session works in its own git worktree and branch**, test-first, and stops at `npm run check` plus `claude plugin validate .`. Nothing is pushed or version-bumped by a session.
+- **An independent reviewer tries to refute each branch** before it is replayed: read the whole diff, probe edge cases with throwaway scripts, run the checks in a scratch worktree. A builder's "all green" isn't evidence. On 0.4.1 the reviewers found real bugs in two of six branches (apostrophes treated as quotes, a status parser that failed on tracked files, a symlink committed by mistake).
+- **Replay linearly.** `git cherry-pick $(git rev-list --reverse BASE..branch)` for each branch in turn, so history has no merge commits. Run the full check once after the last one.
+- **Re-plan when the facts change.** If the plan changes mid-build, stop the build, re-plan, then rebuild only what no longer matches. Keep finished work.
+
+**What went wrong, and the rule it gives**
+- **Check a worktree before removing it.** `git worktree remove --force` discards uncommitted work. Run `git status` in it, and save a diff first. One cleanup lost a builder's edits.
+- **Never `git commit` in a worktree you didn't set up** without looking at `git status`: staged files from someone else's work come along. Add explicit paths.
+- **`.gitignore` with `node_modules/` doesn't ignore a symlink named `node_modules`.** Use `node_modules`. A builder committed the symlink, and replaying that commit removed the real folder. `tests/plugin-ship.test.mts` guards `plugin/`, not the repo root.
+- **A passing test you wrote can still be wrong.** If a new test fails, find out whether the code or the test is wrong before committing.
+- **zsh doesn't split an unquoted variable into words.** `$Q` holding a command and its arguments fails. Use a function.
+- **Claude desktop's plugin upload has rules `claude plugin validate` doesn't check:** no top-level `bin/`, and no XML-like tags (`<App>`) in a skill description. `plugin-ship.test.mts` checks both.
+- **Version rule (Q46):** a release with a feature is a minor release, fixes only a patch, and 1.0.0 is product v1 complete.
+

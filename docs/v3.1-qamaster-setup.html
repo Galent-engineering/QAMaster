@@ -97,12 +97,12 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 </head>
 <body>
 <main>
-<p><span class="b now">Plugin 0.4.0</span><span class="b v11">Decisions to Q47</span><span class="b later">Checked 2026-11-04</span></p>
+<p><span class="b now">Plugin 0.4.1</span><span class="b v11">Decisions to Q48</span><span class="b later">Checked 2026-11-04</span></p>
 <h1>QAMaster setup</h1>
 <p class="lead">How a team sets QAMaster up, step by step: what each step does, the integration it plugs into, the decisions behind it, and what arrives at that step later.</p>
 
 <div class="note">
-  <p><strong>Where it stands.</strong> The plugin is <strong>0.4.0</strong>, built and tested on the branch <code>feature/0.3.2-toolshop-fixes</code>. It isn't on <code>main</code> or GitHub yet. Product v1 isn't complete: <strong>requirements fetching and scripts for the other channels</strong> aren't built. Reports and feedback are, but have only run on test data, not on a live app. Everything after v1 below is planned scope from <a href="product.md#scope">product.md</a>, not a schedule.</p>
+  <p><strong>Where it stands.</strong> The plugin is <strong>0.4.1</strong>, built and tested on the branch <code>feature/0.3.2-toolshop-fixes</code>. It isn't on <code>main</code> or GitHub yet. Product v1 isn't complete: <strong>requirements fetching and scripts for the other channels</strong> aren't built. Reports and feedback are, but have only run on test data, not on a live app. Everything after v1 below is planned scope from <a href="product.md#scope">product.md</a>, not a schedule.</p>
 </div>
 <p class="legend"><span class="b now">Shipped</span><span class="b prop">Proposed</span><span class="b todo">Decided, not built</span><span class="b v11">v1.1</span><span class="b v2">v2</span><span class="b v3">v3</span><span class="b later">Later</span></p>
 
@@ -196,14 +196,14 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <div class="pick"><label for="host">Code host</label><select id="host"><option value="none">None: the Claude Code push hook</option><option value="github">GitHub</option><option value="azure-repos">Azure Repos</option><option value="bitbucket">Bitbucket</option><option value="gitlab">GitLab</option></select>
     <label for="ci">CI</label><select id="ci"><option value="none">None</option><option value="github-actions">GitHub Actions</option><option value="azure-pipelines">Azure Pipelines</option><option value="bitbucket-pipelines">Bitbucket Pipelines</option><option value="gitlab-ci">GitLab CI</option><option value="jenkins">Jenkins</option></select></div>
     <p class="why">Q14 hooks are fast and quiet · Q28 the code host is a replaceable adapter</p>
-    <p class="next"><b>Next here:</b> evidence from a real desktop push, not only a test event <span class="b todo">0.4.1</span>. <b>Later:</b> PR checks with one plan comment and approval by comment <span class="b v11">v1.1</span>.</p>
+    <p class="next"><b>Next here:</b> evidence from a real desktop push, not only a test event <span class="b todo">0.4.2</span>. <b>Later:</b> PR checks with one plan comment and approval by comment <span class="b v11">v1.1</span>.</p>
   </li>
   <li class="step gap">
     <h3>Report and feed back</h3>
     <p class="what">Self-contained HTML reports fed by the gate, and feedback that proposes new or stale cases, broken links and defect drafts for a person to act on. <strong>Built in 0.4.0:</strong> <code>qam report all | manual | &lt;type&gt;</code> writes six reports (test summary, test cases, execution, defects, root cause analysis, DSM) into <code>reports/output/</code>, and <code>qam feedback [&lt;sha&gt;]</code> proposes gaps, stale cases, BROKEN links and defect drafts into <code>reports/data/</code>. A report with no input says which one is missing. They have run on test data only.</p>
     <div class="pick"><label for="res">Results go to</label><select id="res"><option value="html">HTML reports</option><option value="adorun">HTML reports + an ADO Test Run</option></select></div>
     <p class="why">Q17 reports are self-contained HTML · Q19 feedback proposes, never generates on its own</p>
-    <p class="next"><b>Later:</b> reports from a live run, checked by a person <span class="b todo">0.4.1</span>;  root-cause evidence from commits and logs, value metrics <span class="b v3">v3</span>.</p>
+    <p class="next"><b>Later:</b> reports from a live run, checked by a person <span class="b todo">0.4.2</span>;  root-cause evidence from commits and logs, value metrics <span class="b v3">v3</span>.</p>
   </li>
 </ol>
 
@@ -216,11 +216,11 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 <p class="sub">Version numbers: a new feature raises the minor, fixes only raise the patch, and 1.0.0 is the major release, product v1 complete (<a href="decisions.md">Q46</a>). Every open item is in <a href="plans/backlog.md">plans/backlog.md</a>. Only 0.3.3 and 0.4.0 are planned in detail.</p>
 <ol class="tl">
   <li><h3>0.3.2 <span class="b now">Built 2026-11-03</span></h3><ul><li>Toolshop fixes T1–T5, <code>/qamaster:status</code>, zips for Claude desktop and the CLI, local first (Q44), a plugin with no <code>bin/</code> (Q45).</li></ul></li>
-  <li class="here"><h3>0.4.0 <span class="b now">Built 2026-11-04</span></h3><ul>
-    <li>The six reports, <code>qam report</code> and <code>qam feedback</code>; setup's three folder suggestions (Q47); a crawl that keeps loose forms, restarts and backs off, with an ETA.</li>
-    <li>Clearer publish status, skip-smoke remembered, a tidy <code>/</code> menu, and a doctor warning for the store default.</li>
-    <li>The demo runs from install to report, except requirements.</li></ul></li>
-  <li><h3>0.4.1 <span class="b todo">Next: fixes only</span></h3><ul><li>Fixes from running 0.4.0 on a live app (agentmesh), reports read by a person, and the Docker check from a plain checkout.</li></ul></li>
+  <li><h3>0.4.0 <span class="b now">Built 2026-11-04</span></h3><ul><li>The six reports, <code>qam report</code> and <code>qam feedback</code>; setup's three folder suggestions (Q47); a crawl that keeps loose forms, restarts and backs off, with an ETA; clearer publish status.</li></ul></li>
+  <li class="here"><h3>0.4.1 <span class="b now">Built 2026-11-04</span></h3><ul>
+    <li>Fixes from the AgentMesh run: ADO org URLs accepted, projects listed, request bodies checked against the code, FastAPI routes, API routes kept out of the UI map (Q48), a single-page app's shell not counted as screens.</li>
+    <li>Better status, paste-ready commands, <code>check-scripts</code> rejecting positional selectors, and Docker-check fixtures.</li></ul></li>
+  <li><h3>0.4.2 <span class="b todo">Next: fixes only</span></h3><ul><li>Fixes from running 0.4.1 on a live app (AgentMesh again), the Docker check run once, reports read by a person, and Q49 decided.</li></ul></li>
   <li><h3>0.5.0 – 0.7.0 <span class="b todo">Rest of v1</span></h3><ul><li>0.5.0 requirements fetch, which completes the demo; 0.6.0 daily-use features (conflicts, review confirmation, presets, faster DSM); 0.7.0 scripts for Mobile Web, API, Android and iOS.</li></ul></li>
   <li><h3>1.0.0 <span class="b now">Major release</span></h3><ul><li>Product v1 complete, a clean-room Docker run, and the walkthrough passing on a second unknown app.</li></ul></li>
   <li><h3>1.1.0 <span class="b v11">v1.1</span></h3><ul><li>A git pre-push hook for any terminal; each IDE and agent set up by ticking it (Q43); PR checks on GitHub and Azure Repos; results published back as an ADO Test Run.</li></ul></li>
@@ -245,6 +245,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <tr><td>Q44</td><td>Local first: with nothing chosen, the code is a local folder and the store is the local file (a CSV). A project that already published keeps its store; Azure DevOps is <code>QAMASTER_STORE=ado</code>.</td></tr>
     <tr><td>Q45</td><td>The plugin ships no <code>bin/</code>, and nothing local sits in <code>plugin/</code>, so Claude desktop accepts the upload and a zip is always ready; a test and the packaging script keep it that way.</td></tr>
     <tr><td>Q46</td><td>Version numbers are MAJOR.MINOR.PATCH: a feature raises the minor, fixes only raise the patch, and 1.0.0 is product v1 complete.</td></tr>
+    <tr><td>Q48</td><td>A route found only in server code is an API route, not a screen: no DSM cell, no orphan flag, no UI cases.</td></tr>
     <tr><td>Q47</td><td>With no code folder given, setup asks where, with three suggestions: this folder, the folder used most in past setups, or a path you type.</td></tr>
   </tbody>
 </table></div>
@@ -259,6 +260,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <tr><td>0.3.1</td><td>What a clean machine needs, checked and explained (F1–F11).</td><td>A clean Docker container: 41 of 41 steps.</td></tr>
     <tr><td>0.3.2</td><td>Toolshop fixes T1–T5, <code>/qamaster:status</code>, the zips, the local file store as the default (Q44).</td><td>450 tests; both zips installed through the CLI. Toolshop's run on 0.3.1: two gates passed 13 of 13.</td></tr>
     <tr><td>0.4.0</td><td>Reports and feedback, setup's folder suggestions (Q47), crawler fixes and an ETA, publish fixes.</td><td>477 tests; typecheck, lint and plugin validation clean. Not run on a live app.</td></tr>
+    <tr><td>0.4.1</td><td>Fixes from the AgentMesh run (A1–A16), Q48, and the Docker check's fixtures.</td><td>537 tests; typecheck, lint and plugin validation clean; each branch reviewed independently. Not run on a live app or in Docker.</td></tr>
   </tbody>
 </table></div>
 <div class="note">

@@ -112,13 +112,27 @@ Plan: [plans/0.4.0.md](plans/0.4.0.md). Built on `feature/0.3.2-toolshop-fixes` 
 | The `Domain_Test_Design_Skill` sub-skills hidden from the `/` menu | `plugin/skills/` | |
 
 
+## 0.4.1: fixes from the AgentMesh run
+
+Plan: [plans/0.4.1.md](plans/0.4.1.md). Built on `feature/0.3.2-toolshop-fixes` on 2026-11-04. Findings from the [AgentMesh run](demos/2026-11-04-0.3.2-agentmesh-feedback.md) (A1–A17). Fixes only, so a patch release (Q46).
+
+| Change | Where | Decision |
+|---|---|---|
+| `QAMASTER_ADO_ORG` takes the org's URL; doctor lists projects when none is set; a launcher warning | `adapters/ado.mts`, `cli/project.mts` | |
+| The vague-outcome check ignores quoted values; request bodies are checked against the cited code; `check-scripts` rejects positional selectors | `testgen/validate.mts`, `automation/quality.mts` | Q10 |
+| FastAPI routes scanned; server-only routes are `kind: api`, not screens, not crawl seeds | `dsm/scan.mts`, `dsm/build.mts`, `dsm/update.mts` | Q48 |
+| A single-page app's fallback shell isn't a screen | `adapters/crawler-playwright.mts` | Q15 |
+| QAMaster's own folders aren't uncommitted changes or new commits | `pipeline/sources.mts`, `pipeline/pipeline.mts` | |
+| First-gate-run, store and unpushed-scripts status read correctly | `pipeline/pipeline.mts`, `cli/publish.mts` | |
+| Skills hand you paste-ready commands; TestGen works one component at a time | `plugin/skills/`, `plugin/commands/` | |
+| The Docker check runs from a plain checkout (fixtures; container not run) | `scripts/docker-e2e/`, `tests/fixtures/docker-e2e/` | |
+
 ## Planned
 
 Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.4.1 | Fixes | From the AgentMesh run: ADO org URLs accepted, projects listed, API data not "vague", FastAPI routes, API routes kept out of the UI map (Q48), a single-page app's shell not counted as screens, request bodies checked against the code, `check-scripts` rejecting positional selectors, launcher, doctor and status fixes, TestGen in smaller steps; the Docker check from a plain checkout | [0.4.1.md](plans/0.4.1.md) |
 | 0.5.0 | Features | Requirements fetch: completes the demo's step 6 | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
 | 0.6.0 | Features | Daily-use features: conflicts that show their fields, a review confirmation, selection presets, faster DSM | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
 | 0.7.0 | Features | Scripts for Mobile Web, API, Android and iOS | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |

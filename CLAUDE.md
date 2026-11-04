@@ -15,7 +15,7 @@ Read before working on a feature:
 - [docs/install.md](docs/install.md): load a release as a zip in Claude desktop or the Claude CLI
 - [docs/learning.md](docs/learning.md): concepts and design explained, one lesson per ported feature. Add a lesson when a feature finishes Learn
 
-Sources being ported, next to this repo: `../CheckMasterPlugin` (Python; port its tests before its code), `../autonomous-qe-0.2.0` (TypeScript, `tools/`). The old demos `../CheckMasterDemo` and `../autonomousQeDemo` were deleted on 2026-11-03 (they had no remote); the fixtures copied from them are under `tests/fixtures/`. The Docker check (`scripts/docker-e2e/`) has no inputs on this machine any more (the old demo repos, the Juice Shop clone and the walkthrough QA projects were deleted on 2026-11-03): see the header of `run.sh` for the three it needs, set through `CHECKMASTER_DEMO`, `JUICE_SHOP` and `QA_SOURCE`.
+Sources being ported, next to this repo: `../CheckMasterPlugin` (Python; port its tests before its code), `../autonomous-qe-0.2.0` (TypeScript, `tools/`). The old demos `../CheckMasterDemo` and `../autonomousQeDemo` were deleted on 2026-11-03 (they had no remote); the fixtures copied from them are under `tests/fixtures/`. The Docker check (`scripts/docker-e2e/`) runs from checked-in fixtures under `tests/fixtures/docker-e2e/` (0.4.1); override them with `CHECKMASTER_DEMO`, `JUICE_SHOP` and `QA_SOURCE`. The container has never been run: it needs Docker and network access.
 
 Layout (Q2). `plugin/` is everything an install copies. The repo root is the marketplace plus dev tooling:
 
@@ -158,6 +158,7 @@ Report exactly what you ran and what you couldn't. Never call something verified
 
 <!-- Append one line each time Claude gets something wrong in this repo, so it doesn't happen again.
      Format: "- <rule>. (<what went wrong>)" -->
+- Parallel sessions: split by file ownership, give each its own worktree and branch, review each branch independently, then replay with `git cherry-pick $(git rev-list --reverse BASE..branch)` so history stays linear. Before `git worktree remove --force`, run `git status` in it. `.gitignore` needs `node_modules`, not `node_modules/`, or a symlinked one gets committed. The lesson is in [docs/learning.md](docs/learning.md#lesson-building-a-release-with-parallel-sessions-2026-11-04).
 - In WIQL, name the project (`[System.TeamProject] = 'X'`), not `@project`: at org level `@project` matches nothing. (From CheckMaster: a re-run would have duplicated every item.)
 
 ---

@@ -25,16 +25,19 @@ Ten steps from install to report. After 0.4.0 every step is built except require
 | 9 | Gate a change | Shipped |
 | 10 | Reports and feedback | Shipped (0.4.0); never run on a live app |
 
-## 0.4.1: fixes (patch)
+## Shipped in 0.4.1 (2026-11-04)
 
-Plan: [0.4.1.md](0.4.1.md), from the [AgentMesh run](../demos/2026-11-04-0.3.2-agentmesh-feedback.md): A1–A6 and A8–A16 (A7 and A17 were fixed in 0.4.0; r2 added A12–A16, with the request-body check A12 first), plus the items below. No new command, flag, config key or file format.
+The AgentMesh fixes A1–A16 (A7 and A17 were already fixed in 0.4.0) and the Docker check's fixtures. See [0.4.1.md](0.4.1.md#what-shipped).
 
-| # | Item | Source | Effort |
-|---|---|---|---|
-| 1 | The Docker check runs from a plain checkout: a small pytest demo, a Juice Shop reference and a recorded QA project under `tests/fixtures/` | 0.3.2 point 9 | M |
-| 2 | Fixes from running 0.4.0 on a live app: your agentmesh test, then a signed-in crawl on a data-heavy app (the restart, back-off and ETA have only run against fixtures), then the reports read by a person | agentmesh, T1, T2 | — |
+## Next: 0.4.2 (fixes), from running 0.4.1
 
-**Verify, with no code:** `/qamaster:status` and `/qamaster:report` in Claude desktop on the uploaded zip · the push hook from a normal desktop push, not a test event (K8).
+| # | Item | Source |
+|---|---|---|
+| 1 | Re-run AgentMesh on 0.4.1: regenerate the 13 published cases with the wrong request body and re-publish (yours) | A12 |
+| 2 | Run the Docker check once, with Docker and network (the container was never run) | 0.4.1 item 11 |
+| 3 | A signed-in crawl on a data-heavy app (the restart, back-off, ETA and shell-drop have only run against fixtures), and the reports read by a person | 0.4.0, 0.4.1 |
+| 4 | `/qamaster:status` and `/qamaster:report` in Claude desktop on the uploaded zip; the push hook from a normal desktop push (K8) | 0.4.0, 0.3.2 |
+| 5 | Q49: linking local scripts without a push, which needs a decision (a flag or setting makes it a minor release) | A15 |
 
 ## 0.5.0 to 0.7.0: the rest of product v1 (minor)
 
