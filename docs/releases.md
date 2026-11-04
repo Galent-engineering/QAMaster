@@ -118,7 +118,7 @@ Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.4.1 | Fixes | The Docker check from a plain checkout, and fixes from running 0.4.0 on a live app (agentmesh) | [backlog](plans/backlog.md#041-fixes-patch) |
+| 0.4.1 | Fixes | From the AgentMesh run: ADO org URLs accepted, projects listed, API data not "vague", FastAPI routes, API routes kept out of the UI map (Q48), the Streamlit map investigated, launcher and doctor fixes, TestGen in smaller steps; the Docker check from a plain checkout | [0.4.1.md](plans/0.4.1.md) |
 | 0.5.0 | Features | Requirements fetch: completes the demo's step 6 | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
 | 0.6.0 | Features | Daily-use features: conflicts that show their fields, a review confirmation, selection presets, faster DSM | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
 | 0.7.0 | Features | Scripts for Mobile Web, API, Android and iOS | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |

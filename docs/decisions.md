@@ -729,6 +729,13 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Why:** the person wants setup to ask for a location, with the likely answers one keypress away, instead of failing and asking for a flag.
 - **Gave up:** a fully silent setup. It always asks when no folder is given.
 
+**Q48. A route found only in server code is an API route, not a screen** (2026-11-04, accepted 2026-11-04; amends Q11's DSM use)
+- **Decision:**
+  - A route the code scan finds only on the server (an HTTP verb, with no UI page and no link to it) is recorded as `kind: api`.
+  - It stays in the code model, so impact analysis and the API channel (0.7.0) can use it. It isn't a screen: it gets no DSM cell, no orphan or code-only flag, and TestGen writes no UI case for it.
+- **Why:** on AgentMesh (FastAPI plus Streamlit), 27 of 38 "pages" were API endpoints. TestGen wrote them as UI cases, and the validator then flagged the HTTP verbs as invented UI.
+- **Gave up:** API endpoints in the screen matrix. They come back as API cases with the API channel.
+
 ---
 
 ## Open questions
