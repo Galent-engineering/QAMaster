@@ -7,7 +7,7 @@ description: Works with Azure DevOps directly (Boards work items, WIQL queries, 
 
 This skill is for **your own** ADO work in a session. The `qam` engine (the gate, `qam doctor`, publish) uses QAMaster's own REST adapter (`plugin/src/adapters/ado.mts`) and doesn't go through here.
 
-Settings come from the app repo's `.env`: `QAMASTER_ADO_ORG`, `QAMASTER_ADO_PROJECT`, and optionally `QAMASTER_ADO_PLAN` and `QAMASTER_ADO_TEAM`. Sign-in is `az login`, or `QAMASTER_ADO_TOKEN` (a PAT). Never ask for a token in chat, and never print one.
+Settings come from the app repo's `.env`, then the QA project's for anything it leaves out: `QAMASTER_ADO_ORG`, `QAMASTER_ADO_PROJECT`, and optionally `QAMASTER_ADO_PLAN` and `QAMASTER_ADO_TEAM`. Sign-in is `az login`, or `QAMASTER_ADO_TOKEN` (a PAT). Never ask for a token in chat, and never print one.
 
 ## Procedure
 

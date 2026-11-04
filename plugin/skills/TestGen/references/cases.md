@@ -84,7 +84,7 @@ A list of cases:
 | `dsm:element:<route>:<label>` | an element, field, form or button on it | exact name, ignoring case, punctuation and a kind word |
 | `dsm:relation:<from>-><to>` | a navigation | in the DSM |
 | `dsm:journey:<n>` | candidate journey n | in the context pack |
-| `code:<repo>:<path>[:<line>]` | a file, or a line in it | in the scanned code; a line must exist at the scanned commit |
+| `code:<repo>:<path>[:<line>[-<line>]]` | a file, a line in it, or a range of lines (`:18-25`) | in the scanned code; a line, or both ends of a range, must exist at the scanned commit |
 | `aut:<Skill>[#<heading>]` | an AUT skill, or a heading in it | the skill and the heading exist |
 | `domain:<SubSkill>[#<heading>]` | a domain sub-skill section | exists; the `Domain_Test_Design_Skill-` prefix is optional |
 | `req:<id>` | a fetched requirement | exact ID in `requirements/<requirements_scope>/requirements.json` |

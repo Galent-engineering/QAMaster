@@ -129,7 +129,9 @@ export async function approve(g: Gate, plan: Plan, by: string, add: string[], re
     const collected = await collect(g, runnersFor(g, cases));
     for (const c of cases) {
       if (!c.automatedTest || !linkRunner(c.automatedTest) || !resolve(c.automatedTest, collected).length)
-        throw new BlockedError(`Can't add TC${c.id}: it has no automated test in the test root.`);
+        throw new BlockedError(
+          `Can't add TC${c.id}: it has no automated test in the test root. If its script exists, bind it: qam plan --tag <its group>, qam automate <that plan> --done, then approve that plan.`,
+        );
       plan.items.push({ testCase: c, reasons: [{ kind: 'added', detail: by }], selected: true });
     }
   }

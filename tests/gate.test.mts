@@ -110,6 +110,17 @@ test('approve rejects bad edits', async () => {
     await assert.rejects(approve(g, structuredClone(plan), 'ada', [...add], [...remove]), blocked(re));
 });
 
+test('adding a case with no bound script says how to bind it (0.4.2 W19)', async () => {
+  const { g } = gate();
+  const plan = await makePlan(g, 'main', {});
+  await assert.rejects(
+    approve(g, plan, 'ada', ['503'], []),
+    blocked(
+      /If its script exists, bind it: qam plan --tag <its group>, qam automate <that plan> --done, then approve that plan\./,
+    ),
+  );
+});
+
 test('a failed test is retried once; failed then passed is flaky, with both attempts kept apart', async () => {
   let calls = 0;
   const flaky: Runner = {

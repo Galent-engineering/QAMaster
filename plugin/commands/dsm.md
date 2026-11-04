@@ -14,7 +14,7 @@ node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" --json dsm $ARGUMENTS
 
 from the QA project, then report as the skill describes. Exit 2 is blocked:
 - if it's about signing in, offer the user the skill's three ways and never ask for the password in chat;
-- if it's about missing settings, ask the user for the app's URL and repository, then run `qam setup` with their answers.
+- if it's about missing settings, ask the user for the app's URL and repository, then run `qam setup` with their answers. When there's no QA project yet (no `config/qamaster.json`), first ask where it goes: this folder, a new folder next to it, or a path they type, and wait; never pick one yourself. When setup prints folder choices for the code, show them and wait for the answer.
 
 For `render`, show the user `dsm/index.html`.
 

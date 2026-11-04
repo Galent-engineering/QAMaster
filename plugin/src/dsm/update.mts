@@ -219,6 +219,18 @@ const LOCK_HOURS = 3;
  * Brings the DSM in `dir` up to date. `project` is the QA project (relative repository paths start there).
  * `crawler` is only called when a crawl is needed, so Playwright loads only then.
  */
+/** The crawl's blocked writes, named: each method and URL (without its query), most frequent first, at most five. */
+export function blockedWarning(blocked: { method: string; url: string }[]): string {
+  const counts = new Map<string, number>();
+  for (const b of blocked) {
+    const key = `${b.method} ${b.url.split(/[?#]/)[0]}`;
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  const named = [...counts].sort((a, b) => b[1] - a[1]).map(([k, n]) => (n > 1 ? `${k} (${n})` : k));
+  const more = named.length > 5 ? `, and ${named.length - 5} more` : '';
+  return `${blocked.length} write request(s) blocked during the crawl: ${named.slice(0, 5).join(', ')}${more}; if a page needs one to render, add it to safety.allow_mutating_patterns`;
+}
+
 export async function update(
   project: string,
   dir: string,
@@ -315,9 +327,7 @@ async function updateLocked(
       if (ui.truncated)
         warnings.push('the crawl stopped at application.max_pages; raise it to cover the remaining routes');
       if (ui.blocked_requests?.length) {
-        warnings.push(
-          `${ui.blocked_requests.length} write request(s) blocked during the crawl; if a page needs one to render, add it to safety.allow_mutating_patterns`,
-        );
+        warnings.push(blockedWarning(ui.blocked_requests));
       }
     } catch (e) {
       if (e instanceof BlockedError) throw e; // sign-in problems: nothing is rebuilt, the previous DSM stands

@@ -8,7 +8,7 @@
  *     dsm:element:<route>:<label>     the element, form, field or button is on that screen
  *     dsm:relation:<from>-><to>       the navigation is in the DSM
  *     dsm:journey:<n>                 candidate journey n (from context)
- *     code:<repo>:<path>[:<line>]     the file is in the scanned code
+ *     code:<repo>:<path>[:<line>[-<line>]]  the file is in the scanned code, and the line or range is in it
  *     aut:<Skill>[#<heading>]         the AUT skill (and heading) exists
  *     domain:<SubSkill>[#<heading>]   Domain_Test_Design_Skill or a sub-skill (prefix optional), and the heading
  *     req:<id>                        a requirement in requirements/<manifest.requirements_scope>/requirements.json
@@ -24,7 +24,7 @@ export const EVIDENCE_FORMATS = [
   'dsm:element:<route>:<label>',
   'dsm:relation:<from>-><to>',
   'dsm:journey:<n>',
-  'code:<repo>:<path>[:<line>]',
+  'code:<repo>:<path>[:<line>[-<line>]]',
   'aut:<Skill>[#<heading>]',
   'domain:<SubSkill>[#<heading>]',
   'req:<id>',
@@ -173,13 +173,19 @@ export class Facts {
       const key = parts.length >= 2 ? parts.slice(0, 2).join(':') : rest;
       if (!this.codeFiles.has(key)) return `${key} is not in the scanned repository (DSM code model)`;
       if (parts.length < 3) return null;
-      // a cited line must exist (AQE checked the file only, so line 9999 of a 40-line file passed)
-      const line = Number(parts[2]);
+      // a cited line, or both ends of a range (18-25), must exist (AQE checked the file only, so line 9999 of a
+      // 40-line file passed)
       const count = this.input.lines(key);
       if (count === null) return `can't read ${key} at the scanned commit to check line ${parts[2]}`;
-      return Number.isInteger(line) && line >= 1 && line <= count
-        ? null
-        : `${key} has no line ${parts[2]} (${count} lines)`;
+      const ends = parts[2].split('-');
+      for (const end of ends) {
+        const line = Number(end);
+        if (!(ends.length <= 2 && Number.isInteger(line) && line >= 1 && line <= count))
+          return `${key} has no line ${end} (${count} lines)`;
+      }
+      if (ends.length === 2 && Number(ends[0]) > Number(ends[1]))
+        return `${key} lines ${parts[2]}: the range starts after it ends`;
+      return null;
     }
     if (kind === 'aut') {
       const [skill, , heading] = partition(rest, '#');

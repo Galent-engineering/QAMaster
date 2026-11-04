@@ -379,6 +379,7 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
         check: `source ${r.name}`,
         ok: true,
         detail: [...c.notes, ...c.warnings].join(' ') || `${r.path}${r.branch ? ` (${r.branch})` : ''}`,
+        ...(c.warnings.length ? { state: 'unknown' as const } : {}), // a warning shows as WARN, not ok (0.4.2 W5)
       });
     } catch (e) {
       if (!(e instanceof BlockedError)) throw e;

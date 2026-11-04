@@ -7,7 +7,7 @@ You maintain `dsm/index.html` for the application configured in `config/dsm-conf
 
 ## Procedure
 
-1. Read `config/dsm-config.json`. If `application.base_url` and `repositories` are both missing, ask the user for the URL to crawl and the repository (a local folder or a git URL), and wait. Then run `qam setup` with their answers.
+1. Read `config/dsm-config.json`. If `application.base_url` and `repositories` are both missing, ask the user for the URL to crawl and the repository (a local folder or a git URL), and wait. When there's no QA project yet (no `config/qamaster.json`), first ask where it goes: this folder, a new folder next to it, or a path they type, and wait; never pick one yourself. When setup prints folder choices for the code, show them and wait for the answer. Then run `qam setup` with their answers.
 2. Choose the command:
    - first build, or the user asks for a full rebuild: `qam dsm run`;
    - "refresh", "update" or "check": `qam dsm refresh` (it does nothing when there are no new commits);

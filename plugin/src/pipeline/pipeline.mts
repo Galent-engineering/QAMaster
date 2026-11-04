@@ -64,7 +64,8 @@ function runs(c: Ctx, file: string, ok: (data: Record<string, unknown>) => boole
       return data !== null && ok(data);
     });
 }
-const appFolder = (c: Ctx) => (c.app ? path.join(c.project, c.app) : null);
+// the automation folder is <project>/<App>, as qam app create makes it (0.4.2 W12: the raw name is the app's clone)
+const appFolder = (c: Ctx) => (c.app ? path.join(c.project, pascal(c.app)) : null);
 
 export const STAGES: Stage[] = [
   {
@@ -251,8 +252,8 @@ export const STAGES: Stage[] = [
       const dir = appFolder(c);
       // app.json, written by qam app create (.aut-app.json is Autonomous-QE's marker for the same folder)
       return dir && (exists(path.join(dir, 'app.json')) || exists(path.join(dir, '.aut-app.json')))
-        ? { done: true, detail: `${c.app}/` }
-        : { done: false, detail: c.app ? `${c.app}/ not created` : 'no app name yet' };
+        ? { done: true, detail: `${pascal(c.app as string)}/` }
+        : { done: false, detail: c.app ? `${pascal(c.app)}/ not created` : 'no app name yet' };
     },
     how: (c) => `Run qam app create --app ${c.app ?? '<Name>'} --web-url <URL>.`,
   },

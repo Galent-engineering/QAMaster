@@ -142,7 +142,7 @@ const ACTS =
 /** UI named in the action text: "quoted names", and "the <name> button|link|field|tab|checkbox|dropdown|menu item". */
 const NAMED = [/"([^"]+)"|'([^']+)'/g, /\bthe ([^,.;]+?) (?:button|link|field|tab|checkbox|dropdown|menu item)\b/gi];
 /** A citation precise enough for a reviewer to check a rule in seconds: a line, a heading or a requirement (fix 3). */
-const PRECISE = /^(code:[^:]+:[^:]+:\d+|aut:[^#]+#.+|domain:[^#]+#.+|req:.+)$/;
+const PRECISE = /^(code:[^:]+:[^:]+:\d+(-\d+)?|aut:[^#]+#.+|domain:[^#]+#.+|req:.+)$/;
 
 const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\/-]/g, '\\$&');
 const s = (v: unknown) => (v === null || v === undefined ? 'None' : String(v)); // AQE printed Python's None
@@ -308,7 +308,7 @@ export function validate(
       // a rule needs a citation a reviewer can open: a bare file or skill passed in AQE, whatever the rule said
       else if (!(tc.evidence ?? []).some((r) => PRECISE.test(String(r))))
         errors.push(
-          `${w}: cite where the business rule is written: code:<repo>:<path>:<line>, aut:<Skill>#<heading> or req:<id> (a whole file or skill isn't checkable)`,
+          `${w}: cite where the business rule is written: code:<repo>:<path>:<line> (or :<line>-<line>), aut:<Skill>#<heading> or req:<id> (a whole file or skill isn't checkable)`,
         );
     }
     checkEvidence(w, tc.evidence);

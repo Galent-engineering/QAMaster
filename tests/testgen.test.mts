@@ -57,6 +57,8 @@ test("golden: the context pack is AQE's, without its v2 parts", () => {
   // AQE's API model, locator files and their evidence formats are v2 or feature 8
   for (const k of ['api_endpoints', 'api_context', 'locator_files']) delete aqe[k];
   aqe.evidence_formats = aqe.evidence_formats.filter((f: string) => !/^(locator|tc|api):/.test(f));
+  // 0.4.2 W6: a code: citation may name a line range
+  aqe.evidence_formats = aqe.evidence_formats.map((f: string) => f.replace('[:<line>]', '[:<line>[-<line>]]'));
   // feature 5 fix 7: link text in a journey is quoted page text, in backticks
   for (const j of aqe.journeys) j.path = j.path.replace(/\("([^"]*)"\)/g, '(`$1`)');
   assert.deepEqual(JSON.parse(JSON.stringify(facts().context(null))), aqe);
@@ -110,6 +112,21 @@ test('fix 2: UI named in the action text is checked, and an acting step must nam
   const { manifest, cases } = run();
   lastStep(cases, 1).action = 'Type "SAVE10" in the Coupon field and submit the checkout form';
   assert.equal(validate(manifest, cases, facts(), settings()).status, 'pass');
+});
+
+test('a code: citation may name a line range, and both ends must exist (0.4.2 W6)', () => {
+  const { manifest, cases } = run();
+  lastStep(cases, 1).evidence = ['code:shop:src/Cart.tsx:12-20'];
+  cases[2].evidence = ['code:shop:src/Cart.tsx:18-25'];
+  assert.equal(validate(manifest, cases, facts(), settings()).status, 'pass');
+  const past = findings((_, c) => {
+    lastStep(c, 1).evidence = ['code:shop:src/Cart.tsx:30-45'];
+  });
+  assert.match(past.join('\n'), /shop:src\/Cart\.tsx has no line 45 \(40 lines\)/);
+  const backwards = findings((_, c) => {
+    lastStep(c, 1).evidence = ['code:shop:src/Cart.tsx:20-12'];
+  });
+  assert.match(backwards.join('\n'), /shop:src\/Cart\.tsx lines 20-12: the range starts after it ends/);
 });
 
 test('fix 3: a cited line must exist, and a business rule needs a line, heading or requirement', () => {

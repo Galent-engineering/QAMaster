@@ -213,9 +213,12 @@ function pageSignature(p: UiPage): string {
   return [...new Set(parts)].sort().join('\n');
 }
 
+/** A page's title and headings: pages that share a nav menu (the same elements) still differ here (0.4.2 W3). */
+const pageHeading = (p: UiPage) => [p.title ?? '', ...(p.headings ?? [])].join('\n');
+
 /**
  * A single-page app answers 200 with the same shell for any path, so a code-seeded route that shows exactly the start
- * page's elements is not a screen. Drops those pages and their edges. Pages found by a link, errors and redirects stay.
+ * page's elements, title and headings is not a screen. Drops those pages and their edges. Pages found by a link, errors and redirects stay.
  */
 export function dropShellPages(
   pages: UiPage[],
@@ -225,8 +228,13 @@ export function dropShellPages(
   const start = pages.find((p) => p.route === startRoute);
   const shell = start ? pageSignature(start) : '';
   if (!shell) return { pages, edges, dropped: [] };
+  const heading = start ? pageHeading(start) : '';
   const isShell = (p: UiPage) =>
-    p.discovered_by === 'code-seed' && !p.error && !p.redirect_to && pageSignature(p) === shell;
+    p.discovered_by === 'code-seed' &&
+    !p.error &&
+    !p.redirect_to &&
+    pageSignature(p) === shell &&
+    pageHeading(p) === heading;
   const dropped = pages.filter(isShell).map((p) => p.route);
   if (!dropped.length) return { pages, edges, dropped };
   return {

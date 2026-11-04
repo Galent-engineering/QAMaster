@@ -20,6 +20,7 @@ import type { Work } from '../gate/automate.mts';
 import { bind, type Drafts, folderHash, prove, recordedUnchanged, worklist } from '../gate/automate.mts';
 import { dsmCases, repoDirs, runCases } from '../gate/dsm.mts';
 import { approve, type Gate, makePlan, runPlan } from '../gate/gate.mts';
+import { linkRunner } from '../gate/select.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
 import { readLedger } from '../publish/ledger.mts';
 import type { Config } from '../shared/config.mts';
@@ -313,6 +314,15 @@ async function finish(cfg: Config, g: Gate, plan: Plan, json: boolean): Promise<
   return verdict.result === 'pass' ? PASS : FAIL;
 }
 
+/** Browser scripts need the app up: name where, when the plan runs any (0.4.2 W17). */
+export function appHint(cfg: Config, plan: Plan): string {
+  const url = cfg.project.app?.url;
+  const browser = plan.items.some(
+    (i) => i.selected && i.testCase.automatedTest && linkRunner(i.testCase.automatedTest) === 'playwright-bdd',
+  );
+  return url && browser ? ` Its scripts open ${url}: start the app there before qam run.` : '';
+}
+
 export async function gate(cfg: Config, command: string, argv: string[], json: boolean): Promise<number> {
   const { values: v, positionals } = parse(argv, command);
   const g = gateFor(cfg);
@@ -328,7 +338,7 @@ export async function gate(cfg: Config, command: string, argv: string[], json: b
     out(
       json,
       plan,
-      `${renderPlan(plan)}\n\nApprove with qam approve ${plan.id} (--add/--remove to change it), then qam run ${plan.id}.`,
+      `${renderPlan(plan)}\n\nApprove with qam approve ${plan.id} (--add/--remove to change it), then qam run ${plan.id}.${appHint(cfg, plan)}`,
     );
     return AWAITING;
   }
@@ -421,7 +431,7 @@ function automateCommand(cfg: Config, plan: Plan, done: boolean, json: boolean):
   out(
     json,
     r.plan,
-    `${renderPlan(r.plan)}\n\nScripts recorded (not committed: review and commit them yourself). Approve with qam approve ${plan.id}, then qam run ${plan.id}.`,
+    `${renderPlan(r.plan)}\n\nScripts recorded (not committed: review and commit them yourself). Approve with qam approve ${plan.id}, then qam run ${plan.id}.${appHint(cfg, r.plan)}`,
   );
   return AWAITING;
 }

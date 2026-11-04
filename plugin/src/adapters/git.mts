@@ -135,16 +135,27 @@ export function changesSince(
   return rec;
 }
 
+// the gate compares two commits, so a folder with no git history needs both (0.4.2 W13)
+const FIRST_COMMITS =
+  'The gate compares a change with a base commit: git init, commit the baseline, commit the change, then qam plan --base <baseline commit>.';
+
 /** git's answer as text, or a BlockedError with what it said. */
 function gitText(dir: string, args: string[]): string {
   const r = spawnSync('git', ['-C', dir, ...args], { encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
   if (r.error) throw new BlockedError("git isn't installed: install git 2.20 or later, then run again.");
-  if (r.status !== 0) throw new BlockedError(`git ${args.join(' ')} failed in ${dir}: ${(r.stderr || '').trim()}`);
+  if (r.status !== 0) {
+    const err = (r.stderr || '').trim();
+    if (/not a git repository/i.test(err)) throw new BlockedError(`${dir} isn't a git repository. ${FIRST_COMMITS}`);
+    if (/ambiguous argument 'HEAD'/.test(err)) throw new BlockedError(`${dir} has no commit yet. ${FIRST_COMMITS}`);
+    throw new BlockedError(`git ${args.join(' ')} failed in ${dir}: ${err}`);
+  }
   return r.stdout;
 }
 
 /** The branch a change is compared with when --base isn't given: origin/HEAD, else main, else master. */
 export function defaultBase(dir: string): string {
+  if (!git(dir, ['rev-parse', '--git-dir']).ok)
+    throw new BlockedError(`${dir} isn't a git repository. ${FIRST_COMMITS}`);
   for (const ref of ['origin/HEAD', 'main', 'master'])
     if (git(dir, ['rev-parse', '--verify', '--quiet', ref]).ok) return ref;
   throw new BlockedError(`Couldn't find a base branch (origin/HEAD, main or master) in ${dir}. Pass --base <branch>.`);

@@ -63,6 +63,17 @@ test('dropShellPages compares form field labels, and never an empty signature', 
   assert.deepEqual(dropShellPages(empty, [], '/').dropped, []);
 });
 
+test('dropShellPages keeps a page with the same elements but its own title or heading (0.4.2 W3)', () => {
+  const nav = ['Home', 'Cats', 'Landscapes'];
+  const pages = [
+    page('/', 'start', nav, { title: 'Home', headings: ['Home'] }),
+    page('/cats.html', 'code-seed', nav, { title: 'Cats', headings: ['Cats'] }),
+    page('/landscapes.html', 'code-seed', nav, { title: 'Home', headings: ['Landscapes'] }),
+    page('/shell', 'code-seed', nav, { title: 'Home', headings: ['Home'] }),
+  ];
+  assert.deepEqual(dropShellPages(pages, [], '/').dropped, ['/shell']);
+});
+
 test('dropShellPages does nothing without a start page', () => {
   const pages = [page('/a', 'code-seed', ['Connect'])];
   assert.deepEqual(dropShellPages(pages, [], '/').dropped, []);
@@ -101,4 +112,26 @@ test('a single-page app answering 200 for every path crawls to its real screens'
     lines.some((l) => /dropped 10 code-seeded route\(s\) that show the start page's elements/.test(l)),
     lines.join('\n'),
   );
+});
+
+// ---- a real crawl of tests/fixtures/crawl/static-site.mjs
+
+test('a static site whose pages share a nav menu keeps every page (0.4.2 W3)', { timeout: 120_000 }, async () => {
+  const site = spawn(process.execPath, [path.join(ROOT, 'tests/fixtures/crawl/static-site.mjs')], {
+    stdio: ['ignore', 'pipe', 'inherit'],
+  });
+  try {
+    const base = (
+      await new Promise<{ ui: string }>((resolve) => site.stdout?.once('data', (d) => resolve(JSON.parse(String(d)))))
+    ).ui;
+    const model = await new PlaywrightCrawler({
+      app: { base_url: base, settle_ms: 100, login: { mode: 'auto' } },
+      projectDir: ROOT,
+      authDir: null,
+      credentials: {},
+    }).crawl({ baseUrl: base, seeds: ['/cats.html', '/landscapes.html'] });
+    assert.deepEqual(model.pages.map((p) => p.route).sort(), ['/', '/cats.html', '/landscapes.html']);
+  } finally {
+    site.kill();
+  }
 });

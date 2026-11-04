@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { impact, planCrawl, type State, type UpdateConfig, update } from '../plugin/src/dsm/update.mts';
+import { blockedWarning, impact, planCrawl, type State, type UpdateConfig, update } from '../plugin/src/dsm/update.mts';
 import type { CodeModel, UiModel } from '../plugin/src/shared/models.mts';
 import { FakeCrawler } from './fakes.mts';
 import { tmpDir } from './tmp.mts';
@@ -197,4 +197,15 @@ test('qam dsm impact and changes', async () => {
     qam('dsm', 'changes', '--no-fetch').stdout,
     /polyglot \(main\): \w{8}\.\.\w{8}, 1 changed file\n {2}\w+ t: change flask\/app\.py/,
   );
+});
+
+test('the blocked-writes warning names each request, most frequent first, at most five (0.4.2 W4)', () => {
+  const ga = { method: 'POST', url: 'https://www.google-analytics.com/collect?v=1&t=pageview' };
+  const list = [ga, ga, ga, { method: 'PUT', url: 'http://localhost:8080/api/x' }];
+  assert.equal(
+    blockedWarning(list),
+    '4 write request(s) blocked during the crawl: POST https://www.google-analytics.com/collect (3), PUT http://localhost:8080/api/x; if a page needs one to render, add it to safety.allow_mutating_patterns',
+  );
+  const many = Array.from({ length: 7 }, (_, i) => ({ method: 'POST', url: `http://h/p${i}` }));
+  assert.match(blockedWarning(many), /POST http:\/\/h\/p4, and 2 more;/);
 });

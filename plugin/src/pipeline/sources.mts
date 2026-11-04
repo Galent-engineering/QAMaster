@@ -157,7 +157,10 @@ function checkFolder(dir: string, spec: SourceSpec, project: string, ownExtra: s
     exclude: [...DEFAULT_EXCLUDE],
   };
   if (!git(['rev-parse', '--git-dir'], dir).ok) {
-    warnings.push(`${rel} isn't in git: it's read from disk, and the gate has no change history for it.`);
+    // 0.4.2 W5: a clone copied without its .git looks like this, so say what breaks and how to get it back
+    warnings.push(
+      `${rel} isn't in git: it's read from disk, the gate has no change history for it, and TestGen can't check code: line citations. If it was copied from a clone, re-clone it with qam setup --source <git URL> --clone-to <new folder>.`,
+    );
     repo.branch = undefined;
     return { repo, notes, warnings, cloned: false };
   }

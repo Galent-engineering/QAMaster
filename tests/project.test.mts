@@ -137,6 +137,10 @@ test('setup checks each source and blocks with the fix', () => {
   }
   const plain = json(qa, 'setup', '--no-install', '--source', 'plain');
   assert.match(plain.warnings.join(), /isn't in git: it's read from disk/);
+  // 0.4.2 W5: say what breaks, how to fix it, and show it as WARN in doctor
+  assert.match(plain.warnings.join(), /TestGen can't check code: line citations/);
+  assert.match(plain.warnings.join(), /re-clone it with qam setup --source <git URL> --clone-to <new folder>/);
+  assert.match(qam(qa, 'doctor').out, /WARN\s+source plain/);
   fs.writeFileSync(path.join(qa, 'app/src/New.jsx'), 'x');
   assert.match(json(qa, 'setup', '--no-install', '--source', 'app').warnings.join(), /uncommitted changes/);
 });

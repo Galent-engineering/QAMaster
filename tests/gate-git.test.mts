@@ -66,3 +66,22 @@ test('defaultBase is origin/HEAD, else main, else master; an unknown base blocks
   const bare = tmpDir('qam-gate-nogit-');
   assert.throws(() => defaultBase(bare), BlockedError);
 });
+
+test('a folder that is not a git repository, or has no commit, blocks with the next step (0.4.2 W13)', async () => {
+  const plain = tmpDir('qam-gate-nogit-');
+  const steps = /git init, commit the baseline, commit the change, then qam plan --base <baseline commit>/;
+  await assert.rejects(new GitRepoReader(plain).head(), (e: Error) => {
+    assert.ok(e instanceof BlockedError);
+    assert.match(e.message, /isn't a git repository/);
+    assert.match(e.message, steps);
+    return true;
+  });
+  assert.throws(() => defaultBase(plain), /isn't a git repository/);
+  const empty = tmpDir('qam-gate-nocommit-');
+  git(empty, 'init', '-q', '-b', 'main');
+  await assert.rejects(new GitRepoReader(empty).head(), (e: Error) => {
+    assert.match(e.message, /has no commit yet/);
+    assert.match(e.message, steps);
+    return true;
+  });
+});

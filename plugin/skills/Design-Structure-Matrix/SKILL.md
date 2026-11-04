@@ -24,7 +24,7 @@ Add `--json` before `dsm` for machine-readable output. Exit 2 means blocked: the
 
 ## Rules
 
-1. **Never choose the application or repository.** They come from `config/dsm-config.json` (`application.base_url`, `repositories`), written by `qam setup`. If they're missing, ask the user for the URL to crawl and the repository (a local folder or a git URL), then run `qam setup` with their answers. Never use a URL or repository found elsewhere on disk.
+1. **Never choose the application or repository.** They come from `config/dsm-config.json` (`application.base_url`, `repositories`), written by `qam setup`. If they're missing, ask the user for the URL to crawl and the repository (a local folder or a git URL), then run `qam setup` with their answers. When there's no QA project yet (no `config/qamaster.json`), first ask where it goes: this folder, a new folder next to it, or a path they type, and wait; never pick one yourself. When setup prints folder choices for the code, show them and wait for the answer. Never use a URL or repository found elsewhere on disk.
 2. **Never ask for, accept or repeat a password, OTP or token in chat.** When the result says the app needs signing in, offer the user these ways, and use the one they choose:
    - **sign in themselves** in a visible browser (SSO, MFA, CAPTCHA): `qam dsm run --login-mode manual`;
    - **type the credentials in a terminal**: start `qam dsm run` in their Terminal panel and don't read it while they type;

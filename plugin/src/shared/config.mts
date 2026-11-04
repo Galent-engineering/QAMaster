@@ -61,7 +61,7 @@ function readProjectConfig(qaProject: string | null): ProjectConfig {
 }
 
 /**
- * Settings from the shell, then <root>/.env. The QA project is found from the test root upwards, so it works both when
+ * Settings from the shell, then <root>/.env, then the QA project's .env. The QA project is found from the test root upwards, so it works both when
  * the tests live in the app repo and when QAMASTER_TEST_ROOT points into a separate QA project.
  */
 export function loadConfig(root: string, env: Env = process.env): Config {
@@ -77,6 +77,9 @@ export function loadConfig(root: string, env: Env = process.env): Config {
     );
   }
   const qaProject = findQaProject(testRoot) ?? findQaProject(root);
+  // a repo inside or pointing into a QA project takes the QA project's .env for what its own leaves out, so the
+  // store's token never has to go into a team repo (0.4.2 W14)
+  if (qaProject && qaProject !== root) loadEnv(path.join(qaProject, ENV_FILE), env);
   const project = readProjectConfig(qaProject);
   const envAi = env.QAMASTER_AI?.toLowerCase();
   if (envAi && envAi !== 'on' && envAi !== 'off') {

@@ -187,3 +187,18 @@ test('Q44: with no QAMASTER_STORE, a QA project that published keeps the store i
   write(path.join(qa, '.qamaster/ledger.json'), 'not json');
   assert.equal(loadConfig(qa, {}).store, 'file', "a broken ledger doesn't pick the store: publish reports it");
 });
+
+test('a repo inside a QA project reads the QA project .env for what its own .env leaves out (0.4.2 W14)', () => {
+  const qa = tmpDir('qam-cfg-');
+  const clone = path.join(qa, 'dummy-static-website');
+  fs.mkdirSync(path.join(qa, 'config'), { recursive: true });
+  fs.mkdirSync(clone);
+  fs.writeFileSync(path.join(qa, 'config', 'qamaster.json'), '{}');
+  fs.writeFileSync(path.join(qa, '.env'), 'QAMASTER_ADO_ORG=acme\nQAMASTER_ADO_PROJECT=from-qa\n');
+  fs.writeFileSync(path.join(clone, '.env'), 'QAMASTER_ADO_PROJECT=from-clone\n');
+  const env: Record<string, string | undefined> = {};
+  const cfg = loadConfig(clone, env);
+  assert.equal(cfg.qaProject, qa);
+  assert.equal(env.QAMASTER_ADO_ORG, 'acme');
+  assert.equal(env.QAMASTER_ADO_PROJECT, 'from-clone', "the repo's own .env still wins");
+});
