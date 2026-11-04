@@ -334,6 +334,8 @@ export function build(
   }
 
   for (const r of code?.routes ?? []) {
+    // Q48: a server-only route is an API route, not a screen, unless the crawl found a page there
+    if (r.kind === 'api' && !byKey.has(matchKey(r.route))) continue;
     const nd = node(matchKey(r.route), r.route);
     if (!nd.sources.includes('code')) nd.sources.push('code');
     nd.code_defs.push(`${r.repo}:${r.file}:${r.line}`);

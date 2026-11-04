@@ -40,7 +40,7 @@ export type ScanRoute = {
   repo: string;
   file: string;
   line: number;
-  kind: string; // route, page-file or action
+  kind: string; // route, page-file, action, or api (server-only: an HTTP verb, no page, no link to it)
   framework: string;
   component: string | null;
   redirect_to?: string | null;
@@ -49,6 +49,7 @@ export type ScanRoute = {
   action?: string;
   views?: string[];
   prefixed?: string;
+  method?: string; // the HTTP verb of a decorated server route (GET, POST, ...)
 };
 
 export type NavRef = { target: string | null; kind: string; line: number; relative?: string };
@@ -292,7 +293,96 @@ const SPRING_CLASS_MAP_RE =
   /@RequestMapping\(\s*(?:value\s*=\s*)?\{?\s*"([^"]*)"[^)]*\)\s*(?:@\w+(?:\([^)]*\))?\s*)*public\s+class/;
 const SPRING_METHOD_RE = /@(?:Get|Post|Request|Put|Delete)Mapping\(\s*(?:value\s*=\s*|path\s*=\s*)?\{?\s*"([^"]*)"/g;
 const DJANGO_PATH_RE = /\b(?:path|re_path)\(\s*r?['"]([^'"]*)['"]\s*,\s*([\w.]+)/g;
-const FLASK_RE = /@\w+\.(?:route|get|post)\(\s*['"]([^'"]+)['"]/g;
+const FLASK_RE = /@(\w+)\.(route|get|post|put|patch|delete)\(\s*['"]([^'"]+)['"]/g;
+const PY_ROUTER_RE = /^(\w+)\s*(?::[^=\n]+)?=\s*(?:[\w.]+\.)?(APIRouter|FastAPI)\(/gm;
+const PY_INCLUDE_RE = /\b(\w+)\.include_router\(/g;
+const PY_FROM_IMPORT_RE = /^from\s+([\w.]+)\s+import\s+([^\n(]+)$/gm;
+const PY_PREFIX_RE = /\bprefix\s*=\s*['"]([^'"]*)['"]/;
+
+/** The text of a call's arguments, from just after its "(" to the matching ")". */
+function callArgs(text: string, open: number): string {
+  let depth = 1;
+  let quote = '';
+  for (let i = open; i < text.length; i++) {
+    const c = text[i];
+    if (quote) {
+      if (c === '\\') i++;
+      else if (c === quote) quote = '';
+    } else if (c === '"' || c === "'") quote = c;
+    else if (c === '(') depth++;
+    else if (c === ')' && --depth === 0) return text.slice(open, i);
+  }
+  return text.slice(open);
+}
+
+export type PyRoute = { route: string; line: number; framework: string; method?: string };
+
+/**
+ * Flask and FastAPI routes of every .py file. A FastAPI router's own prefix and the prefix of each include_router
+ * that mounts it (followed up through routers that include routers) are put in front of its routes.
+ */
+export function scanPythonRoutes(files: Map<string, string>): Map<string, PyRoute[]> {
+  const py = [...files].filter(([rel]) => rel.endsWith('.py'));
+  const byStem = new Map<string, string>();
+  for (const [rel] of py) byStem.set(rel.replace(/^.*\//, '').replace(/\.py$/, ''), rel);
+  const own = new Map<string, string>(); // "file::var" -> its own prefix, for every FastAPI() and APIRouter()
+  for (const [rel, text] of py) {
+    for (const m of text.matchAll(PY_ROUTER_RE)) {
+      own.set(`${rel}::${m[1]}`, PY_PREFIX_RE.exec(callArgs(text, m.index + m[0].length))?.[1] ?? '');
+    }
+  }
+  // "file::var" of a router named in `file`: a local one, `module.var`, or one imported (maybe renamed) from a module
+  const resolve = (rel: string, text: string, expr: string): string | null => {
+    const [head, attr] = expr.split('.');
+    if (attr) {
+      const target = byStem.get(head);
+      return target && own.has(`${target}::${attr}`) ? `${target}::${attr}` : null;
+    }
+    if (own.has(`${rel}::${head}`)) return `${rel}::${head}`;
+    for (const m of text.matchAll(PY_FROM_IMPORT_RE)) {
+      for (const item of m[2].split(',')) {
+        const [orig, alias] = item.trim().split(/\s+as\s+/);
+        const target = byStem.get(m[1].split('.').pop() as string);
+        if ((alias ?? orig) === head && target && own.has(`${target}::${orig}`)) return `${target}::${orig}`;
+      }
+    }
+    return null;
+  };
+  const parents = new Map<string, { parent: string; prefix: string }[]>();
+  for (const [rel, text] of py) {
+    for (const m of text.matchAll(PY_INCLUDE_RE)) {
+      const parent = `${rel}::${m[1]}`;
+      if (!own.has(parent)) continue;
+      const args = callArgs(text, m.index + m[0].length);
+      const child = resolve(rel, text, args.split(',')[0].trim());
+      if (!child) continue;
+      const list = parents.get(child) ?? [];
+      list.push({ parent, prefix: PY_PREFIX_RE.exec(args)?.[1] ?? '' });
+      parents.set(child, list);
+    }
+  }
+  const prefixes = (key: string, seen: string[] = []): string[] => {
+    const mine = own.get(key) ?? '';
+    const ups = (parents.get(key) ?? []).filter((u) => !seen.includes(u.parent));
+    if (!ups.length) return [mine];
+    return ups.flatMap((u) => prefixes(u.parent, [...seen, key]).map((up) => joinRoute(up, u.prefix, mine)));
+  };
+  const out = new Map<string, PyRoute[]>();
+  for (const [rel, text] of py) {
+    const list: PyRoute[] = [];
+    for (const m of text.matchAll(FLASK_RE)) {
+      const line = lineOf(text, m.index);
+      const method = m[2] === 'route' ? undefined : m[2].toUpperCase();
+      const key = `${rel}::${m[1]}`;
+      if (!own.has(key)) list.push({ route: m[3], line, framework: 'flask', method });
+      else
+        for (const prefix of prefixes(key))
+          list.push({ route: joinRoute(prefix, m[3]), line, framework: 'fastapi', method });
+    }
+    if (list.length) out.set(rel, list);
+  }
+  return out;
+}
 
 /** The route a page file serves, from its path (Next.js, Razor Pages, WebForms, static HTML). */
 export function pageRouteFromFile(rel: string, kind: string): string {
@@ -501,6 +591,8 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
     if (tm) templateOf.set(rel, normPath(join(dirname(rel), tm[1])));
   }
 
+  const pyRoutes = scanPythonRoutes(files);
+
   const addRoute = (
     route: string,
     rel: string,
@@ -594,7 +686,9 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
       }
     }
     if (ext === '.py') {
-      for (const mm of text.matchAll(FLASK_RE)) addRoute(mm[1], rel, lineOf(text, mm.index), 'action', 'flask');
+      for (const r of pyRoutes.get(rel) ?? []) {
+        addRoute(r.route, rel, r.line, 'action', r.framework, null, r.method ? { method: r.method } : {});
+      }
     }
     if (
       ['.html', '.htm'].includes(ext) &&
@@ -829,5 +923,13 @@ export function scan(
     seen.add(k);
     return true;
   });
+  // Q48: a route found only in server code (an HTTP verb, no page at the same route, no link to it) is an API route
+  const linked = new Set(model.edges.map((e) => e.to));
+  for (const r of model.routes) {
+    if (r.kind !== 'action' || !r.method || linked.has(r.route)) continue;
+    if (model.routes.some((o) => o.route === r.route && o.kind !== 'action' && o.kind !== 'api')) continue;
+    if (model.routes.some((o) => o.route === r.route && o.kind === 'action' && !o.method)) continue;
+    r.kind = 'api';
+  }
   return model;
 }

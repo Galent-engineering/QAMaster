@@ -122,9 +122,10 @@
    "repo": "polyglot",
    "file": "flask/app.py",
    "line": 4,
-   "kind": "action",
+   "kind": "api",
    "framework": "flask",
-   "component": null
+   "component": null,
+   "method": "GET"
   },
   {
    "route": "/Account",
