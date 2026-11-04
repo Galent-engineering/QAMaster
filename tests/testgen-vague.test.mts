@@ -60,3 +60,28 @@ test('0.4.1 A3: vague phrases are matched outside quotes and test_data values on
   );
   assert.match(errorsFor('The page works and says "ok" in a banner'), /vague or too short/);
 });
+
+test('0.4.1 A3: an apostrophe inside a word does not open a quote, and a short test_data value hides nothing', () => {
+  const settings: TestGenSettings = {
+    ...read(path.join(FIX, 'shop/testgen.json')),
+    vague_expected_phrases: ['ok', 'works'],
+  };
+  const errorsFor = (expected: string, data?: Record<string, string>) => {
+    const manifest: Manifest = read(path.join(FIX, 'shop/run/manifest.json'));
+    const cases: TestCase[] = read(path.join(FIX, 'shop/run/testcases.json'));
+    cases[0].expected_result = expected;
+    if (data) cases[0].test_data = data;
+    return validate(manifest, cases, facts(), settings).errors.filter((e) => /vague or too short/.test(e));
+  };
+  assert.equal(errorsFor("The user's basket works and it's fine for the shopper").length, 1);
+  assert.equal(errorsFor("The page works for the shopper and the customer's cart is empty").length, 1);
+  // a quoted value after a space, colon, bracket or equals is still data
+  assert.equal(errorsFor("The status field equals 'ok' exactly in the response").length, 0);
+  assert.equal(errorsFor("The response is {status:'ok'} with HTTP 200 returned").length, 0);
+  assert.equal(errorsFor('The response status=`ok` is returned with HTTP 200').length, 0);
+  // a one- or two-character value is not cut out of other words
+  assert.equal(errorsFor('The page works for the shopper in the cart view', { qty: 'r' }).length, 1);
+  assert.equal(errorsFor('The page works for the shopper in the cart view', { qty: 'ks' }).length, 1);
+  // a longer value is removed only as a whole token
+  assert.equal(errorsFor('The service answers works for the given input', { answer: 'works' }).length, 0);
+});

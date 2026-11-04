@@ -213,15 +213,18 @@ export function validate(
   const genericValue =
     /^(valid|invalid|test|testing|dummy|sample|xyz|abc|abc123|asdf|qwerty|value|data|n\/a|na|tbd|todo|something|anything|x+)$/i;
   const components = facts.model.components;
-  // A3: a quoted string or a test_data value is data (`{"status": "ok"}`), not a vague word
+  // A3: a quoted value or a test_data value is data (`{"status": "ok"}`), not a vague word.
+  // A quote opens only after a non-word character and closes only before one, so an apostrophe inside a word
+  // (user's, it's) never pairs with another. A test_data value is removed only as a whole, case-sensitive token,
+  // and a value of one or two letters or digits is never removed: it would cut 'works' into 'wo ks'.
   const isVague = (text: unknown, data: unknown = {}) => {
-    const t = String(text || '')
-      .trim()
-      .toLowerCase();
-    let rest = t.replace(/"[^"]*"|'[^']*'|`[^`]*`/g, ' ');
-    for (const v of Object.values((data ?? {}) as Record<string, unknown>).map((x) => String(x).toLowerCase()))
-      if (v) rest = rest.split(v).join(' ');
-    return Array.from(t).length < minLen || Boolean(vagueRe?.test(rest));
+    const t = String(text || '').trim();
+    let rest = t.replace(/(?<!\w)(["'`])(?:(?!\1)[\s\S])*\1(?!\w)/g, ' ');
+    for (const v of Object.values((data ?? {}) as Record<string, unknown>).map(String)) {
+      if (!v || /^[A-Za-z0-9]{1,2}$/.test(v)) continue;
+      rest = rest.replace(new RegExp(`(?<!\\w)${escapeRe(v)}(?!\\w)`, 'g'), ' ');
+    }
+    return Array.from(t).length < minLen || Boolean(vagueRe?.test(rest.toLowerCase()));
   };
   // the files a case cites as code: evidence (its own and its steps'), without the line
   const cites = (tc: TestCase) =>
