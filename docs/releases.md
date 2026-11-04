@@ -133,8 +133,9 @@ Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
+| 0.4.2 | Fixes | The dummy-static-website findings (W1–W20): real pages kept when they share a menu, one automation folder name, the gate's settings from the QA project, clearer blocked messages | [plans/0.4.2.md](plans/0.4.2.md) |
 | 0.5.0 | Features | Requirements fetch: completes the demo's step 6 | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
-| 0.6.0 | Features | Daily-use features: conflicts that show their fields, a review confirmation, selection presets, faster DSM | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
+| 0.6.0 | Features | Daily-use features: conflicts that show their fields, a review confirmation, selection presets, faster DSM, the local store first with several publish destinations (Q50), a gate run with no git change | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
 | 0.7.0 | Features | Scripts for Mobile Web, API, Android and iOS | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
 | **1.0.0** | **Major** | Product v1 complete, a clean-room Docker run, and a walkthrough on a second unknown app | [backlog](plans/backlog.md#100-the-major-release) |
 | 1.1.0 | Features | The git pre-push hook, each IDE and agent set up by ticking it (Q43), PR checks, ADO Test Run | [backlog](plans/backlog.md#after-100) |

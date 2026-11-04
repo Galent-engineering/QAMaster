@@ -736,6 +736,15 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Why:** on AgentMesh (FastAPI plus Streamlit), 27 of 38 "pages" were API endpoints. TestGen wrote them as UI cases, and the validator then flagged the HTTP verbs as invented UI.
 - **Gave up:** API endpoints in the screen matrix. They come back as API cases with the API channel.
 
+**Q50. Test cases are stored locally first; publish chooses its destinations** (2026-11-04, proposed; would amend the store stage's place in the pipeline)
+- **Decision (proposed):**
+  - The pipeline order becomes: generate and review test cases, store them locally (the file store), then publish.
+  - Publish asks which integration(s) to publish to. Several destinations at once are allowed.
+  - A destination already set up (an ADO plan, say) publishes after one approval. A new one first asks for its connection details and checks access before anything else is shown.
+  - When every check passes, publish asks for a final apply, and that ends it.
+- **Why:** on dummy-static-website (W9) the store was chosen at setup, before any test case existed, the ADO details were set by hand in `.env`, and only one destination was possible.
+- **Gave up (if accepted):** choosing the store at setup. Built in 0.6.0.
+
 ---
 
 ## Open questions

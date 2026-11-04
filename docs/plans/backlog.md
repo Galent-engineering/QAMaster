@@ -29,22 +29,34 @@ Ten steps from install to report. After 0.4.0 every step is built except require
 
 The AgentMesh fixes A1–A16 (A7 and A17 were already fixed in 0.4.0) and the Docker check's fixtures. See [0.4.1.md](0.4.1.md#what-shipped).
 
-## Next: 0.4.2 (fixes), from running 0.4.1
+## Next: 0.4.2 (fixes), from the dummy-static-website run
+
+Plan: [0.4.2.md](0.4.2.md). Findings W1–W20 from the [dummy-static-website run](../demos/2026-11-04-0.4.1-dummy-static-website.md).
 
 | # | Item | Source |
 |---|---|---|
-| 1 | Re-run AgentMesh on 0.4.1: regenerate the 13 published cases with the wrong request body and re-publish (yours) | A12 |
-| 2 | Run the Docker check once, with Docker and network (the container was never run) | 0.4.1 item 11 |
-| 3 | A signed-in crawl on a data-heavy app (the restart, back-off, ETA and shell-drop have only run against fixtures), and the reports read by a person | 0.4.0, 0.4.1 |
-| 4 | `/qamaster:status` and `/qamaster:report` in Claude desktop on the uploaded zip; the push hook from a normal desktop push (K8) | 0.4.0, 0.3.2 |
-| 5 | Q49: linking local scripts without a push, which needs a decision (a flag or setting makes it a minor release) | A15 |
+| 1 | The shell drop compares title, heading and text, not only elements | W3, W7 |
+| 2 | The blocked-writes warning names the URLs | W4 |
+| 3 | `code:` evidence takes a line range | W6 |
+| 4 | One name for the automation folder in the pipeline | W12 |
+| 5 | The gate reads settings from the QA project, not the clone | W14 |
+| 6 | `qam plan` with no git repo or base commit says what to do | W10, W13, W15 |
+| 7 | The approve hint names the app URL that must be running | W17 |
+| 8 | `approve --add` with no bound script says how to bind it | W19 |
+| 9 | Setup warns about a code folder with no `.git`; the skills ask where the QA project goes | W2, W5 |
+| 10 | The Publish skill offers the ADO project list | W8 |
+| 11 | Re-run AgentMesh on 0.4.1: regenerate the 13 published cases with the wrong request body and re-publish (yours) | A12 |
+| 12 | Run the Docker check once, with Docker and network (the container was never run) | 0.4.1 item 11 |
+| 13 | A signed-in crawl on a data-heavy app, and the reports read by a person | 0.4.0, 0.4.1 |
+| 14 | `/qamaster:status` and `/qamaster:report` in Claude desktop on the uploaded zip; the push hook from a normal desktop push (K8) | 0.4.0, 0.3.2 |
+| 15 | Q49: linking local scripts without a push, and keeping a script's binding per test case across plans, needs a decision (a flag or setting makes it a minor release) | A15, W16, W19 |
 
 ## 0.5.0 to 0.7.0: the rest of product v1 (minor)
 
 | Release | Feature | Source | Effort |
 |---|---|---|---|
 | 0.5.0 | Requirements fetch (`qam requirements fetch`, stage 6) from Azure Boards, then Jira: completes demo step 6 | K4, product v1 | L |
-| 0.6.0 | Daily-use features: a conflict shows its fields (S); a store-only edit is reported (S); `--take-store <TC-ID…>`, which needs a decision (M); `qam review` confirms on a terminal (E3, S); selection presets and a model choice (Q31, M); DSM speed: an ID-shape hint, smarter waiting, parallel tabs, a scope option, `--estimate` (S1–S4, S7) | K7, E3, K6, S1–S4, S7 | L in all |
+| 0.6.0 | Daily-use features: a conflict shows its fields (S); a store-only edit is reported (S); `--take-store <TC-ID…>`, which needs a decision (M); `qam review` confirms on a terminal (E3, S); selection presets and a model choice (Q31, M); DSM speed: an ID-shape hint, smarter waiting, parallel tabs, a scope option, `--estimate` (S1–S4, S7); Q50, the local store first and several publish destinations (W9, L); a verdict for every reviewed case with no git change (W10, M); shared step wording between TestGen's `.feature` files and the automation (W11, M); ADO credentials from a file, after a decision (W8) | K7, E3, K6, S1–S4, S7, W8–W11 | L in all |
 | 0.7.0 | Scripts for the other channels in v1: Mobile Web, API, Android, iOS | product v1, K5 | L |
 
 ## 1.0.0: the major release
