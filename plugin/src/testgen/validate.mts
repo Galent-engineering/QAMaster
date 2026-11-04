@@ -165,8 +165,20 @@ export const credentialValues = (text: unknown): string[] => {
 /** A test_data value that would leak a credential if published: its key names a secret, or it looks like one. */
 export const isSecretData = (key: string, value: unknown) =>
   SECRET_WORD.test(key) || (typeof value === 'string' && isCredential(value));
-const CREDENTIAL_HINT =
-  'name the test data instead (e.g. "the registered user\'s password"); the value belongs in test_data only';
+/** What the text is about, so the hint says "API token" for a token and not always "password" (E6). */
+const hintFor = (text: unknown) => {
+  const t = typeof text === 'string' ? text : '';
+  const what = /api[\s_-]?key/i.test(t)
+    ? 'API key'
+    : /token/i.test(t)
+      ? 'API token'
+      : /secret/i.test(t)
+        ? 'secret'
+        : /\bpin\b/i.test(t)
+          ? 'PIN'
+          : 'password';
+  return `name the test data instead (e.g. "the registered user's ${what}"); the value belongs in test_data only`;
+};
 
 export function validate(
   manifest: Manifest | null,
@@ -241,7 +253,7 @@ export function validate(
     }
     for (const field of ['title', 'objective', 'expected_result'] as const) {
       for (const secret of credentialValues(tc[field]))
-        errors.push(`${w}: ${field} contains a credential-like value "${secret}": ${CREDENTIAL_HINT}`);
+        errors.push(`${w}: ${field} contains a credential-like value "${secret}": ${hintFor(tc[field])}`);
     }
     if (tc.type && !TYPES.includes(tc.type)) errors.push(`${w}: type ${s(tc.type)} not one of ${TYPES.join(', ')}`);
     if (tc.category && !CATEGORIES.includes(tc.category))
@@ -326,7 +338,7 @@ export function validate(
       // step data holds the value by design; the text around it must not
       for (const field of ['action', 'expected'] as const) {
         for (const secret of credentialValues(st[field]))
-          errors.push(`${sw}: ${field} contains a credential-like value "${secret}": ${CREDENTIAL_HINT}`);
+          errors.push(`${sw}: ${field} contains a credential-like value "${secret}": ${hintFor(st[field])}`);
       }
       const route = facts.screen(st.screen);
       if (!st.screen) errors.push(`${sw}: no screen`);

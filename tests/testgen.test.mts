@@ -298,6 +298,17 @@ test('fix 8: no DSM or no run is blocked, not failed', () => {
 });
 
 // From the 0.2.0 publish walkthrough: titles like "Register with password Reg#Pass2026" went to ADO.
+// 0.2.1 verification E6: the hint named a password even when the text was about a token, key or PIN
+test('E6: the credential hint names what the text is about', () => {
+  const hint = (title: string) =>
+    findings((_, cases) => {
+      cases[0].title = title;
+    }).join('\n');
+  assert.match(hint('Sign in with token Ab3dEf9x succeeds'), /the registered user's API token/);
+  assert.match(hint('Enter the PIN Xy7#kLm2 to unlock'), /the registered user's PIN/);
+  assert.match(hint('Register with password Reg#Pass2026 succeeds'), /the registered user's password/);
+});
+
 test('0.2.1 A6: a credential-like value in a title, objective, expected result or step is a finding', () => {
   const titled = findings((_, cases) => {
     cases[0].title = 'Register with password Reg#Pass2026 succeeds';
