@@ -27,7 +27,7 @@ Ten steps from install to report. After 0.4.0 every step is built except require
 
 ## 0.4.1: fixes (patch)
 
-Plan: [0.4.1.md](0.4.1.md), from the [AgentMesh run](../demos/2026-11-04-0.3.2-agentmesh-feedback.md): A1–A6 and A8–A11 (A7 was fixed in 0.4.0), plus the items below. No new command, flag, config key or file format.
+Plan: [0.4.1.md](0.4.1.md), from the [AgentMesh run](../demos/2026-11-04-0.3.2-agentmesh-feedback.md): A1–A6 and A8–A16 (A7 and A17 were fixed in 0.4.0; r2 added A12–A16, with the request-body check A12 first), plus the items below. No new command, flag, config key or file format.
 
 | # | Item | Source | Effort |
 |---|---|---|---|
