@@ -135,7 +135,7 @@ export const STAGES: Stage[] = [
         now: resolveRef(path.resolve(c.project, r.path), r.branch ?? 'main')?.[1],
       }));
       // 0.4.1 A11: when the QA project is the app repo, commits of QAMaster's own files are not new app code
-      const own = ownPaths(c.project, c.app ? [c.app] : []);
+      const own = ownPaths(c.project, c.app ? [pascal(c.app)] : []);
       const behind = repos.filter(
         (r) =>
           r.seen &&

@@ -19,8 +19,8 @@ const commit = (dir: string, ...files: string[]) => {
   git(dir, 'add', '-A');
   assert.equal(git(dir, 'commit', '-qm', 'c').status, 0);
 };
-const stage = (project: string, appRepo: string, id: string) =>
-  status(project, appRepo, 'Shop').stages.find((s) => s.stage === id) as { status: string; evidence: string };
+const stage = (project: string, appRepo: string, id: string, app = 'Shop') =>
+  status(project, appRepo, app).stages.find((s) => s.stage === id) as { status: string; evidence: string };
 
 function qaProject() {
   const dir = tmpDir('qam-p041-');
@@ -53,6 +53,36 @@ test('a separate app repo with a commit under dsm/ is still stale', () => {
   put(qa, 'dsm/state.json', JSON.stringify({ repos: { app: { commit: head(app) } } }));
   commit(app, 'dsm/x');
   assert.equal(stage(qa, qa, 'dsm').status, 'stale');
+});
+
+test('the own automation folder is the PascalCase of app.name', () => {
+  for (const [app, folder] of [
+    ['toolshop', 'Toolshop'],
+    ['Agent Mesh', 'AgentMesh'],
+  ]) {
+    const qa = qaProject();
+    commit(qa, `${folder}/f.feature`);
+    assert.equal(stage(qa, qa, 'dsm', app).status, 'done', app);
+  }
+  const qa = qaProject();
+  commit(qa, 'src/a.py');
+  assert.equal(stage(qa, qa, 'dsm', 'toolshop').status, 'stale');
+});
+
+test("the configured dsm output_dir is QAMaster's own, in the DSM stage", () => {
+  const qa = tmpDir('qam-p041-');
+  git(qa, 'init', '-q', '-b', 'main');
+  put(qa, 'src/a.py', 'a');
+  put(
+    qa,
+    'config/dsm-config.json',
+    JSON.stringify({ output_dir: 'maps', repositories: [{ name: 'app', path: '.', branch: 'main' }] }),
+  );
+  commit(qa);
+  put(qa, 'maps/dsm.json', JSON.stringify({ generated_at: 'now', stats: { pages: 1, page_relations: 0 } }));
+  put(qa, 'maps/state.json', JSON.stringify({ repos: { app: { commit: head(qa) } } }));
+  commit(qa, 'maps/index.html');
+  assert.equal(stage(qa, qa, 'dsm').status, 'done');
 });
 
 function verdict(dir: string, name: string, v: object, age: number) {
