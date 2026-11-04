@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-Functional"
+user-invocable: false
 description: "Functional testing sub-skill of Domain_Test_Design_Skill: requirement and business-rule verification (field validation, calculations, state transitions, roles, CRUD, search/filter/export, notifications, batch jobs, reports, configuration), checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating functional tests for any application or domain."
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-Manufacturing"
+user-invocable: false
 description: "Manufacturing domain test design sub-skill of Domain_Test_Design_Skill: discrete, process and regulated manufacturing (ERP manufacturing modules, MES / MOM, PLM and engineering change, bill of materials and routings, MRP and production planning, shop-floor execution, quality management and inspection, lot / serial traceability and genealogy, maintenance (CMMS / EAM), procurement and inventory, industrial IoT and OEE), key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is an ERP (SAP PP/QM/MM, Oracle, Dynamics, Infor), MES, PLM, QMS, CMMS, shop-floor or IIoT application, or when TestGen / Domain_Test_Design_Skill routes a manufacturing application here."
 ---
 

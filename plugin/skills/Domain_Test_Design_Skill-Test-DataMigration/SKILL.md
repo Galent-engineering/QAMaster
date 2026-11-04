@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-DataMigration"
+user-invocable: false
 description: "Data migration testing sub-skill of Domain_Test_Design_Skill: legacy-to-new system migrations, platform and cloud moves, database upgrades, ETL validation (extract, transform, load), mapping and transformation rules, data quality and cleansing, reconciliation (counts, sums, hashes, field-level sampling), referential integrity, mock migrations and dress rehearsals, cut-over, rollback, delta/incremental loads and post-migration business validation, checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating data migration tests for any application or domain."
 ---
 

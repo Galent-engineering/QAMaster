@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-Localisation"
+user-invocable: false
 description: "Localisation testing sub-skill of Domain_Test_Design_Skill: internationalisation readiness (Unicode, externalised strings, pseudo-localisation), translation completeness and quality, locale formats (dates, numbers, currency, addresses, names, phone), RTL and bidirectional layout, sorting/collation, time zones, plural rules, legal and cultural content, with a locale matrix, checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating localisation tests for any application or domain."
 ---
 

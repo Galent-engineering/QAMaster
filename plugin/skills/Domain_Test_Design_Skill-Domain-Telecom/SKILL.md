@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-Telecom"
+user-invocable: false
 description: "Telecom domain test design sub-skill of Domain_Test_Design_Skill: mobile, fixed, broadband, enterprise and OTT service providers (BSS, OSS, charging, billing, self-care, retail POS, dealer portals), key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is a telecom BSS/OSS, CRM for subscribers, online charging system, billing, number portability, eSIM, self-care app or dealer portal, or when TestGen / Domain_Test_Design_Skill routes a telecom application here."
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-Resilience"
+user-invocable: false
 description: "Resilience testing sub-skill of Domain_Test_Design_Skill: high availability and failover, disaster recovery (RPO/RTO), backup and restore, chaos engineering and fault injection, graceful degradation, timeouts, retries, circuit breakers, bulkheads, idempotency, queue durability, autoscaling and self-healing, dependency failures, maintenance and zero-downtime deployments, observability and alerting, checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating resilience tests for any application or domain."
 ---
 

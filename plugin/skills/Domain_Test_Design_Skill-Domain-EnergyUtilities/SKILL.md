@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-EnergyUtilities"
+user-invocable: false
 description: "Energy and Utilities domain test design sub-skill of Domain_Test_Design_Skill: electricity, gas and water retail and distribution (customer information and billing, meter-to-cash, smart metering / AMI and meter data management, tariffs and time-of-use pricing, prepayment, outage and work management, net metering and distributed energy, demand response, field service, grid operations interfaces), key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is a utility CIS / billing system, MDM, AMI head-end, customer self-service portal, outage management, smart meter app, EV charging or energy retail platform, or when TestGen / Domain_Test_Design_Skill routes an energy or utilities application here."
 ---
 

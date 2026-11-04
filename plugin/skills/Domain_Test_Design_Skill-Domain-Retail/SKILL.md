@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-Retail"
+user-invocable: false
 description: "Retail and eCommerce domain test design sub-skill of Domain_Test_Design_Skill: B2C / B2B eCommerce storefronts, marketplaces, omnichannel (BOPIS, ship-from-store), store POS, order management, inventory, pricing and promotions, loyalty, payments, returns and customer service, key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is an online store, shopping cart, checkout, marketplace, POS, OMS, PIM, loyalty or promotions engine, or when TestGen / Domain_Test_Design_Skill routes a retail or eCommerce application here."
 ---
 

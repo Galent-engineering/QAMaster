@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-App-Mobile"
+user-invocable: false
 description: "Mobile application (native iOS/Android, hybrid, React Native, Flutter, PWA, mobile web) test design sub-skill of Domain_Test_Design_Skill: detection signals, focus areas, default device/OS matrix, checklist, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories (interruptions, offline, permissions, lifecycle, upgrades, biometrics), test-type applicability, tooling and automation with Appium / Playwright mobile emulation in the application automation folder ({AppName}/), and pitfalls. Use when the application under test runs on phones or tablets, or when Domain_Test_Design_Skill routes a mobile application here."
 ---
 

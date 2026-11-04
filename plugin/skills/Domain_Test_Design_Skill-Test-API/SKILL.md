@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-API"
+user-invocable: false
 description: "API testing sub-skill of Domain_Test_Design_Skill: REST, GraphQL, SOAP, gRPC, webhooks and event APIs (contract and schema, status codes, validation, auth, idempotency, pagination, versioning, rate limits, error model, OWASP API Top 10 2023 checks), checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating API tests for any application or domain."
 ---
 

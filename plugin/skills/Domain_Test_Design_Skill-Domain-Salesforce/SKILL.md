@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-Salesforce"
+user-invocable: false
 description: "Salesforce domain test design sub-skill of Domain_Test_Design_Skill: Sales Cloud, Service Cloud, Experience Cloud, Marketing Cloud, Commerce Cloud, CPQ / Revenue Cloud, Field Service, Health Cloud, Financial Services Cloud, AppExchange packages and custom Apex / LWC, key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is a Salesforce org, Lightning app, Experience Cloud site, CPQ, Flows, Apex, MuleSoft integration or a Salesforce-based CRM, or when TestGen / Domain_Test_Design_Skill routes a Salesforce application here."
 ---
 

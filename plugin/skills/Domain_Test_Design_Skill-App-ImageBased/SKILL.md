@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-App-ImageBased"
+user-invocable: false
 description: "Image-based application (OCR, intelligent document processing, document capture, ID verification, face/liveness, medical imaging DICOM, computer vision, visual search, barcode/QR) test design sub-skill of Domain_Test_Design_Skill: detection signals, input variation dimensions, formats, oracles and accuracy metrics, checklist, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, metamorphic tests, bias and privacy checks, tooling and pitfalls. Use when the application under test processes images or scanned documents, or when Domain_Test_Design_Skill routes an image-based application here."
 ---
 

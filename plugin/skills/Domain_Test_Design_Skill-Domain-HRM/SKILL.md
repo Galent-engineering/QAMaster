@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-HRM"
+user-invocable: false
 description: "HRM / HCM and Payroll domain test design sub-skill of Domain_Test_Design_Skill: core HR, recruitment/ATS, onboarding, time and attendance, leave, payroll, statutory compliance, benefits, expenses, performance, learning, compensation, offboarding and full-and-final settlement, ESS/MSS and HR helpdesk, key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is an HRMS, HCM suite, payroll engine, attendance or leave system, ATS, ESS portal or HR mobile app, or when TestGen / Domain_Test_Design_Skill routes an HR or payroll application here."
 ---
 

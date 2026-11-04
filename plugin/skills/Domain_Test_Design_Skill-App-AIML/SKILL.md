@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-App-AIML"
+user-invocable: false
 description: "AI/ML and generative AI application-type test design sub-skill of Domain_Test_Design_Skill for predictive models, recommendation and scoring engines, chatbots, LLM assistants, RAG search and agentic features: detection signals, focus areas (accuracy against labelled sets, robustness, fairness/bias, explainability, drift, hallucination and groundedness, prompt injection, data leakage, safety, cost/latency), checklist, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, evaluation metrics, tooling and pitfalls. Use when the application under test embeds a model or LLM, or when Domain_Test_Design_Skill routes an AI/ML application here."
 ---
 

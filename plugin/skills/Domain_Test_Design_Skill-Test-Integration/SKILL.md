@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-Integration"
+user-invocable: false
 description: "Integration testing sub-skill of Domain_Test_Design_Skill: component and system integration, consumer-driven contract testing, end-to-end flows across systems, synchronous APIs, messaging and event streaming (Kafka, MQ, JMS, SQS/SNS, Service Bus), batch and file interfaces (SFTP, CSV, fixed-width, XML, EDI, ISO 20022, HL7/FHIR), middleware and iPaaS, data mapping, error handling, retries, idempotency and reconciliation, checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating integration tests for any application or domain."
 ---
 

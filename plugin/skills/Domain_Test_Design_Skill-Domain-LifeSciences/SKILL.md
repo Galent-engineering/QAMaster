@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-LifeSciences"
+user-invocable: false
 description: "Life Sciences domain test design sub-skill of Domain_Test_Design_Skill: pharma, biotech, medical devices and CROs (clinical trials CTMS/EDC/IRT/eTMF, pharmacovigilance, LIMS, QMS, RIM, MES, commercial), key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is a GxP / computerised system such as EDC, CTMS, IRT/RTSM, eTMF, safety database, LIMS, QMS, eQMS, RIM/eCTD, MES or pharma commercial CRM, or when TestGen / Domain_Test_Design_Skill routes a life sciences application here."
 ---
 

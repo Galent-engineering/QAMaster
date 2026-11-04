@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-Security"
+user-invocable: false
 description: "Security testing sub-skill of Domain_Test_Design_Skill: OWASP Top 10 2021, OWASP API Security Top 10 2023, OWASP ASVS and MASVS (mobile), authentication, session and authorisation test matrices, input validation and injection, cryptography and data protection, configuration and headers, business-logic abuse, file upload, supply chain, logging and privacy (GDPR, HIPAA, PCI DSS), SAST/DAST/SCA and penetration testing, checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating security tests for any application or domain."
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-Logistics"
+user-invocable: false
 description: "Logistics and Supply Chain domain test design sub-skill of Domain_Test_Design_Skill: transportation management (TMS), warehouse management (WMS), courier / parcel and last-mile delivery, freight forwarding and customs, fleet and telematics, yard and dock management, cold chain, reverse logistics and supply-chain visibility, key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is a TMS, WMS, shipment tracking, courier, last-mile delivery app, freight booking, customs filing, fleet or yard management system, or when TestGen / Domain_Test_Design_Skill routes a logistics application here."
 ---
 

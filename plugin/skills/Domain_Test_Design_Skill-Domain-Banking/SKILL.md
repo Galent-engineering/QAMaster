@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-Banking"
+user-invocable: false
 description: "Banking domain test design sub-skill of Domain_Test_Design_Skill: retail, corporate and digital banking (core banking CASA/deposits/loans, internet and mobile banking, payments, cards, loan origination and servicing, trade finance, treasury, AML/KYC, fraud, branch, ATM, Open Banking), key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is a core banking system, internet or mobile banking app, payment hub, card management, loan origination, AML or Open Banking API, or when TestGen / Domain_Test_Design_Skill routes a banking application here."
 ---
 

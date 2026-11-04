@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-Compatibility"
+user-invocable: false
 description: "Compatibility testing sub-skill of Domain_Test_Design_Skill: browsers and engines, operating systems, mobile devices and OS versions, screen sizes and densities, assistive and input devices, networks, databases and runtimes, third-party software and peripherals, backward and forward compatibility of data, APIs, clients and file formats, coverage matrices built from analytics and risk, checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating compatibility tests for any application or domain."
 ---
 

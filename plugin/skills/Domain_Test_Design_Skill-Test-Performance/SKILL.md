@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-Performance"
+user-invocable: false
 description: "Performance testing sub-skill of Domain_Test_Design_Skill: workload modelling, load, stress, spike, soak/endurance, scalability, volume and capacity tests, front-end performance (Core Web Vitals), mobile performance, metrics (response time percentiles, throughput, error rate, resource utilisation), SLA/SLO definitions with examples, k6, JMeter and Gatling scripting, monitoring and bottleneck analysis, checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating performance tests for any application or domain."
 ---
 

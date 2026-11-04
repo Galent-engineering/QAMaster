@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-App-Desktop"
+user-invocable: false
 description: "Desktop application (Windows, macOS, Linux thick clients, Electron, WPF, WinForms, Java Swing, Qt) test design sub-skill of Domain_Test_Design_Skill: detection signals, focus areas, OS/DPI matrix, checklist, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories (install/upgrade, permissions, file system, peripherals, offline, auto-update), test-type applicability, tooling and pitfalls. Use when the application under test is installed on a workstation, or when Domain_Test_Design_Skill routes a desktop application here."
 ---
 

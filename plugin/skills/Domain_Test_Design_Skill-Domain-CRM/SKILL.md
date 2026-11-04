@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-CRM"
+user-invocable: false
 description: "CRM domain test design sub-skill of Domain_Test_Design_Skill: generic and custom customer relationship management (Dynamics 365, HubSpot, Zoho, Freshworks, custom CRMs) covering sales force automation, CPQ and quoting, marketing automation, customer service and contact centre, partner management and analytics, key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is a CRM, lead or pipeline management tool, helpdesk / ticketing system, contact-centre agent desktop, marketing automation platform or customer portal, or when TestGen / Domain_Test_Design_Skill routes a CRM application here (Salesforce orgs go to Domain_Test_Design_Skill-Domain-Salesforce)."
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Core-RiskAndData"
+user-invocable: false
 description: "Core sub-skill of Domain_Test_Design_Skill for risk-based prioritisation (impact × likelihood scoring, P1–P4, always-P1 areas, smoke/sanity/regression tagging, automation candidacy) and test data strategy (data classes, privacy-safe synthetic and masked data, domain test ranges, data independence, environment and data refresh). Use when prioritising scenarios, selecting a smoke or regression set, deciding what to automate, or specifying test data for any domain or application type."
 ---
 

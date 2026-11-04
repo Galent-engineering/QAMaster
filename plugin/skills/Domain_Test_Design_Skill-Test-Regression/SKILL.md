@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-Regression"
+user-invocable: false
 description: "Regression testing sub-skill of Domain_Test_Design_Skill: impact analysis, layered suites (smoke, sanity, core, full), risk-based and change-based selection, defect-driven regression, suite maintenance and flakiness control, checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating regression tests for any application or domain."
 ---
 

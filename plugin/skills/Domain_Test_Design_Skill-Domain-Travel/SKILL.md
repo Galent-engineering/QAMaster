@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-Travel"
+user-invocable: false
 description: "Travel and Hospitality domain test design sub-skill of Domain_Test_Design_Skill: airline reservation, departure control and loyalty, online travel agencies, hotel PMS and booking engines, channel managers, car rental, rail and bus, cruise, tours and activities, corporate travel and expense, key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is a flight, hotel, car, rail or holiday booking site, GDS / NDC integration, PMS, channel manager, check-in or loyalty system, or when TestGen / Domain_Test_Design_Skill routes a travel or hospitality application here."
 ---
 

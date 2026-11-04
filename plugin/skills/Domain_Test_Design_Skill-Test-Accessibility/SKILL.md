@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-Accessibility"
+user-invocable: false
 description: "Accessibility testing sub-skill of Domain_Test_Design_Skill: WCAG 2.2 Level A and AA conformance (perceivable, operable, understandable, robust), keyboard and focus, screen readers (NVDA, JAWS, VoiceOver, TalkBack), colour contrast, forms and errors, ARIA, mobile accessibility, documents, legal standards (ADA, Section 508, EN 301 549, European Accessibility Act), automated (axe, Lighthouse) and manual checks, checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating accessibility tests for any application or domain."
 ---
 

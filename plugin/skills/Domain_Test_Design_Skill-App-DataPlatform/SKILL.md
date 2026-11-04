@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-App-DataPlatform"
+user-invocable: false
 description: "Data platform application-type test design sub-skill of Domain_Test_Design_Skill for data warehouses, data lakes and lakehouses, ETL/ELT pipelines, streaming pipelines, BI dashboards and reports: detection signals, focus areas (completeness, accuracy, transformations, reconciliation, data quality rules, SCD, late/duplicate data, schema drift, lineage, freshness SLAs), checklist, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, test-type applicability, tooling and pitfalls. Use when the application under test moves, transforms or reports data, or when Domain_Test_Design_Skill routes a data or reporting application here."
 ---
 

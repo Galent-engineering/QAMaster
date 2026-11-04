@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-App-Web"
+user-invocable: false
 description: "Web application (browser UI, SPA, MPA, PWA, portals) test design sub-skill of Domain_Test_Design_Skill: detection signals, focus areas, default browser/OS/viewport matrix, checklist, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, test-type applicability, tooling and automation with Playwright in the application automation folder ({AppName}/), and common pitfalls. Use when the application under test runs in a browser, or when Domain_Test_Design_Skill routes a web application here."
 ---
 

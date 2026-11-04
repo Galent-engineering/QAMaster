@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Core-Techniques"
+user-invocable: false
 description: "Core sub-skill of Domain_Test_Design_Skill with the black-box test design techniques (equivalence partitioning, boundary value analysis, decision tables, cause-effect, state transition, use case, pairwise, classification tree, CRUD/permission matrix, error guessing, exploratory, checklist, syntax, domain analysis, metamorphic, data-flow), worked examples, the generic error-guessing list, the six scenario categories (Positive, Negative, Boundary, End-to-end, Business, Edge) and the category-to-technique map. Use when deriving test scenarios from inputs, rules, states or journeys for any application type, domain or test type."
 ---
 

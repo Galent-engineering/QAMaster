@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-App-CloudSaaS"
+user-invocable: false
 description: "Cloud and SaaS (multi-tenant platforms, subscription products, PaaS-hosted apps) test design sub-skill of Domain_Test_Design_Skill: detection signals, focus areas (tenant isolation, configuration per tenant, entitlements and licensing, provisioning, SSO/SCIM, zero-downtime upgrades, data residency, backup/restore, elasticity, API limits, webhooks, observability), checklist, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, test-type applicability, tooling and pitfalls. Use when the application under test is delivered as a cloud service or SaaS, or when Domain_Test_Design_Skill routes a SaaS application here."
 ---
 

@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Test-UIUX"
+user-invocable: false
 description: "UI/UX testing sub-skill of Domain_Test_Design_Skill: visual design conformance (Figma/design system), layout and responsiveness, navigation and information architecture, forms and feedback, content and microcopy, states (empty, loading, error), usability heuristics and visual regression, checklist, design techniques, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, entry/exit criteria, metrics, tooling and automation with the automation framework ({AppName}/ folders). Use when planning, designing, reviewing or automating UI/UX tests for any application or domain."
 ---
 

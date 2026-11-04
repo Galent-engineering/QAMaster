@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-FinancialServices"
+user-invocable: false
 description: "Financial Services domain test design sub-skill of Domain_Test_Design_Skill: capital markets, brokerage and trading, wealth and asset management, mutual funds, payment processors and acquiring, wallets, lending fintech and crypto platforms (OMS/EMS, market data, portfolio, risk, clearing and settlement, corporate actions, fund accounting/NAV, robo-advisory, payment gateway, reconciliation, regulatory reporting), key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is a trading platform, broker app, OMS, FIX gateway, portfolio or fund system, payment gateway, wallet or fintech lending app, or when TestGen / Domain_Test_Design_Skill routes a financial services application here."
 ---
 

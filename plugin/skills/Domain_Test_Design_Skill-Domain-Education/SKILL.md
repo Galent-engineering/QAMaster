@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-Education"
+user-invocable: false
 description: "Education domain test design sub-skill of Domain_Test_Design_Skill: K-12 and higher education, EdTech and corporate learning (student information systems, admissions and enrolment, timetabling, learning management systems, online assessments and proctoring, gradebooks and transcripts, fees and financial aid, attendance, parent and student portals, library, credentials and certificates), key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is an SIS, LMS (Moodle, Canvas, Blackboard, D2L), admissions portal, exam or proctoring platform, gradebook, fee or financial aid system, learning app or corporate LMS, or when TestGen / Domain_Test_Design_Skill routes an education application here."
 ---
 

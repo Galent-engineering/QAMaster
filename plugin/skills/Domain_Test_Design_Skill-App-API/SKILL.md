@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-App-API"
+user-invocable: false
 description: "API and microservices (REST, SOAP, GraphQL, gRPC, webhooks, event streams) application-type test design sub-skill of Domain_Test_Design_Skill: detection signals, test layers, focus areas, checklist, scenario patterns across Positive, Negative, Boundary, End-to-end, Business and Edge categories, test-type applicability, tooling and automation with the application automation folder API layer, and common pitfalls. Use when the application under test is an API, a microservice back end, an integration layer or an event-driven system, or when Domain_Test_Design_Skill routes an API application here."
 ---
 

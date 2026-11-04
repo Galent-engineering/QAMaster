@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Core-OutputAndQuality"
+user-invocable: false
 description: "Core sub-skill of Domain_Test_Design_Skill with the deliverable templates (scenario list, detailed test case, BDD/Gherkin, API test case, requirements traceability matrix, coverage summary, exploratory charter, test strategy outline), the ID convention, the quality gates and self-review checklist, and the glossary. Use when writing test design deliverables or reviewing test cases for completeness, traceability and observable expected results."
 ---
 

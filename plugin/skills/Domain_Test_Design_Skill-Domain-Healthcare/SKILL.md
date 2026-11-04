@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-Healthcare"
+user-invocable: false
 description: "Healthcare domain test design sub-skill of Domain_Test_Design_Skill: providers, payers and health-tech (EHR/EMR, patient portals, scheduling, CPOE, e-prescribing, LIS/RIS/PACS, pharmacy, revenue cycle, telehealth, remote monitoring, HIE, payer enrolment, claims adjudication and prior authorisation), key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is an EHR, patient portal, practice management, RCM, claims, pharmacy, telehealth, FHIR / HL7 interface or payer system, or when TestGen / Domain_Test_Design_Skill routes a healthcare application here."
 ---
 

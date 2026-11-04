@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-Insurance"
+user-invocable: false
 description: "Insurance domain test design sub-skill of Domain_Test_Design_Skill: life, health, property and casualty, motor, commercial lines and reinsurance (quote and rating, policy administration, underwriting, billing and collections, claims, agent and broker portals, customer portals, document generation, reinsurance, actuarial interfaces, fraud detection), key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is a quote engine, policy administration system, underwriting workbench, claims system, agent portal or insurance customer app, or when TestGen / Domain_Test_Design_Skill routes an insurance application here."
 ---
 

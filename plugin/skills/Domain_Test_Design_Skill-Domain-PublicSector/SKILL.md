@@ -1,5 +1,6 @@
 ---
 name: "Domain_Test_Design_Skill-Domain-PublicSector"
+user-invocable: false
 description: "Public Sector and Government domain test design sub-skill of Domain_Test_Design_Skill: citizen digital services (identity and sign-in, eligibility and benefits, tax filing and refunds, permits and licensing, registrations and certificates, grants, case management, inspections and enforcement, courts and justice, public payments, open data, records management, procurement), key business objects and workflows, regulations, risk hotspots, test strategy per test type, a scenario bank across Positive, Negative, Boundary, End-to-end, Business and Edge categories, business rules, integrations, non-functional profile and test data. Use when the application under test is a government portal, benefits or tax system, licensing or permit application, case management, e-procurement, citizen identity service or municipal service, or when TestGen / Domain_Test_Design_Skill routes a public sector application here."
 ---
 
