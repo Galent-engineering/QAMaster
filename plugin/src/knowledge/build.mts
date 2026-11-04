@@ -570,7 +570,7 @@ function renderMain(m: Model, journeys: Journey[], meta: Meta, curated: string |
     '### Routing',
     `- Questions about one component → its \`AUT_${app}-<Component>\` sub-skill.`,
     '- Navigation, dependencies, impact of a code change → `Design-Structure-Matrix` / `qam dsm impact`.',
-    '- Test scenario design → `Domain_Test_Design_Skill`; locators → `UI-Locator-Sync`.',
+    '- Test scenario design → `Domain_Test_Design_Skill`; locators and scripts → `AutomationCode`.',
     '- Refresh these skills → `AUT-Skill-Builder` (`qam aut-skills`).',
     GEN_END,
     '',

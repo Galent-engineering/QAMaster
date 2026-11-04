@@ -26,14 +26,16 @@
 
 ## Commands
 
+Built today: `status`, `dsm`, `publish`, `check` and `report`. `onboard`, `setup` and `plan` are designed, not built: their work runs through the skills and the CLI (`qam setup`, `qam pipeline next`, `qam plan`).
+
 | Command | Does | Writes |
 |---|---|---|
-| `/qamaster:onboard <url> <repo> [name] [--channels …]` | Runs the build stages in order and resumes after interruptions. Asks for anything missing, never for secrets | QA project |
+| `/qamaster:onboard <url> <repo> [name] [--channels …]` (planned) | Runs the build stages in order and resumes after interruptions. Asks for anything missing, never for secrets | QA project |
 | `/qamaster:status` | Every stage with its evidence, and the next step | Nothing |
-| `/qamaster:setup` | Config, packages, browsers, launcher. Safe to re-run | QA project |
+| `/qamaster:setup` (planned) | Config, packages, browsers, launcher. Safe to re-run | QA project |
 | `/qamaster:dsm [run\|refresh\|changes\|…]` | Build or refresh the DSM and show what changed | `dsm/` |
 | `/qamaster:publish [run]` | Dry run of what goes to ADO, then waits for a yes, then applies | ADO, ledger |
-| `/qamaster:plan [base]` | Shows the plan for the current change, with Claude's group picks. Runs nothing | `.qamaster/plans/` |
+| `/qamaster:plan [base]` (planned) | Shows the plan for the current change, with Claude's group picks. Runs nothing | `.qamaster/plans/` |
 | `/qamaster:check [base]` | Plan, then drafts or updates scripts for the selected cases (Q39), shows the cases and scripts, waits for one approval, then runs and reports the verdict | `.qamaster/`, scripts in the test root (left uncommitted) |
 | `/qamaster:report` | Builds every report there is data for | `reports/output/` |
 

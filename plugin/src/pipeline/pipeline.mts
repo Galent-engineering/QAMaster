@@ -268,7 +268,7 @@ export const STAGES: Stage[] = [
         ? { done: true, detail: `${locs.length} locator file(s)` }
         : { done: false, detail: 'no locator files yet' };
     },
-    how: () => 'Use the UI-Locator-Sync skill.',
+    how: () => 'The AutomationCode skill writes the locator files with the scripts.',
   },
   {
     id: 'scripts',

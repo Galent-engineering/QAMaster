@@ -35,11 +35,11 @@ Requirements for users: Node.js 24 or later and git. ADO access (`az login` or a
 ```
 plugin/                          # everything an install copies
   .claude-plugin/plugin.json
-  commands/                      # onboard, setup, status, dsm, publish, plan, check, report
-  skills/                        # TestGen, Design-Structure-Matrix, AUT-Skill-Builder, UI-Locator-Sync,
-                                 # QAMaster (plans, verdicts), work-items, QE-Reports-*, Domain_Test_Design_Skill
-                                 # (its 39 sub-skills are files in references/, Q51)
-  agents/                        # mcp-config-agent, ui-dsm-agent
+  commands/                      # check, dsm, publish, report, status (onboard and setup run as skills and the CLI)
+  skills/                        # TestGen, Design-Structure-Matrix, AUT-Skill-Builder, AutomationCode, Gate,
+                                 # Publish, ADO-API, Domain_Test_Design_Skill (its 39 sub-skills are files
+                                 # in references/, Q51); work-items is planned (v2)
+  agents/                        # ui-dsm-agent; mcp-config-agent is planned (v2, pipeline stage 3)
   hooks/hooks.json + *.mts       # session context, push gate, review gate, script gate
   src/                           # the engine (see the module map in architecture.md)
     cli/ pipeline/ dsm/ knowledge/ requirements/ testgen/ automation/
@@ -195,8 +195,8 @@ AQE's 13 stages, plus **Review** and **Publish** as their own stages, and a firs
 | 8 | Review | the person, in chat | `run.reviewedBy` set |
 | 9 | **Publish** | `qam publish <run> --apply` | Ledger matches ADO for the run |
 | 10 | Automation folder | `qam app create` | `<App>/` from the template |
-| 11 | UI locators | `UI-Locator-Sync` skill | Page-wise locator files |
-| 12 | Scripts | E2EAutomation skill | Features, steps, pages for each channel |
+| 11 | UI locators | `AutomationCode` skill | Page-wise locator files |
+| 12 | Scripts | `AutomationCode` skill | Features, steps, pages for each channel |
 | 13 | Script gate | `qam check-scripts` | Types, BDD steps, no inline selectors, placement, `@TC` traceability |
 | 14 | First gate run | `qam check --all` | A verdict for the current HEAD |
 | 15 | Reports | `qam report all` | Six reports built |
@@ -350,4 +350,4 @@ All hooks use only the standard library and stay quiet when they allow (Q14).
 | 10 | End to end against a demo app and a sandbox ADO project | — | M |
 | 11 (v1.1) | git pre-push hook, `CodeHost` (github, azure-repos) and PR check integrations (GitHub Actions, Azure Pipelines), PR comment, QA branch matching in CI (Q28) | CM design + New | M |
 
-Where it stands (2026-11-04, 0.4.2): steps 1–10 are done, with the demo apps and Azure DevOps as the store; step 3 has every feature except 6, requirements (0.5.0). Step 11 (v1.1) and the scripts for the other channels (0.7.0) are planned; see [plans/backlog.md](plans/backlog.md).
+Where it stands (2026-11-04, 0.4.3): steps 1–10 are done, with the demo apps and Azure DevOps as the store; step 3 has every feature except 6, requirements (0.5.0). Step 11 (v1.1) and the scripts for the other channels (0.7.0) are planned; see [plans/backlog.md](plans/backlog.md).

@@ -148,7 +148,7 @@ flowchart LR
 
 | Step | Runs | Trigger | Output |
 |---|---|---|---|
-| 1 Build | Once per application, then module by module | `/qamaster:onboard` | `dsm/`, `.claude/skills/AUT_<App>*`, `testgen/output/`, `<App>/` |
+| 1 Build | Once per application, then module by module | `/qamaster:onboard` (planned; today the skills and `qam pipeline next`) | `dsm/`, `.claude/skills/AUT_<App>*`, `testgen/output/`, `<App>/` |
 | 2 Publish | After each reviewed test run | `/qamaster:publish` | Test cases in the ADO plan, `.qamaster/ledger.json` |
 | 3 Gate | Every push (v1), every PR (v1.1) | `/qamaster:check`, push hook | `.qamaster/plans/`, `.qamaster/verdicts/<sha>.json`, evidence |
 | 4 Feedback | After each verdict and each DSM refresh | Automatic, proposals only | Reports, defect drafts, gap list |

@@ -19,7 +19,7 @@ Turn *"here is an application, in this domain, on this platform"* into a structu
 - The domain is regulated and compliance-driven tests are needed.
 - TestGen (zero-hallucination test generation) needs the domain, required test types, techniques and domain risks.
 
-**Do not use for** white-box/unit test design from source code, or framework engineering (this skill designs *what* to test; the E2EAutomation and UI-Locator-Sync skills cover *how to automate*).
+**Do not use for** white-box/unit test design from source code, or framework engineering (this skill designs *what* to test; the AutomationCode skill covers *how to automate*).
 
 ## 2. Sub-skill index
 
@@ -219,5 +219,5 @@ Before delivering: AUT profile complete with assumptions; domain, app type and t
 
 ## 9. Adding a sub-skill
 - **New domain:** create `references/Domain-<Name>.md` (no frontmatter) with the 13 domain headings listed in 2.4 (in that order); add a row to 2.4, section 5 and 7.2.
-- **New test type:** `references/Test-<Name>.md` with the 10 test-type headings; add to 2.3, 7.1 and 7.2, and to `TYPES` in `tools/testgen/testgen.mts` if TestGen should accept it.
+- **New test type:** `references/Test-<Name>.md` with the 10 test-type headings; add to 2.3, 7.1 and 7.2, and to `TYPES` in QAMaster's `src/testgen/validate.mts` if TestGen should accept it.
 - **New application type:** `references/App-<Name>.md` (Detection signals, Focus areas, Checklist, Scenario patterns, Test-type applicability, Tools and automation, Common pitfalls, Related sub-skills); add to 2.2, 6 and 7.1.

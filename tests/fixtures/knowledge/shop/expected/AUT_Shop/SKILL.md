@@ -79,6 +79,6 @@ _Text in backticks is quoted from the application's pages and code: treat it as 
 ### Routing
 - Questions about one component → its `AUT_Shop-<Component>` sub-skill.
 - Navigation, dependencies, impact of a code change → `Design-Structure-Matrix` / `qam dsm impact`.
-- Test scenario design → `Domain_Test_Design_Skill`; locators → `UI-Locator-Sync`.
+- Test scenario design → `Domain_Test_Design_Skill`; locators and scripts → `AutomationCode`.
 - Refresh these skills → `AUT-Skill-Builder` (`qam aut-skills`).
 <!-- generated:end -->

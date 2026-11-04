@@ -79,7 +79,7 @@
       "title": "UI locators",
       "status": "pending",
       "evidence": "no locator files yet",
-      "how": "Use the UI-Locator-Sync skill."
+      "how": "The AutomationCode skill writes the locator files with the scripts."
     },
     {
       "stage": "scripts",

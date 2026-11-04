@@ -12,7 +12,7 @@ There's one plan per plugin release. Each plan is the working source of truth fo
 | 0.3.3 | [0.3.3.md](0.3.3.md): fixes only | Folded into 0.4.0 (no 0.3.3 release) |
 | 0.4.0 | [0.4.0.md](0.4.0.md): the 0.3.3 fixes, setup folder suggestions, the crawl ETA, the six reports and feedback | Built 2026-11-04, r4 |
 | 0.4.1 | [0.4.1.md](0.4.1.md): fixes from the AgentMesh run (A1–A17), request bodies checked against the code, FastAPI routes, API routes kept out of the UI map (Q48), the Docker check | Built 2026-11-04, r4 |
-| 0.4.2 | [0.4.2.md](0.4.2.md): fixes from the dummy-static-website run (W1–W20): the shell drop that dropped real pages, the automation folder's name, the gate's settings, clearer messages | Built 2026-11-04, r3 |
+| 0.4.2 | [0.4.2.md](0.4.2.md): fixes from the dummy-static-website run (W1–W20): the shell drop that dropped real pages, the automation folder's name, the gate's settings, clearer messages | Released 2026-11-04, r4 |
 | 0.4.3 | [0.4.3.md](0.4.3.md): the 39 domain sub-skills ship as reference files of `Domain_Test_Design_Skill` (Q51), so the catalog lists 8 skills | Released 2026-11-04, r1 |
 | — | [backlog.md](backlog.md): every open fix and to-do, with its source and target release, up to 1.0.0 and after | Kept current |
 

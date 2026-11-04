@@ -42,7 +42,7 @@ The 39 domain sub-skills as reference files (Q51). See [0.4.3.md](0.4.3.md#what-
 | # | Item | Source |
 |---|---|---|
 | 1 | Run 0.4.3 end to end on a live application, in a new session, and fix what it finds (the crawl fix failed once on the real site and was corrected) | 0.4.2 |
-| 2 | Re-run dummy-static-website's DSM on 0.4.2; check cats, landscapes and videogames are kept | W3 |
+| 2 | Re-run dummy-static-website's DSM on 0.4.2 or later; check cats, landscapes and videogames are kept | W3 |
 | 3 | Re-run AgentMesh on 0.4.1 or later: regenerate the 13 published cases with the wrong request body and re-publish (yours) | A12 |
 | 4 | Run the Docker check once, with Docker and network (the container was never run) | 0.4.1 item 11 |
 | 5 | A signed-in crawl on a data-heavy app, and the reports read by a person | 0.4.0, 0.4.1 |
@@ -91,7 +91,7 @@ Signed-in crawls need your `.env.dsm` and block writes (K3, Q15) · a file count
 1. ~~**The order of 0.5.0 to 0.8.0.**~~ Accepted 2026-11-04 (requirements, reports, feedback, scripts), then **reordered the same day around the demo path:** the test summary report in 0.4.0, then requirements, the other reports with feedback, the daily-use features, and scripts for the other channels.
 2. ~~**The Toolshop cases in Azure DevOps.**~~ **Decided 2026-11-04: leave them as they are.** Project Toolshop holds 13 cases from a QA project that has since been deleted, so no ledger links them, and publishing Toolshop again would create 13 more. QAMaster never deletes. Revisit when a new Toolshop QA project exists: relink them, or retire them by hand in ADO.
 3. ~~**Setup using the folder you're in.**~~ **Accepted 2026-11-04 as Q47:** three suggestions (this folder, the usual folder, a path you type).
-4. ~~**Merge and push.**~~ `main` was fast-forwarded to 0.4.2 on 2026-11-04. **Still open:** push it, or keep it local (local `main` is ahead of GitHub).
+4. ~~**Merge and push.**~~ **Done 2026-11-04:** `main` holds 0.4.3 and is pushed to GitHub, with `release/0.4.2` and `release/0.4.3`.
 
 ## Sessions reviewed
 

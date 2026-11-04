@@ -26,7 +26,7 @@ The walkthrough scripts and run logs of the older demos were removed on 2026-11-
 
 | Demo | Finding | Went to |
 |---|---|---|
-| 0.1.0 step 1 | The `/` menu lists every Domain_Test_Design skill. They should be used silently, not offered to the user unless asked for by name | Moved 2026-11-02 to after 0.3.0 ([plans/0.2.1.md, Later](../plans/0.2.1.md#later)) |
+| 0.1.0 step 1 | The `/` menu lists every Domain_Test_Design skill. They should be used silently, not offered to the user unless asked for by name | 0.4.0: hidden from the `/` menu; 0.4.3: shipped as reference files of one skill, so a plugin catalog lists 8 skills (Q51) |
 | 0.1.0 step 4 | A missing ADO project showed the raw TF200016 error, not the projects that exist, with a suggested or custom name, or a local store | 0.2.0: doctor lists projects and the ways forward; publish can create the project (Q35); the file store also takes JSON (Q36, proposed). xlsx goes to 0.2.1 |
 | 0.1.0 step 4 | `qam ado call` couldn't list projects (it only works inside a project) | 0.2.0: an ADO-API recipe for `qam ado call GET projects --org-level` (the flag already existed; no recipe said so) |
 | 0.1.0 (seen while preparing) | The scan found 489 routes in Juice Shop instead of ~48 (`data/static/codefixes/`) | 0.2.0: `codefixes/` in the default excludes; doctor warns when an existing config lacks it |

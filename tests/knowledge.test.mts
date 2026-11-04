@@ -58,6 +58,7 @@ const RENAMES: [string | RegExp, string][] = [
   [/; skill generated [^._]*/g, ''], // fix 1
   [/(^description: .*?) _\(one sentence:[^)]*\)_/m, '$1'], // fix 10
   ['`/autonomous-qe:generate-dsm`', '`qam dsm impact`'],
+  ['locators → `UI-Locator-Sync`', 'locators and scripts → `AutomationCode`'], // QAMaster has no UI-Locator-Sync skill
   ['(also triggered by the hook `the aut-skill-gen hook of the plugin`)', '(`qam aut-skills`)'],
   [
     'through the code-repository\nMCP server or the local clone,',
