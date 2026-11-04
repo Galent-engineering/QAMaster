@@ -205,6 +205,37 @@ type Dialog = { title: string; fields: number; buttons: string[] };
 
 // ---- the crawler
 
+/** What a page shows, without its route: its elements' keys minus the `<route>::` prefix, and its form field labels. */
+function pageSignature(p: UiPage): string {
+  const prefix = `${p.route}::`;
+  const parts = (p.elements ?? []).map((e) => (e.key.startsWith(prefix) ? e.key.slice(prefix.length) : e.key));
+  for (const f of p.forms ?? []) for (const field of f.fields ?? []) parts.push(`field:${field.label ?? ''}`);
+  return [...new Set(parts)].sort().join('\n');
+}
+
+/**
+ * A single-page app answers 200 with the same shell for any path, so a code-seeded route that shows exactly the start
+ * page's elements is not a screen. Drops those pages and their edges. Pages found by a link, errors and redirects stay.
+ */
+export function dropShellPages(
+  pages: UiPage[],
+  edges: UiEdge[],
+  startRoute: string,
+): { pages: UiPage[]; edges: UiEdge[]; dropped: string[] } {
+  const start = pages.find((p) => p.route === startRoute);
+  const shell = start ? pageSignature(start) : '';
+  if (!shell) return { pages, edges, dropped: [] };
+  const isShell = (p: UiPage) =>
+    p.discovered_by === 'code-seed' && !p.error && !p.redirect_to && pageSignature(p) === shell;
+  const dropped = pages.filter(isShell).map((p) => p.route);
+  if (!dropped.length) return { pages, edges, dropped };
+  return {
+    pages: pages.filter((p) => !dropped.includes(p.route)),
+    edges: edges.filter((e) => !dropped.includes(e.from) && !dropped.includes(e.to)),
+    dropped,
+  };
+}
+
 export class PlaywrightCrawler implements Crawler {
   private readonly s: CrawlerSettings;
 
@@ -722,6 +753,17 @@ export class PlaywrightCrawler implements Crawler {
         edges: outEdges,
         api_calls: outCalls,
       } = mergeIncremental(previous, { pages: outPages, edges: outEdges, api_calls: outCalls }));
+    }
+    const startRoute = routes.routeOf(abs(app.start_paths?.[0] ?? info.landed_route ?? '/'));
+    if (startRoute) {
+      const kept = dropShellPages(outPages, outEdges, startRoute);
+      if (kept.dropped.length) {
+        this.log(
+          `dropped ${kept.dropped.length} code-seeded route(s) that show the start page's elements (a single-page app's fallback): ${kept.dropped.join(', ')}`,
+        );
+        outPages = kept.pages;
+        outEdges = kept.edges;
+      }
     }
     const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
     return {
