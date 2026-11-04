@@ -10,7 +10,7 @@ Read before working on a feature:
 - [docs/decisions.md](docs/decisions.md): settled decisions. Don't reverse one silently; propose a new entry.
 - [docs/data-handling.md](docs/data-handling.md): what goes to Claude, and `QAMASTER_AI=off`
 - [docs/releases.md](docs/releases.md): what each plugin version holds, and the next one's plan
-- [docs/plans/](docs/plans/README.md): one versioned plan per release, the working source of truth for that release. A change of scope adds a revision row
+- [docs/plans/](docs/plans/README.md): one versioned plan per release, the working source of truth for that release. A change of scope adds a revision row. [docs/plans/backlog.md](docs/plans/backlog.md) lists every open fix and to-do with its target release
 - [docs/demos/](docs/demos/README.md): every walkthrough with the tester's feedback, and where each finding went
 - [docs/install.md](docs/install.md): load a release as a zip in Claude desktop or the Claude CLI
 - [docs/learning.md](docs/learning.md): concepts and design explained, one lesson per ported feature. Add a lesson when a feature finishes Learn
@@ -111,7 +111,7 @@ For multi-step work, state a short plan first:
 - **Approval is the user's.** Commands never review a run, approve a plan or apply a publish without the user's explicit reply.
 - **Least privilege.** Give commands only the `allowed-tools` they need.
 - **No secrets in the plugin.** Read them from the environment (`QAMASTER_ADO_TOKEN`) or `az login`.
-- **Bump `version`** in `plugin/.claude-plugin/plugin.json` on every release.
+- **Version numbers are MAJOR.MINOR.PATCH** (Q46). 1.0.0 is the major release, product v1 complete. A new feature raises the minor (0.4.0) and resets the patch; fixes only raise the patch (0.3.3), with no new command, flag, config key or file format. After 1.0.0: 1.1.0 for features, 1.0.1 for fixes, 2.0.0 for a breaking change. Bump `version` in `plugin/.claude-plugin/plugin.json` on every release, name its plan `docs/plans/<version>.md`, and list it in `docs/plans/README.md` and `docs/releases.md`.
 
 ---
 

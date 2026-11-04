@@ -97,7 +97,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 </head>
 <body>
 <main>
-<p><span class="b now">Plugin 0.3.2</span><span class="b v11">Decisions to Q44</span><span class="b later">Checked 2026-11-03</span></p>
+<p><span class="b now">Plugin 0.3.2</span><span class="b v11">Decisions to Q46</span><span class="b later">Checked 2026-11-03</span></p>
 <h1>QAMaster setup</h1>
 <p class="lead">How a team sets QAMaster up, step by step: what each step does, the integration it plugs into, the decisions behind it, and what arrives at that step later.</p>
 
@@ -213,25 +213,26 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 </div>
 
 <h2>What comes next</h2>
-<p class="sub">From <a href="plans/0.3.2.md#points-to-take-to-the-next-release-033">plans/0.3.2.md</a> and <a href="product.md#scope">product.md</a>. Only 0.3.3 has an order; the rest is scope.</p>
+<p class="sub">Version numbers: a new feature raises the minor, fixes only raise the patch, and 1.0.0 is the major release, product v1 complete (<a href="decisions.md">Q46</a>). Every open item is in <a href="plans/backlog.md">plans/backlog.md</a>. Only 0.3.3 and 0.4.0 are planned in detail.</p>
 <ol class="tl">
-  <li class="here"><h3>0.3.2 <span class="b now">Built 2026-11-03</span></h3><ul><li>Toolshop fixes T1–T5, <code>/qamaster:status</code>, zips for Claude desktop and the CLI, and local first: the file store is the default (Q44).</li></ul></li>
-  <li><h3>0.3.3 <span class="b todo">Next</span></h3><ul>
-    <li>Forms without a <code>&lt;form&gt;</code> tag in the crawl.</li>
-    <li>Faster crawls and a time estimate before running (S1–S7); re-crawl Toolshop signed in.</li>
-    <li>Reports and feedback; requirements fetch; clearer store conflicts.</li>
-    <li>Push-hook evidence from a real desktop session; check the Toolshop cases in ADO by eye.</li>
-    <li>The generic walkthrough on a second unknown app (Restful Booker Platform).</li>
-    <li>Bring the Docker check's three inputs into the repo.</li></ul></li>
-  <li><h3>Rest of v1 <span class="b todo">v1</span></h3><ul><li>Requirements, feedback and the six HTML reports; scripts for Mobile Web, API, Android and iOS.</li></ul></li>
-  <li><h3>v1.1 <span class="b v11">v1.1</span></h3><ul><li>A git pre-push hook for any terminal; each IDE and agent set up by ticking it: Kiro, Cursor, Copilot, Visual Studio, JetBrains, Gemini CLI, Codex CLI (Q43); PR checks on GitHub and Azure Repos; results published back as an ADO Test Run.</li></ul></li>
-  <li><h3>v2 <span class="b v2">v2</span></h3><ul><li>Context sources through MCP; the QAMaster MCP server and exports to other AI tools; importing existing cases and gap analysis; locators from the crawl; API discovery.</li></ul></li>
-  <li><h3>v3 <span class="b v3">v3</span></h3><ul><li>Generate into a team's existing framework; impact and traceability matrices; root-cause evidence; value metrics; an encrypted secrets vault and security scan; a Visio MCP server.</li></ul></li>
+  <li class="here"><h3>0.3.2 <span class="b now">Built 2026-11-03</span></h3><ul><li>Toolshop fixes T1–T5, <code>/qamaster:status</code>, zips for Claude desktop and the CLI, local first (Q44), a plugin with no <code>bin/</code> (Q45). Loads in Claude desktop.</li></ul></li>
+  <li><h3>0.3.3 <span class="b todo">Next: fixes only</span></h3><ul>
+    <li>Forms without a <code>&lt;form&gt;</code> tag in the DSM; a crawl that survives a closed browser and a 503.</li>
+    <li>Small publish and setup fixes, a doctor warning for the new store default, hidden sub-skills.</li>
+    <li>The Docker check runs from a plain checkout.</li></ul></li>
+  <li><h3>0.4.0 <span class="b todo">Features</span></h3><ul>
+    <li>Conflicts show their fields and can take the store's version; a confirmation in <code>qam review</code>.</li>
+    <li>Selection presets and a model choice; faster crawls with an ETA.</li></ul></li>
+  <li><h3>0.5.0 – 0.8.0 <span class="b todo">Rest of v1</span></h3><ul><li>Requirements fetch, the six HTML reports, feedback, scripts for Mobile Web, API, Android and iOS. Order proposed.</li></ul></li>
+  <li><h3>1.0.0 <span class="b now">Major release</span></h3><ul><li>Product v1 complete, a clean-room Docker run, and the walkthrough passing on a second unknown app.</li></ul></li>
+  <li><h3>1.1.0 <span class="b v11">v1.1</span></h3><ul><li>A git pre-push hook for any terminal; each IDE and agent set up by ticking it (Q43); PR checks on GitHub and Azure Repos; results published back as an ADO Test Run.</li></ul></li>
+  <li><h3>2.0.0 <span class="b v2">v2</span></h3><ul><li>Context sources through MCP; the QAMaster MCP server and exports to other AI tools; importing existing cases and gap analysis; locators from the crawl; API discovery.</li></ul></li>
+  <li><h3>3.0.0 <span class="b v3">v3</span></h3><ul><li>Generate into a team's existing framework; impact and traceability matrices; root-cause evidence; value metrics; an encrypted secrets vault and security scan; a Visio MCP server.</li></ul></li>
   <li><h3>Later <span class="b later">Later</span></h3><ul><li>A spreadsheet store, then Jira with Xray or Zephyr; Cypress and other runners; a VS Code extension; learning which tests fail for which files.</li></ul></li>
 </ol>
 
 <h2>Latest decisions</h2>
-<p class="sub">Q37–Q42 accepted on 2026-11-02 (Q36 proposed 2026-10-30, accepted then too); Q43 and Q44 accepted 2026-11-03. Full text in <a href="decisions.md">decisions.md</a>.</p>
+<p class="sub">Q37–Q42 accepted on 2026-11-02 (Q36 proposed 2026-10-30, accepted then too); Q43–Q46 accepted 2026-11-03. Full text in <a href="decisions.md">decisions.md</a>.</p>
 <div class="tw"><table>
   <thead><tr><th>Decision</th><th>What it settles</th></tr></thead>
   <tbody>
@@ -244,6 +245,8 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <tr><td>Q42</td><td>The gate's local files go into the app repo's <code>.git/info/exclude</code>, out of its commits.</td></tr>
     <tr><td>Q43</td><td>Ticking a tool writes its own rules or steering file, a hook where the tool has one, and later its MCP registration. Every file it creates is kept out of commits, and the method depends on where the file lives and on the code source. Moves the IDE and agent entry points from v2 to v1.1.</td></tr>
     <tr><td>Q44</td><td>Local first: with nothing chosen, the code is a local folder and the store is the local file (a CSV). A project that already published keeps its store; Azure DevOps is <code>QAMASTER_STORE=ado</code>.</td></tr>
+    <tr><td>Q45</td><td>The plugin ships no <code>bin/</code>, and nothing local sits in <code>plugin/</code>, so Claude desktop accepts the upload and a zip is always ready; a test and the packaging script keep it that way.</td></tr>
+    <tr><td>Q46</td><td>Version numbers are MAJOR.MINOR.PATCH: a feature raises the minor, fixes only raise the patch, and 1.0.0 is product v1 complete.</td></tr>
   </tbody>
 </table></div>
 

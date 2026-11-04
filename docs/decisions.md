@@ -712,6 +712,15 @@ All entries Q1–Q24 were **accepted** on 2026-10-28. To change one, add a new e
 - **Why:** Claude desktop's "Upload a plugin" refused the 0.3.2 zip: "claude.ai-hosted plugins may not ship bin/ executables", because they go on the PATH without appearing on the admin approval screen. `claude plugin validate` doesn't run that check. The person wants the plugin code clean and ready to zip at all times.
 - **Gave up:** `qam` on the PATH after a CLI plugin install.
 
+**Q46. Version numbers are MAJOR.MINOR.PATCH, and 1.0.0 is product v1 complete** (2026-11-03, accepted 2026-11-03; New)
+- **Decision:**
+  - **1.0.0 is the major release:** all of product v1's scope, a clean-room Docker run, and a walkthrough on a second unknown app.
+  - **A release that adds a feature raises the minor** (0.4.0) and resets the patch. **A release of fixes only raises the patch** (0.3.3) and adds no command, flag, config key, file format or behaviour a user must learn.
+  - After 1.0.0 the same: 1.1.0 for features, 1.0.1 for fixes. A breaking change (command, flag, exit code, config key, tag or link format, manifest field) is a major release then; before 1.0.0 it's a minor release, named in the notes.
+  - Releases up to 0.3.2 keep their numbers. Each release has `docs/plans/<version>.md`, and open items are kept in `docs/plans/backlog.md`.
+- **Why:** 0.3.1 and 0.3.2 each mixed fixes and features, so the number didn't say what changed. The person wants a feature release and a fix release to look different, and 1.0.0 to mean something.
+- **Gave up:** a single counter that rises with every release.
+
 ---
 
 ## Open questions

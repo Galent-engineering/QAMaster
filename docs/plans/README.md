@@ -8,7 +8,18 @@ There's one plan per plugin release. Each plan is the working source of truth fo
 | 0.2.2 | [0.2.2.md](0.2.2.md): fixes from the 0.2.1 verification | Released inside 0.3.0, r1 |
 | 0.3.0 | [0.3.0.md](0.3.0.md): the first full working plugin (gate, just-in-time automation, pytest and playwright-bdd runners) | Released 2026-11-02, r9 |
 | 0.3.1 | [0.3.1.md](0.3.1.md): prerequisites a clean machine needs, checked and explained (Docker findings F1–F11) | Released 2026-11-02, r5 |
-| 0.3.2 | [0.3.2.md](0.3.2.md): fixes from the Toolshop run, `/qamaster:status`, an installable zip, and the next release's points | Released 2026-11-03, r1 |
+| 0.3.2 | [0.3.2.md](0.3.2.md): fixes from the Toolshop run, `/qamaster:status`, an installable zip, local first, a plugin with no `bin/` | Built 2026-11-03, loads in Claude desktop, r3 |
+| 0.3.3 | [0.3.3.md](0.3.3.md): fixes only (patch) | Planned |
+| 0.4.0 | [0.4.0.md](0.4.0.md): features (minor) | Planned |
+| — | [backlog.md](backlog.md): every open fix and to-do, with its source and target release, up to 1.0.0 and after | Kept current |
+
+**Version numbers: MAJOR.MINOR.PATCH** ([Q46](../decisions.md), 2026-11-03).
+- **1.0.0 is the major release:** product v1 complete, as [product.md](../product.md#v1) describes it.
+- **New feature → minor** (0.4.0, 0.5.0, …): resets the patch to 0. A release with a feature and fixes is a minor release.
+- **Fixes only → patch** (0.3.3, 0.3.4, …): no new command, flag, config key, file format or behaviour a user must learn.
+- **After 1.0.0 the same rules apply:** 1.1.0 for features, 1.0.1 for fixes. A change that breaks users (a command, flag, exit code, config key, tag or link format or manifest field) is a major release, 2.0.0. Before 1.0.0 it's a minor release and the release notes say so.
+- Releases up to 0.3.2 keep their numbers, though 0.3.1 and 0.3.2 mixed fixes with features.
+- Every release: bump `plugin/.claude-plugin/plugin.json`, name the plan `docs/plans/<version>.md`, add its row to [plans/README.md](README.md) and to [releases.md](../releases.md), and build the zips with `scripts/package.sh`. Open items live in [plans/backlog.md](backlog.md).
 
 **How the plans relate to the other docs**
 - [releases.md](../releases.md) has a short summary of each release and links here. When a release ships, its row there lists what actually shipped.

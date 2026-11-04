@@ -6,6 +6,14 @@ Findings come from the [demos](demos/README.md). From 0.2.1 on, each planned rel
 
 Effort: XS < 30 min · S ~1 h · M half a day · L a day or more.
 
+**Version numbers: MAJOR.MINOR.PATCH** ([Q46](decisions.md), 2026-11-03).
+- **1.0.0 is the major release:** product v1 complete, as [product.md](product.md#v1) describes it.
+- **New feature → minor** (0.4.0, 0.5.0, …): resets the patch to 0. A release with a feature and fixes is a minor release.
+- **Fixes only → patch** (0.3.3, 0.3.4, …): no new command, flag, config key, file format or behaviour a user must learn.
+- **After 1.0.0 the same rules apply:** 1.1.0 for features, 1.0.1 for fixes. A change that breaks users (a command, flag, exit code, config key, tag or link format or manifest field) is a major release, 2.0.0. Before 1.0.0 it's a minor release and the release notes say so.
+- Releases up to 0.3.2 keep their numbers, though 0.3.1 and 0.3.2 mixed fixes with features.
+- Every release: bump `plugin/.claude-plugin/plugin.json`, name the plan `docs/plans/<version>.md`, add its row to [plans/README.md](plans/README.md) and to this file, and build the zips with `scripts/package.sh`. Open items live in [plans/backlog.md](plans/backlog.md).
+
 ## 0.2.0: publish, and fixes from the first walkthrough
 
 Publish (Q33, Q34), plus the fixes the 0.1.0 walkthrough turned up (WALKTHROUGH-0.1.0, step 4 notes).
@@ -89,3 +97,15 @@ Plan: [plans/0.3.2.md](plans/0.3.2.md), with what went well, the feedback and wh
 | Local first: with no `QAMASTER_STORE` the store is the one the ledger names, else the local file store, not Azure DevOps | `shared/config.mts` | Q44 |
 
 Not in 0.3.0: Feedback, Reports and Requirements (`qam requirements fetch`), and the v1.1, v2 and v3 scope in product.md.
+
+## Planned
+
+Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
+
+| Release | Kind | What | Plan |
+|---|---|---|---|
+| 0.3.3 | Fixes | Forms without `<form>` in the DSM, a crawl that survives a closed browser and a 503, the small publish and setup fixes (E1, E2, E4–E7), a doctor warning for the new store default, and the Docker check from a plain checkout | [0.3.3.md](plans/0.3.3.md) |
+| 0.4.0 | Features | Conflicts that show their fields and can take the store's version, a confirmation in `qam review`, selection presets and a model choice, faster crawls with an ETA | [0.4.0.md](plans/0.4.0.md) |
+| 0.5.0 – 0.8.0 | Features | The rest of product v1, order proposed: requirements fetch, the six reports, feedback, scripts for the other channels | [backlog](plans/backlog.md#050-to-080-the-rest-of-product-v1-minor-order-proposed) |
+| **1.0.0** | **Major** | Product v1 complete, a clean-room Docker run, and a walkthrough on a second unknown app | [backlog](plans/backlog.md#100-the-major-release) |
+| 1.1.0 | Features | The git pre-push hook, each IDE and agent set up by ticking it (Q43), PR checks, ADO Test Run | [backlog](plans/backlog.md#after-100) |
