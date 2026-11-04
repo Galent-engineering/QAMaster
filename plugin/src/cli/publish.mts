@@ -40,6 +40,23 @@ const ids = (xs: string[] | undefined) =>
     .filter(Boolean);
 const tc = (id: number) => `TC${id}`;
 
+/** How to gate scripts that can't be pushed: the newest plan's id (by mtime), or how to get one. */
+function gateHint(cfg: Config): string {
+  const plans = path.join(cfg.root, '.qamaster', 'plans');
+  let newest = '';
+  let at = -1;
+  try {
+    for (const f of fs.readdirSync(plans)) {
+      if (!f.endsWith('.json')) continue;
+      const m = fs.statSync(path.join(plans, f)).mtimeMs;
+      if (m > at) [newest, at] = [f.slice(0, -'.json'.length), m];
+    }
+  } catch {}
+  return newest
+    ? `Run 'qam automate ${newest} --done' to gate them now.`
+    : 'Run qam plan, then qam automate with its id and --done, to gate them now.';
+}
+
 function readDsm(dir: string): Dsm {
   let out = 'dsm';
   try {
@@ -182,7 +199,8 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   if (unpushed.length)
     lines.push(
       '',
-      `Scripts not pushed to the QA repo (${unpushed.length}): their automation links stay unpublished until they're committed and pushed: ${unpushed.join(', ')}`,
+      `Scripts not pushed to the QA repo (${unpushed.length}): ${unpushed.join(', ')}`,
+      `Their links reach the store after they're committed and pushed. No push access? ${gateHint(cfg)}`,
     );
   const { priorities, categories, max } = cfg.project.smoke;
   if (suggestion.ids.length) {
@@ -280,6 +298,28 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     // recorded even when cases were held back, so the pipeline can say so (E7)
     const published = { publishedAt: now, store: where, ...applied, unchanged: unchanged.length, heldBack };
     fs.writeFileSync(path.join(run.dir, 'published.json'), `${JSON.stringify(published, null, 1)}\n`);
+    // the store was reached: the pipeline's store stage reads this entry (A16), as doctor writes it
+    const doctorFile = path.join(dir, '.qamaster', 'doctor.json');
+    let prev = {};
+    try {
+      prev = JSON.parse(fs.readFileSync(doctorFile, 'utf8'));
+    } catch {}
+    fs.mkdirSync(path.dirname(doctorFile), { recursive: true });
+    fs.writeFileSync(
+      doctorFile,
+      `${JSON.stringify(
+        {
+          ...prev,
+          store: {
+            ok: true,
+            at: now,
+            detail: `${where}: reached by publish --apply (created ${applied.created}, updated ${applied.updated})`,
+          },
+        },
+        null,
+        2,
+      )}\n`,
+    );
     lines.push(
       `Created ${applied.created}, updated ${applied.updated}, retired ${applied.retired}, unchanged ${unchanged.length}; ${heldBack} held back by a conflict; smoke in the plan: ${smokeInStore + smokeWritten} of max ${max}.`,
     );
