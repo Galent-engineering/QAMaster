@@ -47,5 +47,5 @@ test('a bare form literal is flagged before a trailing comment or as const', () 
   assert.equal(selectors('  f: "form" // comment').length, 1);
   assert.equal(selectors("  f: 'form' as const").length, 1);
   assert.equal(selectors("  f: 'form', // the form").length, 1);
-  assert.equal(selectors("  f: `form`;").length, 1);
+  assert.equal(selectors('  f: `form`;').length, 1);
 });
