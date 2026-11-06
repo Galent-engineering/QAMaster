@@ -158,8 +158,11 @@ Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.5.0 | Features | Requirements fetch: completes the demo's step 6 | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
-| 0.6.0 | Features | Daily-use features: conflicts that show their fields, a review confirmation, selection presets, faster DSM, the local store first with several publish destinations (Q50), a gate run with no git change | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
-| 0.7.0 | Features | Scripts for Mobile Web, API, Android and iOS | [backlog](plans/backlog.md#050-to-070-the-rest-of-product-v1-minor) |
+| 0.4.4 | Fixes | Messages and docs from the fastapi-react-app run (R1–R30) | [plans/0.4.4.md](plans/0.4.4.md) |
+| 0.5.0 | Features | Requirements fetch from Azure Boards and import from a file: completes the demo's step 6 | [plans/0.5.0.md](plans/0.5.0.md) |
+| 0.6.0 | Features | A gate you can trust: its state in the QA project and a push hook that blocks (Q52), app errors fail a case (Q53), every verdict kept, script bindings kept (Q49) | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
+| 0.7.0 | Features | Apps with a sign-in: signed-out and signed-in crawls merged, dialog fields, clickable cards, each screen's own source files | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
+| 0.8.0 | Features | Daily use: the local store first with several destinations (Q50), switching stores, `az` credentials, conflicts, review confirmation, presets, faster DSM | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
+| 0.9.0 | Features | Scripts for API, Mobile Web, Android and iOS | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
 | **1.0.0** | **Major** | Product v1 complete, a clean-room Docker run, and a walkthrough on a second unknown app | [backlog](plans/backlog.md#100-the-major-release) |
 | 1.1.0 | Features | The git pre-push hook, each IDE and agent set up by ticking it (Q43), PR checks, ADO Test Run | [backlog](plans/backlog.md#after-100) |

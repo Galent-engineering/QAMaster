@@ -37,32 +37,34 @@ The dummy-static-website fixes, items 1–10 of [0.4.2.md](0.4.2.md#what-shipped
 
 The 39 domain sub-skills as reference files (Q51). See [0.4.3.md](0.4.3.md#what-shipped).
 
-## Next: run 0.4.3 live
+## The road to 1.0.0 (planned 2026-11-06)
 
-| # | Item | Source |
-|---|---|---|
-| 1 | Run 0.4.3 end to end on a live application, in a new session, and fix what it finds (the crawl fix failed once on the real site and was corrected) | 0.4.2 |
-| 2 | Re-run dummy-static-website's DSM on 0.4.2 or later; check cats, landscapes and videogames are kept | W3 |
-| 3 | Re-run AgentMesh on 0.4.1 or later: regenerate the 13 published cases with the wrong request body and re-publish (yours) | A12 |
-| 4 | Run the Docker check once, with Docker and network (the container was never run) | 0.4.1 item 11 |
-| 5 | A signed-in crawl on a data-heavy app, and the reports read by a person | 0.4.0, 0.4.1 |
-| 6 | `/qamaster:status` and `/qamaster:report` in Claude desktop on the uploaded zip; the push hook from a normal desktop push (K8) | 0.4.0, 0.3.2 |
-| 7 | Load the 0.4.3 plugin zip in Claude desktop (built 2026-11-04), check the catalog lists 8 skills, and re-run setup in a QA project so its launcher points at it | 0.4.2, 0.4.3 |
-| 8 | Q49: linking local scripts without a push, and keeping a script's binding per test case across plans, needs a decision (a flag or setting makes it a minor release) | A15, W16, W19 |
+Ordered with you on 2026-11-06: fixes from the [fastapi-react-app run](../demos/2026-11-04-0.4.3-fastapi-react-todo.md) (R1–R30) first, then requirements, then the gate's trust, apps with a sign-in, daily use and the other channels.
 
-## 0.5.0 to 0.7.0: the rest of product v1 (minor)
+| Release | Kind | What | Source | Effort |
+|---|---|---|---|---|
+| 0.4.4 | Fixes | The run's messages and docs. See [0.4.4.md](0.4.4.md) | R2–R4, R11, R13–R15, R18–R20, R29 | M |
+| 0.5.0 | Features | Requirements fetch from Azure Boards (`qam requirements fetch`, stage 6), so `req:` evidence and the requirements in the reports are real; completes demo step 6. See [0.5.0.md](0.5.0.md) | K4, product v1 | L |
+| 0.6.0 | Features | **A gate you can trust.** Its state in the QA project and a push hook that blocks from the app clone (Q52); an app error during a passing case fails it (Q53); every verdict kept, not one per commit; script bindings kept per test case across plans (Q49, to decide first); doctor names a second, different build of the same version; the app's own test suite noticed by doctor and offered to the plan | R22, R25–R28, R17, R1, R4, Q49, A15, W16, W19 | L |
+| 0.7.0 | Features | **Apps with a sign-in.** A signed-out crawl merged with the signed-in one, so public forms keep their fields; two crawls kept and compared; fields inside dialogs; clickable cards and sidebar links followed; each screen's own source files, not the shared sign-in code, so tags narrow; screens named by their heading. Then TestGen covers sign-in, sign-up and add/edit forms | R5–R10, R12, R16, R30 | L |
+| 0.8.0 | Features | **Daily use.** Q50, the local store first and several publish destinations (W9); switching stores with a command (R23); `az devops`'s own credential variables read (R24); `qam status` as a short name (R2); a conflict shows its fields; a store-only edit reported; `--take-store` (needs a decision); `qam review` confirms on a terminal (E3); selection presets and a model choice (Q31); DSM speed (S1–S4, S7); a verdict with no git change (W10); shared step wording (W11); ADO credentials from a file, after a decision (W8) | K6, K7, E3, S1–S7, W8–W11, R2, R23, R24 | L in all |
+| 0.9.0 | Features | **The other v1 channels.** API and Mobile Web scripts, then Android and iOS through Appium, ported from Autonomous-QE's `framework/TestAutomation/src/api` and `src/mobile`. Native runs need a machine with the Android SDK or Xcode | product v1, K5, Q20 | L |
 
-| Release | Feature | Source | Effort |
-|---|---|---|---|
-| 0.5.0 | Requirements fetch (`qam requirements fetch`, stage 6) from Azure Boards, then Jira: completes demo step 6 | K4, product v1 | L |
-| 0.6.0 | Daily-use features: a conflict shows its fields (S); a store-only edit is reported (S); `--take-store <TC-ID…>`, which needs a decision (M); `qam review` confirms on a terminal (E3, S); selection presets and a model choice (Q31, M); DSM speed: an ID-shape hint, smarter waiting, parallel tabs, a scope option, `--estimate` (S1–S4, S7); Q50, the local store first and several publish destinations (W9, L); a verdict for every reviewed case with no git change (W10, M); shared step wording between TestGen's `.feature` files and the automation (W11, M); ADO credentials from a file, after a decision (W8) | K7, E3, K6, S1–S4, S7, W8–W11 | L in all |
-| 0.7.0 | Scripts for the other channels in v1: Mobile Web, API, Android, iOS | product v1, K5 | L |
+**Not v1:** Jira requirements over REST. Q20 keeps Jira to MCP during test design in v1; a Jira `RequirementSource` comes after 1.0.0 unless you change Q20.
+
+**Verification still owed** (yours or needing Docker, carried into the release that touches each area):
+- Load the 0.4.3 zip in Claude desktop, check the catalog lists 8 skills, and re-run setup so the launcher points at the same build (R27 ran two builds labelled 0.4.3).
+- Re-run dummy-static-website's DSM on 0.4.2 or later (W3), and AgentMesh to regenerate its 13 cases with the wrong request body (A12).
+- Run the Docker check once, with Docker and network.
+- `/qamaster:status` and `/qamaster:report` from the uploaded zip; the push hook from a normal desktop push (K8; R25 found it never blocks: 0.6.0).
 
 ## 1.0.0: the major release
 
 Product v1 as [product.md](../product.md#v1) describes it, all of it, plus:
 - the clean-room Docker run passes from a plain checkout;
-- the walkthrough passes on a second unknown app (Restful Booker Platform is saved for this);
+- the walkthrough passes on a second unknown app (Restful Booker Platform is saved for this), with the slash commands and skills as the front end, not direct `qam` calls;
+- the failure path seen live: a FAIL, a retry and a flaky case, a BROKEN case, screenshots, defect drafts, and the defect and root-cause reports with real data (no run has failed yet);
+- the store's life cycle seen live: a republish that updates, a conflict, `--retire` and `--leave-out`;
 - no open High finding in [demos/](../demos/README.md);
 - every decision accepted, and every doc current.
 
@@ -92,6 +94,7 @@ Signed-in crawls need your `.env.dsm` and block writes (K3, Q15) · a file count
 2. ~~**The Toolshop cases in Azure DevOps.**~~ **Decided 2026-11-04: leave them as they are.** Project Toolshop holds 13 cases from a QA project that has since been deleted, so no ledger links them, and publishing Toolshop again would create 13 more. QAMaster never deletes. Revisit when a new Toolshop QA project exists: relink them, or retire them by hand in ADO.
 3. ~~**Setup using the folder you're in.**~~ **Accepted 2026-11-04 as Q47:** three suggestions (this folder, the usual folder, a path you type).
 4. ~~**Merge and push.**~~ **Done 2026-11-04:** `main` holds 0.4.3 and is pushed to GitHub, with `release/0.4.2` and `release/0.4.3`.
+5. ~~**The order to 1.0.0.**~~ **Decided 2026-11-06:** fixes (0.4.4), requirements (0.5.0), the gate's trust (0.6.0, Q52, Q53), apps with a sign-in (0.7.0), daily use (0.8.0), the other channels with native Android and iOS kept in v1 (0.9.0).
 
 ## Sessions reviewed
 

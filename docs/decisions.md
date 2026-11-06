@@ -9,7 +9,7 @@ Each entry says where the choice came from:
 
 Format: **Q<n>. Title** (date, status, source): decision, why, what we gave up.
 
-Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 is **proposed**; Q51 was accepted on 2026-11-04. Q49 (linking local scripts without a push) is open and has no entry yet; see the [AgentMesh analysis](demos/2026-11-04-0.3.2-agentmesh-feedback.md). To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
+Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 is **proposed**; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06. Q49 (linking local scripts without a push) is open and has no entry yet; see the [AgentMesh analysis](demos/2026-11-04-0.3.2-agentmesh-feedback.md). To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
 
 ---
 
@@ -752,6 +752,23 @@ Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in ea
   - The router skill and TestGen tell Claude to read the file instead of loading a skill.
 - **Why:** an uploaded plugin's catalog lists every skill, hidden or not, so 39 internal knowledge files showed as 39 skills next to QAMaster's own 8. They're a reference book TestGen reads, not something a person picks.
 - **Gave up:** loading a sub-skill by name with the Skill tool. Generating them per project at first start was rejected: they're TestGen's ground truth and must be the same reviewed text everywhere.
+
+**Q52. The gate keeps its state in the QA project** (2026-11-06, accepted 2026-11-06; amends Q22 and Q42)
+- **Decision:**
+  - When the repo being pushed is a code source a QA project recorded, the gate writes its plans, verdicts, evidence and drafts into that QA project's `.qamaster/`, keyed by the app repo and commit. It still reads the diff from the repo being pushed (Q22).
+  - The push hook in an app clone finds the same QA project and gates the push from there. It takes the repo from a `cd` or `git -C` in the command, not only the session's folder.
+  - A repo with no recorded QA project (tests next to the code, as in CheckMaster) keeps everything in its own `.qamaster/`, as today.
+  - With a QA project, the gate writes nothing into the app clone, so Q42's `.git/info/exclude` lines are no longer needed there.
+- **Why:** on fastapi-react-app (R22, R25) the gate kept its state in the app clone while setup recorded the push hook in the QA project. The push gate never blocked, and the reports and pipeline status in the QA project never saw a verdict.
+- **Gave up:** gate state next to the code when a QA project exists. Built in 0.6.0.
+
+**Q53. An error the app shows during a passing UI test fails the case** (2026-11-06, accepted 2026-11-06)
+- **Decision:**
+  - While a UI case runs, the runner records the app's own failed requests (a 5xx from the app's origins) and uncaught page errors.
+  - Any of them fails the case, even when every step passed, with the request, status and response body (or the page error) in the evidence.
+  - Known noise is allowed by a list of URL patterns or messages in the gate's settings; nothing is allowed by default.
+- **Why:** on fastapi-react-app (R26) a case passed while the backend answered 500, because the drafted script checked only the screen. The Trust criterion says the check is never green when something went wrong.
+- **Gave up:** a pass that ignores what the app's own server and page report. Built in 0.6.0.
 
 ---
 
