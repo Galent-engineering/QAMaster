@@ -167,13 +167,25 @@ Plan: [plans/0.4.4.md](plans/0.4.4.md). Built on `release/0.4.4` on 2026-11-06. 
 
 Not yet run on fastapi-react-app.
 
+## 0.5.0: requirements, fetched or imported
+
+Plan: [plans/0.5.0.md](plans/0.5.0.md). Built on `release/0.5.0` on 2026-11-06. A new command, so a minor release (Q46).
+
+| Change | Where | Decision |
+|---|---|---|
+| `qam requirements fetch` reads a sprint, the current sprint or a date range from Azure Boards and saves `requirements/<scope>/`; bugs follow the team's "bugs as requirements" setting | `cli/requirements.mts`, `adapters/ado.mts` | Q5, Q20 |
+| `qam requirements import` reads stories from .xlsx, .csv, .json or .md (a Jira or spreadsheet export); `qam requirements list` | `requirements/` | Q20 |
+| Pipeline stage 6 names fetch and import; TestGen asks for the sprint or file and cites `req:<id>` | `pipeline/pipeline.mts`, `skills/TestGen` | Q10 |
+| The test case report shows each case's requirements and the requirements no case covers | `reports/` | |
+
+Not yet run against a live organization.
+
 ## Planned
 
 Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.5.0 | Features | Requirements fetch from Azure Boards and import from a file: completes the demo's step 6 | [plans/0.5.0.md](plans/0.5.0.md) |
 | 0.6.0 | Features | A gate you can trust: its state in the QA project and a push hook that blocks (Q52), app errors fail a case (Q53), every verdict kept, script bindings kept (Q49) | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
 | 0.7.0 | Features | Apps with a sign-in: signed-out and signed-in crawls merged, dialog fields, clickable cards, each screen's own source files | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
 | 0.8.0 | Features | Daily use: the local store first with several destinations (Q50), switching stores, `az` credentials, conflicts, review confirmation, presets, faster DSM | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |

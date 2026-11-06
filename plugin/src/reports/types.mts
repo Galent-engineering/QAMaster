@@ -255,6 +255,19 @@ const testCases: ReportType = {
     const all = i.runs.flatMap((r) => r.cases.map((c) => ({ run: r.run, c })));
     if (!all.length)
       return { missing: 'No TestGen run yet: generate cases first (testgen/output/<run>/testcases.json).' };
+    // the requirements a case cites (req:<id>, on the case or a step), and the saved ones no case cites
+    const reqs = (c: (typeof all)[number]['c']) => [
+      ...new Set(
+        [...(c.evidence ?? []), ...(c.steps ?? []).flatMap((s) => s.evidence ?? [])]
+          .map(String)
+          .filter((e) => e.startsWith('req:'))
+          .map((e) => e.slice(4)),
+      ),
+    ];
+    const cited = new Set(all.flatMap(({ c }) => reqs(c)));
+    const uncovered = i.requirements.flatMap((s) =>
+      s.requirements.filter((r) => !cited.has(String(r.id))).map((r) => [esc(s.scope), esc(r.id), esc(r.title)]),
+    );
     const rows = all.map(({ run, c }) => [
       esc(c.id),
       esc(c.title),
@@ -263,6 +276,7 @@ const testCases: ReportType = {
       esc(c.category),
       esc(c.type),
       c.id && i.ledger.has(c.id) ? esc(`TC${i.ledger.get(c.id)}`) : badge('not published'),
+      esc(reqs(c).join(', ')),
       `<ol>${(c.steps ?? []).map((s) => `<li>${esc(s.action)}${s.expected ? ` → ${esc(s.expected)}` : ''}</li>`).join('')}</ol>`,
       esc(run),
     ]);
@@ -272,11 +286,22 @@ const testCases: ReportType = {
         ['Cases', all.length],
         ['Published', published],
         ['Runs', i.runs.length],
+        ['Requirements with no case', uncovered.length],
       ]) +
       section(
         'Cases',
-        table('cases', ['ID', 'Title', 'Component', 'Priority', 'Category', 'Type', 'Store', 'Steps', 'Run'], rows),
-      );
+        table(
+          'cases',
+          ['ID', 'Title', 'Component', 'Priority', 'Category', 'Type', 'Store', 'Requirements', 'Steps', 'Run'],
+          rows,
+        ),
+      ) +
+      (i.requirements.length
+        ? section(
+            'Requirements with no test case',
+            table('uncovered', ['Scope', 'ID', 'Title'], uncovered, 'Every saved requirement has a test case.'),
+          )
+        : '');
     return { file: 'test-case-report.html', html: page('Manual test cases', stamp(i), body) };
   },
 };

@@ -1,0 +1,1 @@
+{"stories": [{"id": "SHOP-30", "title": "Track an order", "acceptanceCriteria": ["The order page shows its status"]}, {"title": "Cancel an order", "description": "Before it ships"}]}

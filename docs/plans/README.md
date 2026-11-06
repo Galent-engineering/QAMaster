@@ -15,7 +15,7 @@ There's one plan per plugin release. Each plan is the working source of truth fo
 | 0.4.2 | [0.4.2.md](0.4.2.md): fixes from the dummy-static-website run (W1–W20): the shell drop that dropped real pages, the automation folder's name, the gate's settings, clearer messages | Released 2026-11-04, r4 |
 | 0.4.3 | [0.4.3.md](0.4.3.md): the 39 domain sub-skills ship as reference files of `Domain_Test_Design_Skill` (Q51), so the catalog lists 8 skills | Released 2026-11-04, r1 |
 | 0.4.4 | [0.4.4.md](0.4.4.md): messages and docs from the fastapi-react-app run (R1–R30) | Built 2026-11-06, r2 |
-| 0.5.0 | [0.5.0.md](0.5.0.md): requirements fetch from Azure Boards and import from a file | Planned 2026-11-06, r1 |
+| 0.5.0 | [0.5.0.md](0.5.0.md): requirements fetch from Azure Boards and import from a file | Built 2026-11-06, r3 |
 | — | [backlog.md](backlog.md): every open fix and to-do, with its source and target release, up to 1.0.0 and after | Kept current |
 
 **Version numbers: MAJOR.MINOR.PATCH** ([Q46](../decisions.md), 2026-11-03).

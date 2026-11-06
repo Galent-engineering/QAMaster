@@ -180,14 +180,15 @@ export const STAGES: Stage[] = [
     title: 'Requirements',
     optional: true,
     detect: (c) => {
-      // written by qam requirements fetch (feature 6)
+      // written by qam requirements fetch or import
       const dir = path.join(c.project, 'requirements');
       const saved = files(dir, /^requirements\.json$/);
       return saved.length
         ? { done: true, detail: `${saved.length} scope(s) saved` }
         : { done: false, detail: 'none fetched yet (optional)' };
     },
-    how: () => 'Fetching sprint stories isn\'t built yet: qam pipeline mark requirements skipped --note "…".',
+    how: () =>
+      'Fetch the sprint\'s stories from Azure Boards (qam requirements fetch --current-sprint, or --sprint NAME), or import a file of stories (qam requirements import --file stories.csv). No requirements? qam pipeline mark requirements skipped --note "…".',
   },
   {
     id: 'test-cases',

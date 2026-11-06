@@ -236,7 +236,14 @@ function errorText(body: string): string {
   return body.slice(0, 300);
 }
 
-type RequestOpts = { orgLevel?: boolean; params?: Record<string, string>; json?: unknown; patch?: unknown };
+type RequestOpts = {
+  orgLevel?: boolean;
+  /** A team-level call ({org}/{project}/{team}/_apis), such as work/teamsettings. */
+  team?: string;
+  params?: Record<string, string>;
+  json?: unknown;
+  patch?: unknown;
+};
 
 export class AdoClient {
   readonly organization: string;
@@ -275,7 +282,12 @@ export class AdoClient {
 
   async request(method: string, path: string, opts: RequestOpts = {}): Promise<Response> {
     this.header ??= this.auth();
-    const url = new URL(`${opts.orgLevel ? this.orgBase : this.base}/${path}`);
+    const base = opts.team
+      ? `https://dev.azure.com/${encodeURIComponent(this.organization)}/${encodeURIComponent(this.project)}/${encodeURIComponent(opts.team)}/_apis`
+      : opts.orgLevel
+        ? this.orgBase
+        : this.base;
+    const url = new URL(`${base}/${path}`);
     for (const [k, v] of Object.entries({ ...opts.params, 'api-version': API_VERSION })) url.searchParams.set(k, v);
     const headers: Record<string, string> = { Authorization: this.header };
     let body: string | undefined;
@@ -1138,6 +1150,30 @@ export class AdoTestCases extends AdoItems implements TestCaseStore {
 
 /** Requirements: the process's requirement work items, and a sprint's in AQE's shape (feature 6). */
 export class AdoRequirements extends AdoItems implements RequirementSource {
+  /** Whether the last requirements() took bugs, from the team's "bugs as requirements" setting, and why. */
+  bugs: { included: boolean; why: string } | undefined;
+
+  /** The bug types when the team works bugs as requirements (work/teamsettings bugsBehavior asRequirements), else []. */
+  private async bugTypes(): Promise<string[]> {
+    const team = this.settings.team || `${this.client.project} Team`;
+    let behavior: string;
+    try {
+      behavior = String((await this.client.send('GET', 'work/teamsettings', { team }))?.bugsBehavior ?? 'off');
+    } catch (e) {
+      if (!skippable(e)) throw e;
+      this.bugs = { included: false, why: `bugs left out: couldn't read team ${team}'s settings (${e.message})` };
+      return [];
+    }
+    if (behavior !== 'asRequirements') {
+      this.bugs = { included: false, why: `bugs left out: team ${team} doesn't work bugs as requirements` };
+      return [];
+    }
+    const config = await this.client.get('work/processconfiguration').catch(() => null);
+    const types = typeNames(config?.bugWorkItems?.workItemTypes);
+    this.bugs = { included: true, why: `bugs included: team ${team} works bugs as requirements` };
+    return types.length ? types : ['Bug'];
+  }
+
   find(filter: Filter): Promise<Item[]> {
     return this.findKind('requirement', filter);
   }
@@ -1192,12 +1228,21 @@ export class AdoRequirements extends AdoItems implements RequirementSource {
       where.push(
         `[System.AreaPath] UNDER ${q(query.module === project || query.module.startsWith(`${project}\\`) ? query.module : `${project}\\${query.module}`)}`,
       );
+    // the type clause is first in where; bugs, when the team counts them, are a second query with the same filters
+    const bugs = await this.bugTypes();
+    const select = (clauses: string[]) =>
+      this.client.wiql(`SELECT [System.Id] FROM workitems WHERE ${clauses.join(' AND ')} ORDER BY [System.Id]`, 1000);
     let ids: number[];
     try {
-      ids = await this.client.wiql(
-        `SELECT [System.Id] FROM workitems WHERE ${where.join(' AND ')} ORDER BY [System.Id]`,
-        1000,
-      );
+      ids = await select(where);
+      if (bugs.length) {
+        const more = await select([
+          where[0],
+          `[System.WorkItemType] IN (${bugs.map(q).join(', ')})`,
+          ...where.slice(2),
+        ]);
+        ids = [...new Set([...ids, ...more])].sort((a, b) => a - b);
+      }
     } catch (e) {
       throw await this.explain(e, query);
     }

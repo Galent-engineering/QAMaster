@@ -1,0 +1,4 @@
+Issue key,Summary,Description,Acceptance Criteria,Labels
+SHOP-1,Add to cart,"Shoppers add an item, then see it in the cart","- The cart badge counts the item
+- The item shows in the cart",cart; web
+,Remove from cart,The item leaves the cart,,

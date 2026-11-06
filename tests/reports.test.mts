@@ -245,3 +245,28 @@ test('the onboarding stage turns done once a test summary report exists', () => 
   assert.equal(before?.status, 'pending');
   assert.equal(after?.status, 'done');
 });
+
+test('0.5.0: the test case report shows each case requirements and the saved requirements with no case', () => {
+  const dir = project();
+  const run = fs.readdirSync(path.join(dir, 'testgen/output'))[0];
+  const file = path.join(dir, 'testgen/output', run, 'testcases.json');
+  const cases = JSON.parse(fs.readFileSync(file, 'utf8'));
+  cases[0].evidence = ['req:US-001'];
+  fs.writeFileSync(file, JSON.stringify(cases));
+  fs.mkdirSync(path.join(dir, 'requirements/sprint-24'), { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'requirements/sprint-24/requirements.json'),
+    JSON.stringify({
+      requirements: [
+        { id: 'US-001', title: 'Add to cart' },
+        { id: 'US-002', title: 'Apply a coupon' },
+      ],
+    }),
+  );
+  buildReports(cfg(dir), 'test-cases');
+  const html = read(dir, 'test-case-report.html');
+  assert.match(html, /<td>US-001<\/td>/);
+  assert.match(html, /Requirements with no test case/);
+  assert.match(html, /<td>sprint-24<\/td><td>US-002<\/td><td>Apply a coupon<\/td>/);
+  assert.doesNotMatch(html, /<td>sprint-24<\/td><td>US-001<\/td>/);
+});

@@ -22,6 +22,7 @@ export type Inputs = {
   dsm: Dsm | null;
   dsmDir: string;
   feedback: Map<string, Feedback>; // by head
+  requirements: { scope: string; requirements: { id: string; title: string }[] }[]; // requirements/<scope>/
   now: Date;
 };
 
@@ -84,6 +85,12 @@ export function loadInputs(cfg: Config, now = new Date()): Inputs {
     const fb = readJson<Feedback>(path.join(fdir, f));
     if (f.startsWith('feedback-') && fb?.head) feedback.set(fb.head, fb);
   }
+  const requirements: Inputs['requirements'] = [];
+  const rdir = path.join(project, 'requirements');
+  for (const scope of fs.existsSync(rdir) ? fs.readdirSync(rdir).sort() : []) {
+    const r = readJson<{ requirements?: { id: string; title: string }[] }>(path.join(rdir, scope, 'requirements.json'));
+    if (Array.isArray(r?.requirements)) requirements.push({ scope, requirements: r.requirements });
+  }
   return {
     root: cfg.root,
     project,
@@ -94,6 +101,7 @@ export function loadInputs(cfg: Config, now = new Date()): Inputs {
     dsm: readJson<Dsm>(path.join(dsmDir, 'dsm.json')),
     dsmDir,
     feedback,
+    requirements,
     now,
   };
 }

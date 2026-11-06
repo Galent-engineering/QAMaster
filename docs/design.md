@@ -1,6 +1,6 @@
 # QAMaster: Design
 
-> Status: current at 0.4.3 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.4.4-setup-guide.html). How QAMaster looks and behaves for each user. For the why, see [product.md](product.md). For how it's built, see [tech.md](tech.md).
+> Status: current at 0.4.3 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.5.0-setup-guide.html). How QAMaster looks and behaves for each user. For the why, see [product.md](product.md). For how it's built, see [tech.md](tech.md).
 
 ## Principles
 
@@ -50,7 +50,9 @@ qam integrations list [--all] | add <entry…> | remove <id> | verify
 qam pipeline start|status|next|mark|reset ...
 qam doctor                                    # settings, credentials, plan, runner
 qam dsm run|refresh|changes|impact <files…>
-qam requirements fetch --sprint NAME | --current-sprint | --from D --to D
+qam requirements fetch (--sprint NAME | --current-sprint | --from D --to D) [--module AREA] [--scope NAME]
+qam requirements import --file STORIES.xlsx|.csv|.json|.md [--sheet NAME] [--scope NAME]   # a Jira or spreadsheet export
+qam requirements list                         # the saved scopes; a TestGen manifest names one in requirements_scope
 qam testgen context|validate|render <run>
 qam review <run>                              # records gate 1 with the ADO account + git email; commands call it only after the person's yes
 qam publish <run> [--apply] [--retire] [--leave-out ID,…] [--skip-smoke ID,…]

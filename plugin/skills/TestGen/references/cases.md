@@ -35,7 +35,7 @@ An exclusion whose key no check produces (a form that doesn't exist, a misspelt 
 
 `generated_at` is the current time in **UTC** (`date -u +%Y-%m-%dT%H:%M:%SZ`), not the local time from the run's folder name. The validator reports one that's in the future.
 
-Leave out `requirements_scope` when there are no fetched requirements.
+`requirements_scope` is the folder name under `requirements/` that `qam requirements fetch` or `import` printed. Leave it out when there are no saved requirements.
 
 ## testcases.json
 

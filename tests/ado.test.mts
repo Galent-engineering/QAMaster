@@ -94,6 +94,9 @@ class Mock {
         r.url === `${url.origin}${decodeURIComponent(url.pathname)}` &&
         Object.entries(r.params ?? {}).every(([k, v]) => url.searchParams.get(k) === v),
     );
+    // 0.5.0: every requirements() reads the team's bug setting; a test that doesn't script it gets "bugs off"
+    if (!route && url.pathname.endsWith('/_apis/work/teamsettings'))
+      return new Response(JSON.stringify({ bugsBehavior: 'off' }), { status: 200 });
     if (!route) throw new Error(`unexpected request ${call.method} ${raw}`);
     return route.reply();
   };
@@ -1633,4 +1636,25 @@ test('0.4.1 A1: the hint for a missing setting shows the organization name form'
     () => adoSettings(loadConfig(dir, { QAMASTER_ADO_ORG: 'org' })),
     /QAMASTER_ADO_ORG=<organization> \(its name, as in dev\.azure\.com\/<name>\)/,
   );
+});
+
+test('0.5.0: bugs are requirements only when the team works them as requirements, and the adapter says which', async () => {
+  const ado = new FakeAdo();
+  ado.add(17, 'Bug', 'Cart total is wrong');
+  const r = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await r.requirements(period)).map((x) => x.id),
+    ['3'],
+  );
+  assert.match(r.bugs?.why ?? '', /bugs left out: team Shop Team doesn't work bugs as requirements/);
+  ado.bugsBehavior = 'asRequirements';
+  const withBugs = new AdoRequirements(...onFake(ado));
+  assert.deepEqual(
+    (await withBugs.requirements(period)).map((x) => [x.id, x.type]),
+    [
+      ['3', 'User Story'],
+      ['17', 'Bug'],
+    ],
+  );
+  assert.deepEqual(withBugs.bugs, { included: true, why: 'bugs included: team Shop Team works bugs as requirements' });
 });

@@ -15,7 +15,16 @@ export type RunCase = {
   category?: string;
   objective?: string;
   expected_result?: string;
-  steps?: { screen?: string; leads_to?: string; action?: string; element?: string; data?: string; expected?: string }[];
+  evidence?: string[];
+  steps?: {
+    screen?: string;
+    leads_to?: string;
+    action?: string;
+    element?: string;
+    data?: string;
+    expected?: string;
+    evidence?: string[];
+  }[];
 };
 export type RunCases = { run: string; cases: RunCase[] };
 

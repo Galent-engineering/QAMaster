@@ -36,7 +36,7 @@ code ───┤ scan ──┘                (AUT skills)   (TestGen)        
 
 The important idea: **the DSM connects the two halves**. It knows which screens exist (from the crawl) and which code files belong to which screen (from the scan). That lets QAMaster tag each test case with the files it covers (`path:src/checkout/**`), so when those files change, the gate knows which tests to run.
 
-**Try it:** open [v0.4.4-setup-guide.html](v0.4.4-setup-guide.html), the setup guide. It walks the setup step by step with the integration at each step, the roadmap and the latest decisions; options marked planned or proposed are not built yet.
+**Try it:** open [v0.5.0-setup-guide.html](v0.5.0-setup-guide.html), the setup guide. It walks the setup step by step with the integration at each step, the roadmap and the latest decisions; options marked planned or proposed are not built yet.
 
 **The current picture:** the setup guide also shows decisions Q26 to Q32:
 - the entry-point checklist;
@@ -628,6 +628,27 @@ Publish is the link between the two halves. TestGen writes draft cases into `tes
 </details>
 
 ---
+
+## Lesson: requirements, fetched or imported (0.5.0)
+
+### What it's for
+
+A test case that traces to a screen and a line of code proves the case is real. One that also traces to a story proves it's *wanted*. `qam requirements` saves the stories TestGen may cite as `req:<id>`, and the validator checks every such ID against the saved file, so a case can't cite a story nobody wrote.
+
+### The split of work
+
+| Piece | Does |
+|---|---|
+| `RequirementSource` (`adapters/ado.mts`) | Reads Azure Boards: a sprint, the current sprint or a date range, only the process's requirement types, plus bugs when the team works bugs as requirements |
+| `storiesFromFile` (`requirements/requirements.mts`) | Turns a workbook, CSV, JSON list or Markdown file into the same shape; stories with no ID get `US-001`, … |
+| `requirements/<scope>/` | `requirements.json` for the validator and reports, `requirements.md` for people and Claude |
+| Stage 6, TestGen, the test case report | Done when a scope is saved; cite `req:<id>`; list requirements no case covers |
+
+### Three ideas worth keeping
+
+- **Two doors, one room.** Fetch and import end in the same file shape, so nothing after them knows or cares where a story came from. A Jira team gets in today through an export (Q20 keeps Jira itself to MCP).
+- **Ask the process, not a list.** "Which work item types are requirements?" differs between Agile, Scrum, CMMI and Basic, and bugs depend on a team setting. The adapter asks Azure DevOps each time and says what it decided, instead of hard-coding "User Story".
+- **The scope is a folder name.** The manifest's `requirements_scope` is just the folder under `requirements/`, so a person can see, diff and commit exactly what a run was traced to.
 
 ## Lesson: the gate and just-in-time automation (0.3.0)
 

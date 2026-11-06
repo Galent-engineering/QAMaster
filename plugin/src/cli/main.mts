@@ -19,6 +19,7 @@ import { autSkills } from './knowledge.mts';
 import { doctor, integrations, pipeline, setup } from './project.mts';
 import { publish } from './publish.mts';
 import { feedback, report } from './reports.mts';
+import { requirements } from './requirements.mts';
 import { review, testgen } from './testgen.mts';
 
 export const PASS = 0;
@@ -37,7 +38,8 @@ export const COMMANDS: Record<string, string> = {
   integrations: 'Where QAMaster is plugged in: list [--all] | add <entry…> | remove <id> | verify',
   dsm: 'Design Structure Matrix: run | refresh | changes | impact <files…> | scan | build | render',
   'aut-skills': 'Application knowledge skills (AUT_<App>) from the DSM; --check says whether they are current',
-  requirements: 'Fetch requirements: --sprint NAME | --current-sprint | --from D --to D',
+  requirements:
+    'Requirements TestGen may cite: fetch (--sprint NAME | --current-sprint | --from D --to D) | import --file F | list',
   testgen: 'Test generation: context | validate <run> | render <run>',
   review: 'Record the review of a run (only after the person says yes)',
   publish: 'Show what a reviewed run would publish to the test case store; --apply writes it',
@@ -64,6 +66,7 @@ const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promi
   dsm: (opts, args) => dsm(loadConfig(opts.repo), args, opts.json),
   ado: (opts, args) => ado(loadConfig(opts.repo), args, opts.json),
   'aut-skills': (opts, args) => autSkills(loadConfig(opts.repo), args, opts.json),
+  requirements: (opts, args) => requirements(loadConfig(opts.repo), args, opts.json),
   testgen: (opts, args) => testgen(loadConfig(opts.repo), args, opts.json),
   review: (opts, args) => review(loadConfig(opts.repo), args, opts.json),
   publish: (opts, args) => publish(loadConfig(opts.repo), args, opts.json),

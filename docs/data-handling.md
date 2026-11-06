@@ -1,6 +1,6 @@
 # QAMaster: Data handling
 
-> Status: current at 0.4.3 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.4.4-setup-guide.html). Written for customers, security reviewers and Galent legal. Decisions: [Q24](decisions.md) (AI switch), [Q16](decisions.md) (secrets), [Q15](decisions.md) (read-only), [Q7](decisions.md) (publishing).
+> Status: current at 0.4.3 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.5.0-setup-guide.html). Written for customers, security reviewers and Galent legal. Decisions: [Q24](decisions.md) (AI switch), [Q16](decisions.md) (secrets), [Q15](decisions.md) (read-only), [Q7](decisions.md) (publishing).
 
 ## In short
 
@@ -41,7 +41,7 @@ Only with `QAMASTER_AI` on (the default), and only in a Claude Code session.
 | Step | What Claude reads | Why |
 |---|---|---|
 | Application knowledge | DSM contents (screens, elements, URLs, source file paths and line numbers) and the source files it opens | To write the `AUT_<App>` skills |
-| Requirements | Requirement titles, descriptions and acceptance criteria fetched from ADO | To trace test cases to requirements |
+| Requirements | Titles, descriptions and acceptance criteria saved in `requirements/<scope>/` by `qam requirements fetch` (Azure Boards, read-only: work item fields of the sprint or dates asked for, and the team's bug setting) or `qam requirements import` (a file the person gives). Claude reads `requirements.md` | To trace test cases to requirements (`req:<id>`) |
 | Context sources | Pages, designs or diagrams read through MCP (Confluence, Figma, Visio), only if configured | Background for test design |
 | Test design | The context pack (screens, forms, fields, journeys, source file list), domain skills, generated test cases, validator findings | To write and fix test cases |
 | Automation | Front-end source files for locators, generated scripts, script gate findings | To write features, steps and page objects |

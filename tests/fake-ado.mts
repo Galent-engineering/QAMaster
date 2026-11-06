@@ -48,6 +48,8 @@ export class FakeAdo {
   /** The only team that exists; @CurrentIteration with another is the live 500 VS402612. */
   team = 'Shop Team';
   currentIteration = 'Shop\\Sprint 24';
+  /** The team's bugsBehavior (work/teamsettings): asRequirements, asTasks or off. */
+  bugsBehavior = 'off';
   /** The organization's other projects, as projects lists them with this one. */
   otherProjects = ['Billing', 'Shop Web'];
   /** true: this project doesn't exist, so every project-level call is the 404 TF200016 (envelope hand-built). */
@@ -122,6 +124,7 @@ export class FakeAdo {
     const method = init.method ?? 'GET';
     const body = init.body ? JSON.parse(String(init.body)) : null;
     const p = decodeURIComponent(url.pathname)
+      .replace(`/${this.org}/${this.project}/${this.team}/_apis/`, 'team:')
       .replace(`/${this.org}/${this.project}/_apis/`, '')
       .replace(`/${this.org}/_apis/`, '');
     this.log.push(`${method} ${p}`);
@@ -229,6 +232,9 @@ export class FakeAdo {
           .map((w) => (w ? { id: w.id, rev: w.rev, fields: w.fields } : null)),
       });
     }
+    if (method === 'GET' && p === 'team:work/teamsettings') return ok({ bugsBehavior: this.bugsBehavior });
+    if (method === 'GET' && p.endsWith('/_apis/work/teamsettings'))
+      return ok({ message: 'VS800075: The team does not exist.' }, 404); // live shape not recorded
     if (method === 'GET' && p === 'work/processconfiguration' && !this.processConfig)
       return ok({ message: 'The requested resource does not exist.' }, 404);
     if (method === 'GET' && p === 'work/processconfiguration') {
