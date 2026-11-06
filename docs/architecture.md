@@ -1,6 +1,6 @@
 # QAMaster: Architecture
 
-> Status: current at 0.4.3 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.4.3-setup-guide.html). For what and why, see [product.md](product.md). For behavior, see [design.md](design.md). For the stack and internals, see [tech.md](tech.md). Settled choices are in [decisions.md](decisions.md) as Q1, Q2, ...
+> Status: current at 0.4.3 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.4.4-setup-guide.html). For what and why, see [product.md](product.md). For behavior, see [design.md](design.md). For the stack and internals, see [tech.md](tech.md). Settled choices are in [decisions.md](decisions.md) as Q1, Q2, ...
 
 QAMaster joins two existing Galent plugins into one loop:
 

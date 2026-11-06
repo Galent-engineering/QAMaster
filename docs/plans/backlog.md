@@ -43,7 +43,7 @@ Ordered with you on 2026-11-06: fixes from the [fastapi-react-app run](../demos/
 
 | Release | Kind | What | Source | Effort |
 |---|---|---|---|---|
-| 0.4.4 | Fixes | The run's messages and docs. See [0.4.4.md](0.4.4.md) | R2–R4, R11, R13–R15, R18–R20, R29 | M |
+| 0.4.4 | Fixes | **Built 2026-11-06.** The run's messages and docs. See [0.4.4.md](0.4.4.md) | R2–R4, R11, R13–R15, R18–R20, R29 | M |
 | 0.5.0 | Features | Requirements fetch from Azure Boards (`qam requirements fetch`, stage 6), so `req:` evidence and the requirements in the reports are real; completes demo step 6. See [0.5.0.md](0.5.0.md) | K4, product v1 | L |
 | 0.6.0 | Features | **A gate you can trust.** Its state in the QA project and a push hook that blocks from the app clone (Q52); an app error during a passing case fails it (Q53); every verdict kept, not one per commit; script bindings kept per test case across plans (Q49, to decide first); doctor names a second, different build of the same version; the app's own test suite noticed by doctor and offered to the plan | R22, R25–R28, R17, R1, R4, Q49, A15, W16, W19 | L |
 | 0.7.0 | Features | **Apps with a sign-in.** A signed-out crawl merged with the signed-in one, so public forms keep their fields; two crawls kept and compared; fields inside dialogs; clickable cards and sidebar links followed; each screen's own source files, not the shared sign-in code, so tags narrow; screens named by their heading. Then TestGen covers sign-in, sign-up and add/edit forms | R5–R10, R12, R16, R30 | L |

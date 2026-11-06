@@ -373,3 +373,37 @@ test('0.2.2 B5: a manifest generated_at in the future is a finding (local time w
   manifest.generated_at = '2026-10-30T13:40:00Z';
   assert.equal(validate(manifest, cases, facts(), settings(), now).status, 'pass');
 });
+
+test('0.4.4 R13: a gap line prints its exclusion key, and an exclusion that matches nothing is a finding', () => {
+  const { manifest, cases } = run();
+  const gone = validate(
+    manifest,
+    cases.filter((c) => c.category !== 'Boundary'),
+    facts(),
+    settings(),
+  );
+  const line = gone.gaps.find((g) => /no Boundary test case/.test(g)) ?? '';
+  assert.match(line, /\(to exclude: item "category:Boundary"\)/);
+  manifest.coverage_exclusions = [{ component: 'Cart', item: 'category:Boundary', reason: 'no limits on this screen' }];
+  const ok = validate(
+    manifest,
+    cases.filter((c) => c.category !== 'Boundary'),
+    facts(),
+    settings(),
+  );
+  assert.ok(!ok.gaps.some((g) => /no Boundary/.test(g)));
+  assert.deepEqual(ok.errors, []);
+  manifest.coverage_exclusions = [{ component: 'Cart', item: 'form:/cart:Nope:negative', reason: 'x' }];
+  const bad = validate(manifest, cases, facts(), settings());
+  assert.match(bad.errors.join('\n'), /Cart\/form:\/cart:Nope:negative matches no coverage check/);
+});
+
+test('0.4.4 R14: a step that only opens a URL needs no UI element', () => {
+  const { manifest, cases } = run();
+  const st = lastStep(cases);
+  delete st.element;
+  st.action = 'Open the URL /cart';
+  assert.equal(validate(manifest, cases, facts(), settings()).status, 'pass');
+  st.action = 'Open the Apply voucher menu';
+  assert.match(validate(manifest, cases, facts(), settings()).errors.join('\n'), /names no element/);
+});

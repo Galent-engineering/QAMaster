@@ -105,7 +105,27 @@ function askFolder(io: SetupIo, choices: FolderChoice[], what: string): string {
   return answer;
 }
 
+const SETUP_USAGE = `usage: qam [--repo PATH] setup [options]
+
+Prepares the QA project: config, packages, browsers, launcher. Safe to re-run.
+
+  --url <URL>           the running app's address
+  --app <Name>          the app's name
+  --source <folder|git URL>   where the app's code is; with --clone-to <new folder> or --use-clone <folder> for a git URL
+  --branch <name>       the branch to read; --name <name> names the source
+  --entry <ids>         entry points to install, comma separated (e.g. claude-code)
+  --browsers <chromium|all|none>   browsers for the crawl (default chromium)
+  --no-install          don't run npm install
+  --check               report what is missing, change nothing
+  --help                this text
+`;
+
 export function setup(cfg: Config, argv: string[], json: boolean, io: SetupIo = REAL_IO): number {
+  if (argv.includes('--help') || argv.includes('-h')) {
+    if (json) console.log(JSON.stringify({ result: 'pass', usage: SETUP_USAGE }));
+    else process.stdout.write(SETUP_USAGE);
+    return 0;
+  }
   type V = {
     check?: boolean;
     'no-install'?: boolean;
@@ -251,6 +271,12 @@ export function setup(cfg: Config, argv: string[], json: boolean, io: SetupIo = 
         .filter(Boolean),
     );
 
+  if (!opts.check)
+    notes.push(
+      cfg.store === 'ado'
+        ? 'Test cases go to Azure DevOps (QAMASTER_STORE=ado). To use the local CSV file instead, set QAMASTER_STORE=file in .env.'
+        : 'Test cases go to the local CSV file store. To publish to Azure DevOps instead, set QAMASTER_STORE=ado, QAMASTER_ADO_ORG and QAMASTER_ADO_PROJECT in .env, then run qam doctor.',
+    );
   if (pending)
     notes.push(`No code folder was given. Add --source <folder>, for example one of:\n${showChoices(pending)}`);
   const failed = steps.some((s) => s.status === 'failed');
@@ -517,6 +543,23 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
       checks.push({ check: `runner ${c.check}`, ok: c.ok, detail: c.detail });
   }
   const url = process.env.WEB_BASE_URL || cfg.project.app?.url || app.base_url;
+  // before the automation folder exists these lines still show, so a missing step reads as "not yet", not as an absence
+  if (!runners.size && !noApp) {
+    checks.push({
+      check: 'runner',
+      ok: true,
+      detail: 'not set up yet: the automation step creates it (qam pipeline next)',
+      state: 'unknown',
+    });
+    checks.push({
+      check: 'app URL',
+      ok: true,
+      detail: url
+        ? `${url} not checked: no runner yet, so nothing opens it`
+        : 'not set: run qam setup --url <the running app>',
+      state: 'unknown',
+    });
+  }
   if (runners.size && url) {
     let answer: string | null = null;
     try {

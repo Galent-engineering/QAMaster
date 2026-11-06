@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>QAMaster setup guide, 0.4.3</title>
+<title>QAMaster setup guide, 0.4.4</title>
 <style>
 :root{color-scheme:light;--bg:#f7f8fa;--card:#fff;--text:#18212b;--muted:#52606d;--hint:#7b8794;--border:#d9e0e7;--border-strong:#b8c3ce;
 --blue:#174f7a;--blue-bg:#e9f2f8;--gold:#805500;--gold-bg:#fff4d8;--green:#17623a;--green-bg:#e8f5ec;--plum:#6b2f7a;--plum-bg:#f5ebf8;
@@ -97,12 +97,12 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 </head>
 <body>
 <main>
-<p><span class="b now">Plugin 0.4.3</span><span class="b v11">Decisions to Q51</span><span class="b later">Checked 2026-11-04</span></p>
-<h1>QAMaster setup guide, 0.4.3</h1>
+<p><span class="b now">Plugin 0.4.4</span><span class="b v11">Decisions to Q51</span><span class="b later">Checked 2026-11-04</span></p>
+<h1>QAMaster setup guide, 0.4.4</h1>
 <p class="lead">How a team sets QAMaster up, step by step: what each step does, the integration it plugs into, the decisions behind it, and what arrives at that step later.</p>
 
 <div class="note">
-  <p><strong>Where it stands.</strong> The plugin is <strong>0.4.3</strong>, on <code>main</code>. 0.4.3 ships the 39 domain test design sub-skills as reference files of one skill (Q51), so the plugin lists 8 skills. The 0.4.2 fixes before it come from a run on a static website (dummy-static-website): real pages kept when they share a menu, one name for the automation folder, the gate reading its settings from the QA project, and clearer messages. Product v1 isn't complete: <strong>requirements fetching and scripts for the other channels</strong> aren't built. The next step is to run 0.4.3 on a live application. Everything after v1 below is planned scope from <a href="product.md#scope">product.md</a>, not a schedule.</p>
+  <p><strong>Where it stands.</strong> The plugin is <strong>0.4.4</strong>, on <code>release/0.4.4</code>. 0.4.4 is eleven message and doc fixes from the fastapi-react-app run. 0.4.3 shipped the 39 domain test design sub-skills as reference files of one skill (Q51), so the plugin lists 8 skills. The 0.4.2 fixes before it come from a run on a static website (dummy-static-website): real pages kept when they share a menu, one name for the automation folder, the gate reading its settings from the QA project, and clearer messages. Product v1 isn't complete: <strong>requirements fetching and scripts for the other channels</strong> aren't built. The next step is to run 0.4.3 on a live application. Everything after v1 below is planned scope from <a href="product.md#scope">product.md</a>, not a schedule.</p>
 </div>
 <p class="legend"><span class="b now">Shipped</span><span class="b prop">Proposed</span><span class="b todo">Decided, not built</span><span class="b v11">v1.1</span><span class="b v2">v2</span><span class="b v3">v3</span><span class="b later">Later</span></p>
 
@@ -221,7 +221,8 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <li>Fixes from the AgentMesh run: ADO org URLs accepted, projects listed, request bodies checked against the code, FastAPI routes, API routes kept out of the UI map (Q48), a single-page app's shell not counted as screens.</li>
     <li>Better status, paste-ready commands, <code>check-scripts</code> rejecting positional selectors, and Docker-check fixtures.</li></ul></li>
   <li><h3>0.4.2 <span class="b now">Built 2026-11-04</span></h3><ul><li>Fixes from the dummy-static-website run (W1–W20): pages that share a menu are told apart by their text, the blocked-writes warning names its URLs, <code>code:</code> evidence takes a line range, the pipeline finds the automation folder under its real name, the gate reads settings from the QA project, and a folder not in git warns and says how to re-clone.</li></ul></li>
-  <li class="here"><h3>0.4.3 <span class="b now">Released 2026-11-04</span></h3><ul><li>The 39 domain test design sub-skills ship as reference files of <code>Domain_Test_Design_Skill</code> (Q51): the catalog lists QAMaster&#8217;s 8 skills instead of 47; their text and TestGen&#8217;s citations are unchanged.</li><li>Run on fastapi-react-app (R1–R30): end to end on one module, PASS 3 of 3; it found a push gate that never blocks and a pass that hid a 500. Next: 0.4.4.</li></ul></li></ul></li>
+  <li class="here"><h3>0.4.3 <span class="b now">Released 2026-11-04</span></h3><ul><li>The 39 domain test design sub-skills ship as reference files of <code>Domain_Test_Design_Skill</code> (Q51): the catalog lists QAMaster&#8217;s 8 skills instead of 47; their text and TestGen&#8217;s citations are unchanged.</li><li>Run on fastapi-react-app (R1–R30): end to end on one module, PASS 3 of 3; it found a push gate that never blocks and a pass that hid a 500. Next: 0.4.4.</li></ul></li>
+  <li class="here"><h3>0.4.4 <span class="b now">Built 2026-11-06</span></h3><ul><li>Messages and docs from that run: <code>setup --help</code>, the store setup chose, doctor&#8217;s app URL and runner lines, checked citations in AUT skills, exclusion keys, the accepted locator shape.</li></ul></li></ul>
   <li><h3>0.4.4 – 0.9.0 <span class="b todo">Rest of v1</span></h3><ul><li>0.4.4 messages and docs from the fastapi-react-app run; 0.5.0 requirements fetch and import, which completes the demo; 0.6.0 a gate you can trust (its state in the QA project, a push hook that blocks, app errors fail a case: Q52, Q53); 0.7.0 apps with a sign-in (signed-out pages, dialog fields, clickable cards); 0.8.0 daily use (the local store first with several publish destinations (Q50), switching stores, conflicts, presets, faster DSM); 0.9.0 scripts for API, Mobile Web, Android and iOS.</li></ul></li>
   <li><h3>1.0.0 <span class="b now">Major release</span></h3><ul><li>Product v1 complete, a clean-room Docker run, and the walkthrough passing on a second unknown app.</li></ul></li>
   <li><h3>1.1.0 <span class="b v11">v1.1</span></h3><ul><li>A git pre-push hook for any terminal; each IDE and agent set up by ticking it (Q43); PR checks on GitHub and Azure Repos; results published back as an ADO Test Run.</li></ul></li>
@@ -265,6 +266,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <tr><td>0.4.0</td><td>Reports and feedback, setup's folder suggestions (Q47), crawler fixes and an ETA, publish fixes.</td><td>477 tests; typecheck, lint and plugin validation clean. Not run on a live app.</td></tr>
     <tr><td>0.4.1</td><td>Fixes from the AgentMesh run (A1–A16), Q48, and the Docker check's fixtures.</td><td>537 tests; typecheck, lint and plugin validation clean; each branch reviewed independently. Not run on a live app or in Docker.</td></tr>
     <tr><td>0.4.2</td><td>Fixes from the dummy-static-website run (W1–W20), items 1–10 of its plan.</td><td>546 tests; typecheck, lint and plugin validation clean. The crawl fix failed on the real site once and was corrected; not yet re-run there.</td></tr>
+    <tr><td>0.4.4</td><td>Messages and docs from the fastapi-react-app run.</td><td>552 tests, typecheck, lint and plugin validation clean. Not run on fastapi-react-app.</td></tr>
     <tr><td>0.4.3</td><td>The domain sub-skills as reference files (Q51).</td><td>546 tests, including the golden TestGen tests; typecheck, lint and plugin validation clean. Not run in a live session.</td></tr>
   </tbody>
 </table></div>

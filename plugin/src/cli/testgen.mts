@@ -39,7 +39,7 @@ const writeJson = (file: string, data: unknown) => fs.writeFileSync(file, `${JSO
 type Project = { dir: string; dsm: Dsm; facts: Facts };
 
 /** Everything a run is checked against. No app name or no DSM blocks (AQE exited 1 for a missing DSM). */
-function load(cfg: Config): Project {
+export function load(cfg: Config): Project {
   const dir = cfg.qaProject ?? cfg.root;
   const name = cfg.project.app?.name;
   if (!name) throw new BlockedError('No app name. Run qam setup --app <Name> first.');

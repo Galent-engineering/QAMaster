@@ -9,6 +9,9 @@ import path from 'node:path';
 
 export const SELECTOR =
   /(\.locator\(\s*['"`]|getBy(?:TestId|Role|Text|Label|Placeholder|AltText|Title)\(\s*['"`]|\.\$\$?\(\s*['"`]|xpath=|\bcss=)/;
+/** What a page object may use instead of an inline selector (0.4.4 R18). */
+const ACCEPTED =
+  "move it to the page's locator file and use it from there, role and name both: `page.getByRole(L.save.role, { name: L.save.name })`, or `page.getByTestId(L.save.testId)`";
 export const PLATFORM_TAGS = new Set(['@web', '@mobile-web', '@api', '@native']);
 const PLACEMENT = [
   /^steps\/pages\/[\w-]+\.(page|component)\.steps\.ts$/,
@@ -121,7 +124,7 @@ export function staticFindings(root: string, known: Set<string>): Record<string,
       .forEach((line, i) => {
         const t = line.trim();
         if (!t.startsWith('//') && !t.startsWith('*') && SELECTOR.test(line))
-          add('selectors', `${f}:${i + 1}: inline selector \`${t.slice(0, 110)}\`; move it to the page's locator file`);
+          add('selectors', `${f}:${i + 1}: inline selector \`${t.slice(0, 110)}\`; ${ACCEPTED}`);
       });
 
   // A13: a positional or bare-tag locator breaks when the page changes; a test id or label from the crawl doesn't

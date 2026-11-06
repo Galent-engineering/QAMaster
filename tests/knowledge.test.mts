@@ -213,3 +213,23 @@ test('fix 1 and 3: a second run writes nothing; --check exits 0 when current, 1 
   assert.equal(stale.status, 1);
   assert.match(stale.out, /AUT_Shop: stale/);
 });
+
+test('0.4.4 R11: qam aut-skills names a code: citation in a curated block that is not in the scanned code', () => {
+  const dir = project('Shop');
+  fs.mkdirSync(path.join(dir, 'dsm'));
+  fs.copyFileSync(path.join(ROOT, 'tests/fixtures/dsm/shop/dsm.expected.json'), path.join(dir, 'dsm/dsm.json'));
+  fs.copyFileSync(path.join(ROOT, 'tests/fixtures/dsm/shop/code-model.json'), path.join(dir, 'dsm/code-model.json'));
+  assert.equal(qam(dir, 'aut-skills').status, 0);
+  const file = path.join(dir, '.claude/skills/AUT_Shop-Cart/SKILL.md');
+  const text = fs.readFileSync(file, 'utf8');
+  fs.writeFileSync(
+    file,
+    text.replace('<!-- curated:end -->', 'Totals: code:shop:src/Nope.tsx:4\n<!-- curated:end -->'),
+  );
+  const r = qam(dir, 'aut-skills');
+  assert.equal(r.status, 1);
+  assert.match(
+    r.out,
+    /AUT_Shop-Cart: code:shop:src\/Nope\.tsx:4: shop:src\/Nope\.tsx is not in the scanned repository/,
+  );
+});

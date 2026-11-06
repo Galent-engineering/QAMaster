@@ -77,6 +77,10 @@ test('the static gates catch inline selectors, missing locator files, misplaced 
   const f = staticFindings(dir, new Set(['TC-LOGIN-001']));
   assert.match(f.selectors.join('\n'), /src\/web\/pages\/CartPage\.ts:1: inline selector/);
   assert.match(f.selectors.join('\n'), /steps\/cart\.ts:2: inline selector/);
+  assert.match(
+    f.selectors.join('\n'),
+    /role and name both: `page\.getByRole\(L\.save\.role, \{ name: L\.save\.name \}\)`/,
+  );
   assert.match(f.locators.join('\n'), /CartPage\.ts: does not import a locator file/);
   assert.match(f.locators.join('\n'), /orphan\.page\.locators\.ts: no page object uses it/);
   assert.match(f.placement.join('\n'), /steps\/cart\.ts: put screen steps in steps\/pages/);

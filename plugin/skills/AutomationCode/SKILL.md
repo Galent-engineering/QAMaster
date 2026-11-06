@@ -23,9 +23,21 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
 | One scenario per test case, tagged `@TC-<id>`, named after it | in that feature |
 | Steps of one screen | `steps/pages/<page>.page.steps.ts` (generic ones in `steps/shared/`) |
 | A page object per screen, business-level methods, `extends BasePage` | `src/web/pages/<Page>.ts` |
+| API helpers for preconditions (create a record, reset state) | `src/web/api/<name>.ts` |
 | Its selectors, and nowhere else | `src/web/locators/<page>.page.locators.ts`, imported as `'../locators/<page>.page.locators'` |
 
 Steps import `Given`, `When`, `Then` and `expect` from `src/fixtures`. Test data comes from the case's `test_data`. A password or other credential is read from an environment variable (`process.env.<NAME>`), never written into a script.
+
+**The test account** is a pair of variables in the QA project's `.env`, named after the app (`<APP>_USER`, `<APP>_PASSWORD`, for example `TODO_USER`); the scripts read them with `process.env`, and `.env` is never committed. **Preconditions** (a record the case needs, a clean state) are set up through the app's API from a helper in `src/web/api/`, called from a step or a `Background`, not by clicking through the UI.
+
+**A locator is used whole.** The locator file holds the role and the name (or the test id); the page object passes both from there, so a rename is one edit:
+
+```ts
+// src/web/locators/todo.page.locators.ts
+export const L = { save: { role: 'button', name: 'Save' } } as const;
+// src/web/pages/TodoPage.ts
+await this.page.getByRole(L.save.role, { name: L.save.name }).click();
+```
 
 ## Rules the check enforces (`qam check-scripts`)
 

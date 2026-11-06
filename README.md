@@ -2,7 +2,7 @@
 
 A Claude Code plugin that builds a team's test cases and automation from the application and its code, publishes them to Azure DevOps Test Plans (or a local file), and checks every code change against them before it's pushed.
 
-**Status: 0.4.3** (2026-11-04). Built and tested on fixtures and on three live apps; not yet run on a live application at 0.4.2 or 0.4.3. Product v1 isn't complete: requirements fetching (0.5.0) and scripts for the other channels (0.7.0) are still to build. What each release holds is in [docs/releases.md](docs/releases.md); the walk-through of setup and the roadmap is [docs/v0.4.3-setup-guide.html](docs/v0.4.3-setup-guide.html).
+**Status: 0.4.3** (2026-11-04). Built and tested on fixtures and on three live apps; not yet run on a live application at 0.4.2 or 0.4.3. Product v1 isn't complete: requirements fetching (0.5.0) and scripts for the other channels (0.7.0) are still to build. What each release holds is in [docs/releases.md](docs/releases.md); the walk-through of setup and the roadmap is [docs/v0.4.4-setup-guide.html](docs/v0.4.4-setup-guide.html).
 
 ## Install
 
@@ -64,7 +64,7 @@ scripts/package.sh                # dist/: the plugin zip and the marketplace zi
 | [docs/install.md](docs/install.md) | Load a release as a zip, and what the machine needs |
 | [docs/learning.md](docs/learning.md) | The concepts and design, one lesson per feature |
 | [docs/porting-step3.md](docs/porting-step3.md) | How the Autonomous-QE features were ported, and the intended differences |
-| [docs/v0.4.3-setup-guide.html](docs/v0.4.3-setup-guide.html) | Setup step by step, the roadmap, the latest decisions |
+| [docs/v0.4.4-setup-guide.html](docs/v0.4.4-setup-guide.html) | Setup step by step, the roadmap, the latest decisions |
 
 ## Key decisions
 

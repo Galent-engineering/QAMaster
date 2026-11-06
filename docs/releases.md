@@ -152,13 +152,27 @@ Plan: [plans/0.4.3.md](plans/0.4.3.md). Released 2026-11-04. Fixes only, so a pa
 
 Not yet run in a live session.
 
+## 0.4.4: messages and docs from the fastapi-react-app run
+
+Plan: [plans/0.4.4.md](plans/0.4.4.md). Built on `release/0.4.4` on 2026-11-06. Fixes only, so a patch release (Q46).
+
+| Change | Where | Decision |
+|---|---|---|
+| `qam setup --help` prints usage; setup names the store it chose; doctor always shows the app URL and runner lines | `cli/project.mts` | |
+| `qam aut-skills` checks the `code:` citations in curated blocks and names a bad one (exit 1) | `cli/knowledge.mts`, `cli/testgen.mts` | |
+| Coverage gaps print the key that excludes them, an exclusion that matches nothing is a finding, and a step that only opens a URL needs no element | `testgen/validate.mts`, `skills/TestGen/references/cases.md` | Q10 |
+| No domain fits: record `General`, use the Core, App and Test sub-skills | `skills/Domain_Test_Design_Skill`, `skills/TestGen` | |
+| `check-scripts` shows the accepted locator shape; the AutomationCode skill covers the test account, API helpers and whole locators | `automation/quality.mts`, `skills/AutomationCode` | |
+| The plan messages say to run the app on the committed code; Publish says what script links need | `cli/gate.mts`, `cli/publish.mts` | |
+
+Not yet run on fastapi-react-app.
+
 ## Planned
 
 Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.4.4 | Fixes | Messages and docs from the fastapi-react-app run (R1–R30) | [plans/0.4.4.md](plans/0.4.4.md) |
 | 0.5.0 | Features | Requirements fetch from Azure Boards and import from a file: completes the demo's step 6 | [plans/0.5.0.md](plans/0.5.0.md) |
 | 0.6.0 | Features | A gate you can trust: its state in the QA project and a push hook that blocks (Q52), app errors fail a case (Q53), every verdict kept, script bindings kept (Q49) | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
 | 0.7.0 | Features | Apps with a sign-in: signed-out and signed-in crawls merged, dialog fields, clickable cards, each screen's own source files | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |

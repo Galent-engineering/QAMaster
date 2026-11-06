@@ -320,7 +320,9 @@ export function appHint(cfg: Config, plan: Plan): string {
   const browser = plan.items.some(
     (i) => i.selected && i.testCase.automatedTest && linkRunner(i.testCase.automatedTest) === 'playwright-bdd',
   );
-  return url && browser ? ` Its scripts open ${url}: start the app there before qam run.` : '';
+  return url && browser
+    ? ` Its scripts open ${url}: start the app there, on the committed code, before qam run (restart it if it has no auto-reload, or it serves the old code).`
+    : '';
 }
 
 export async function gate(cfg: Config, command: string, argv: string[], json: boolean): Promise<number> {

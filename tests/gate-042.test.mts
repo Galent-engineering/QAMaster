@@ -12,7 +12,7 @@ const plan = (link: string | null, selected = true) =>
 test('the approve hint names the app URL when the plan runs browser scripts (W17)', () => {
   assert.equal(
     appHint(cfg('http://127.0.0.1:8080/'), plan('bdd:@TC-HOME-001')),
-    ' Its scripts open http://127.0.0.1:8080/: start the app there before qam run.',
+    ' Its scripts open http://127.0.0.1:8080/: start the app there, on the committed code, before qam run (restart it if it has no auto-reload, or it serves the old code).',
   );
   assert.equal(appHint(cfg('http://127.0.0.1:8080/'), plan('pytest:tests/test_a.py::test_a')), '');
   assert.equal(appHint(cfg('http://127.0.0.1:8080/'), plan('bdd:@TC-HOME-001', false)), '');

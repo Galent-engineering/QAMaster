@@ -139,6 +139,8 @@ export type Report = {
 /** A step that does something to the UI must name the element it acts on (fix 2). */
 const ACTS =
   /\b(click|tap|press|type|enter|select|choose|tick|check|uncheck|toggle|submit|upload|drag|drop|hover|clear|fill|open)\b/i;
+/** "Open the URL", "Open /cart", "Open the page": a step that goes to an address acts on no element (0.4.4 R14). */
+const OPENS_PAGE = /^\s*open\s+(?:the\s+)?(?:(?:url|page|app|site|address)\b|https?:\/\/|\/)/i;
 /** UI named in the action text: "quoted names", and "the <name> button|link|field|tab|checkbox|dropdown|menu item". */
 const NAMED = [/"([^"]+)"|'([^']+)'/g, /\bthe ([^,.;]+?) (?:button|link|field|tab|checkbox|dropdown|menu item)\b/gi];
 /** A citation precise enough for a reviewer to check a rule in seconds: a line, a heading or a requirement (fix 3). */
@@ -370,7 +372,7 @@ export function validate(
       if (st.element && route && !facts.hasElement(route, st.element))
         errors.push(`${sw}: element "${s(st.element)}" is not on ${route} in the DSM (invented UI element?)`);
       // AQE checked only the element field, so UI named in the action text was never compared with the DSM
-      if (route && !st.element && ACTS.test(s(st.action)))
+      if (route && !st.element && ACTS.test(s(st.action)) && !OPENS_PAGE.test(s(st.action)))
         errors.push(`${sw}: the action acts on the UI but names no element: add the element it uses, from ${route}`);
       if (route) {
         for (const re of NAMED) {
@@ -439,8 +441,11 @@ export function validate(
   for (const e of exclusions) {
     if (!e.reason) errors.push(`coverage_exclusions: ${s(e.component)}/${s(e.item)} has no reason`);
   }
-  const gap = (comp: string, item: string, text: string) => {
-    if (!excl.has(pair(comp, item))) gaps.push(`${comp}: ${text}`);
+  // every key a coverage check can produce, covered or not: an exclusion for any other key matches nothing
+  const known = new Set<string>();
+  const gap = (comp: string, item: string, missing: boolean, text: string) => {
+    known.add(pair(comp, item));
+    if (missing && !excl.has(pair(comp, item))) gaps.push(`${comp}: ${text} (to exclude: item "${item}")`);
   };
   const pathOf = (tc: TestCase): string[] => {
     const seq: string[] = [];
@@ -456,14 +461,14 @@ export function validate(
     const mine = cases.filter((tc) => tc.component === comp);
     const visited = new Set(cases.flatMap(pathOf));
     for (const cat of cfg.required_categories ?? CATEGORIES) {
-      if (!mine.some((tc) => tc.category === cat)) gap(comp, `category:${cat}`, `no ${cat} test case`);
+      gap(comp, `category:${cat}`, !mine.some((tc) => tc.category === cat), `no ${cat} test case`);
     }
     for (const t of manifest.required_types ?? ['Functional']) {
-      if (!mine.some((tc) => tc.type === t)) gap(comp, `type:${t}`, `no ${t} test case (required_types)`);
+      gap(comp, `type:${t}`, !mine.some((tc) => tc.type === t), `no ${t} test case (required_types)`);
     }
     if (cfg.require_every_screen_covered ?? true) {
       for (const n of screens)
-        if (!isGap(n) && !visited.has(n.id)) gap(comp, `screen:${n.id}`, `screen ${n.id} not covered by any step`);
+        if (!isGap(n)) gap(comp, `screen:${n.id}`, !visited.has(n.id), `screen ${n.id} not covered by any step`);
     }
     if (cfg.require_every_form_positive_and_negative ?? true) {
       for (const n of screens) {
@@ -473,8 +478,12 @@ export function validate(
             ['positive', ['Positive', 'E2E', 'Business']],
             ['negative', ['Negative', 'Boundary']],
           ] as const) {
-            if (!on.some((tc) => (cats as readonly string[]).includes(tc.category as string)))
-              gap(comp, `form:${n.id}:${s(f.name)}:${cat}`, `form ${s(f.name)} on ${n.id} has no ${cat} test`);
+            gap(
+              comp,
+              `form:${n.id}:${s(f.name)}:${cat}`,
+              !on.some((tc) => (cats as readonly string[]).includes(tc.category as string)),
+              `form ${s(f.name)} on ${n.id} has no ${cat} test`,
+            );
           }
         }
       }
@@ -491,16 +500,22 @@ export function validate(
             return false;
           });
         });
-        if (!covered)
-          gap(
-            comp,
-            `journey:${i + 1}`,
-            `journey ${i + 1} (${facts.model.journeyText(j)}) not covered by an E2E/Business test`,
-          );
+        gap(
+          comp,
+          `journey:${i + 1}`,
+          !covered,
+          `journey ${i + 1} (${facts.model.journeyText(j)}) not covered by an E2E/Business test`,
+        );
       });
     }
   }
 
+  for (const e of exclusions) {
+    if (e.reason && !known.has(pair(e.component, e.item)))
+      errors.push(
+        `coverage_exclusions: ${s(e.component)}/${s(e.item)} matches no coverage check: use category:<C>, type:<T>, screen:<id>, form:<screen>:<form>:positive|negative or journey:<n> (see skills/TestGen/references/cases.md)`,
+      );
+  }
   const byCategory: Record<string, number> = {};
   for (const c of CATEGORIES) byCategory[c] = cases.filter((tc) => tc.category === c).length;
   const byType: Record<string, number> = {};

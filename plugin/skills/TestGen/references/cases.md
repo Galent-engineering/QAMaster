@@ -21,6 +21,18 @@ A run is a folder `testgen/output/<YYYYMMDD-HHMM>-<module>/` holding two files y
 }
 ```
 
+`coverage_exclusions` leaves out a coverage gap on purpose, with a reason. Each gap line the validator prints ends with `(to exclude: item "<key>")`: copy that key. The keys are:
+
+| Key | Excludes |
+|---|---|
+| `category:<C>` | no case of category C (Positive, Negative, Boundary, E2E, Business, Edge) |
+| `type:<T>` | no case of a required type |
+| `screen:<id>` | a screen no step visits, e.g. `screen:/cart/admin` |
+| `form:<screen>:<form>:positive` or `:negative` | a form with no positive or no negative test |
+| `journey:<n>` | journey n has no E2E or Business case |
+
+An exclusion whose key no check produces (a form that doesn't exist, a misspelt screen) is a finding, so a typo can't hide a gap.
+
 `generated_at` is the current time in **UTC** (`date -u +%Y-%m-%dT%H:%M:%SZ`), not the local time from the run's folder name. The validator reports one that's in the future.
 
 Leave out `requirements_scope` when there are no fetched requirements.

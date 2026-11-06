@@ -10,9 +10,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import type { Dsm, DsmConfig } from '../dsm/build.mts';
-import { buildSkills, type KnowledgeSettings, pascal } from '../knowledge/build.mts';
+import { buildSkills, CURATED_END, CURATED_START, type KnowledgeSettings, pascal } from '../knowledge/build.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
+import { load as loadProject } from './testgen.mts';
 
 function readJson<T>(file: string): T | null {
   if (!fs.existsSync(file)) return null;
@@ -37,6 +38,27 @@ function writeIfChanged(file: string, text: string): boolean {
     );
   }
   return true;
+}
+
+/**
+ * The code: citations in the curated blocks that don't check out (0.4.4 R11), the same way testgen validate checks them,
+ * so a wrong line or file is found here and not when a run cites the skill.
+ */
+function badCitations(cfg: Config, skillsDir: string): string[] {
+  const { facts } = loadProject(cfg);
+  if (!facts.codeFiles.size) return []; // no code model: nothing to check against
+  const bad: string[] = [];
+  for (const skill of fs.existsSync(skillsDir) ? fs.readdirSync(skillsDir).sort() : []) {
+    const f = path.join(skillsDir, skill, 'SKILL.md');
+    if (!skill.startsWith('AUT_') || !fs.existsSync(f)) continue;
+    const text = fs.readFileSync(f, 'utf8');
+    const block = text.slice(text.indexOf(CURATED_START), text.indexOf(CURATED_END));
+    for (const m of block.matchAll(/\bcode:([^\s:`'"),;]+:[^\s:`'"),;]+(?::\d+(?:-\d+)?)?)/g)) {
+      const why = facts.verify(`code:${m[1]}`, {});
+      if (why) bad.push(`${skill}: code:${m[1]}: ${why}`);
+    }
+  }
+  return bad;
 }
 
 export function autSkills(cfg: Config, argv: string[], json: boolean): number {
@@ -88,7 +110,14 @@ export function autSkills(cfg: Config, argv: string[], json: boolean): number {
   const { built_at: __, ...after } = r.state;
   if (written.length || JSON.stringify(before) !== JSON.stringify(after))
     writeIfChanged(stateFile, `${JSON.stringify(r.state, null, 2)}\n`);
-  const report = { result: 'pass', ...r.report, written, skills_dir: path.relative(project, skillsDir) };
+  const bad = badCitations(cfg, skillsDir);
+  const report = {
+    result: bad.length ? 'fail' : 'pass',
+    ...r.report,
+    written,
+    skills_dir: path.relative(project, skillsDir),
+    bad_citations: bad,
+  };
   if (json) console.log(JSON.stringify(report));
   else {
     console.log(
@@ -100,5 +129,9 @@ export function autSkills(cfg: Config, argv: string[], json: boolean): number {
         `No longer in the DSM (marked retired, curated notes kept; delete when done): ${r.report.sub_skills_no_longer_in_dsm.join(', ')}`,
       );
   }
-  return 0;
+  if (bad.length && !json)
+    console.log(
+      `Citations that don't check out (${bad.length}): fix them in the curated block.\n  ${bad.join('\n  ')}`,
+    );
+  return bad.length ? 1 : 0;
 }

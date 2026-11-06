@@ -200,7 +200,7 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     lines.push(
       '',
       `Scripts not pushed to the QA repo (${unpushed.length}): ${unpushed.join(', ')}`,
-      `Their links reach the store after they're committed and pushed. No push access? ${gateHint(cfg)}`,
+      `Their links reach the store once the QA project is committed and pushed to a remote (git add, git commit, git push in the QA project folder), then publish again. No push access? ${gateHint(cfg)}`,
     );
   const { priorities, categories, max } = cfg.project.smoke;
   if (suggestion.ids.length) {

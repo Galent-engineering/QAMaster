@@ -156,7 +156,7 @@ Match the AUT's terms, objects, screens, routes and data fields against these si
 | BOM, work order, routing, MRP, lot/serial, inspection, shop floor, OEE | Domain-Manufacturing |
 | Citizen, applicant, eligibility, benefit, permit, licence, case worker, tax return | Domain-PublicSector |
 
-No match → build a new domain sub-skill with the same headings (section 9) and state the assumption.
+No match → record the domain as `General` and use the Core, App and Test sub-skills only (`Core-*`, `App-<Type>`, `Test-<Type>`); don't build a domain sub-skill for one run. State the assumption in `domain_evidence`. A domain that keeps coming up is added by hand (section 9).
 
 ## 6. Recognising the application type
 
