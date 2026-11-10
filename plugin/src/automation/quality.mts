@@ -103,7 +103,19 @@ export function outlineFindings(feature: string, text: string): string[] {
 }
 
 /** A direct call on Playwright's request context: only the base client makes one. */
-const DIRECT_REQUEST = /\brequest\.(fetch|get|post|put|patch|delete|head)\(/;
+const REQUEST_CALL = '(fetch|get|post|put|patch|delete|head)';
+const DIRECT_REQUEST = new RegExp(`\\brequest\\.${REQUEST_CALL}\\(`);
+/** Names a file gives the request fixture: `({ request: ctx })`, `const api = request`. */
+const requestAliases = (text: string): string[] => [
+  ...new Set(
+    [
+      ...text.matchAll(/\brequest\s*:\s*([A-Za-z_$][\w$]*)/g),
+      ...text.matchAll(/\b([A-Za-z_$][\w$]*)\s*=\s*(?:this\.)?request\s*[;\n]/g),
+    ]
+      .map((m) => m[1])
+      .filter((a): a is string => !!a && a !== 'request'),
+  ),
+];
 /** The channel folders whose features carry the channel's tag, and the Playwright project that runs them. */
 const CHANNEL = {
   api: { tag: '@api', project: 'api' },
@@ -112,18 +124,27 @@ const CHANNEL = {
 
 /** The API layers (0.7.0): steps call a service, a service extends the base client, only the base client fetches. */
 function apiFindings(root: string, add: (k: string, msg: string) => void) {
-  const direct = (f: string) =>
-    read(root, f)
-      .split('\n')
-      .forEach((line, i) => {
-        const t = line.trim();
-        const m = DIRECT_REQUEST.exec(line);
-        if (m && !t.startsWith('//') && !t.startsWith('*'))
-          add(
-            'api',
-            `${f}:${i + 1}: calls request.${m[1]} directly; call a service from src/api/services/ (one service per resource), and let its base client make the request`,
-          );
-      });
+  const direct = (f: string) => {
+    const text = read(root, f);
+    const names = ['request', ...requestAliases(text)];
+    const calls = names.map(
+      (n) =>
+        [
+          n,
+          n === 'request' ? DIRECT_REQUEST : new RegExp(`\\b${n.replace(/\$/g, '\\$')}\\.${REQUEST_CALL}\\(`),
+        ] as const,
+    );
+    text.split('\n').forEach((line, i) => {
+      const t = line.trim();
+      const hit = calls.map(([n, re]) => [n, re.exec(line)] as const).find(([, m]) => m);
+      const m = hit?.[1];
+      if (hit && m && !t.startsWith('//') && !t.startsWith('*'))
+        add(
+          'api',
+          `${f}:${i + 1}: calls ${hit[0]}.${m[1]} directly; call a service from src/api/services/ (one service per resource), and let its base client make the request`,
+        );
+    });
+  };
   const steps = files(root, 'steps/api', /\.ts$/);
   for (const f of steps) {
     direct(f);

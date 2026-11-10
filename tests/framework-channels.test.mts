@@ -168,6 +168,17 @@ test('an API step that calls request.fetch (or any request method) directly is a
   assert.match((f.api ?? []).join('\n'), /todos\.api\.steps\.ts:6: calls request\.get directly/);
 });
 
+test('an API step that renames the request fixture still makes a direct call (0.7.1)', () => {
+  const dir = folder();
+  write(dir, {
+    'steps/api/todos.api.steps.ts':
+      "import { When } from '../../src/fixtures';\nimport { TodoService } from '../../src/api/services/TodoService';\nWhen('I list the todos', async ({ request: ctx }) => {\n  new TodoService(ctx);\n  await ctx.get('/api/todos');\n});\nWhen('I add a todo', async ({ page, request : api }) => {\n  await api.post('/api/todos');\n});\n",
+  });
+  const out = (staticFindings(dir, KNOWN).api ?? []).join('\n');
+  assert.match(out, /todos\.api\.steps\.ts:5: calls ctx\.get directly/);
+  assert.match(out, /todos\.api\.steps\.ts:8: calls api\.post directly/);
+});
+
 test('an API step file that imports no service, a service that is not a BaseApiClient, and an unused service are findings', () => {
   const dir = folder();
   write(dir, {
