@@ -47,3 +47,17 @@ test('R24: no QAMaster setting and no az default still blocks, saying what to se
   const env = { AZURE_CONFIG_DIR: tmpDir('qam-az-empty-') };
   assert.throws(() => adoSettings(loadConfig(tmpDir('qam-app-'), env)), /QAMASTER_ADO_ORG/);
 });
+
+test('R24: the az defaults are taken as a pair, never to fill one QAMaster setting left out', () => {
+  const dir = tmpDir('qam-app-');
+  const AZURE_CONFIG_DIR = azConfig('organization = otherorg\nproject = OtherProject');
+  // QAMaster names the organization: az's project belongs to another one, so it isn't borrowed
+  assert.throws(
+    () => adoSettings(loadConfig(dir, { AZURE_CONFIG_DIR, QAMASTER_ADO_ORG: 'myorg' })),
+    /QAMASTER_ADO_PROJECT/,
+  );
+  assert.throws(
+    () => adoSettings(loadConfig(dir, { AZURE_CONFIG_DIR, QAMASTER_ADO_PROJECT: 'myproj' })),
+    /QAMASTER_ADO_ORG/,
+  );
+});

@@ -28,7 +28,7 @@ export function loadEnv(file: string, env: Env = process.env): void {
 /**
  * What `az devops configure --defaults` set (R24): the organization and project, from AZURE_DEFAULTS_ORGANIZATION and
  * AZURE_DEFAULTS_PROJECT, else the [defaults] section of az's config file (AZURE_CONFIG_DIR, else ~/.azure). QAMaster's
- * own QAMASTER_ADO_* settings are read first by the caller; this only fills what they leave out.
+ * own QAMASTER_ADO_* settings are read first by the caller; these are used only when both of those are unset.
  */
 export function azDefaults(env: Env = process.env): { organization?: string; project?: string } {
   const out: { organization?: string; project?: string } = {

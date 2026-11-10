@@ -1292,9 +1292,8 @@ export function orgName(value: string | undefined): string | undefined {
  * null when it can't be asked (no organization, or no credentials), so the plain message stands.
  */
 export async function noProjectError(config: Config): Promise<NoProjectError | null> {
-  const az = azDefaults(config.env);
-  const organization = orgName(config.env.QAMASTER_ADO_ORG || az.organization);
-  if (!organization || config.env.QAMASTER_ADO_PROJECT || az.project) return null;
+  const { organization, project } = adoTarget(config);
+  if (!organization || project) return null;
   try {
     authHeader(config.env);
   } catch {
@@ -1303,11 +1302,19 @@ export async function noProjectError(config: Config): Promise<NoProjectError | n
   return new AdoClient(organization, '', () => authHeader(config.env)).noProject();
 }
 
+/**
+ * The organization and project: QAMaster's own settings, else az's defaults (R24), taken as a pair. One QAMaster setting
+ * with az's other would mix two places, such as az's project inside QAMaster's organization.
+ */
+function adoTarget(config: Config): { organization?: string; project?: string } {
+  const { QAMASTER_ADO_ORG: org, QAMASTER_ADO_PROJECT: project } = config.env;
+  const pick = org || project ? { organization: org, project } : azDefaults(config.env);
+  return { organization: orgName(pick.organization), project: pick.project || undefined };
+}
+
 /** The settings for QAMASTER_STORE=ado and QAMASTER_REQUIREMENTS=ado. */
 export function adoSettings(config: Config): AdoSettings {
-  const az = azDefaults(config.env);
-  const organization = orgName(config.env.QAMASTER_ADO_ORG || az.organization);
-  const project = config.env.QAMASTER_ADO_PROJECT || az.project;
+  const { organization, project } = adoTarget(config);
   if (!organization || !project)
     throw new BlockedError(
       `Don't know which Azure DevOps project to use. Add these lines to ${config.root}/.env:\n  QAMASTER_ADO_ORG=<organization> (its name, as in dev.azure.com/<name>)\n  QAMASTER_ADO_PROJECT=<project>`,
