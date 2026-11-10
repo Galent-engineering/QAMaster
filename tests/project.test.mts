@@ -421,3 +421,10 @@ test('0.3.2 T3-T5: qam app create and qam check-scripts turn their stages done; 
   assert.match(qam(qa, 'pipeline', 'status').out, /Automation folder\s+done .*\n/);
   assert.match(qam(qa, 'pipeline', 'status').out, /Script gate\s+pending \(optional\)/);
 });
+
+test('item 12: qam status is qam pipeline status, listed in help', () => {
+  const qa = tmp();
+  assert.deepEqual(json(qa, 'status'), json(qa, 'pipeline', 'status'));
+  assert.equal(qam(qa, 'status').out, qam(qa, 'pipeline', 'status').out);
+  assert.match(qam(qa, 'help').out, /^ {2}status {2}/m);
+});

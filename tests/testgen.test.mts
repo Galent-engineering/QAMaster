@@ -8,7 +8,9 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
+import { review } from '../plugin/src/cli/testgen.mts';
 import type { Dsm } from '../plugin/src/dsm/build.mts';
+import { loadConfig } from '../plugin/src/shared/config.mts';
 import { domainRefs } from '../plugin/src/testgen/domain-refs.mts';
 import { Facts } from '../plugin/src/testgen/facts.mts';
 import { render } from '../plugin/src/testgen/render.mts';
@@ -406,4 +408,53 @@ test('0.4.4 R14: a step that only opens a URL needs no UI element', () => {
   assert.equal(validate(manifest, cases, facts(), settings()).status, 'pass');
   st.action = 'Open the Apply voucher menu';
   assert.match(validate(manifest, cases, facts(), settings()).errors.join('\n'), /names no element/);
+});
+
+// 0.6.0 item 13 (E3): on a terminal, qam review shows the run and asks; a script passes --yes
+
+function reviewWith(dir: string, args: string[], io: { tty: boolean; ask: (p: string) => string }) {
+  const lines: string[] = [];
+  const log = console.log;
+  console.log = (...a: unknown[]) => lines.push(a.join(' '));
+  try {
+    return { code: review(loadConfig(dir, {}), args, false, io), out: lines.join('\n') };
+  } finally {
+    console.log = log;
+  }
+}
+
+test('item 13: on a terminal review shows the run, asks, and records only after a yes', () => {
+  const { dir, run } = project();
+  assert.equal(qam(dir, 'testgen', 'validate', 'cart').status, 0);
+  git(dir, 'config', 'user.email', 'reviewer@example.test');
+  const asked: string[] = [];
+  const no = reviewWith(dir, ['cart'], {
+    tty: true,
+    ask: (p) => {
+      asked.push(p);
+      return 'n';
+    },
+  });
+  assert.equal(no.code, 3);
+  assert.match(no.out, /cart/);
+  assert.match(no.out, /Not recorded/);
+  assert.match(asked[0], /Approve run cart as reviewed\? \[y\/N\]/);
+  const file = path.join(run, 'run.json');
+  assert.equal(fs.existsSync(file) ? read(file).reviewedBy : undefined, undefined);
+  const blank = reviewWith(dir, ['cart'], { tty: true, ask: () => '' });
+  assert.equal(blank.code, 3, 'no answer is a no');
+  const yes = reviewWith(dir, ['cart'], { tty: true, ask: () => 'Yes' });
+  assert.equal(yes.code, 0);
+  assert.equal(read(path.join(run, 'run.json')).reviewedBy, 'reviewer@example.test');
+});
+
+test('item 13: --yes records without asking, and so does a script with no terminal', () => {
+  const { dir, run } = project();
+  assert.equal(qam(dir, 'testgen', 'validate', 'cart').status, 0);
+  git(dir, 'config', 'user.email', 'reviewer@example.test');
+  const never = () => assert.fail('asked');
+  assert.equal(reviewWith(dir, ['cart', '--yes'], { tty: true, ask: never }).code, 0);
+  assert.equal(read(path.join(run, 'run.json')).reviewedBy, 'reviewer@example.test');
+  assert.equal(reviewWith(dir, ['--yes', 'cart'], { tty: true, ask: never }).code, 0, '--yes may come first');
+  assert.equal(reviewWith(dir, ['cart'], { tty: false, ask: never }).code, 0);
 });

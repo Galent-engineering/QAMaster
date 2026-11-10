@@ -1,12 +1,26 @@
 /**
  * Q53 (0.6.0 item 4): the playwright-bdd framework's fixture fails a passing case when the app answered 5xx or the
  * page threw. The recording lives in framework/playwright-bdd/src/app-errors.ts with no Playwright import, so a fake
- * page drives it here.
+ * page drives it here. The framework's folder is CommonJS (Playwright's config uses __dirname), so the file is loaded
+ * from a copy named .mts.
  */
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
+import fs from 'node:fs';
+import path from 'node:path';
 import { test } from 'node:test';
-import { parseAllow, watchApp } from '../plugin/framework/playwright-bdd/src/app-errors.ts';
+import { tmpDir } from './tmp.mts';
+
+type AppError =
+  | { kind: 'request'; method: string; url: string; status: number; body: string }
+  | { kind: 'page'; message: string };
+type Watch = { finish(): Promise<AppError[]>; describe(e: AppError[]): string };
+const copy = path.join(tmpDir('qam-app-errors-'), 'app-errors.mts');
+fs.copyFileSync(path.resolve(import.meta.dirname, '../plugin/framework/playwright-bdd/src/app-errors.ts'), copy);
+const { parseAllow, watchApp } = (await import(copy)) as {
+  parseAllow(raw: string | undefined): string[];
+  watchApp(page: unknown, origins: string[], allow: string[]): Watch;
+};
 
 type Fake = { url: string; status: number; method?: string; body?: string };
 const response = ({ url, status, method = 'GET', body = '' }: Fake) => ({

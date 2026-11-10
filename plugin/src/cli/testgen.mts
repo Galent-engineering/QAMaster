@@ -5,7 +5,7 @@
  *     qam testgen context [--component NAME …]   the facts Claude may use, as JSON
  *     qam testgen validate <run>                 check a run; writes validation.json; exit 1 on any finding or gap
  *     qam testgen render <run>                   validate, then testcases.md, <Component>.feature, testcases.csv
- *     qam review <run>                           record the person's review, only after their yes
+ *     qam review <run> [--yes]                   record the person's review; on a terminal it asks first, a script passes --yes
  *
  * <run> is a folder, or a name under testgen/output/.
  */
@@ -185,13 +185,34 @@ export function testgen(cfg: Config, argv: string[], json: boolean): number {
   return 0;
 }
 
+export type ReviewIo = { tty: boolean; ask: (prompt: string) => string };
+
+/** One line from stdin, read synchronously. */
+function readLine(prompt: string): string {
+  process.stderr.write(prompt);
+  const buf = Buffer.alloc(1);
+  let line = '';
+  while (fs.readSync(0, buf, 0, 1, null) === 1 && buf[0] !== 10) line += String.fromCharCode(buf[0]);
+  return line.trim();
+}
+
+const REAL_IO: ReviewIo = { tty: !!process.stdin.isTTY, ask: readLine };
+
 /**
- * Records the person's review of a validated run (Q12). Run it only after they said yes: it doesn't ask. The reviewer is
- * the git user here; the ADO identity is added with the ADO adapter (step 4).
+ * Records the person's review of a validated run (Q12). On a terminal it shows the run and asks for a yes first (a
+ * blank answer is a no: exit 3, nothing recorded); `--yes`, or a script with no terminal, records without asking,
+ * because the caller has already had the person's yes. The reviewer is the git user here; the ADO identity is added
+ * with the ADO adapter (step 4).
  */
-export function review(cfg: Config, argv: string[], json: boolean): number {
+export function review(cfg: Config, argv: string[], json: boolean, io: ReviewIo = REAL_IO): number {
+  let parsed: { values: { yes?: boolean }; positionals: string[] };
+  try {
+    parsed = parseArgs({ args: argv, options: { yes: { type: 'boolean' } }, allowPositionals: true });
+  } catch (e) {
+    throw new BlockedError(`qam review: ${(e as Error).message}`);
+  }
   const p = load(cfg);
-  const dir = runDir(p.dir, argv[0]);
+  const dir = runDir(p.dir, parsed.positionals[0]);
   const problem = validationProblem(dir, p.dsm.generated_at);
   if (problem)
     throw new BlockedError(
@@ -200,6 +221,18 @@ export function review(cfg: Config, argv: string[], json: boolean): number {
   const email = git(p.dir, ['config', 'user.email']).stdout.toString('utf8').trim();
   if (!email)
     throw new BlockedError('No git user to record as the reviewer. Run git config user.email <you@example.com>.');
+  const name = path.basename(dir);
+  if (io.tty && !parsed.values.yes) {
+    const v = readJson<Validation>(path.join(dir, 'validation.json'));
+    const shown = path.relative(p.dir, path.join(dir, 'testcases.md'));
+    console.log(
+      `Run ${name}: ${v?.cases ?? '?'} test cases, validation ${v?.status ?? 'unknown'}, ${v?.gaps.length ?? 0} coverage gaps.\nRead them in ${shown} first.`,
+    );
+    if (!/^y(es)?$/i.test(io.ask(`Approve run ${name} as reviewed? [y/N] `))) {
+      console.log(json ? JSON.stringify({ result: 'awaiting', run: name }) : `Not recorded: ${name} isn't reviewed.`);
+      return 3;
+    }
+  }
   const record = {
     ...(readRunRecord(dir) ?? {}),
     reviewedBy: email,
@@ -207,6 +240,6 @@ export function review(cfg: Config, argv: string[], json: boolean): number {
     run_hash: runHash(dir),
   };
   writeJson(path.join(dir, 'run.json'), record);
-  console.log(json ? JSON.stringify({ result: 'pass', ...record }) : `Reviewed ${path.basename(dir)} as ${email}.`);
+  console.log(json ? JSON.stringify({ result: 'pass', ...record }) : `Reviewed ${name} as ${email}.`);
   return 0;
 }

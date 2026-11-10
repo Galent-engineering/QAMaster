@@ -33,6 +33,7 @@ const PLUGIN_ROOT = path.resolve(import.meta.dirname, '../..');
 export const COMMANDS: Record<string, string> = {
   setup: 'Config, app URL and code sources, packages, browsers, launcher, entry points. Safe to re-run',
   pipeline: 'Onboarding pipeline: start | status | next | mark',
+  status: 'Where the onboarding pipeline stands: the same as pipeline status',
   doctor:
     'Check settings, credentials, the test plan and the runner; --check-write asks whether the user may write (reads only)',
   integrations: 'Where QAMaster is plugged in: list [--all] | add <entry…> | remove <id> | verify',
@@ -41,7 +42,7 @@ export const COMMANDS: Record<string, string> = {
   requirements:
     'Requirements TestGen may cite: fetch (--sprint NAME | --current-sprint | --from D --to D) | import --file F | list',
   testgen: 'Test generation: context | validate <run> | render <run>',
-  review: 'Record the review of a run (only after the person says yes)',
+  review: 'Record the review of a run: asks for a yes on a terminal, --yes for a script',
   publish: 'Show what a reviewed run would publish to the test case store; --apply writes it',
   app: 'Create the automation folder: create --app NAME --web-url URL',
   'check-scripts': 'Quality gate for automation scripts',
@@ -72,6 +73,7 @@ const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promi
   publish: (opts, args) => publish(loadConfig(opts.repo), args, opts.json),
   setup: (opts, args) => setup(loadConfig(opts.repo), args, opts.json),
   pipeline: (opts, args) => pipeline(loadConfig(opts.repo), args, opts.json),
+  status: (opts, args) => pipeline(loadConfig(opts.repo), ['status', ...args], opts.json),
   doctor: (opts, args) => doctor(loadConfig(opts.repo), args, opts.json),
   integrations: (opts, args) => integrations(loadConfig(opts.repo), args, opts.json),
   app: (opts, args) => app(loadConfig(opts.repo), args, opts.json),
