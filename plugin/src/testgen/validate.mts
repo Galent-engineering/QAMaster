@@ -348,6 +348,16 @@ export function validate(
     // Asked only when the DSM records access (0.7.0), so a run on an older DSM is unchanged
     // Q48: an API case (channel API) has no screen, so there is no session or navigation to check
     const apiCase = tc.channel === 'API';
+    // 0.7.1: evidence that is only dsm:api: describes an API case; checked as a screen case it would fail on a screen
+    // that doesn't exist, so the mismatch is named instead (the channel decides, never the evidence)
+    const dsmRefs = [tc.evidence ?? [], ...steps.map((st) => st.evidence ?? [])]
+      .flat()
+      .map(String)
+      .filter((r) => r.startsWith('dsm:'));
+    if (!apiCase && dsmRefs.length && dsmRefs.every((r) => r.startsWith('dsm:api:')))
+      errors.push(
+        `${w}: its DSM evidence is only dsm:api: routes but its channel ${s(tc.channel ?? 'missing')} is not API: set channel to API (an API case), or cite the screen the case drives`,
+      );
     if (
       apiCase &&
       ![tc.evidence ?? [], ...steps.map((st) => st.evidence ?? [])].flat().some((r) => String(r).startsWith('dsm:api:'))

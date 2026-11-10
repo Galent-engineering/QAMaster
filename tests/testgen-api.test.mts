@@ -72,6 +72,21 @@ test('an API case validates with dsm:api evidence, the request model and no scre
   assert.equal(r.status, 'pass');
 });
 
+test('a case whose DSM evidence is only dsm:api: but whose channel is not API is a finding (0.7.1)', () => {
+  const r = check(api({ channel: 'Web' }));
+  assert.match(
+    r.errors.join('\n'),
+    /TC-TODO-API-001: its DSM evidence is only dsm:api: .* channel Web.* set channel to API/,
+  );
+  assert.equal(r.status, 'fail');
+  // a UI case that also cites a screen, and an API case, are not flagged by this check
+  assert.doesNotMatch(
+    check(api({ channel: 'Web', evidence: ['dsm:api:POST /api/todos', 'dsm:screen:/todo'] })).errors.join('\n'),
+    /its DSM evidence is only dsm:api:/,
+  );
+  assert.doesNotMatch(check(api()).errors.join('\n'), /its DSM evidence is only dsm:api:/);
+});
+
 test('a route the code model does not have fails, by evidence and by the route named in a step', () => {
   const evidence = check(api({ evidence: ['dsm:api:POST /api/nope', 'code:todo:server/schemas.py:4'] }));
   assert.match(
