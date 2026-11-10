@@ -233,3 +233,37 @@ test('0.4.4 R11: qam aut-skills names a code: citation in a curated block that i
     /AUT_Shop-Cart: code:shop:src\/Nope\.tsx:4: shop:src\/Nope\.tsx is not in the scanned repository/,
   );
 });
+
+// ---- 0.7.0: screens named by their heading, dialog forms and field limits (items 2 and 7)
+
+test('0.7.0 item 7: a screen labelled by its heading is still named by its route in the skills', () => {
+  const dsm = dsmOf('shop');
+  const cart = dsm.page.nodes.find((n) => n.id === '/cart') as Dsm['page']['nodes'][number];
+  cart.label = 'Your basket';
+  const text = [...buildSkills(dsm, {}, 'Shop', () => null, [], AQE_NOW).files.values()].join('\n');
+  assert.match(text, /`\/cart \(Your basket\)`/);
+  assert.ok(!text.includes('`Your basket`'), 'never the heading alone');
+  const plain = [...build('shop').files.values()].join('\n');
+  assert.ok(plain.includes('`/cart`'), 'a route label reads as before');
+});
+
+test('0.7.0 item 2: a dialog form and the limits of its fields reach the skill', () => {
+  const dsm = dsmOf('shop');
+  const cart = dsm.page.nodes.find((n) => n.id === '/cart') as Dsm['page']['nodes'][number];
+  cart.forms.push({
+    name: 'New note',
+    method: 'none',
+    target: null,
+    dialog: 'New note',
+    submits: ['Save note'],
+    fields: [
+      { label: 'Title', name: 'title', type: 'text', required: true, min_length: 3, max_length: 50 },
+      { label: 'Priority', name: 'p', type: 'number', required: false, min: 1, max: 5, pattern: '[0-9]' },
+    ],
+  });
+  const text = [...buildSkills(dsm, {}, 'Shop', () => null, [], AQE_NOW).files.values()].join('\n');
+  assert.match(
+    text,
+    /- Dialog form `New note` \(none\): `Title` \(text, required, min 3 chars, max 50 chars\); `Priority` \(number, min 1, max 5, pattern \[0-9\]\); buttons: `Save note`/,
+  );
+});

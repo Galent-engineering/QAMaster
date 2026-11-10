@@ -80,6 +80,14 @@ const mermaidLabel = (text: unknown) =>
 const q = (text: unknown) => `\`${str(text).replaceAll('`', "'").replace(/\s+/g, ' ').trim()}\``;
 const relHow = (types: string[]) => types.map((t) => REL_NAME[t] ?? t).join('/');
 const more = (n: number, limit: number) => (n > limit ? ' …' : '');
+/**
+ * How a screen is named in the skills: its label, which is its route unless the crawl labelled it by its heading
+ * (0.7.0 item 7), and then the route comes first so the skills still say where the screen is.
+ */
+export const screenName = (n: PageNode): string => {
+  const route = n.routes?.[0];
+  return route && route !== n.label ? `${route} (${n.label})` : n.label;
+};
 export const isGap = (n: PageNode) => n.flags.includes('unresolved') || n.flags.includes('broken');
 
 export class Model {
@@ -235,8 +243,9 @@ export class Model {
   }
 
   journeyText(j: Journey): string {
-    const parts = [`\`${this.node(j.start).label}\``];
-    for (const s of j.steps) parts.push(`→ (${s.label ? q(s.label) : relHow(s.types)}) \`${this.node(s.to).label}\``);
+    const parts = [`\`${screenName(this.node(j.start))}\``];
+    for (const s of j.steps)
+      parts.push(`→ (${s.label ? q(s.label) : relHow(s.types)}) \`${screenName(this.node(s.to))}\``);
     return parts.join(' ');
   }
 }
@@ -327,7 +336,7 @@ const FACTS = (meta: Meta) =>
   `## Facts from the Design Structure Matrix\n_DSM built ${meta.dsmAt} from ${meta.sources}._\n\n${NOTICE}\n`;
 
 function navText(m: Model, r: Relation, end: 'from' | 'to'): string {
-  return `\`${m.node(r[end]).label}\`${r.label ? ` via ${q(r.label)}` : ` (${relHow(r.types)})`}`;
+  return `\`${screenName(m.node(r[end]))}\`${r.label ? ` via ${q(r.label)}` : ` (${relHow(r.types)})`}`;
 }
 
 function renderSub(
@@ -341,11 +350,7 @@ function renderSub(
   const app = m.app;
   const ids = screens.map((n) => n.id);
   const idSet = new Set(ids);
-  const labels =
-    screens
-      .slice(0, 12)
-      .map((n) => n.label)
-      .join(', ') + (screens.length > 12 ? ' ...' : '');
+  const labels = screens.slice(0, 12).map(screenName).join(', ') + (screens.length > 12 ? ' ...' : '');
   const formCount = screens.reduce((s, n) => s + (n.counts?.form ?? 0), 0);
   const summary = curatedSummary(curated);
   const desc =
@@ -367,17 +372,17 @@ function renderSub(
   ];
   for (const n of screens) {
     const c = n.counts ?? {};
-    const ins = sorted(new Set(m.incOf(n.id).map((r) => m.node(r.from).label)));
-    const outs = sorted(new Set(m.outOf(n.id).map((r) => m.node(r.to).label)));
+    const ins = sorted(new Set(m.incOf(n.id).map((r) => screenName(m.node(r.from)))));
+    const outs = sorted(new Set(m.outOf(n.id).map((r) => screenName(m.node(r.to)))));
     const flags = [...n.flags, ...(n.in_cycle ? ['cycle'] : [])].join(', ');
     out.push(
-      `| \`${md(n.label)}\` | ${truthy(n.title) ? md(q(n.title)) : ''} | ${md(ins.slice(0, 6).join(', '))}${more(ins.length, 6)} | ` +
+      `| \`${md(screenName(n))}\` | ${truthy(n.title) ? md(q(n.title)) : ''} | ${md(ins.slice(0, 6).join(', '))}${more(ins.length, 6)} | ` +
         `${md(outs.slice(0, 6).join(', '))}${more(outs.length, 6)} | ${str(c.form ?? 0)} · ${str(c.field ?? 0)} | ${md(flags)} |`,
     );
   }
   out.push('\n### Screen details\n');
   for (const n of screens) {
-    out.push(`#### \`${n.label}\`${truthy(n.title) ? ` — ${q(n.title)}` : ''}`);
+    out.push(`#### \`${screenName(n)}\`${truthy(n.title) ? ` — ${q(n.title)}` : ''}`);
     const facts: string[] = [];
     if (truthy(n.url)) facts.push(`- URL: ${str(n.url)}${truthy(n.status) ? ` (HTTP ${str(n.status)})` : ''}`);
     if (truthy(n.headings)) facts.push(`- Headings: ${(n.headings as string[]).map(q).join(', ')}`);
@@ -385,7 +390,14 @@ function renderSub(
     for (const f of n.forms ?? []) {
       const fields = (f.fields ?? [])
         .map((fd) => {
-          const about = [fd.type, fd.required ? 'required' : ''].filter(Boolean).join(', ');
+          const limits = [
+            fd.min_length != null ? `min ${fd.min_length} chars` : '',
+            fd.max_length != null ? `max ${fd.max_length} chars` : '',
+            fd.min != null ? `min ${fd.min}` : '',
+            fd.max != null ? `max ${fd.max}` : '',
+            fd.pattern ? `pattern ${fd.pattern}` : '',
+          ];
+          const about = [fd.type, fd.required ? 'required' : '', ...limits].filter(Boolean).join(', ');
           return `${q(fd.label || fd.name || '?')}${about ? ` (${about})` : ''}`;
         })
         .join('; ');
@@ -396,7 +408,7 @@ function renderSub(
             .join(', ')}`
         : '';
       facts.push(
-        `- Form ${q(f.name || 'form')} (${str(f.method || 'n/a')}${truthy(f.target) ? ` → ${f.target}` : ''}): ${fields || 'no fields'}${buttons}`,
+        `- ${f.dialog ? 'Dialog form' : 'Form'} ${q(f.name || 'form')} (${str(f.method || 'n/a')}${truthy(f.target) ? ` → ${f.target}` : ''}): ${fields || 'no fields'}${buttons}`,
       );
     }
     const kinds = new Map<string, string[]>();
@@ -439,7 +451,7 @@ function renderSub(
   const inner = ids.flatMap((i) => m.outOf(i).filter((r) => idSet.has(r.to)));
   if (inner.length) {
     out.push('### Navigation within the component\n', '```mermaid', 'flowchart LR');
-    for (const i of ids) out.push(`  ${mermaidId(i)}["${mermaidLabel(m.node(i).label)}"]`);
+    for (const i of ids) out.push(`  ${mermaidId(i)}["${mermaidLabel(screenName(m.node(i)))}"]`);
     for (const r of inner)
       out.push(`  ${mermaidId(r.from)} -->|${r.label ? mermaidLabel(r.label) : relHow(r.types)}| ${mermaidId(r.to)}`);
     out.push('```', '');
@@ -458,7 +470,7 @@ function renderSub(
   out.push('### Dependencies on other components (from the DSM)\n');
   out.push(`- Depends on (navigates to): ${outbound.map(([b, k]) => link(b, k)).join(', ') || 'none'}`);
   out.push(`- Used by (navigated from): ${inbound.map(([a, k]) => link(a, k)).join(', ') || 'none'}`);
-  const cyc = sorted(new Set(screens.filter((n) => n.in_cycle).map((n) => n.label)));
+  const cyc = sorted(new Set(screens.filter((n) => n.in_cycle).map(screenName)));
   if (cyc.length)
     out.push(
       `- In navigation cycles: ${cyc.map((c) => `\`${c}\``).join(', ')} (test back/forward and state carry-over)`,
@@ -477,7 +489,7 @@ function renderSub(
     ['orphan', 'no screen links to it'],
     ['dead-end', 'no onward navigation'],
   ]) {
-    const hits = screens.filter((n) => n.flags.includes(flag)).map((n) => n.label);
+    const hits = screens.filter((n) => n.flags.includes(flag)).map(screenName);
     if (hits.length) notes.push(`- **${flag}**: ${hits.map((h) => `\`${h}\``).join(', ')} — ${why}`);
   }
   out.push(
@@ -521,7 +533,7 @@ function renderMain(m: Model, journeys: Journey[], meta: Meta, curated: string |
     const forms = screens.reduce((t, n) => t + (n.counts?.form ?? 0), 0);
     const main = byFanIn(screens)
       .slice(0, 4)
-      .map((n) => `\`${n.label}\``)
+      .map((n) => `\`${screenName(n)}\``)
       .join(', ');
     out.push(
       `| ${comp} | [AUT_${app}-${comp}](../AUT_${app}-${comp}/SKILL.md) | ${screens.length} | ${forms} | ${main} |`,
@@ -551,7 +563,7 @@ function renderMain(m: Model, journeys: Journey[], meta: Meta, curated: string |
     '### Most reached screens (smoke / regression candidates)\n',
     ...byFanIn(m.nodes)
       .slice(0, 8)
-      .map((n) => `- \`${n.label}\` (${m.compOf(n.id)}): reached from ${str(n.fan_in ?? 0)} screens`),
+      .map((n) => `- \`${screenName(n)}\` (${m.compOf(n.id)}): reached from ${str(n.fan_in ?? 0)} screens`),
   );
   const gapLines: string[] = [];
   for (const f of ['code-only', 'unresolved', 'broken']) {
@@ -560,7 +572,7 @@ function renderMain(m: Model, journeys: Journey[], meta: Meta, curated: string |
       gapLines.push(
         `- **${f}** (${v.length}): ${v
           .slice(0, 15)
-          .map((n) => `\`${n.label}\``)
+          .map((n) => `\`${screenName(n)}\``)
           .join(', ')}`,
       );
   }
