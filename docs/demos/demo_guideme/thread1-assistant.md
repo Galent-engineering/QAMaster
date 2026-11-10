@@ -26,7 +26,9 @@ answer it here. That's separate from THREAD 2's messages, which are the user's w
 - The test account is in `.env.dsm` (git-ignored). Never print its values or put them in messages or files. The
   Azure DevOps token and organization reach you as `QAMASTER_ADO_TOKEN` / `QAMASTER_ADO_ORG` (a SessionStart hook on
   my machine); never print them either.
-- `git push` only to the remote named `local` (a bare repo in this folder). Never push to `origin`.
+- `git push` only to the remote named `local` (a bare repo in this folder). Never push to `origin`, and never pass
+  `--no-verify`. Commit in the app clone only when THREAD 2 asks, with the message it gives (it may name a story as
+  `AB#<id>`).
 - Azure DevOps, or anything else outside this machine: only when THREAD 2's message contains `HUMAN-OK`, which
   means I approved it in THREAD 2's chat.
 - Before switching the clone's branch for a gate run, run `guideme/start.sh` after the switch so the app runs the

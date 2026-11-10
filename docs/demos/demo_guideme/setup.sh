@@ -1,6 +1,6 @@
 #!/bin/bash
 # demo_guideme setup: a fresh demo folder with TodoApp (finsberg/fastapi-react-app) running, a test account,
-# two prepared code changes and the three thread prompts. QAMaster itself is NOT set up here: that is Thread 1's job.
+# three prepared code changes and the thread prompts. QAMaster itself is NOT set up here: that is Thread 1's job.
 #
 #   docs/demos/demo_guideme/setup.sh [demo-folder]
 #
@@ -61,6 +61,18 @@ g switch -q -c demo/bad-change
 sed -i '' "s/'Pending'/'Pendng'/" fastapi-react-app/frontend/src/components/Todo/TodoCard.tsx
 g commit -q -am "Todo card: badge text (contains a deliberate typo for the FAIL path)"
 g switch -q main
+g switch -q -c demo/server-error
+python3 - <<'EOF'
+p = 'fastapi-react-app/backend/app/api/api_v1/handlers/todo.py'
+s = open(p).read()
+old = "    return await todo_service.list_todos(user=user, session=session)\n"
+new = ("    todos = await todo_service.list_todos(user=user, session=session)\n    if len(todos) > 2:\n"
+       "        raise RuntimeError(\"list_todos: more than one page\")\n    return todos\n")
+assert old in s
+open(p, 'w').write(s.replace(old, new))
+EOF
+g commit -q -am "List todos: one page only (contains a deliberate server error: the list answers 500 once a third todo exists, and the UI hides it)"
+g switch -q main
 
 echo "== Settings for this folder: accept messages between the two threads (bypass is NOT set: only Thread 2 gets it, from you)"
 mkdir -p .claude
@@ -71,9 +83,11 @@ cat > .claude/settings.local.json <<'EOF'
 EOF
 printf '.venv-app/\n.logs/\nlocal-remote.git/\n.claude/settings.local.json\nguideme/.observer-cursor\n' > .gitignore
 
-echo "== Guide files"
-cp "$HERE"/thread*.md "$HERE"/observe.sh "$HERE"/start.sh "$HERE"/stop.sh guideme/
+echo "== Guide files, and the light testing agents Thread 2 may hand checks to"
+cp "$HERE"/thread*.md "$HERE"/observe.sh "$HERE"/report.sh "$HERE"/start.sh "$HERE"/stop.sh guideme/
 chmod +x guideme/*.sh
+mkdir -p .claude/agents
+cp "$HERE"/agents/*.md .claude/agents/
 cat > guideme/demo.env <<EOF
 DEMO=$DEMO
 QAM_REPO=$QAM_REPO

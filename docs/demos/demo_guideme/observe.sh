@@ -3,13 +3,17 @@
 # demo and appends findings to FEEDBACK.md; this terminal shows each pass's new entries. Ctrl-C to stop.
 #   guideme/observe.sh            # loop
 #   ONCE=1 guideme/observe.sh     # one pass (e.g. a final one after the demo)
+# A light model at low effort keeps each pass quick; the final report is guideme/report.sh's job (Opus).
 cd "$(dirname "$0")/.."
 . guideme/demo.env
 INTERVAL="${INTERVAL:-180}"
+MODEL="${OBSERVER_MODEL:-haiku}"
+EFFORT="${OBSERVER_EFFORT:-low}"
 
 pass() {
   echo "== observer pass $(date +%H:%M:%S)"
   claude -p "$(cat guideme/thread3-observer.md)" \
+    --model "$MODEL" --effort "$EFFORT" \
     --add-dir "$QAM_REPO" --add-dir "$TRANSCRIPTS" \
     --permission-mode acceptEdits \
     --allowedTools "Read" "Grep" "Glob" "Edit" "Write" \
