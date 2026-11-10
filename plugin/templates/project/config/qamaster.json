@@ -14,6 +14,7 @@
     "retries": 1,
     "noMatch": "pass-with-warning",
     "preset": "standard",
-    "groupsModel": "inherit"
+    "groupsModel": "inherit",
+    "allowErrors": []
   }
 }

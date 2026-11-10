@@ -479,3 +479,9 @@ test('setup on a real terminal waits for the folder answer', { skip: !PYTHON && 
   assert.match(r.stdout, /Choose 1-\d+, or type a path/);
   assert.equal(read(path.join(qa, 'config/dsm-config.json')).repositories.length, 1);
 });
+
+test('setup seeds gate.allowErrors as an empty list in config/qamaster.json (0.7.1 item 10)', () => {
+  const qa = tmp();
+  assert.equal(qam(qa, 'setup', '--no-install').status, 0);
+  assert.deepEqual(read(path.join(qa, 'config/qamaster.json')).gate.allowErrors, []);
+});
