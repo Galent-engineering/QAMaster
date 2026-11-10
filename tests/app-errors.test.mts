@@ -5,7 +5,8 @@
  * from a copy named .mts.
  */
 import assert from 'node:assert/strict';
-import { EventEmitter } from 'node:events';
+import { spawn, spawnSync } from 'node:child_process';
+import { EventEmitter, once } from 'node:events';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
@@ -107,4 +108,80 @@ test('parseAllow reads a JSON list of strings; anything else is nothing allowed'
   assert.deepEqual(parseAllow(undefined), []);
   assert.deepEqual(parseAllow('not json'), []);
   assert.deepEqual(parseAllow('[1,"a"]'), []);
+});
+
+// The plan's check, end to end: the real fixture under Playwright, run by QAMaster's runner against an app that answers
+// 500 on one call. Needs @playwright/test and playwright-bdd in npm's cache (installed offline, never downloaded) and
+// Chromium; skipped otherwise.
+const FRAMEWORK = path.resolve(import.meta.dirname, '../plugin/framework/playwright-bdd');
+const APP_SERVER = `
+const http = require('node:http');
+const page = (api) => '<p id="s">loading</p><script>fetch("' + api + '").then(() => { s.textContent = "loaded"; })</script>';
+const server = http.createServer((req, res) => {
+  if (req.url === '/boom') return res.end(page('/api/boom'));
+  if (req.url === '/telemetry') return res.end(page('/api/telemetry'));
+  if (req.url.startsWith('/api/')) { res.statusCode = 500; return res.end('boom detail'); }
+  res.statusCode = 404; res.end();
+});
+server.listen(0, '127.0.0.1', () => console.log(server.address().port));
+`;
+
+function installedFramework(): string | null {
+  const dir = tmpDir('qam-app-errors-e2e-');
+  fs.cpSync(FRAMEWORK, dir, { recursive: true });
+  const npm = spawnSync('npm', ['install', '--offline', '--no-audit', '--no-fund', '--ignore-scripts'], {
+    cwd: dir,
+    encoding: 'utf8',
+  });
+  if (npm.status !== 0) return null;
+  const probe = "require('@playwright/test').chromium.launch().then((b) => b.close(), () => process.exit(1))";
+  return spawnSync(process.execPath, ['-e', probe], { cwd: dir }).status === 0 ? dir : null;
+}
+
+test('end to end: a passing scenario fails on the app 500 with the request in the evidence; an allowed URL passes', async (t) => {
+  const dir = installedFramework();
+  if (!dir) return t.skip('@playwright/test, playwright-bdd or Chromium not available offline');
+  const server = spawn(process.execPath, ['-e', APP_SERVER], { stdio: ['ignore', 'pipe', 'inherit'] });
+  t.after(() => server.kill());
+  const [port] = (await once(server.stdout, 'data')).map((d: Buffer) => d.toString().trim());
+  fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify({ name: 'Shop', webUrl: `http://127.0.0.1:${port}` }));
+  fs.writeFileSync(
+    path.join(dir, 'features/web/home.feature'),
+    `Feature: Home
+
+  @TC-1 @web
+  Scenario: The page that calls a failing API
+    Given I open the path "/boom"
+    Then I should see the text "loaded"
+
+  @TC-2 @web
+  Scenario: The page that calls an allowed failing API
+    Given I open the path "/telemetry"
+    Then I should see the text "loaded"
+`,
+  );
+  const { PlaywrightBddRunner } = await import('../plugin/src/adapters/runner-bdd.mts');
+  const evidence = path.join(dir, 'evidence');
+  const [boom, telemetry] = await new PlaywrightBddRunner('npx', ['/api/telemetry']).run(
+    new Map([
+      [1, ['bdd:@TC-1']],
+      [2, ['bdd:@TC-2']],
+    ]),
+    dir,
+    evidence,
+  );
+  assert.equal(boom.status, 'failed');
+  assert.match(boom.error ?? '', /The app reported an error during this case/);
+  assert.match(boom.error ?? '', /GET http:\/\/127\.0\.0\.1:\d+\/api\/boom answered 500:\nboom detail/);
+  const file = boom.evidence.find((e) => path.basename(e).startsWith('app-errors'));
+  assert.ok(file, `app-errors.json in the evidence: ${boom.evidence.join(', ')}`);
+  const recorded = JSON.parse(fs.readFileSync(file, 'utf8'));
+  assert.deepEqual(recorded[0], {
+    kind: 'request',
+    method: 'GET',
+    url: `http://127.0.0.1:${port}/api/boom`,
+    status: 500,
+    body: 'boom detail',
+  });
+  assert.equal(telemetry.status, 'passed', telemetry.error);
 });

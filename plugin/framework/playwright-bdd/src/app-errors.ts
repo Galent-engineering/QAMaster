@@ -1,8 +1,9 @@
 /**
  * Q53: what the app itself reports during a case. A 5xx answer from the app's origins and an uncaught page error fail
- * the case, even when every step passed, unless the gate's allowErrors list names it (a string found in the URL or the
- * message). QAMaster's runner hands the list over in QAMASTER_ALLOW_ERRORS as JSON. No Playwright import: it takes
- * anything shaped like a page, so the engine's tests can drive it.
+ * the case, even when every step passed, unless the gate's allowErrors list names it: a string found in a 5xx request's
+ * URL (not its status or body) or in a page error's message. QAMaster's runner hands the list over in
+ * QAMASTER_ALLOW_ERRORS as JSON. No Playwright import: it takes anything shaped like a page, so the engine's tests can
+ * drive it.
  */
 export type AppError =
   | { kind: 'request'; method: string; url: string; status: number; body: string }
