@@ -184,9 +184,10 @@ const CLICK_CANDIDATES = (selectors: string[]) => `(() => {
   return out; })()`;
 
 /**
- * Clickable cards (0.7.0 item 3, R7) and sidebar items: an element with a pointer cursor and no link or role, found by
- * its computed style because the crawler cannot see a React onClick. Only the outermost element of a pointer region
- * counts. Outside a nav or aside, one card per group of repeated siblings (same parent, tag and class); in a nav or
+ * Clickable cards (0.7.0 item 3, R7) and sidebar items: an element with a pointer cursor and no link or button role,
+ * found by its computed style because the crawler cannot see a React onClick. Also (0.7.1): an element with an onclick
+ * attribute, a role=link without an href, or a focusable one (tabindex >= 0) that has text. Only the outermost
+ * element of a pointer region counts. Outside a nav or aside, one card per group of repeated siblings (same parent, tag and class); in a nav or
  * aside every item. A card's text leaves out the buttons and links inside it, so a "Delete" in it does not hide it.
  */
 const CARD_CANDIDATES = `(() => {
@@ -194,14 +195,19 @@ const CARD_CANDIDATES = `(() => {
   const navAncestor = 'nav, [role=navigation], aside, .sidebar, .side-nav, .menu, .navbar';
   const area = innerWidth * innerHeight; const groups = new Set(); const out = [];
   for (const el of document.body ? document.body.querySelectorAll('*') : []) {
-    if (el.closest('svg') || el.matches('a[href], button, input, select, textarea, label, summary, option, [role]')) continue;
-    if (el.closest('a[href], button, [role=button], [role=link]') || getComputedStyle(el).cursor !== 'pointer') continue;
+    if (el.closest('svg') || el.matches('a[href], button, input, select, textarea, label, summary, option')) continue;
+    if (el.matches('[role]') && !el.matches('[role=link]')) continue;
+    if (el.closest('a[href], button, [role=button]') || (el.parentElement && el.parentElement.closest('[role=link], [onclick]'))) continue;
     const parent = el.parentElement;
-    if (parent && getComputedStyle(parent).cursor === 'pointer') continue;
+    const pointer = (n) => getComputedStyle(n).cursor === 'pointer';
+    const focusable = el.hasAttribute('tabindex') && el.tabIndex >= 0 && (el.textContent || '').trim().length > 0;
+    const signal = pointer(el) ? 'pointer' : el.hasAttribute('onclick') ? 'onclick' : el.matches('[role=link]') ? 'link' : focusable ? 'tabindex' : '';
+    if (!signal) continue;
+    if (parent && pointer(parent) && pointer(el)) continue;
     const r = el.getBoundingClientRect();
     if (!visible(el) || r.width < 24 || r.height < 16 || r.width * r.height > area * 0.8) continue;
     const inNav = !!el.closest(navAncestor);
-    if (!inNav) { const g = cssPath(parent) + '>' + el.tagName + '.' + el.className; if (groups.has(g)) continue; groups.add(g); }
+    if (!inNav) { const g = cssPath(parent) + '>' + el.tagName + '.' + el.className + '.' + signal; if (groups.has(g)) continue; groups.add(g); }
     const copy = el.cloneNode(true); copy.querySelectorAll('button, a, [role=button], input, select, textarea').forEach((n) => n.remove());
     out.push({ selector: cssPath(el), text: (copy.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 80), card: !inNav, inNav });
   }
@@ -1229,6 +1235,25 @@ export class PlaywrightCrawler implements Crawler {
     const cards = ((await page.evaluate(CARD_CANDIDATES)) as Candidate[]).filter(
       (c) => !taken.has(c.selector) && !deny.some((re) => re.test(c.text)),
     );
+    // every sidebar item is an element of this page, the item for the current page included; a click that
+    // navigates adds its target below (0.7.1)
+    const sidebarItems = new Map<string, UiElement>();
+    for (const c of cards) {
+      if (!c.inNav || elements.some((e) => e.selector === c.selector)) continue;
+      const own = {
+        key: keyOf('link', c.text || c.selector),
+        kind: 'link',
+        text: c.text,
+        href: null,
+        target: null,
+        external: false,
+        visible: true,
+        in_nav: true,
+        selector: c.selector,
+      } as UiElement;
+      elements.push(own);
+      sidebarItems.set(c.selector, own);
+    }
     const openDialogs = () => page.evaluate(OPEN_DIALOGS) as Promise<Dialog[]>;
     for (const c of [...fromSelectors, ...cards].slice(0, explore.max_per_page ?? 40)) {
       if (routes.routeOf(page.url()) !== item.route || (await openDialogs()).length) {
@@ -1276,6 +1301,8 @@ export class PlaywrightCrawler implements Crawler {
       if (now && now !== item.route) {
         if (routes.allowed(page.url())) {
           let via = known;
+          const own = sidebarItems.get(c.selector);
+          if (own) own.target = now;
           if (!via && c.card) via = keyOf('card', c.text || c.selector);
           else if (!via) {
             // a sidebar or menu item with no href: an element a step may click, and the relation it causes (R8)

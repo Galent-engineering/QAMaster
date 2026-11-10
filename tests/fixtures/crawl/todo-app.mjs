@@ -4,7 +4,7 @@
 //
 // Public: /login (a text link to /register), /register (a sign-up form with limits), /about (shows "Sign in" signed out).
 // Private (redirect to /login when signed out; /login and /register redirect to / when signed in): /, /todo (cards with
-// no link, a sidebar of divs, an "Add todo" dialog with limits), /todo/<id>, /profile.
+// no link, a sidebar of divs, an "Add todo" dialog with limits), /todo/<id>, /profile, /signals (clickables without a pointer cursor).
 // Every POST and DELETE is recorded; GET /__writes lists them, so a test can prove a crawl changed nothing.
 // /slow shows its content in steps 80 ms apart; /busy changes its DOM until the page is left; /poll starts a request
 // that is never answered (a long poll).
@@ -91,6 +91,18 @@ document.getElementById('add').onclick = () => {
 </script>`, true));
   }
   if (/^\/todo\/\d+$/.test(url.pathname)) return send(200, page('Todo detail', '<p>Details.</p><a href="/todo">Back to todos</a>', true));
+  if (url.pathname === '/signals') {
+    // clickable things with no pointer cursor: a role=link, an onclick attribute, a focusable tile, a destructive one
+    return send(200, page('Signals', `<div role="link" tabindex="0" id="s1">Open about</div>
+<span onclick="location.href='/profile'">Go profile</span>
+<div tabindex="0" id="tile">Open todos</div>
+<div onclick="fetch('/api/todos/1', { method: 'DELETE' })">Trash it</div>
+<div role="button" onclick="fetch('/api/todos/1', { method: 'DELETE' })">Delete everything</div>
+<script>
+document.getElementById('s1').addEventListener('click', () => { location.href = '/about'; });
+document.getElementById('tile').addEventListener('click', () => { location.href = '/todo'; });
+</script>`, true));
+  }
   if (url.pathname === '/profile') return send(200, page('Profile', '<p>qa@example.test</p>', true));
   return send(404, page('Not found', '', user));
 });

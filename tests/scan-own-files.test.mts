@@ -197,9 +197,7 @@ function pagesRoutes(extra: Record<string, string>): string[] {
     commit: null,
     files: new Map(Object.entries(all).filter(([p]) => wanted(p, r))),
   }));
-  return Object.values(m.routes ?? {})
-    .flat()
-    .map((r) => `${(r as { route: string }).route} ${(r as { framework: string }).framework}`);
+  return (m.routes ?? []).map((r) => `${r.route} ${r.framework}`);
 }
 
 test('a CRA or Vite app with src/pages/ gets no Next routes', () => {

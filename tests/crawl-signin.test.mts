@@ -289,3 +289,38 @@ test('item 1: a public start page still signs in, from the sign-in route the sig
   assert.equal(todo.redirect_to, undefined);
   assert.equal(route(model, '/about').access, 'both');
 });
+
+// ---- 0.7.1 items 2 and 3
+
+test('0.7.1 item 2: every sidebar item is an element of each page it is on, the current page included', {
+  timeout: 180_000,
+}, async () => {
+  const model = await full();
+  for (const r of ['/', '/todo', '/profile']) {
+    const links = (route(model, r).elements ?? []).filter((e) => e.kind === 'link' && e.in_nav);
+    for (const t of ['Home', 'Profile', 'Todos']) {
+      assert.equal(links.filter((e) => e.text === t).length, 1, `${r}: sidebar item ${t}, once`);
+    }
+  }
+  const own = (route(model, '/todo').elements ?? []).find((e) => e.in_nav && e.text === 'Todos');
+  assert.equal(own?.target ?? null, null, 'the item for the current page goes nowhere');
+  const other = (route(model, '/todo').elements ?? []).find((e) => e.in_nav && e.text === 'Profile');
+  assert.equal(other?.target, '/profile');
+  assert.deepEqual(await writes(), []);
+});
+
+test('0.7.1 item 3: role=link, onclick and focusable elements without a pointer cursor are clicked, never a destructive one', {
+  timeout: 180_000,
+}, async () => {
+  const before = (await writes()).length;
+  const model = await crawler({ start_paths: ['/signals'] }).crawl({ baseUrl: ui });
+  const to = (t: string) => model.edges.some((e) => e.from === '/signals' && e.to === t && e.type === 'click');
+  assert.ok(to('/about'), 'role=link');
+  assert.ok(to('/profile'), 'onclick attribute');
+  assert.ok(to('/todo'), 'tabindex tile');
+  assert.ok(
+    (model.blocked_requests ?? []).every((b) => b.method !== 'DELETE') || (await writes()).length === before,
+    'a DELETE never reached the server',
+  );
+  assert.equal((await writes()).length, before, 'nothing was written');
+});
