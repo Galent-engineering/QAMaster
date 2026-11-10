@@ -95,7 +95,7 @@ test('plan, approve, run: the cart change selects its case and smoke, runs them 
   assert.equal(run.status, 0, run.out + run.err);
   assert.match(run.out, /Verdict: PASS \(2 of 2 test cases passed\.\)/);
   const head = sh(dir, 'git', 'rev-parse', 'HEAD').stdout.trim();
-  const verdict = JSON.parse(fs.readFileSync(path.join(dir, '.qamaster/verdicts', `${head}.json`), 'utf8'));
+  const verdict = JSON.parse(fs.readFileSync(path.join(dir, '.qamaster/verdicts', `${head}-${id}.json`), 'utf8'));
   assert.equal(verdict.result, 'pass');
 });
 

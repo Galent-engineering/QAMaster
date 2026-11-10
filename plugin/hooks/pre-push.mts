@@ -72,7 +72,15 @@ export function check(event: { tool_input?: { command?: string }; cwd?: string }
   const head = git(root, 'rev-parse', 'HEAD');
   if (!head) return null; // no commits yet: nothing to check
   try {
-    const v = JSON.parse(fs.readFileSync(path.join(root, '.qamaster', 'verdicts', `${head}.json`), 'utf8'));
+    // every run keeps its own verdict (<head>-<plan>.json; <head>.json before 0.6.0): the newest one decides
+    const dir = path.join(root, '.qamaster', 'verdicts');
+    const newest = fs
+      .readdirSync(dir)
+      .filter((f) => f === `${head}.json` || (f.startsWith(`${head}-`) && f.endsWith('.json')))
+      .map((f) => ({ f, t: fs.statSync(path.join(dir, f)).mtimeMs }))
+      .sort((a, b) => b.t - a.t)[0];
+    if (!newest) throw new Error('no verdict');
+    const v = JSON.parse(fs.readFileSync(path.join(dir, newest.f), 'utf8'));
     if (v.result === 'pass') return null;
     return `QAMaster's verdict for ${head.slice(0, 8)} is ${String(v.result ?? 'unknown').toUpperCase()}: ${(v.reasons ?? []).join(' ')} Fix it and run /qamaster:check again.`;
   } catch {

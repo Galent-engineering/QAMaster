@@ -304,7 +304,7 @@ The gate needs only the read scopes. Publishing and `work-items` need read and w
 | QA project | `.qamaster/pipeline.json`, `.qamaster/ledger.json`, `.qamaster/bin/` | Pipeline, publish, setup |
 | QA project | `reports/data/`, `reports/output/` | Reports |
 | App repo | `.env` (git-ignored) | The user |
-| App repo | `.qamaster/plans/<id>.json`, `verdicts/<sha>.json`, `evidence/<sha>/`, `feedback/<sha>.json` | Gate. Writes its own `.gitignore` |
+| App repo | `.qamaster/plans/<id>.json`, `verdicts/<sha>-<plan>.json` (one per run; the newest decides), `evidence/<sha>/`, `feedback/<sha>.json` | Gate. Writes its own `.gitignore` |
 
 When the QA project and the app repo are the same folder, everything lives in one `.qamaster/`.
 

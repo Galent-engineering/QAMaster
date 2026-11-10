@@ -105,3 +105,22 @@ test('0.3.1 F11: in a gated repo without git, the push is allowed with a note', 
   assert.equal(r.status, 0);
   assert.match(r.stderr, /QAMaster couldn't check this push: git isn't available/);
 });
+
+test('0.6.0 R28: every verdict for a commit is kept, and the newest one decides', () => {
+  const dir = repo();
+  const head = git(dir, 'rev-parse', 'HEAD');
+  const vdir = path.join(dir, '.qamaster/verdicts');
+  fs.mkdirSync(vdir, { recursive: true });
+  const put = (name: string, result: string, when: number) => {
+    const f = path.join(vdir, name);
+    fs.writeFileSync(f, JSON.stringify({ result, reasons: ['TC502 failed.'] }));
+    fs.utimesSync(f, when, when);
+  };
+  put(`${head}-plan1.json`, 'pass', 1000);
+  put(`${head}-plan2.json`, 'fail', 2000);
+  assert.equal(hook(dir, 'git push').status, 2, 'the newer fail decides');
+  put(`${head}-plan3.json`, 'pass', 3000);
+  assert.equal(hook(dir, 'git push').status, 0, 'the newer pass decides');
+  put(`${head}.json`, 'fail', 4000); // a verdict written by 0.5.0 or earlier still counts
+  assert.equal(hook(dir, 'git push').status, 2);
+});

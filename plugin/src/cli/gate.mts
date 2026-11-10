@@ -4,7 +4,7 @@
  *     qam approve <plan-id> [--add TC…|GROUP] [--remove TC…|GROUP]
  *     qam run     <plan-id>                              exit 0 pass, 1 fail
  *     qam check   [--base REF] [--tag …] [--yes]         plan, then with --yes approve and run; without, stops at 3
- * Plans and verdicts live in the app repo's .qamaster/ (plans/<id>.json, verdicts/<head>.json); the push hook reads the
+ * Plans and verdicts live in the app repo's .qamaster/ (plans/<id>.json, verdicts/<head>-<plan>.json); the push hook reads the
  * verdict. The store is read live (settled 2026-11-02).
  */
 import { spawnSync } from 'node:child_process';
@@ -307,7 +307,7 @@ async function finish(cfg: Config, g: Gate, plan: Plan, json: boolean): Promise<
     );
   }
   fs.writeFileSync(
-    path.join(stateDir(cfg, 'verdicts'), `${verdict.head}.json`),
+    path.join(stateDir(cfg, 'verdicts'), `${verdict.head}-${verdict.planId}.json`), // one per run, all kept (R28)
     `${JSON.stringify(verdict, null, 1)}\n`,
   );
   out(json, verdict, renderVerdict(verdict, plan));
