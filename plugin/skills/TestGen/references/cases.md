@@ -28,7 +28,7 @@ A run is a folder `testgen/output/<YYYYMMDD-HHMM>-<module>/` holding two files y
 | `category:<C>` | no case of category C (Positive, Negative, Boundary, E2E, Business, Edge) |
 | `type:<T>` | no case of a required type |
 | `screen:<id>` | a screen no step visits, e.g. `screen:/cart/admin` |
-| `form:<screen>:<form>:positive` or `:negative` | a form with no positive or no negative test |
+| `form:<screen>:<form>:positive` or `:negative` | a form with no positive or no negative test; a dialog's form is named by its title (`form:/todo:Add todo:negative`) |
 | `journey:<n>` | journey n has no E2E or Business case |
 
 An exclusion whose key no check produces (a form that doesn't exist, a misspelt screen) is a finding, so a typo can't hide a gap.
@@ -79,6 +79,7 @@ A list of cases:
   - `priority`: P1–P4;
   - `severity`: Critical, High, Medium, Low, from the domain's risk hotspots and the requirement, never guessed;
   - `channel`: Web, Mobile Web, Android, iOS, API, Desktop.
+- **`session`:** `signed-out` or `signed-in`, the state the case starts in. Required when the context pack shows `access` on screens (see [signin-forms.md](signin-forms.md)).
 - **Report fields:** `feature` is exactly one word. `test_data` is `{}` when the case needs none.
 - **No credentials in the text.** A password, token or key value goes in `test_data` only. Titles, objectives, expected results and steps name it ("the registered user's password"), never quote it: they are published to the test case store as written. The validator reports a credential-like value there as a finding.
 - **Steps:**

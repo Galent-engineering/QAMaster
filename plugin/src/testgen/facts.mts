@@ -15,7 +15,7 @@
  *
  * Pure: skill texts come through `skill(dir, name)`, so tests need no files.
  */
-import type { Dsm } from '../dsm/build.mts';
+import type { Dsm, PageNode } from '../dsm/build.mts';
 import { type Journey, type KnowledgeSettings, Model } from '../knowledge/build.mts';
 
 export const DOMAIN_SKILL = 'Domain_Test_Design_Skill';
@@ -29,6 +29,21 @@ export const EVIDENCE_FORMATS = [
   'domain:<SubSkill>[#<heading>]',
   'req:<id>',
 ];
+
+/**
+ * The DSM shape 0.7.0 adds, read through local types until the dsm track's PageNode carries it: a screen's access, a
+ * form's dialog and a field's declared limits. Every one is optional, so a DSM from 0.6.0 still reads.
+ */
+export type Access = 'public' | 'signed-in' | 'both';
+type Limits = { min_length?: number | null; max_length?: number | null; min?: number | null; max?: number | null };
+export type DsmField = PageNode['forms'][number]['fields'][number] & Limits & { pattern?: string | null };
+export type DsmForm = Omit<PageNode['forms'][number], 'fields'> & { dialog?: string; fields: DsmField[] };
+export type Screen = Omit<PageNode, 'forms'> & { access?: Access; forms: DsmForm[] };
+
+const LIMITS = ['min_length', 'max_length', 'min', 'max', 'pattern'] as const;
+/** The limits a field declares, without the ones the page leaves out. */
+const declared = (fd: DsmField) =>
+  Object.fromEntries(LIMITS.flatMap((k) => (fd[k] === undefined || fd[k] === null ? [] : [[k, fd[k]]])));
 
 /** Lower case, punctuation as single spaces. */
 export function norm(text: unknown): string {
@@ -48,6 +63,7 @@ export function rpartition(s: string, sep: string): [string, string, string] {
   return i < 0 ? ['', '', s] : [s.slice(0, i), sep, s.slice(i + sep.length)];
 }
 const pair = (a: unknown, b: unknown) => JSON.stringify([a ?? null, b ?? null]);
+const access = (n: PageNode) => (n as Screen).access;
 const sorted = (xs: Iterable<string>) => [...xs].sort();
 
 export type FactsInput = {
@@ -76,6 +92,8 @@ export class Facts {
   readonly relations: Set<string>;
   readonly journeys: Journey[];
   readonly entries: Set<string>;
+  readonly limited = new Map<string, string[]>(); // route -> labels of the fields with a declared limit
+  readonly hasAccess: boolean; // the DSM records which screens are public (0.7.0)
   readonly input: FactsInput;
 
   constructor(input: FactsInput) {
@@ -91,12 +109,14 @@ export class Facts {
     for (const n of this.model.nodes) {
       const names = new Set<string>();
       for (const e of this.model.elements.get(n.id) ?? []) names.add(norm(e.label));
-      for (const f of n.forms ?? []) {
+      for (const f of (n as Screen).forms ?? []) {
         names.add(norm(f.name));
         for (const b of f.submits ?? []) names.add(norm(b));
         for (const fd of f.fields ?? []) {
           names.add(norm(fd.label));
           names.add(norm(fd.name));
+          if (Object.keys(declared(fd)).length && (fd.label ?? fd.name))
+            this.limited.set(n.id, [...(this.limited.get(n.id) ?? []), String(fd.label ?? fd.name)]);
         }
       }
       for (const t of (n.tables ?? []) as { columns?: string[] }[]) for (const c of t.columns ?? []) names.add(norm(c));
@@ -104,6 +124,7 @@ export class Facts {
       names.delete('');
       this.elements.set(n.id, names);
     }
+    this.hasAccess = this.model.nodes.some((n) => (n as Screen).access);
     this.relations = new Set([...this.model.out.values()].flatMap((rels) => rels.map((r) => pair(r.from, r.to))));
     this.journeys = this.model.journeys();
     this.entries = new Set([
@@ -129,6 +150,11 @@ export class Facts {
     if (!target) return false;
     for (const n of this.elements.get(route) ?? []) if (n === target || bare(n) === target) return true;
     return false;
+  }
+
+  /** Whether a signed-out visitor sees the screen (public), only a signed-in one does, or both; null when unrecorded. */
+  access(route: string): Access | null {
+    return (this.model.byId.get(route) as Screen | undefined)?.access ?? null;
   }
 
   hasRelation(from: string, to: string): boolean {
@@ -243,8 +269,10 @@ export class Facts {
           title: n.title ?? null,
           url: n.url ?? null,
           flags: n.flags ?? [],
-          forms: (n.forms ?? []).map((f) => ({
+          ...(access(n) ? { access: access(n) } : {}),
+          forms: ((n as Screen).forms ?? []).map((f) => ({
             name: f.name ?? null,
+            ...(f.dialog ? { dialog: f.dialog } : {}),
             method: f.method ?? null,
             target: f.target ?? null,
             fields: (f.fields ?? []).map((fd) => ({
@@ -252,6 +280,7 @@ export class Facts {
               name: fd.name ?? null,
               type: fd.type ?? null,
               required: fd.required ?? null,
+              ...declared(fd),
             })),
             buttons: f.submits ?? [],
           })),

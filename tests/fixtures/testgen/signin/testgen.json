@@ -1,0 +1,34 @@
+{
+ "required_categories": [
+  "Positive",
+  "Negative",
+  "Boundary"
+ ],
+ "require_every_screen_covered": true,
+ "require_every_form_positive_and_negative": true,
+ "require_every_journey_covered": false,
+ "vague_expected_phrases": [
+  "works fine",
+  "works as expected",
+  "as expected",
+  "should work",
+  "is correct",
+  "correctly",
+  "properly",
+  "successfully completes",
+  "no issues",
+  "behaves normally",
+  "appropriate",
+  "appropriately",
+  "etc",
+  "done",
+  "ok",
+  "fine",
+  "verified",
+  "pass",
+  "passes",
+  "valid result"
+ ],
+ "min_expected_length": 15,
+ "require_report_fields": true
+}

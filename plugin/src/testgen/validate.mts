@@ -3,7 +3,7 @@
  * then coverage is reviewed (categories, screens, forms, journeys). Any finding or gap fails the run (Q10).
  */
 import { isGap } from '../knowledge/build.mts';
-import type { Facts } from './facts.mts';
+import { type Facts, norm, rpartition } from './facts.mts';
 
 export const CATEGORIES = ['Positive', 'Negative', 'Boundary', 'E2E', 'Business', 'Edge'];
 /** Values the Manual Test Case Report accepts (require_report_fields in config/testgen.json). */
@@ -113,6 +113,7 @@ export type TestCase = {
   domain_rules?: string[];
   start_via?: string;
   start_via_reason?: string;
+  session?: string; // signed-out or signed-in: the state the case starts in (0.7.0, R12)
   [key: string]: unknown;
 };
 export type Manifest = {
@@ -340,6 +341,41 @@ export function validate(
     if (!steps.length) {
       errors.push(`${w}: no steps`);
       continue;
+    }
+    // R12: where a case starts is part of it. A public screen is reached signed out, a signed-in one from a session.
+    // Asked only when the DSM records access (0.7.0), so a run on an older DSM is unchanged
+    const first = facts.screen(steps[0].screen);
+    if (facts.hasAccess && first) {
+      const need = facts.access(first);
+      if (!tc.session) errors.push(`${w}: missing session ("signed-out" or "signed-in": the state the case starts in)`);
+      else if (tc.session !== 'signed-out' && tc.session !== 'signed-in')
+        errors.push(`${w}: session "${s(tc.session)}" is not signed-out or signed-in`);
+      else if (need === 'public' && tc.session !== 'signed-out')
+        errors.push(
+          `${w}: ${first} is a public screen, so the case starts signed out (session must be "signed-out", not "${tc.session}")`,
+        );
+      else if (need === 'signed-in' && tc.session !== 'signed-in')
+        errors.push(`${w}: ${first} needs a signed-in session (session must be "signed-in", not "${tc.session}")`);
+    }
+    // R12: a Boundary case on a form with declared limits cites the field's limit or the code that checks it
+    if (tc.category === 'Boundary') {
+      const routes = [...new Set(steps.flatMap((st) => [facts.screen(st.screen), facts.screen(st.leads_to)]))].filter(
+        (r): r is string => !!r && !!facts.limited.get(r)?.length,
+      );
+      if (routes.length) {
+        const refs = [tc.evidence ?? [], ...steps.map((st) => st.evidence ?? [])].flat().map(String);
+        const limits = new Set(routes.flatMap((r) => (facts.limited.get(r) ?? []).map((l) => `${r}\0${norm(l)}`)));
+        const cited = refs.some((r) => {
+          if (r.startsWith('code:')) return PRECISE.test(r);
+          if (!r.startsWith('dsm:element:')) return false;
+          const [route, , label] = rpartition(r.slice('dsm:element:'.length), ':');
+          return limits.has(`${facts.screen(route)}\0${norm(label)}`);
+        });
+        if (!cited)
+          errors.push(
+            `${w}: a Boundary case on ${routes.join(', ')} must cite a declared field limit (dsm:element:<route>:<field>, one of ${routes.flatMap((r) => facts.limited.get(r) ?? []).join(', ')}) or the validation code (code:<repo>:<path>:<line>)`,
+          );
+      }
     }
     let prev: string | null = null;
     // the values a case types or selects; quoted in an action they are data, not element names

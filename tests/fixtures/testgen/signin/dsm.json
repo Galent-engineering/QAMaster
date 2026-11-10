@@ -1,0 +1,314 @@
+{
+ "generated_at": "2026-11-10T08:00:00+00:00",
+ "project": "Todo",
+ "base_url": "http://todo.test/",
+ "repos": [
+  {
+   "name": "todo",
+   "path": "/src/todo",
+   "ref": "main",
+   "commit": "dddddddddddddddddddddddddddddddddddddddd"
+  }
+ ],
+ "crawl": {
+  "generated_at": "2026-11-10T00:00:00.000Z",
+  "mode": "full",
+  "truncated": false,
+  "pending_routes": []
+ },
+ "page": {
+  "nodes": [
+   {
+    "id": "/login",
+    "label": "Sign in",
+    "module": "auth",
+    "sources": [
+     "code",
+     "ui"
+    ],
+    "routes": [
+     "/login"
+    ],
+    "url": "http://todo.test/login",
+    "title": "Sign in",
+    "status": 200,
+    "error": null,
+    "depth": 0,
+    "discovered_by": "start",
+    "counts": {
+     "link": 2,
+     "form": 1,
+     "field": 2,
+     "dialog": 0
+    },
+    "access": "public",
+    "forms": [
+     {
+      "name": "Sign in",
+      "method": "post",
+      "target": "/api/login",
+      "fields": [
+       {
+        "label": "Email",
+        "name": "email",
+        "type": "email",
+        "required": true
+       },
+       {
+        "label": "Password",
+        "name": "password",
+        "type": "password",
+        "required": true
+       }
+      ],
+      "submits": [
+       "Sign in"
+      ]
+     }
+    ],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [
+     "todo:src/pages/auth.tsx:5"
+    ],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": null,
+    "headings": [
+     "Sign in"
+    ],
+    "fan_out": 1,
+    "fan_in": 1,
+    "scc": 0,
+    "in_cycle": false,
+    "flags": []
+   },
+   {
+    "id": "/register",
+    "label": "Register",
+    "module": "auth",
+    "sources": [
+     "code",
+     "ui"
+    ],
+    "routes": [
+     "/register"
+    ],
+    "url": "http://todo.test/register",
+    "title": "Register",
+    "status": 200,
+    "error": null,
+    "depth": 1,
+    "discovered_by": null,
+    "counts": {
+     "link": 1,
+     "form": 1,
+     "field": 2,
+     "dialog": 0
+    },
+    "access": "public",
+    "forms": [
+     {
+      "name": "Register",
+      "method": "post",
+      "target": "/api/register",
+      "fields": [
+       {
+        "label": "Email",
+        "name": "email",
+        "type": "email",
+        "required": true
+       },
+       {
+        "label": "Password",
+        "name": "password",
+        "type": "password",
+        "required": true,
+        "min_length": 8,
+        "max_length": 64
+       }
+      ],
+      "submits": [
+       "Create account"
+      ]
+     }
+    ],
+    "dialogs": [],
+    "tables": [],
+    "code_defs": [
+     "todo:src/pages/auth.tsx:5"
+    ],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": null,
+    "headings": [
+     "Register"
+    ],
+    "fan_out": 1,
+    "fan_in": 1,
+    "scc": 0,
+    "in_cycle": false,
+    "flags": []
+   },
+   {
+    "id": "/todo",
+    "label": "Todo",
+    "module": "todo",
+    "sources": [
+     "code",
+     "ui"
+    ],
+    "routes": [
+     "/todo"
+    ],
+    "url": "http://todo.test/todo",
+    "title": "Todo",
+    "status": 200,
+    "error": null,
+    "depth": 0,
+    "discovered_by": "login",
+    "counts": {
+     "link": 0,
+     "form": 1,
+     "field": 2,
+     "dialog": 1
+    },
+    "access": "signed-in",
+    "forms": [
+     {
+      "name": "Add todo",
+      "dialog": "Add todo",
+      "method": null,
+      "target": null,
+      "fields": [
+       {
+        "label": "Title",
+        "name": "title",
+        "type": "text",
+        "required": true,
+        "min_length": 1,
+        "max_length": 100
+       },
+       {
+        "label": "Description",
+        "name": "description",
+        "type": "text",
+        "required": false,
+        "max_length": 500
+       }
+      ],
+      "submits": [
+       "Save"
+      ]
+     }
+    ],
+    "dialogs": [
+     "Add todo"
+    ],
+    "tables": [],
+    "code_defs": [
+     "todo:src/pages/todo.tsx:5"
+    ],
+    "files": [],
+    "code_elements": {},
+    "redirect_to": null,
+    "headings": [
+     "Todo"
+    ],
+    "fan_out": 1,
+    "fan_in": 1,
+    "scc": 0,
+    "in_cycle": false,
+    "flags": []
+   }
+  ],
+  "cells": [
+   {
+    "r": 0,
+    "c": 1,
+    "t": {
+     "link": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Create an account",
+      "el": null
+     }
+    ]
+   },
+   {
+    "r": 0,
+    "c": 2,
+    "t": {
+     "submit": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Sign in",
+      "el": null
+     }
+    ]
+   },
+   {
+    "r": 1,
+    "c": 0,
+    "t": {
+     "link": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Back to sign in",
+      "el": null
+     }
+    ]
+   },
+   {
+    "r": 1,
+    "c": 2,
+    "t": {
+     "submit": 1
+    },
+    "v": [
+     {
+      "s": "ui",
+      "label": "Create account",
+      "el": null
+     }
+    ]
+   }
+  ],
+  "orders": {}
+ },
+ "element": {
+  "nodes": [
+   {
+    "id": "/login::link:create-an-account",
+    "label": "Create an account",
+    "kind": "link",
+    "page": "/login",
+    "module": "auth"
+   },
+   {
+    "id": "/register::link:back-to-sign-in",
+    "label": "Back to sign in",
+    "kind": "link",
+    "page": "/register",
+    "module": "auth"
+   },
+   {
+    "id": "/todo::button:add-todo",
+    "label": "Add todo",
+    "kind": "button",
+    "page": "/todo",
+    "module": "todo"
+   }
+  ]
+ },
+ "change": {},
+ "diff": {
+  "first_run": true
+ }
+}

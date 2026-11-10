@@ -1,0 +1,25 @@
+{
+ "app": "Todo",
+ "scope": {
+  "module": "Auth",
+  "sub_module": ""
+ },
+ "components": [
+  "Auth",
+  "Todo"
+ ],
+ "test_types": [
+  "Functional"
+ ],
+ "required_types": [
+  "Functional"
+ ],
+ "channels": [
+  "Web"
+ ],
+ "domain": "General",
+ "domain_evidence": [
+  "aut:AUT_Todo"
+ ],
+ "generated_at": "2026-11-10T04:00:00Z"
+}

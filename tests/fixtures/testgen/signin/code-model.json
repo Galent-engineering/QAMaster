@@ -1,0 +1,40 @@
+{
+ "files": {
+  "todo:src/pages/auth.tsx": {},
+  "todo:src/pages/todo.tsx": {},
+  "todo:server/routes.py": {},
+  "todo:server/schemas.py": {}
+ },
+ "routes": [
+  {
+   "route": "/api/todos",
+   "repo": "todo",
+   "file": "server/routes.py",
+   "line": 10,
+   "kind": "api",
+   "framework": "fastapi",
+   "component": null,
+   "method": "GET"
+  },
+  {
+   "route": "/api/todos",
+   "repo": "todo",
+   "file": "server/routes.py",
+   "line": 18,
+   "kind": "api",
+   "framework": "fastapi",
+   "component": null,
+   "method": "POST"
+  },
+  {
+   "route": "/api/todos/:id",
+   "repo": "todo",
+   "file": "server/routes.py",
+   "line": 30,
+   "kind": "api",
+   "framework": "fastapi",
+   "component": null,
+   "method": "DELETE"
+  }
+ ]
+}

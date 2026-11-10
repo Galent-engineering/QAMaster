@@ -1,0 +1,447 @@
+[
+ {
+  "id": "TC-AUTH-001",
+  "title": "Signing in with the registered account opens the Todo screen",
+  "component": "Auth",
+  "type": "Functional",
+  "category": "Positive",
+  "priority": "P1",
+  "severity": "High",
+  "sub_module": "AUT_Todo-Auth",
+  "feature": "Login",
+  "channel": "Web",
+  "coverage": [
+   "Functional"
+  ],
+  "session": "signed-out",
+  "objective": "Sign in with the registered user's email and password",
+  "preconditions": [],
+  "test_data": {
+   "account": "the registered user"
+  },
+  "steps": [
+   {
+    "screen": "/login",
+    "action": "Fill the Email field",
+    "element": "Email",
+    "expected": "The Email field shows the registered user's email",
+    "evidence": [
+     "dsm:element:/login:Email"
+    ],
+    "data": "the registered user's email"
+   },
+   {
+    "screen": "/login",
+    "action": "Fill the Password field",
+    "element": "Password",
+    "expected": "The Password field is filled",
+    "evidence": [
+     "dsm:element:/login:Password"
+    ],
+    "data": "the registered user's password"
+   },
+   {
+    "screen": "/login",
+    "action": "Click the Sign in button",
+    "element": "Sign in",
+    "expected": "The /todo screen opens",
+    "evidence": [
+     "dsm:relation:/login->/todo"
+    ],
+    "leads_to": "/todo"
+   }
+  ],
+  "expected_result": "The /todo screen opens for the registered user",
+  "evidence": [
+   "aut:AUT_Todo-Auth#Screen details"
+  ]
+ },
+ {
+  "id": "TC-AUTH-002",
+  "title": "Signing in with a wrong password shows an error on the Sign in screen",
+  "component": "Auth",
+  "type": "Functional",
+  "category": "Negative",
+  "priority": "P1",
+  "severity": "High",
+  "sub_module": "AUT_Todo-Auth",
+  "feature": "Login",
+  "channel": "Web",
+  "coverage": [
+   "Functional"
+  ],
+  "session": "signed-out",
+  "objective": "Reject a wrong password for the registered user",
+  "preconditions": [],
+  "test_data": {
+   "account": "the registered user"
+  },
+  "steps": [
+   {
+    "screen": "/login",
+    "action": "Fill the Email field",
+    "element": "Email",
+    "expected": "The Email field shows the registered user's email",
+    "evidence": [
+     "dsm:element:/login:Email"
+    ],
+    "data": "the registered user's email"
+   },
+   {
+    "screen": "/login",
+    "action": "Fill the Password field",
+    "element": "Password",
+    "expected": "The Password field holds a wrong password",
+    "evidence": [
+     "dsm:element:/login:Password"
+    ],
+    "data": "a wrong password for the registered user"
+   },
+   {
+    "screen": "/login",
+    "action": "Click the Sign in button",
+    "element": "Sign in",
+    "expected": "The Sign in screen stays open with an invalid credentials message",
+    "evidence": [
+     "dsm:element:/login:Sign in"
+    ]
+   }
+  ],
+  "expected_result": "The /login screen stays open and shows an invalid credentials message",
+  "evidence": [
+   "aut:AUT_Todo-Auth#Screen details"
+  ]
+ },
+ {
+  "id": "TC-AUTH-003",
+  "title": "Registering a new account opens the Sign in screen",
+  "component": "Auth",
+  "type": "Functional",
+  "category": "Positive",
+  "priority": "P1",
+  "severity": "High",
+  "sub_module": "AUT_Todo-Auth",
+  "feature": "Register",
+  "channel": "Web",
+  "coverage": [
+   "Functional"
+  ],
+  "session": "signed-out",
+  "objective": "Create an account with a new email",
+  "preconditions": [],
+  "test_data": {
+   "account": "an unregistered email"
+  },
+  "steps": [
+   {
+    "screen": "/login",
+    "action": "Click the Create an account link",
+    "element": "Create an account",
+    "expected": "The /register screen opens",
+    "evidence": [
+     "dsm:relation:/login->/register"
+    ],
+    "leads_to": "/register"
+   },
+   {
+    "screen": "/register",
+    "action": "Fill the Email field",
+    "element": "Email",
+    "expected": "The Email field shows the new email",
+    "evidence": [
+     "dsm:element:/register:Email"
+    ],
+    "data": "the unregistered email"
+   },
+   {
+    "screen": "/register",
+    "action": "Fill the Password field",
+    "element": "Password",
+    "expected": "The Password field is filled",
+    "evidence": [
+     "dsm:element:/register:Password"
+    ],
+    "data": "a new password of 8 to 64 characters"
+   },
+   {
+    "screen": "/register",
+    "action": "Click the Create account button",
+    "element": "Create account",
+    "expected": "The /todo screen opens",
+    "evidence": [
+     "dsm:relation:/register->/todo"
+    ],
+    "leads_to": "/todo"
+   }
+  ],
+  "expected_result": "The new account is created and the /todo screen opens",
+  "evidence": [
+   "aut:AUT_Todo-Auth#Screen details"
+  ]
+ },
+ {
+  "id": "TC-AUTH-004",
+  "title": "Registering an email that already exists is rejected",
+  "component": "Auth",
+  "type": "Functional",
+  "category": "Negative",
+  "priority": "P1",
+  "severity": "High",
+  "sub_module": "AUT_Todo-Auth",
+  "feature": "Register",
+  "channel": "Web",
+  "coverage": [
+   "Functional"
+  ],
+  "session": "signed-out",
+  "objective": "Reject a duplicate email",
+  "preconditions": [],
+  "test_data": {
+   "account": "the registered user"
+  },
+  "steps": [
+   {
+    "screen": "/login",
+    "action": "Click the Create an account link",
+    "element": "Create an account",
+    "expected": "The /register screen opens",
+    "evidence": [
+     "dsm:relation:/login->/register"
+    ],
+    "leads_to": "/register"
+   },
+   {
+    "screen": "/register",
+    "action": "Fill the Email field",
+    "element": "Email",
+    "expected": "The Email field shows the registered user's email",
+    "evidence": [
+     "dsm:element:/register:Email"
+    ],
+    "data": "the registered user's email"
+   },
+   {
+    "screen": "/register",
+    "action": "Click the Create account button",
+    "element": "Create account",
+    "expected": "An error says the email is already registered",
+    "evidence": [
+     "dsm:element:/register:Create account"
+    ]
+   }
+  ],
+  "expected_result": "The /register screen stays open and says the email is already registered",
+  "evidence": [
+   "aut:AUT_Todo-Auth#Screen details"
+  ]
+ },
+ {
+  "id": "TC-AUTH-005",
+  "title": "A 7-character password is rejected on the Register screen",
+  "component": "Auth",
+  "type": "Functional",
+  "category": "Boundary",
+  "priority": "P1",
+  "severity": "High",
+  "sub_module": "AUT_Todo-Auth",
+  "feature": "Register",
+  "channel": "Web",
+  "coverage": [
+   "Functional"
+  ],
+  "session": "signed-out",
+  "objective": "Check the minimum password length of 8",
+  "preconditions": [],
+  "test_data": {
+   "password length": "7 characters"
+  },
+  "steps": [
+   {
+    "screen": "/login",
+    "action": "Click the Create an account link",
+    "element": "Create an account",
+    "expected": "The /register screen opens",
+    "evidence": [
+     "dsm:relation:/login->/register"
+    ],
+    "leads_to": "/register"
+   },
+   {
+    "screen": "/register",
+    "action": "Fill the Password field",
+    "element": "Password",
+    "expected": "The Password field holds 7 characters",
+    "evidence": [
+     "dsm:element:/register:Password"
+    ],
+    "data": "7 characters"
+   },
+   {
+    "screen": "/register",
+    "action": "Click the Create account button",
+    "element": "Create account",
+    "expected": "An error says the password needs at least 8 characters",
+    "evidence": [
+     "dsm:element:/register:Create account"
+    ]
+   }
+  ],
+  "expected_result": "The /register screen stays open and asks for at least 8 characters",
+  "evidence": [
+   "dsm:element:/register:Password"
+  ]
+ },
+ {
+  "id": "TC-TODO-001",
+  "title": "Adding a todo with a title from the Add todo dialog",
+  "component": "Todo",
+  "type": "Functional",
+  "category": "Positive",
+  "priority": "P1",
+  "severity": "High",
+  "sub_module": "AUT_Todo-Todo",
+  "feature": "Todo",
+  "channel": "Web",
+  "coverage": [
+   "Functional"
+  ],
+  "session": "signed-in",
+  "objective": "Add a todo through the Add todo dialog",
+  "preconditions": [],
+  "test_data": {
+   "title": "Buy milk"
+  },
+  "steps": [
+   {
+    "screen": "/todo",
+    "action": "Click the Add todo button",
+    "element": "Add todo",
+    "expected": "The Add todo dialog opens with its Title field",
+    "evidence": [
+     "dsm:element:/todo:Add todo"
+    ]
+   },
+   {
+    "screen": "/todo",
+    "action": "Fill the Title field",
+    "element": "Title",
+    "expected": "The Title field shows Buy milk",
+    "evidence": [
+     "dsm:element:/todo:Title"
+    ],
+    "data": "Buy milk"
+   },
+   {
+    "screen": "/todo",
+    "action": "Click the Save button",
+    "element": "Save",
+    "expected": "The new todo Buy milk is listed",
+    "evidence": [
+     "dsm:element:/todo:Save"
+    ]
+   }
+  ],
+  "expected_result": "The todo Buy milk is listed on the /todo screen",
+  "evidence": [
+   "aut:AUT_Todo-Todo#Screen details"
+  ]
+ },
+ {
+  "id": "TC-TODO-002",
+  "title": "Saving a todo with an empty title is rejected",
+  "component": "Todo",
+  "type": "Functional",
+  "category": "Negative",
+  "priority": "P1",
+  "severity": "High",
+  "sub_module": "AUT_Todo-Todo",
+  "feature": "Todo",
+  "channel": "Web",
+  "coverage": [
+   "Functional"
+  ],
+  "session": "signed-in",
+  "objective": "Reject an empty title in the Add todo dialog",
+  "preconditions": [],
+  "test_data": {},
+  "steps": [
+   {
+    "screen": "/todo",
+    "action": "Click the Add todo button",
+    "element": "Add todo",
+    "expected": "The Add todo dialog opens with its Title field",
+    "evidence": [
+     "dsm:element:/todo:Add todo"
+    ]
+   },
+   {
+    "screen": "/todo",
+    "action": "Click the Save button",
+    "element": "Save",
+    "expected": "An error says the title is required",
+    "evidence": [
+     "dsm:element:/todo:Save"
+    ]
+   }
+  ],
+  "expected_result": "The dialog stays open and says the title is required",
+  "evidence": [
+   "aut:AUT_Todo-Todo#Screen details"
+  ]
+ },
+ {
+  "id": "TC-TODO-003",
+  "title": "A 101-character title is rejected by the Title field limit",
+  "component": "Todo",
+  "type": "Functional",
+  "category": "Boundary",
+  "priority": "P1",
+  "severity": "High",
+  "sub_module": "AUT_Todo-Todo",
+  "feature": "Todo",
+  "channel": "Web",
+  "coverage": [
+   "Functional"
+  ],
+  "session": "signed-in",
+  "objective": "Check the Title maximum length of 100",
+  "preconditions": [],
+  "test_data": {
+   "title length": "101 characters"
+  },
+  "steps": [
+   {
+    "screen": "/todo",
+    "action": "Click the Add todo button",
+    "element": "Add todo",
+    "expected": "The Add todo dialog opens with its Title field",
+    "evidence": [
+     "dsm:element:/todo:Add todo"
+    ]
+   },
+   {
+    "screen": "/todo",
+    "action": "Fill the Title field",
+    "element": "Title",
+    "expected": "The Title field holds 101 characters",
+    "evidence": [
+     "dsm:element:/todo:Title"
+    ],
+    "data": "101 characters"
+   },
+   {
+    "screen": "/todo",
+    "action": "Click the Save button",
+    "element": "Save",
+    "expected": "An error says the title is too long",
+    "evidence": [
+     "dsm:element:/todo:Save"
+    ]
+   }
+  ],
+  "expected_result": "The dialog stays open and says the title is too long",
+  "evidence": [
+   "dsm:element:/todo:Title"
+  ]
+ }
+]
