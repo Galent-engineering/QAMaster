@@ -58,7 +58,7 @@ qam review <run>                              # records gate 1 with the ADO acco
 qam publish <run> [--apply] [--retire] [--leave-out ID,…] [--skip-smoke ID,…]
 qam app create [--app NAME] [--web-url URL]       # <App>/ in the QA project from the playwright-bdd template
 qam check-scripts [--quick]
-qam plan    [--base REF] [--tag GROUP[=WHY]]
+qam plan    [--base REF] [--tag GROUP[=WHY]] [--all]   # --all: every case with a script, recorded ones included (Q49)
 qam automate <plan-id> [--done]               # Q39: scripts to draft/update/keep; --done records them, binds the plan
 qam approve <plan-id> [--add TC…|GROUP] [--remove TC…|GROUP] [--by NAME]
 qam run     <plan-id>
@@ -71,6 +71,8 @@ qam mcp-serve [--project DIR]
 ```
 
 Global flags are `--repo <path>` and `--json`. Exit codes: `0` pass, `1` fail, `2` blocked, `3` awaiting approval. Without a TTY or `--yes`, `check` stops after the plan with exit code 3.
+
+Where the gate keeps its files (Q52): run from an app clone that a QA project recorded, plans, verdicts, evidence and `drafts.json` go to that QA project's `.qamaster/gate/<source name>/`. From the clone, the QA project is found through the per-user index (`~/.qamaster/installs.json`), which lists only QA projects with an integration installed (the push hook, for one). A QA project with none isn't found from its clone, so a run there keeps its files in the clone's own `.qamaster/`, as before 0.6.0, until an integration is installed in the QA project (`qam integrations add`).
 
 ## The publish preview
 
