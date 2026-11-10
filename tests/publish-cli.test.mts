@@ -463,9 +463,11 @@ test('R23: qam store use switches the store and the ledger keeps each store IDs,
   );
   assert.match(qam('store').out, /Azure DevOps org\/Shop/);
 
+  // a line the person wrote with export keeps it
+  fs.writeFileSync(path.join(p.dir, '.env'), p.read('.env').replace(/^QAMASTER_STORE=/m, 'export QAMASTER_STORE='));
   const back = qam('store', 'use', 'file');
   assert.equal(back.status, 0, back.err);
-  assert.match(p.read('.env'), /^QAMASTER_STORE=file$/m);
+  assert.match(p.read('.env'), /^export QAMASTER_STORE=file$/m);
   assert.doesNotMatch(p.read('.env'), /QAMASTER_STORE=ado/);
   assert.match(ledger().store, /^File testcases/);
   assert.equal(ledger().entries.length, 1, 'the file store IDs came back');

@@ -815,9 +815,9 @@ export function store(cfg: Config, argv: string[], json: boolean): number {
 /** Sets KEY=value in a .env file: the line is replaced where it is, else added; other lines are left as they are. */
 function setEnvLine(file: string, key: string, value: string): void {
   const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
-  const line = new RegExp(`^\\s*(export\\s+)?${key}\\s*=.*$`, 'm');
+  const line = new RegExp(`^(\\s*(?:export\\s+)?)${key}\\s*=.*$`, 'm');
   const next = line.test(text)
-    ? text.replace(line, `${key}=${value}`)
+    ? text.replace(line, (_all, lead: string) => `${lead}${key}=${value}`)
     : `${text}${text && !text.endsWith('\n') ? '\n' : ''}${key}=${value}\n`;
   fs.writeFileSync(file, next);
 }
