@@ -21,3 +21,8 @@ process.env.AZURE_CONFIG_DIR = tmpDir('qam-az-');
 delete process.env.AZURE_DEVOPS_EXT_CONFIG_DIR;
 delete process.env.AZURE_DEVOPS_EXT__DEFAULTS_ORGANIZATION;
 delete process.env.AZURE_DEVOPS_EXT__DEFAULTS_PROJECT;
+
+// Nor the developer's Azure DevOps and store settings: tests that want them set them in the env they pass.
+delete process.env.QAMASTER_ADO_ORG;
+delete process.env.QAMASTER_ADO_PROJECT;
+delete process.env.QAMASTER_STORE;
