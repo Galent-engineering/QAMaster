@@ -186,3 +186,33 @@ test('the DSM and a publish derivation give the screen its own files and no path
     assert.ok(!paths.some((p) => p.includes(shared)), `no path tag on ${shared}`);
   }
 });
+
+// 0.7.1 item 4: src/pages/ is Next.js only in a Next.js app.
+
+function pagesRoutes(extra: Record<string, string>): string[] {
+  const repo: RepoConfig = { name: 'app', path: '<repo>', branch: 'main', include: [], exclude: DEFAULT_EXCLUDE };
+  const all = { 'src/pages/Home.tsx': 'export default function Home() { return null; }', ...extra };
+  const m = scan({ repositories: [repo] }, (r) => ({
+    ref: 'main',
+    commit: null,
+    files: new Map(Object.entries(all).filter(([p]) => wanted(p, r))),
+  }));
+  return Object.values(m.routes ?? {})
+    .flat()
+    .map((r) => `${(r as { route: string }).route} ${(r as { framework: string }).framework}`);
+}
+
+test('a CRA or Vite app with src/pages/ gets no Next routes', () => {
+  const pkg = JSON.stringify({ dependencies: { react: '18', 'react-scripts': '5' } });
+  assert.deepEqual(pagesRoutes({ 'package.json': pkg }), []);
+  assert.deepEqual(pagesRoutes({}), []);
+});
+
+test('src/pages/ is Next pages when package.json depends on next or next.config exists', () => {
+  const dep = JSON.stringify({ dependencies: { next: '14' } });
+  const dev = JSON.stringify({ devDependencies: { next: '14' } });
+  assert.deepEqual(pagesRoutes({ 'package.json': dep }), ['/Home nextjs']);
+  assert.deepEqual(pagesRoutes({ 'package.json': dev }), ['/Home nextjs']);
+  assert.deepEqual(pagesRoutes({ 'next.config.mjs': 'export default {}' }), ['/Home nextjs']);
+  assert.deepEqual(pagesRoutes({ 'web/package.json': dep, 'web/pages/About.tsx': 'export default 1' }).length, 1);
+});

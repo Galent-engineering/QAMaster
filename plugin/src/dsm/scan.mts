@@ -142,8 +142,11 @@ function excluded(path: string, rules: string[]): boolean {
   );
 }
 
+const NEXT_MARKER = /(^|\/)(package\.json|next\.config\.[cm]?[jt]s)$/;
+
 /** Whether the scan reads a file: a source extension, not excluded, and inside `include` when that is set. */
 export function wanted(path: string, repo: RepoConfig): boolean {
+  if (NEXT_MARKER.test(path) && !excluded(path, repo.exclude ?? [])) return true; // read to tell a Next.js app (0.7.1)
   if (!TEXT_EXT.has(extOf(path).toLowerCase()) || excluded(path, repo.exclude ?? [])) return false;
   const include = repo.include ?? [];
   return !include.length || include.some((i) => path.startsWith(i.replace(/\*+$/, '')) || fnmatch(path, i));
@@ -636,7 +639,8 @@ export const MOST_MIN_SCREENS = 2;
 
 export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]) {
   const { name } = repo;
-  const { files } = snapshot;
+  const allFiles = snapshot.files;
+  const files = new Map([...allFiles].filter(([rel]) => !NEXT_MARKER.test(rel))); // markers are read, never scanned
   const routes: ScanRoute[] = [];
   const hints = new Set<string>();
   const classFile = new Map<string, string>();
@@ -653,6 +657,25 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
   }
 
   const pyRoutes = scanPythonRoutes(files);
+
+  // a folder is a Next.js app when it, or a folder above it, has a next.config.* or a package.json that depends on next
+  const nextCache = new Map<string, boolean>();
+  const isNextApp = (dir: string): boolean => {
+    const hit = nextCache.get(dir);
+    if (hit !== undefined) return hit;
+    const at = (f: string) => (dir ? `${dir}/${f}` : f);
+    let next = ['js', 'mjs', 'cjs', 'ts', 'mts', 'cts'].some((e) => allFiles.has(at(`next.config.${e}`)));
+    const pkg = allFiles.get(at('package.json'));
+    if (!next && pkg) {
+      try {
+        const j = JSON.parse(pkg) as { dependencies?: object; devDependencies?: object };
+        next = 'next' in (j.dependencies ?? {}) || 'next' in (j.devDependencies ?? {});
+      } catch {}
+    }
+    const result = next || (dir !== '' && isNextApp(dirname(dir)));
+    nextCache.set(dir, result);
+    return result;
+  };
 
   const addRoute = (
     route: string,
@@ -712,6 +735,7 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
       RE.pagesDir.test(rel) &&
       ['.tsx', '.ts', '.jsx', '.js'].includes(ext) &&
       !RE.pagesSpecial.test(rel) &&
+      isNextApp(dirname(rel)) &&
       (text.includes('next') || text.includes('export default'))
     ) {
       addRoute(pageRouteFromFile(rel, 'next-pages'), rel, 1, 'page-file', 'nextjs');

@@ -5,7 +5,7 @@
    "name": "polyglot",
    "path": "<repo>",
    "ref": "main",
-   "commit": "4f09d0a16f087cbab3518fafa48735d00815744e",
+   "commit": "181b80f996c69bf2fb1b3e9fcdcd6497188c9b89",
    "files_scanned": 31,
    "frameworks": [
     "angular",
