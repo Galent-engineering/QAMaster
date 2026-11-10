@@ -335,6 +335,15 @@ test('diff (Q56): a republish removes every stored path: tag it no longer derive
   assert.ok(c.fields.includes('tags'));
 });
 
+test('diff (Q8, Q56): a group tag QAMaster owned and no longer derives is removed; a hand-added one stays', () => {
+  const was = derive(kase('TC-1'), ctx());
+  const now = derive(kase('TC-1', { title: 'New title' }), ctx());
+  const old = entry('TC-1', 7, was.hash, { ownedTags: [...was.tags, 'oldgroup'] });
+  const have = stored(was, 7, { tags: [...was.tags, 'oldgroup', 'added-by-qa'] });
+  const c = diff(input([now], [old], [have])).changes[0];
+  assert.deepEqual(c.change?.removeTags, ['oldgroup']);
+});
+
 test('diff (Q56): a derived path: tag stays; a stored one that is derived again is not removed', () => {
   const was = derive(kase('TC-1'), ctx());
   const now = derive(kase('TC-1', { title: 'New title' }), ctx());

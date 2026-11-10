@@ -282,7 +282,8 @@ test('Q56: a republish with narrower path: tags removes the old ones, the previe
   const after = row(p.read(CSV), '1000');
   assert.doesNotMatch(after, /path:src\/auth\//);
   assert.match(after, /path:src\/cart\/\*/);
-  assert.match(after, /cart/i, 'the group tag stays');
+  const tags = (after.match(/(?:^|,)"?([^,"]*path:[^,"]*)"?(?=,)/)?.[1] ?? '').split(';').map((t) => t.trim());
+  assert.ok(tags.includes('cart'), `the group tag stays: ${tags.join(', ')}`);
 });
 
 test('publish: a case no longer generated is listed, and closed only with --retire', () => {
