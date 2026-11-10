@@ -41,7 +41,7 @@ function project(ado: FakeAdo, env: Record<string, string> = ENV, more: Partial<
   );
   fs.mkdirSync(path.join(dir, 'node_modules/playwright'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'node_modules/playwright/package.json'), '{}');
-  const cfg = loadConfig(dir, { ...env });
+  const cfg = loadConfig(dir, { AZURE_CONFIG_DIR: dir, ...env }); // never the developer's az devops defaults
   STORES.ado = () =>
     new AdoTestCases(
       new AdoClient(

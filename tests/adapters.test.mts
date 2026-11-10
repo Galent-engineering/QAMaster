@@ -15,7 +15,11 @@ requirementSourceContract('fake requirements', {
   missing: 999,
 });
 
-const config = (env: Record<string, string> = {}) => loadConfig(tmpDir('qam-adapters-'), env);
+// an empty az config folder, so the developer's az devops defaults are never read
+const config = (env: Record<string, string> = {}) => {
+  const dir = tmpDir('qam-adapters-');
+  return loadConfig(dir, { AZURE_CONFIG_DIR: dir, ...env });
+};
 
 test('an unknown adapter names the known ones', () => {
   assert.throws(() => buildStore(config({ QAMASTER_STORE: 'jira' })), {
