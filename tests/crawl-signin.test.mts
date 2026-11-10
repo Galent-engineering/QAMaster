@@ -240,3 +240,19 @@ test('item 4: a sidebar item with no href is a link element on each page that sh
   const dsm = build(model, null, { project: 'x' });
   assert.ok(dsm.element.nodes.some((n) => n.page === '/' && n.kind === 'link' && n.label === 'Todos'));
 });
+
+test('item 12: an incremental crawl of one route keeps the rest of the last crawl, with access', {
+  timeout: 180_000,
+}, async () => {
+  const previous = await full();
+  const model = await crawler().crawl({ baseUrl: ui, routes: ['/profile'], previous });
+  assert.equal(model.mode, 'incremental');
+  assert.deepEqual(model.recrawled_routes, ['/profile'], 'only that route was crawled');
+  assert.equal(route(model, '/profile').access, 'signed-in');
+  assert.deepEqual(
+    model.pages.map((p) => p.route),
+    previous.pages.map((p) => p.route),
+    'every other screen is kept',
+  );
+  assert.equal(route(model, '/login').access, 'public');
+});

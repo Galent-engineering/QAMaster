@@ -209,3 +209,143 @@ test('the blocked-writes warning names each request, most frequent first, at mos
   const many = Array.from({ length: 7 }, (_, i) => ({ method: 'POST', url: `http://h/p${i}` }));
   assert.match(blockedWarning(many), /POST http:\/\/h\/p4, and 2 more;/);
 });
+
+// ---- 0.7.0 items 12 and 13
+
+test('item 12: routesPlan crawls the routes the globs match, and blocks a glob that matches none', async () => {
+  const { routesPlan } = await import('../plugin/src/dsm/update.mts');
+  const prev = {
+    ...UI,
+    pages: [
+      { route: '/todo', url: 'x' },
+      { route: '/todo/:id', url: 'x' },
+      { route: '/users', url: 'x' },
+    ],
+  } as UiModel;
+  const plan = routesPlan(['/todo*', '/users'], 'http://app.test/', false, prev, ['/settings']);
+  assert.deepEqual(plan, {
+    crawl: 'incremental',
+    why: 'crawled 2 route(s) matching --routes',
+    routes: ['/todo', '/users'],
+    seeds: [],
+  });
+  assert.deepEqual(routesPlan(['/todo/**'], 'http://app.test/', false, prev, []).routes, ['/todo/:id']);
+  assert.deepEqual(
+    routesPlan(['/settings'], 'http://app.test/', false, prev, ['/settings']).routes,
+    ['/settings'],
+    'a code route',
+  );
+  assert.throws(() => routesPlan(['/nothing*'], 'http://app.test/', false, prev, []), {
+    name: 'BlockedError',
+    message: /matches no route\. Routes known so far: \/todo, \/todo\/:id, \/users/,
+  });
+  assert.throws(() => routesPlan(['/todo'], 'http://app.test/', false, null, []), /Run qam dsm run first/);
+  assert.throws(() => routesPlan(['/todo'], null, false, prev, []), /needs application\.base_url/);
+  assert.throws(() => routesPlan(['/todo'], 'http://app.test/', true, prev, []), /--no-crawl/);
+});
+
+test('item 12: run --routes crawls only those routes and merges them into the last DSM', async () => {
+  const { qa, config, dir } = project();
+  const crawler = new FakeCrawler(UI);
+  await update(qa, dir, config, () => crawler, { mode: 'run', fetch: false });
+  const second = new FakeCrawler({
+    ...UI,
+    mode: 'incremental',
+    pages: [{ route: '/settings', url: 'http://app.test/settings' }],
+  });
+  const r = await update(qa, dir, config, () => second, { mode: 'run', fetch: false, routes: ['/set*'] });
+  assert.equal(r.status, 'updated');
+  assert.equal(second.crawls.length, 1);
+  assert.deepEqual(second.crawls[0].routes, ['/settings']);
+  assert.ok(second.crawls[0].previous, 'merged into the last crawl');
+  assert.deepEqual(second.crawls[0].seeds, []);
+  assert.match(r.crawl ?? '', /crawled 1 route\(s\) matching --routes/);
+  await assert.rejects(
+    update(qa, dir, config, () => second, { mode: 'run', fetch: false, routes: ['/zzz'] }),
+    /matches no route/,
+  );
+  assert.ok(!fs.existsSync(path.join(dir, '.lock')), 'a blocked run releases the lock');
+});
+
+test('item 12: the CLI takes globs after --routes, and only for run', () => {
+  const { qa } = project('');
+  const qam = (...args: string[]) => spawnSync(QAM, ['--repo', qa, ...args], { encoding: 'utf8' });
+  const noPrev = qam('dsm', 'run', '--routes', '/settings', '/orders/*', '--no-fetch');
+  assert.equal(noPrev.status, 2);
+  assert.match(noPrev.stderr, /needs application\.base_url/);
+  assert.match(qam('dsm', 'run', '/settings').stderr, /Routes go after --routes/);
+  assert.match(qam('dsm', 'refresh', '--routes', '/x').stderr, /--routes and --estimate are for qam dsm run/);
+  assert.match(qam('dsm', 'run', '--routes', '/x', '--estimate').stderr, /cannot be used with --routes/);
+});
+
+test('item 13: the estimate names the routes, the pages and the minutes from the last crawl, and crawls nothing', async () => {
+  const { estimate } = await import('../plugin/src/dsm/update.mts');
+  const { qa, config, dir } = project('');
+  const crawler = new FakeCrawler(UI);
+  const noPast = estimate(qa, dir, config);
+  assert.equal(noPast.basis, 'default');
+  assert.ok(noPast.routes.includes('/settings'), 'the routes come from the code scan');
+  assert.ok(noPast.minutes >= 1);
+  assert.ok(!fs.existsSync(path.join(dir, 'ui-model.json')), 'nothing was written');
+
+  fs.mkdirSync(dir, { recursive: true });
+  const timed = {
+    ...UI,
+    timing: { elapsed_ms: 8 * 90_000, pages: 8, concurrency: 3, settle_waits: 8, settle_ms: 4000 },
+  };
+  fs.writeFileSync(path.join(dir, 'ui-model.json'), JSON.stringify(timed));
+  const past = estimate(qa, dir, config);
+  assert.deepEqual(
+    [past.basis, past.pages, past.minutes, past.seconds_per_page, past.concurrency],
+    ['last crawl', 8, 12, 90, 3],
+  );
+
+  const qam = (...args: string[]) => spawnSync(QAM, ['--repo', qa, ...args], { encoding: 'utf8' });
+  const r = qam('dsm', 'run', '--estimate');
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /Routes from the code scan: \d+/);
+  assert.match(
+    r.stdout,
+    /Expected: about 8 pages, about 12 min at 3 tabs, 90 s a page \(from the last crawl's timings\)\./,
+  );
+  assert.match(r.stdout, /Nothing was crawled\./);
+  assert.ok(!fs.existsSync(path.join(dir, 'dsm.json')), 'no DSM was built either');
+  assert.equal(crawler.crawls.length, 0);
+});
+
+test('item 13: many sibling pages differing only in an ID-like segment name the route_normalization rule', async () => {
+  const { idHints } = await import('../plugin/src/dsm/crawl-rules.mts');
+  const slugs = ['a1b2c3d4', 'e5f6a7b8', 'c9d0e1f2', 'a3b4c5d6', 'e7f8a9b0', 'c1d2e3f4'];
+  const hints = idHints([
+    '/',
+    '/boards',
+    ...slugs.map((s) => `/boards/${s}`),
+    ...slugs.map((s) => `/boards/${s}/edit`),
+  ]);
+  assert.equal(hints.length, 2, 'one for /boards/<id>, one for /boards/<id>/edit');
+  assert.match(hints[0], /6 pages differ only in an ID-like segment \(\/boards\/a1b2c3d4 \.\.\.\)/);
+  assert.match(hints[0], /"pattern": "\/\[0-9a-fA-F\]\{8\}\(\?=\/\|\$\)", "replace": "\/:id"/);
+  assert.match(hints[0], /application\.route_normalization/);
+  const words = ['red', 'green', 'blue', 'amber', 'violet', 'orange'];
+  assert.deepEqual(idHints(words.map((w) => `/colors/${w}`)), [], 'words are not IDs');
+  assert.deepEqual(idHints(slugs.slice(0, 3).map((s) => `/boards/${s}`)), [], 'three siblings are not many');
+  assert.deepEqual(
+    idHints(slugs.map((s) => `/boards/${s.length}${s.slice(0, 3)}`.replace('/', '/:'))),
+    [],
+    'a normalised segment is not an ID',
+  );
+});
+
+test('item 13: an update that crawls many ID-shaped siblings warns with the rule', async () => {
+  const { qa, config, dir } = project();
+  const slugs = ['a1b2c3d4', 'e5f6a7b8', 'c9d0e1f2', 'a3b4c5d6', 'e7f8a9b0'];
+  const model = {
+    ...UI,
+    pages: [...UI.pages, ...slugs.map((s) => ({ route: `/projects/${s}`, url: `http://app.test/projects/${s}` }))],
+  };
+  const r = await update(qa, dir, config, () => new FakeCrawler(model), { mode: 'run', fetch: false });
+  assert.ok(
+    r.warnings.some((w) => /5 pages differ only in an ID-like segment.*route_normalization/.test(w)),
+    r.warnings.join('\n'),
+  );
+});
