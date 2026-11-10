@@ -31,7 +31,7 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
 ## Rules
 
 - **No fact without evidence.** If something isn't in the context pack, an AUT skill, code you read or a fetched requirement, it doesn't go in a test case. Ask, or record the gap.
-- **API routes aren't screens.** A route the DSM marks `kind: api` gets no UI case and isn't a screen to cover; API cases come with the API channel (0.7.0, Q48).
+- **API routes aren't screens.** A route the DSM marks `kind: api` gets no UI case and isn't a screen to cover. It gets an **API case** (`channel: "API"`, cited as `dsm:api:<METHOD> <path>`) when the person asks for the API channel: follow [references/api-cases.md](references/api-cases.md).
 - **Name the exact element.** Every step that clicks, types, selects or opens names its `element`, exactly as the DSM recorded it. UI named in the action text ("the Apply button", `"Apply"`) is checked too, so don't mention controls that aren't there.
 - **API request bodies come from the request model.** For a step that calls an endpoint, open the request model (for example a Pydantic `BaseModel` in `schemas.py`), use its field names exactly, honour its required fields and `extra="forbid"`, and cite `code:<repo>:<path>:<line of the class>`. The validator checks that every `test_data` key appears in a cited file.
 - **Cite rules precisely.** A business rule (a limit, calculation or validation) cites the line or heading where it's written: `code:<repo>:<path>:<line>` (or a range, `:18-25`), `aut:<Skill>#<heading>` or `req:<id>`. A whole file or skill isn't enough.

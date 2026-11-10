@@ -97,6 +97,7 @@ A list of cases:
 | `dsm:element:<route>:<label>` | an element, field, form or button on it | exact name, ignoring case, punctuation and a kind word |
 | `dsm:relation:<from>-><to>` | a navigation | in the DSM |
 | `dsm:journey:<n>` | candidate journey n | in the context pack |
+| `dsm:api:<METHOD> <path>` | an API route (API cases, [api-cases.md](api-cases.md)) | in the code model's `kind: api` routes, verb and path |
 | `code:<repo>:<path>[:<line>[-<line>]]` | a file, a line in it, or a range of lines (`:18-25`) | in the scanned code; a line, or both ends of a range, must exist at the scanned commit |
 | `aut:<Skill>[#<heading>]` | an AUT skill, or a heading in it | the skill and the heading exist |
 | `domain:<SubSkill>[#<heading>]` | a domain sub-skill section | exists; the `Domain_Test_Design_Skill-` prefix is optional |
@@ -118,7 +119,7 @@ Copy every name from `qam testgen context` as printed. A paraphrase is a validat
 - **Elements.** The context lists each as `kind: label`, for example `field: Registry URL` or `link: Products`. A step's `element` is the label (`Registry URL`) and never the `kind: label` text or a reworded one.
 - **Screens** are the `route` values (`/cart`), forms are `forms[].name`, and a journey is cited by its `n`.
 - **AUT headings.** Cite `aut:<Skill>#<heading>` with a heading that is in that skill's file. The generated AUT skills use headings such as `## Business understanding` and `## Screen details`; open the skill and copy the heading. Don't invent a `#Business rules`.
-- **Routes marked `kind: api`** are server endpoints, not screens (Q48). They have no DSM screen to cite, so write no UI case for them; API cases come with the API channel (0.7.0).
+- **Routes marked `kind: api`** are server endpoints, not screens (Q48). They have no DSM screen to cite, so write no UI case for them; an API case cites them as `dsm:api:<METHOD> <path>` ([api-cases.md](api-cases.md)).
 - **API request bodies.** A step whose action calls an endpoint (`POST /workflows`) types the request model's fields: open the model (a Pydantic `BaseModel` in `schemas.py`), use its field names exactly in `test_data`, include the required ones, add none the model does not have (`extra="forbid"` rejects them), and cite `code:<repo>:<path>:<line of the class>`. A `test_data` key found in no cited file, or an API step with no `code:` evidence, is a validator finding.
 
 ## One component at a time

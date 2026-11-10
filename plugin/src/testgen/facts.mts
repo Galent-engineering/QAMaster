@@ -8,6 +8,7 @@
  *     dsm:element:<route>:<label>     the element, form, field or button is on that screen
  *     dsm:relation:<from>-><to>       the navigation is in the DSM
  *     dsm:journey:<n>                 candidate journey n (from context)
+ *     dsm:api:<METHOD> <path>         the API route is in the code model (kind: api, Q48), for API cases
  *     code:<repo>:<path>[:<line>[-<line>]]  the file is in the scanned code, and the line or range is in it
  *     aut:<Skill>[#<heading>]         the AUT skill (and heading) exists
  *     domain:<SubSkill>[#<heading>]   Domain_Test_Design_Skill or a sub-skill (prefix optional), and the heading
@@ -24,6 +25,7 @@ export const EVIDENCE_FORMATS = [
   'dsm:element:<route>:<label>',
   'dsm:relation:<from>-><to>',
   'dsm:journey:<n>',
+  'dsm:api:<METHOD> <path>',
   'code:<repo>:<path>[:<line>[-<line>]]',
   'aut:<Skill>[#<heading>]',
   'domain:<SubSkill>[#<heading>]',
@@ -66,9 +68,20 @@ const pair = (a: unknown, b: unknown) => JSON.stringify([a ?? null, b ?? null]);
 const access = (n: PageNode) => (n as Screen).access;
 const sorted = (xs: Iterable<string>) => [...xs].sort();
 
+/** A route of code-model.json (the scan's ScanRoute, the fields TestGen reads). */
+export type ApiRoute = { route: string; kind?: string; method?: string; repo?: string; file?: string; line?: number };
+/** "POST", "/todos/{id}/" -> "POST /todos/:id": a path parameter is written {id} or :id, a trailing slash doesn't count. */
+export const apiKey = (method: unknown, route: unknown): string =>
+  `${String(method).toUpperCase()} ${(
+    String(route)
+      .replace(/\{(\w+)\}/g, ':$1')
+      .replace(/\/+$/, '') || '/'
+  ).trim()}`;
+
 export type FactsInput = {
   dsm: Dsm;
   codeFiles: string[]; // "<repo>:<path>" of every scanned file (code-model.json files)
+  apiRoutes?: ApiRoute[]; // the code model's routes; those of kind api are the API channel's (Q48)
   settings: KnowledgeSettings;
   app: string; // the skill name, as qam aut-skills writes it
   autSkills: string[]; // folders in the skills directory
@@ -92,6 +105,7 @@ export class Facts {
   readonly relations: Set<string>;
   readonly journeys: Journey[];
   readonly entries: Set<string>;
+  readonly apiRoutes: (ApiRoute & { key: string })[];
   readonly limited = new Map<string, string[]>(); // route -> labels of the fields with a declared limit
   readonly hasAccess: boolean; // the DSM records which screens are public (0.7.0)
   readonly input: FactsInput;
@@ -124,6 +138,9 @@ export class Facts {
       names.delete('');
       this.elements.set(n.id, names);
     }
+    this.apiRoutes = (input.apiRoutes ?? [])
+      .filter((r) => r.kind === 'api' && r.method)
+      .map((r) => ({ ...r, key: apiKey(r.method, r.route) }));
     this.hasAccess = this.model.nodes.some((n) => (n as Screen).access);
     this.relations = new Set([...this.model.out.values()].flatMap((rels) => rels.map((r) => pair(r.from, r.to))));
     this.journeys = this.model.journeys();
@@ -157,6 +174,12 @@ export class Facts {
     return (this.model.byId.get(route) as Screen | undefined)?.access ?? null;
   }
 
+  /** The API route (verb and path) is one the code model found on the server only (Q48). */
+  hasApiRoute(method: unknown, route: unknown): boolean {
+    const key = apiKey(method, route);
+    return this.apiRoutes.some((r) => r.key === key);
+  }
+
   hasRelation(from: string, to: string): boolean {
     return this.relations.has(pair(from, to));
   }
@@ -187,6 +210,12 @@ export class Facts {
         const sa = this.screen(a);
         const sb = this.screen(b);
         return sa && sb && this.hasRelation(sa, sb) ? null : `navigation ${a} -> ${b} is not in the DSM`;
+      }
+      if (sub === 'api') {
+        const [method, , route] = partition(val.trim(), ' ');
+        return /^[A-Za-z]+$/.test(method) && route.startsWith('/') && this.hasApiRoute(method, route.trim())
+          ? null
+          : `API route ${val} is not in the code model's API routes (kind: api): ${this.apiRoutes.length ? this.apiRoutes.map((r) => r.key).join(', ') : 'none found'}`;
       }
       if (sub === 'journey')
         return /^\d+$/.test(val) && Number(val) >= 1 && Number(val) <= this.journeys.length
@@ -255,6 +284,15 @@ export class Facts {
         path: this.model.journeyText(j),
         screens: j.screens,
       })),
+      ...(this.apiRoutes.length
+        ? {
+            api_routes: this.apiRoutes.map((r) => ({
+              method: String(r.method).toUpperCase(),
+              path: r.route,
+              source: `${r.repo}:${r.file}:${r.line}`,
+            })),
+          }
+        : {}),
       evidence_formats: EVIDENCE_FORMATS,
       domain_skills: sorted(this.input.domainSkills),
       aut_skills: sorted(this.input.autSkills.filter((d) => d.startsWith(`AUT_${this.app}`))),

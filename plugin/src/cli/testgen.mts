@@ -19,7 +19,7 @@ import { type KnowledgeSettings, pascal } from '../knowledge/build.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import { domainRefs } from '../testgen/domain-refs.mts';
-import { Facts } from '../testgen/facts.mts';
+import { type ApiRoute, Facts } from '../testgen/facts.mts';
 import { render } from '../testgen/render.mts';
 import { readRunRecord, runHash, type Validation, validationProblem } from '../testgen/run.mts';
 import { type Manifest, type TestCase, type TestGenSettings, validate } from '../testgen/validate.mts';
@@ -53,7 +53,9 @@ export function load(cfg: Config): Project {
   const dsm = readJson<Dsm>(path.join(dsmDir, 'dsm.json'));
   if (!dsm)
     throw new BlockedError(`No DSM at ${path.relative(dir, path.join(dsmDir, 'dsm.json'))}. Run qam dsm run first.`);
-  const codeModel = readJson<{ files?: Record<string, unknown> }>(path.join(dsmDir, 'code-model.json'));
+  const codeModel = readJson<{ files?: Record<string, unknown>; routes?: ApiRoute[] }>(
+    path.join(dsmDir, 'code-model.json'),
+  );
   const skillsDir = path.resolve(dir, settings.skills_dir ?? '.claude/skills');
   const ls = (d: string) => (fs.existsSync(d) ? fs.readdirSync(d) : []);
   const repos = new Map((dsmCfg?.repositories ?? []).map((r) => [r.name, path.resolve(dir, r.path)]));
@@ -75,6 +77,7 @@ export function load(cfg: Config): Project {
   const facts = new Facts({
     dsm,
     codeFiles: Object.keys(codeModel?.files ?? {}),
+    apiRoutes: codeModel?.routes ?? [],
     settings,
     app,
     autSkills: ls(skillsDir),

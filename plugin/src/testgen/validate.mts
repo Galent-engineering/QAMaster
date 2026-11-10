@@ -184,6 +184,8 @@ const hintFor = (text: unknown) => {
 };
 
 const API_VERB = /\b(GET|POST|PUT|PATCH|DELETE)\b/;
+/** The route an API step's action names: "POST /api/todos". */
+const API_CALL = /\b(GET|POST|PUT|PATCH|DELETE)\s+(\/[^\s,;"')]*)/;
 
 export function validate(
   manifest: Manifest | null,
@@ -344,7 +346,16 @@ export function validate(
     }
     // R12: where a case starts is part of it. A public screen is reached signed out, a signed-in one from a session.
     // Asked only when the DSM records access (0.7.0), so a run on an older DSM is unchanged
-    const first = facts.screen(steps[0].screen);
+    // Q48: an API case (channel API) has no screen, so there is no session or navigation to check
+    const apiCase = tc.channel === 'API';
+    if (
+      apiCase &&
+      ![tc.evidence ?? [], ...steps.map((st) => st.evidence ?? [])].flat().some((r) => String(r).startsWith('dsm:api:'))
+    )
+      errors.push(
+        `${w}: an API case needs dsm:api:<METHOD> <path> evidence (a route from the context pack's api_routes)`,
+      );
+    const first = apiCase ? null : facts.screen(steps[0].screen);
     if (facts.hasAccess && first) {
       const need = facts.access(first);
       if (!tc.session) errors.push(`${w}: missing session ("signed-out" or "signed-in": the state the case starts in)`);
@@ -399,8 +410,14 @@ export function validate(
         for (const secret of credentialValues(st[field]))
           errors.push(`${sw}: ${field} contains a credential-like value "${secret}": ${hintFor(st[field])}`);
       }
-      const route = facts.screen(st.screen);
-      if (!st.screen) errors.push(`${sw}: no screen`);
+      const route = apiCase ? null : facts.screen(st.screen);
+      if (apiCase) {
+        const call = API_CALL.exec(s(st.action));
+        if (call && !facts.hasApiRoute(call[1], call[2]))
+          errors.push(
+            `${sw}: API route ${call[1]} ${call[2]} is not in the code model's API routes (${facts.apiRoutes.map((r) => r.key).join(', ') || 'none found'})`,
+          );
+      } else if (!st.screen) errors.push(`${sw}: no screen`);
       else if (!route) errors.push(`${sw}: screen ${s(st.screen)} is not in the DSM`);
       for (const field of ['action', 'expected']) if (!st[field]) errors.push(`${sw}: missing ${field}`);
       if (st.expected && isVague(st.expected, tc.test_data))

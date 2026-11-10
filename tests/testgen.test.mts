@@ -65,6 +65,12 @@ test("golden: the context pack is AQE's, without its v2 parts", () => {
   aqe.evidence_formats = aqe.evidence_formats.filter((f: string) => !/^(locator|tc|api):/.test(f));
   // 0.4.2 W6: a code: citation may name a line range
   aqe.evidence_formats = aqe.evidence_formats.map((f: string) => f.replace('[:<line>]', '[:<line>[-<line>]]'));
+  // 0.7.0 item 15: the API route evidence format
+  aqe.evidence_formats.splice(
+    aqe.evidence_formats.indexOf('code:<repo>:<path>[:<line>[-<line>]]'),
+    0,
+    'dsm:api:<METHOD> <path>',
+  );
   // feature 5 fix 7: link text in a journey is quoted page text, in backticks
   for (const j of aqe.journeys) j.path = j.path.replace(/\("([^"]*)"\)/g, '(`$1`)');
   assert.deepEqual(JSON.parse(JSON.stringify(facts().context(null))), aqe);
