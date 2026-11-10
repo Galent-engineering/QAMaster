@@ -20,7 +20,7 @@ import { withCache } from '../adapters/cache.mts';
 import { buildStore, RUNNERS, STORES } from '../adapters/registry.mts';
 import { findAppTests } from '../gate/apptests.mts';
 import { linkRunner } from '../gate/select.mts';
-import { stateDirs } from '../gate/state.mts';
+import { registerQaProject, stateDirs } from '../gate/state.mts';
 import {
   add,
   type Context,
@@ -680,6 +680,7 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
     prev = JSON.parse(fs.readFileSync(record, 'utf8'));
   } catch {}
   writeJson(record, { ...prev, at: new Date().toISOString(), ok, checks, store });
+  registerQaProject(dir); // 0.7.1 item 12: the clones find this project through the home index
   if (json) console.log(JSON.stringify({ result: ok ? 'pass' : 'blocked', checks, ...(write ? { write } : {}) }));
   else {
     const w = Math.max(...checks.map((c) => c.check.length));

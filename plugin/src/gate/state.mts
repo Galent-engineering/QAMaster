@@ -60,6 +60,28 @@ export function recordingProject(appRepo: string, home?: string): Recorded | nul
   return null;
 }
 
+/**
+ * Lists a QA project that recorded code sources in the per-user index, unless it is listed already (its entry is kept).
+ * A project set up before the index existed is found from its clones this way; doctor calls it. Same file format
+ * as the integrations' entries (integrations stays empty). A home folder that can't be written is skipped.
+ */
+export function registerQaProject(project: string, home?: string): void {
+  if (!repositories(project).length) return;
+  const dir = home ?? (process.env.QAMASTER_HOME || path.join(os.homedir(), '.qamaster'));
+  const file = path.join(dir, 'installs.json');
+  const index = (readJson(file) as { repos?: Record<string, unknown> } | null) ?? {};
+  const repos = index.repos ?? {};
+  if (repos[project]) return;
+  try {
+    fs.mkdirSync(dir, { recursive: true });
+    fs.writeFileSync(
+      `${file}.tmp`,
+      `${JSON.stringify({ ...index, repos: { ...repos, [project]: { app: path.basename(project), integrations: [], updated_at: new Date().toISOString() } } }, null, 2)}\n`,
+    );
+    fs.renameSync(`${file}.tmp`, file);
+  } catch {}
+}
+
 /** The nearest folder at or above `start` that has config/qamaster.json. */
 export function findQaProject(start: string): string | null {
   for (let dir = start; ; dir = path.dirname(dir)) {

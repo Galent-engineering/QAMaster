@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
+import { recordingProject } from '../plugin/src/gate/state.mts';
 import { sameRemote } from '../plugin/src/pipeline/sources.mts';
 import { tmpDir } from './tmp.mts';
 
@@ -484,4 +485,26 @@ test('setup seeds gate.allowErrors as an empty list in config/qamaster.json (0.7
   const qa = tmp();
   assert.equal(qam(qa, 'setup', '--no-install').status, 0);
   assert.deepEqual(read(path.join(qa, 'config/qamaster.json')).gate.allowErrors, []);
+});
+
+test('doctor lists a QA project in the home index, so a clone is found from it without .env (0.7.1 item 12)', () => {
+  const home = tmp('qam-home-');
+  const qa = tmp();
+  gitRepo(path.join(qa, 'app'));
+  const run = (...args: string[]) =>
+    spawnSync(QAM, ['--repo', qa, ...args], { encoding: 'utf8', env: { ...process.env, QAMASTER_HOME: home } });
+  assert.equal(run('setup', '--no-install', '--url', 'https://shop.example.test/', '--source', 'app').status, 0);
+  const clone = path.join(qa, 'app');
+  assert.equal(recordingProject(clone, home), null, 'a project set up before the index existed');
+  run('doctor');
+  assert.equal(recordingProject(clone, home)?.project, qa);
+  const entry = read(path.join(home, 'installs.json')).repos[qa];
+  assert.deepEqual(entry.integrations, []);
+  // an entry the project already has (its integrations) is kept
+  fs.writeFileSync(
+    path.join(home, 'installs.json'),
+    JSON.stringify({ repos: { [qa]: { app: 'Shop', integrations: ['claude-hooks:Shop'], updated_at: 'x' } } }),
+  );
+  run('doctor');
+  assert.deepEqual(read(path.join(home, 'installs.json')).repos[qa].integrations, ['claude-hooks:Shop']);
 });
