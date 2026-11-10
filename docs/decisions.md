@@ -9,7 +9,7 @@ Each entry says where the choice came from:
 
 Format: **Q<n>. Title** (date, status, source): decision, why, what we gave up.
 
-Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 is **proposed**; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06. Q49 (linking local scripts without a push) is open and has no entry yet; see the [AgentMesh analysis](demos/2026-11-04-0.3.2-agentmesh-feedback.md). To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
+Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 is **proposed**; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06, Q49 on 2026-11-10. To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
 
 ---
 
@@ -769,6 +769,15 @@ Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in ea
   - Known noise is allowed by a list of URL patterns or messages in the gate's settings; nothing is allowed by default.
 - **Why:** on fastapi-react-app (R26) a case passed while the backend answered 500, because the drafted script checked only the screen. The Trust criterion says the check is never green when something went wrong.
 - **Gave up:** a pass that ignores what the app's own server and page report. Built in 0.6.0.
+
+**Q49. A recorded script stays bound to its test case across plans** (2026-11-04 proposed, accepted 2026-11-10; amends Q39, keeps Q40)
+- **Decision:**
+  - A script that `qam automate <plan> --done` recorded is bound to its test case, by the case's TestGen ID, not to that one plan. Every later plan that selects the case runs it with its local link, with no new `--done`. The binding survives a switch of test case store, because the TestGen ID doesn't change.
+  - A recorded script whose files changed since they were recorded isn't bound: the case stays under **Not run (manual)** with "script edited since recorded: run qam check-scripts, then qam automate <plan> --done". Q39's rule stands: a later edit voids the approval.
+  - A case whose TestGen case changed since its script was recorded stays an **update** in the automate list, as today.
+  - Store links are unchanged (Q39, Q40): a link reaches the test case store only once the script is committed, pushed and published again.
+- **Why:** on AgentMesh (A15), dummy-static-website (W16, W19) and fastapi-react-app (R25), every new plan selected 0 automated cases until `--done` was run again, though the scripts were there and unchanged. With no push access, the gate never selected a script at all.
+- **Gave up:** a link in the store for a script that teammates can't pull (rejected option: local links in publish). Built in 0.6.0.
 
 ---
 

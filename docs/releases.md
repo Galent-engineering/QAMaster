@@ -186,7 +186,7 @@ Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.6.0 | Features | A gate you can trust: its state in the QA project and a push hook that blocks (Q52), app errors fail a case (Q53), every verdict kept, script bindings kept (Q49) | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
+| 0.6.0 | Features | A gate you can trust: its state in the QA project and a push hook that blocks (Q52), app errors fail a case (Q53), every verdict kept, script bindings kept (Q49) | [plans/0.6.0.md](plans/0.6.0.md) |
 | 0.7.0 | Features | Apps with a sign-in: signed-out and signed-in crawls merged, dialog fields, clickable cards, each screen's own source files | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
 | 0.8.0 | Features | Daily use: the local store first with several destinations (Q50), switching stores, `az` credentials, conflicts, review confirmation, presets, faster DSM | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
 | 0.9.0 | Features | Scripts for API, Mobile Web, Android and iOS | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |

@@ -97,7 +97,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 </head>
 <body>
 <main>
-<p><span class="b now">Plugin 0.5.0</span><span class="b v11">Decisions to Q51</span><span class="b later">Checked 2026-11-04</span></p>
+<p><span class="b now">Plugin 0.5.0</span><span class="b v11">Decisions to Q53</span><span class="b later">Checked 2026-11-10</span></p>
 <h1>QAMaster setup guide, 0.5.0</h1>
 <p class="lead">How a team sets QAMaster up, step by step: what each step does, the integration it plugs into, the decisions behind it, and what arrives at that step later.</p>
 
@@ -252,6 +252,9 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <tr><td>Q48</td><td>A route found only in server code is an API route, not a screen: no DSM cell, no orphan flag, no UI cases.</td></tr>
     <tr><td>Q50</td><td><span class="b prop">Proposed</span> Test cases are stored locally first; publish then asks which integrations to use (several at once), checks access before anything else, and ends with one final apply. Built in 0.6.0.</td></tr>
     <tr><td>Q51</td><td><span class="b now">Accepted</span> The 39 domain test design sub-skills are reference files of <code>Domain_Test_Design_Skill</code>, not skills: same text, same names and citations, 8 skills in the catalog. Shipped in 0.4.3.</td></tr>
+    <tr><td>Q52</td><td><span class="b now">Accepted</span> The gate keeps its plans, verdicts and evidence in the QA project; the push hook in an app clone gates from there. Built in 0.6.0.</td></tr>
+    <tr><td>Q53</td><td><span class="b now">Accepted</span> A 5xx from the app or an uncaught page error during a passing UI case fails it, with the request as evidence; known noise on an allow-list. Built in 0.6.0.</td></tr>
+    <tr><td>Q49</td><td><span class="b now">Accepted 2026-11-10</span> A script recorded by <code>qam automate --done</code> stays bound to its test case for every later plan; an edited script stays manual until recorded again; store links still need a push. Built in 0.6.0.</td></tr>
   </tbody>
 </table></div>
 
