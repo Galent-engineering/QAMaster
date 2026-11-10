@@ -26,9 +26,9 @@ export function choosePreset(flag: string | undefined, configured: Preset, all =
   return flag as Preset;
 }
 
-/** Whether the run is in CI (the CI variable CI systems set), where no model picks groups. */
+/** Whether the run is in CI (CI, or Azure Pipelines' TF_BUILD=True), where no model picks groups. */
 export const inCI = (env: Record<string, string | undefined> = process.env): boolean =>
-  !!env.CI && !['false', '0'].includes(env.CI.toLowerCase());
+  (!!env.CI && !['false', '0'].includes(env.CI.toLowerCase())) || env.TF_BUILD?.toLowerCase() === 'true';
 
 /**
  * A plan under a preset. `fast` drops the DSM; `full` is makePlan's `all` (D5: 0.6.0's `qam plan --all`), every case

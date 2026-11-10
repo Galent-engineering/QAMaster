@@ -90,7 +90,9 @@ test('in CI no model picks groups, so the plan names none (0.7.1)', async () => 
   assert.doesNotMatch(renderSelection(p), /groups picked by/);
   assert.equal(inCI({ CI: 'true' }), true);
   assert.equal(inCI({ CI: '1' }), true);
-  for (const off of [{}, { CI: '' }, { CI: 'false' }, { CI: '0' }]) assert.equal(inCI(off), false);
+  assert.equal(inCI({ TF_BUILD: 'True' }), true); // Azure Pipelines sets TF_BUILD, not CI
+  for (const off of [{}, { CI: '' }, { CI: 'false' }, { CI: '0' }, { TF_BUILD: 'False' }])
+    assert.equal(inCI(off), false);
 });
 
 test('the groups model is named only when a model picks groups: standard, with AI on', async () => {
