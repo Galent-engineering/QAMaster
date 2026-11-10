@@ -36,7 +36,7 @@ code ───┤ scan ──┘                (AUT skills)   (TestGen)        
 
 The important idea: **the DSM connects the two halves**. It knows which screens exist (from the crawl) and which code files belong to which screen (from the scan). That lets QAMaster tag each test case with the files it covers (`path:src/checkout/**`), so when those files change, the gate knows which tests to run.
 
-**Try it:** open [v0.5.0-setup-guide.html](v0.5.0-setup-guide.html), the setup guide. It walks the setup step by step with the integration at each step, the roadmap and the latest decisions; options marked planned or proposed are not built yet.
+**Try it:** open [v0.6.0-setup-guide.html](v0.6.0-setup-guide.html), the setup guide. It walks the setup step by step with the integration at each step, the roadmap and the latest decisions; options marked planned or proposed are not built yet.
 
 **The current picture:** the setup guide also shows decisions Q26 to Q32:
 - the entry-point checklist;
@@ -694,6 +694,48 @@ The gate answers "is this change safe to push?" with evidence. It reads the diff
 3. A teammate's check reads the store's link but runs from their own clone. A link to an unpushed script would point at code they can't pull, and the case would be BROKEN for them (Q39).
 </details>
 
+## Lesson: a gate and a store you can trust (0.6.0)
+
+### What it's for
+
+The fastapi-react-app run showed four ways the gate could say green when it shouldn't: the push hook never blocked (its state lived in a different folder from the hook's), a case passed while the backend answered 500, a second run erased the first verdict, and each new plan forgot the scripts already recorded. 0.6.0 closes each of them, then makes the store side safe to change: several destinations in one publish, switching stores by command, and conflicts you can read.
+
+### The split of work
+
+| Piece | Does |
+|---|---|
+| `gate/state.mts` (`stateDirs`) | One answer to "where are this repo's plans and verdicts?": the recording QA project's `.qamaster/gate/<name>/`, else the repo's own `.qamaster/`. The CLI, reports, pipeline status and the push hook all ask it (Q52) |
+| `hooks/pre-push.mts` | Takes the repo from `cd` or `git -C` in the command, finds the QA project the way `qam` does, and reads the newest approved verdict for HEAD |
+| `framework/playwright-bdd/src/app-errors.ts` | Records 5xx answers from the app's origin and page errors; any not allowed by `gate.allowErrors` fails the case with the evidence (Q53) |
+| `gate/automate.mts` (`rebind`) | A recorded, unchanged script is bound by its TestGen ID in every later plan (Q49) |
+| `cli/publish.mts`, `publish/ledger.mts` | `--to file,ado`: check every destination, one preview each, one yes; the ledger keeps each store's IDs; `qam store use` switches (Q50, R23) |
+| `shared/env.mts` | `AZURE_DEVOPS_EXT_PAT` and the `az devops` defaults when QAMaster's own settings are unset (R24) |
+
+### Three ideas worth keeping
+
+- **One function answers "where".** The hook blocked nothing because the CLI and the hook each worked out the folder their own way. When two programs must agree on a location, they call the same function; the reviewer still found one path (a clone whose `.env` points at the QA project) where they disagreed until the hook used the CLI's search too.
+- **Green means nothing went wrong, not "the assertions passed".** A script checks what its author thought of. A 500 from the backend is wrong whatever the script checked, so the framework watches for it on every case, and the allow-list starts empty.
+- **Naming a destination is not choosing a home.** `--to ado` publishes there once; it doesn't move the project. A write that dies part way puts the configured store back in a `finally`, because the default store is read from the ledger and an interrupted run would otherwise change it silently.
+
+### What the reviews found
+
+- **The `az devops` defaults live in their own file.** `az devops configure --defaults` writes `~/.azure/azuredevops/config`, not the core `~/.azure/config`. The first version read the wrong file, and its tests passed because they wrote their fixture to the same wrong place. A test that builds its own world proves only that the code matches the test.
+- **A shared option table accepts flags for every command.** Adding `--all` to it made `qam approve --all` silently ignored. Flags a command doesn't use must be refused.
+- **Counting test files needs one owner per file.** Nested `package.json` files counted a jest file twice; the shortest pytest folder hid its siblings.
+
+### Check yourself
+
+1. Why does the push hook read verdicts through `stateDirs` rather than looking in `.qamaster/verdicts/` of the repo being pushed?
+2. A case passed, but `app-errors.json` lists `GET /api/stats answered 500`. What makes it pass next time without changing the app?
+3. `qam publish run-7 --to file,ado --apply` fails on the third ADO case. Which store is the project on afterwards?
+
+<details><summary>Answers</summary>
+
+1. A recorded clone's verdicts are written to the QA project, so the clone's own folder may hold only old (pre-0.6.0) files or none, and the hook would block every push.
+2. Adding a string that matches it (`/api/stats`) to `gate.allowErrors` in `config/qamaster.json`. An empty string is refused, since it would allow everything.
+3. The one it was set up for. The file store's cases were written and the message says so; the ADO cases written so far are kept in the ledger beside it.
+</details>
+
 ---
 
 ## Journal
@@ -713,6 +755,7 @@ The gate answers "is this change safe to push?" with evidence. It reads the diff
 | 2026-10-30 | Publish (steps 7-8) | A cache that never decides: reads may be stale, writes check the live store. Running publish on an ADO with no plan found a check that blocked `--apply` from creating it |
 | 2026-10-30 | 0.2.0 fixes | An error is a menu, not a dead end: a missing project lists the real ones and the ways forward. An org-level write (creating a project) goes through the same preview and yes as any other write; reviewers caught a fix text that skipped the preview |
 | 2026-11-02 | Gate and just-in-time automation (0.3.0) | Bind approval to what will run (HEAD, QA commit, script hash). The link's prefix picks the runner. A new script is labelled until it passes once. Real runs found five design bugs that unit tests didn't |
+| 2026-11-10 | A gate and store you can trust (0.6.0) | One function decides where gate state lives, for the CLI and the hook alike. An app error fails a passing case. Naming a destination never moves the project's store. A test that writes its own fixture can test the wrong path |
 
 ## Lesson: building a release with parallel sessions (2026-11-04)
 

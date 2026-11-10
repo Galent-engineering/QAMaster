@@ -1,6 +1,6 @@
 # QAMaster: Design
 
-> Status: current at 0.4.3 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.5.0-setup-guide.html). How QAMaster looks and behaves for each user. For the why, see [product.md](product.md). For how it's built, see [tech.md](tech.md).
+> Status: current at 0.6.0 (2026-11-10). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.6.0-setup-guide.html). How QAMaster looks and behaves for each user. For the why, see [product.md](product.md). For how it's built, see [tech.md](tech.md).
 
 ## Principles
 
@@ -48,13 +48,15 @@ qam setup [--check] [--no-install] [--browsers chromium|all|none] [--app NAME] [
           [--source FOLDER|GIT-URL [--branch B] [--clone-to DIR | --use-clone DIR]] [--entry claude-code,…]
 qam integrations list [--all] | add <entry…> | remove <id> | verify
 qam pipeline start|status|next|mark|reset ...
+qam status                                    # R2: short for qam pipeline status
 qam doctor                                    # settings, credentials, plan, runner
 qam dsm run|refresh|changes|impact <files…>
 qam requirements fetch (--sprint NAME | --current-sprint | --from D --to D) [--module AREA] [--scope NAME]
 qam requirements import --file STORIES.xlsx|.csv|.json|.md [--sheet NAME] [--scope NAME]   # a Jira or spreadsheet export
 qam requirements list                         # the saved scopes; a TestGen manifest names one in requirements_scope
 qam testgen context|validate|render <run>
-qam review <run>                              # records gate 1 with the ADO account + git email; commands call it only after the person's yes
+qam review <run> [--yes]                      # records gate 1 with the ADO account + git email; commands call it only after the person's yes
+                                              # E3: on a terminal it shows the run and asks; --yes (or no terminal) records without asking
 qam publish <run> [--to file,ado] [--apply] [--retire] [--leave-out ID,…] [--skip-smoke ID,…]
 qam store [use ado|file]                      # R23: which store test cases go to; use writes QAMASTER_STORE in .env, the ledger keeps each store's IDs
 qam app create [--app NAME] [--web-url URL]       # <App>/ in the QA project from the playwright-bdd template
@@ -152,6 +154,7 @@ Layout rules:
 | A runner's tools are missing and the person didn't approve the download, or a link names a runner QAMaster doesn't have | `blocked`, with what to install or change (Q38) |
 | An approved test didn't run or was skipped | `fail` |
 | A selected case is BROKEN | `fail` |
+| A UI case passed, but the app answered 5xx from its own origin or threw a page error that `gate.allowErrors` doesn't name | `fail`, with the request, status and body (or the error) in `app-errors.json` (Q53) |
 | No test case matched the change | `pass`, with a coverage-gap warning |
 | Missing settings, credentials, ADO unreachable, no plan | `blocked` |
 | The QA project (`QAMASTER_TEST_ROOT`) has uncommitted changes the plan didn't make | `blocked` |
@@ -175,6 +178,8 @@ QAMASTER_ADO_PROJECT=Shop
 #                                       # unset: the store the ledger already names, else file (Q44)
 # QAMASTER_AI=off                       # turn off every AI step for this repo (Q24, data-handling.md)
 # QAMASTER_ADO_TOKEN=…                  # or use az login
+#   unset: AZURE_DEVOPS_EXT_PAT, then az login; an unset org and project come, as a pair, from
+#   `az devops configure --defaults` (~/.azure/azuredevops/config) (R24, 0.6.0)
 ```
 
 **QA project** `config/qamaster.json`:
@@ -187,12 +192,14 @@ QAMASTER_ADO_PROJECT=Shop
   "testgen": { "hallucination_tolerance": 0 },
   "ai": "on",
   "owners": { "Checkout": "a.rao@example.com" },
-  "gate": { "retries": 1, "noMatch": "pass-with-warning", "sharedShare": 0.3 },
+  "gate": { "retries": 1, "noMatch": "pass-with-warning", "sharedShare": 0.3, "allowErrors": [] },
   "runners": { "pytest": { "root": "../shop/tests" }, "playwright-bdd": { "root": "Shop" } }
 }
 ```
 
 `gate.sharedShare` (Q37) and `runners` (Q38) are built in [0.3.0](plans/0.3.0.md). A runner without a `runners` entry uses `QAMASTER_TEST_ROOT`.
+
+`gate.allowErrors` (Q53, 0.6.0) lists strings matched against an app error's URL or message; a match is ignored. Empty by default: every 5xx from the app's origin and every uncaught page error fails the case. An empty string is refused, since it would allow everything.
 
 The DSM, TestGen and MCP config files keep Autonomous-QE's formats.
 

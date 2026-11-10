@@ -180,14 +180,34 @@ Plan: [plans/0.5.0.md](plans/0.5.0.md). Built on `release/0.5.0` on 2026-11-06; 
 
 Not yet run against a live organization.
 
+## 0.6.0: the gate and the store you can trust
+
+Plan: [plans/0.6.0.md](plans/0.6.0.md). Built on `release/0.6.0` on 2026-11-10 from three parallel branches, each reviewed independently. New commands, flags, a settings key and a new place for the gate's files, so a minor release (Q46).
+
+| Change | Where | Decision |
+|---|---|---|
+| Plans, verdicts, evidence and `drafts.json` for an app clone a QA project recorded live in that QA project's `.qamaster/gate/<source name>/`; the clone's old folder is still read for one release and doctor names it | `gate/state.mts`, `cli/gate.mts`, `reports/`, `pipeline/` | Q52, R22 |
+| The push hook gates an app clone from the QA project that recorded it, takes the repo from `cd` or `git -C`, and finds the QA project the same way as `qam` | `hooks/pre-push.mts` | Q52, R25 |
+| A recorded, unchanged script stays bound to its test case in every later plan; an edited one stays manual | `gate/automate.mts`, `cli/gate.mts` | Q49 |
+| An app 5xx from its own origin or an uncaught page error fails a passing UI case, with `app-errors.json` as evidence; `gate.allowErrors` lists what to ignore (empty by default) | `framework/playwright-bdd/src/`, `adapters/runner-bdd.mts`, `shared/schema.mts` | Q53, R26 |
+| Every verdict kept, one per run (`verdicts/<head>-<plan>.json`); the newest for HEAD decides | `cli/gate.mts`, `hooks/pre-push.mts` | R28 |
+| Doctor names a second build of the same version, and test suites found in a code source (pytest, jest, vitest); the plan says they aren't part of the gate | `cli/project.mts`, `gate/apptests.mts` | R1, R4, R17, R27 |
+| `qam plan --all`: every case with a script, with no git change | `gate/gate.mts`, `cli/gate.mts` | W10, W13, W15 |
+| `qam publish --to file,ado`: every destination checked first, one preview each, one yes; the file store first; naming a destination never switches the project's store | `cli/publish.mts`, `publish/`, `skills/Publish` | Q50 (accepted), W9 |
+| `qam store [use ado\|file]`: switches stores by command; the ledger keeps each store's IDs | `cli/project.mts`, `publish/ledger.mts` | R23 |
+| `AZURE_DEVOPS_EXT_PAT` and the `az devops configure --defaults` organization and project are used when QAMaster's own are unset | `shared/env.mts`, `adapters/ado.mts` | R24 |
+| A conflict lists its fields; an edit made only in the store is reported at a new revision | `publish/publish.mts` | K6, K7 |
+| `qam status` (short for `qam pipeline status`); `qam review` shows the run and asks on a terminal, `--yes` skips the question | `cli/main.mts`, `cli/testgen.mts` | R2, E3 |
+
+639 tests, typecheck and lint clean. Not run under Claude Code or on a live app; the app-error check ran under real Playwright and Chromium in the test suite. Open items and the undecided `--take-store` and W8 are in the plan's r5 row.
+
 ## Planned
 
 Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.6.0 | Features | The gate and the store you can trust: Q52, Q53, Q49, every verdict kept; the local store first with several destinations (Q50), switching stores, `az` credentials, conflicts, `qam status` | [plans/0.6.0.md](plans/0.6.0.md) |
-| 0.6.1 | Fixes | What 0.6.0's live run finds | |
+| 0.6.1 | Fixes | What 0.6.0's live run finds, and the open items in [0.6.0 r5](plans/0.6.0.md) | |
 | 0.7.0 | Features | What QAMaster covers: apps with a sign-in, a faster DSM, presets, then API and Mobile Web scripts | [backlog](plans/backlog.md#the-road-to-100-replanned-2026-11-10-q54) |
 | 0.7.1 | Fixes | What the Restful Booker rehearsal finds | |
 | **1.0.0** | **Major** | Product v1 proven: a clean-room Docker run, a walkthrough on a second unknown app, the failure path and the store's life cycle seen live. No new feature | [backlog](plans/backlog.md#100-the-major-release) |

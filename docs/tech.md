@@ -1,6 +1,6 @@
 # QAMaster: Technical design
 
-> Status: current at 0.4.3 (2026-11-04). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.5.0-setup-guide.html). The diagrams are in [architecture.md](architecture.md); the reasons are in [decisions.md](decisions.md).
+> Status: current at 0.6.0 (2026-11-10). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.6.0-setup-guide.html). The diagrams are in [architecture.md](architecture.md); the reasons are in [decisions.md](decisions.md).
 
 ## Tech stack
 
@@ -230,6 +230,8 @@ apply     only with --apply: create/update work items, add to the suite named af
           set Microsoft.VSTS.TCM.AutomatedTestName / AutomatedTestStorage / AutomatedTestType, write the ledger
 ```
 
+**Destinations (Q50, 0.6.0).** `qam publish --to file,ado` runs load/derive/diff once per destination, the file store first. Every destination's access and smoke cap is checked before any preview is shown; `--apply` writes them in order after one yes. The ledger keeps the configured store active and each other store's IDs under `other`, so naming a destination never switches the store (that is `qam store use`, which writes `QAMASTER_STORE` in `.env` and swaps the ledger's IDs). A destination that fails part way puts the configured store back (`finally`) and names what was written. A conflict lists each differing field (store value beside run value); an edit made only in the store is reported when its revision changed.
+
 Steps are written as ADO's `Microsoft.VSTS.TCM.Steps` XML (action plus expected result per step). The evidence list goes in the test case's description under a **Sources** heading, so reviewers in ADO can see why each step exists.
 
 ## Gate (`src/gate/`)
@@ -263,6 +265,7 @@ feedback  gaps + BROKEN + stale cases → .qamaster/feedback/<sha>.json, defect 
 - `collected()` runs `npx bddgen` then `npx playwright test --list --reporter=json` in the test root, and reads each test's tags.
 - `run()` passes `--grep "@TC-A|@TC-B"` for the approved IDs, `--output` set to the attempt's evidence folder, and turns on `screenshot: only-on-failure`, `video: retain-on-failure` and `trace: retain-on-failure` where the project left them off.
 - It reads results from the JSON reporter.
+- The framework's auto fixture (`framework/playwright-bdd/src/app-errors.ts`, Q53) records 5xx answers from the app's own origin (`baseURL`) and uncaught page errors; any not matched by `gate.allowErrors` (passed in `QAMASTER_ALLOW_ERRORS`) fails the case and attaches `app-errors.json`.
 - A case passes only if every scenario linked to it passed, in every Playwright project selected for its channel.
 
 **pytest** (`adapters/runner-pytest.mts` + `runners/pytest/qamaster_pytest.py`), CheckMaster's runner unchanged in behavior:
@@ -272,7 +275,7 @@ feedback  gaps + BROKEN + stale cases → .qamaster/feedback/<sha>.json, defect 
 
 ## Azure DevOps (`adapters/ado.mts`)
 
-Auth: `QAMASTER_ADO_TOKEN` as Basic auth if set, else a Bearer token from `az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798`. API version 7.1. A 401, or ADO's 203 sign-in page, becomes a `BlockedError`.
+Auth: `QAMASTER_ADO_TOKEN` as Basic auth if set, else `AZURE_DEVOPS_EXT_PAT` (az devops's own variable, R24), else a Bearer token from `az account get-access-token --resource 499b84ac-1321-427f-aa17-267ca6975798`. API version 7.1. A 401, or ADO's 203 sign-in page, becomes a `BlockedError`.
 
 | Need | Call | Scope |
 |---|---|---|
@@ -292,6 +295,8 @@ Auth: `QAMASTER_ADO_TOKEN` as Basic auth if set, else a Bearer token from `az ac
 | Create the project (Q35, `--apply` only) | `POST {org}/_apis/projects` (private, Git), answered with an operation | Project and Team (Read, write, & manage), and "Create new projects" in the organization |
 | Wait for the new project | `GET {org}/_apis/operations/{id}` until `succeeded`, `failed` or `cancelled` (at most 2 minutes) | The token that created it |
 
+An unset `QAMASTER_ADO_ORG` and `QAMASTER_ADO_PROJECT` are taken, as a pair, from `az devops configure --defaults`: `<AZURE_DEVOPS_EXT_CONFIG_DIR, else $AZURE_CONFIG_DIR/azuredevops, else ~/.azure/azuredevops>/config`, `[defaults]` (`shared/env.mts`).
+
 The gate needs only the read scopes. Publishing and `work-items` need read and write. The two WIQL notes (name the project, not `@project`) come from CheckMaster's Learnings.
 
 ## State
@@ -304,16 +309,17 @@ The gate needs only the read scopes. Publishing and `work-items` need read and w
 | QA project | `.qamaster/pipeline.json`, `.qamaster/ledger.json`, `.qamaster/bin/` | Pipeline, publish, setup |
 | QA project | `reports/data/`, `reports/output/` | Reports |
 | App repo | `.env` (git-ignored) | The user |
-| App repo | `.qamaster/plans/<id>.json`, `verdicts/<sha>-<plan>.json` (one per run; the newest decides), `evidence/<sha>/`, `feedback/<sha>.json` | Gate. Writes its own `.gitignore` |
+| QA project | `.qamaster/gate/<source name>/plans/<id>.json`, `verdicts/<sha>-<plan>.json` (one per run; the newest decides), `evidence/<sha>/`, `feedback/<sha>.json`, `drafts.json`, for an app clone the QA project recorded (Q52, 0.6.0) | Gate (`gate/state.mts`) |
+| App repo | The same files under its own `.qamaster/`, when no QA project recorded it. Before 0.6.0 a recorded clone kept them here too: 0.6.0 still reads them, never writes or deletes them, and doctor names the folder | Gate. Writes its own `.gitignore` |
 
-When the QA project and the app repo are the same folder, everything lives in one `.qamaster/`.
+When the QA project and the app repo are the same folder, everything lives in one `.qamaster/`. `gate/state.mts` (`stateDirs`) returns where a run writes and where it reads; the CLI, reports, pipeline status and the push hook all call it. From a clone, the QA project is found through `QAMASTER_TEST_ROOT` in the clone's `.env` (then upwards), else the per-user index `~/.qamaster/installs.json`.
 
 ## Hooks (`plugin/hooks/hooks.json`)
 
 | Event | Script | Does | Timeout |
 |---|---|---|---|
 | SessionStart | `context.mts` | Prints the `qam` command for this install, the pipeline status line, stale stages | 10 s |
-| PreToolUse (Bash) | `push-gate.mts` | Parses the command; blocks `git push` (exit 2) unless `.qamaster/verdicts/<HEAD>.json` says pass. Ignores repos without `.qamaster/` | 5 s |
+| PreToolUse (Bash) | `pre-push.mts` | Parses the command, taking the repo from a `cd` or `git -C` in it; blocks `git push` (exit 2) unless the newest approved verdict for HEAD says pass, read where `stateDirs` puts it (the recording QA project, else the repo's own `.qamaster/`). Ignores repos neither has planned in | 5 s |
 | UserPromptSubmit | `prompt.mts` | On a test-design or script request, adds the context pack path and the rules | 15 s |
 | Stop | `review-gate.mts` | Blocks ending the turn while a run is validated but unreviewed, or failed validation | 15 s |
 | Stop | `script-gate.mts` | Blocks when `<App>/` files changed since the last passing `check-scripts` (hash compare, does not run the gate) | 10 s |

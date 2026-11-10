@@ -2,7 +2,7 @@
 
 A Claude Code plugin that builds a team's test cases and automation from the application and its code, publishes them to Azure DevOps Test Plans (or a local file), and checks every code change against them before it's pushed.
 
-**Status: 0.5.0** (2026-11-10), on `main` and pushed. Built and tested on fixtures and on four live apps; 0.4.4 and 0.5.0 not yet run on a live application. Product v1 isn't complete: the gate and the store you can trust (0.6.0, in progress) and what QAMaster covers, with API and Mobile Web scripts (0.7.0), are still to build, each followed by a patch; then 1.0.0 proves v1, and native Android and iOS come in 1.1.0 (Q54). What each release holds is in [docs/releases.md](docs/releases.md); the walk-through of setup and the roadmap is [docs/v0.5.0-setup-guide.html](docs/v0.5.0-setup-guide.html).
+**Status: 0.6.0** (2026-11-10), on `release/0.6.0`, not yet merged to `main` or pushed. Built and tested on fixtures and on four live apps; 0.4.4, 0.5.0 and 0.6.0 not yet run on a live application. Product v1 isn't complete: 0.6.1 (fixes from 0.6.0's live run) and what QAMaster covers, with API and Mobile Web scripts (0.7.0), are still to come, each followed by a patch; then 1.0.0 proves v1, and native Android and iOS come in 1.1.0 (Q54). What each release holds is in [docs/releases.md](docs/releases.md); the walk-through of setup and the roadmap is [docs/v0.6.0-setup-guide.html](docs/v0.6.0-setup-guide.html).
 
 ## Install
 
@@ -64,7 +64,7 @@ scripts/package.sh                # dist/: the plugin zip and the marketplace zi
 | [docs/install.md](docs/install.md) | Load a release as a zip, and what the machine needs |
 | [docs/learning.md](docs/learning.md) | The concepts and design, one lesson per feature |
 | [docs/porting-step3.md](docs/porting-step3.md) | How the Autonomous-QE features were ported, and the intended differences |
-| [docs/v0.5.0-setup-guide.html](docs/v0.5.0-setup-guide.html) | Setup step by step, the roadmap, the latest decisions |
+| [docs/v0.6.0-setup-guide.html](docs/v0.6.0-setup-guide.html) | Setup step by step, the roadmap, the latest decisions |
 
 ## Key decisions
 

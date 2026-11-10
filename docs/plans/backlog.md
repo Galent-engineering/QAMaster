@@ -45,14 +45,14 @@ Ordered with you on 2026-11-06 and regrouped on 2026-11-10 (Q54): the four featu
 |---|---|---|---|---|
 | 0.4.4 | Fixes | **Released 2026-11-10.** The run's messages and docs. See [0.4.4.md](0.4.4.md) | R2–R4, R11, R13–R15, R18–R20, R29 | M |
 | 0.5.0 | Features | **Released 2026-11-10.** Requirements fetch from Azure Boards and import from a file; completes demo step 6. See [0.5.0.md](0.5.0.md) | K4, product v1 | L |
-| 0.6.0 | Features | **The gate and the store you can trust** (gate, hook, publish, store adapters, CLI). The gate: its state in the QA project and a push hook that blocks from the app clone (Q52); an app error fails a passing case (Q53); bindings kept across plans (Q49, **built**); every verdict kept (**built**); doctor names a second build; the app's own tests noticed. The store: the local store first and several publish destinations (Q50, to accept first); switching stores with a command; `az devops` credential variables; a conflict shows its fields and a store-only edit is reported; `qam status`; `qam review` confirms on a terminal; a verdict with no git change. See [0.6.0.md](0.6.0.md) | R1, R2, R4, R17, R22–R28, Q49, Q50, Q52, Q53, A15, W9, W10, W16, W19, E3, K6, K7 | L+ (two L halves) |
-| 0.6.1 | Fixes | Kept for the bugs 0.6.0's live run finds (fastapi-react-app again, with imported stories), and the checks owed below | the run | S–M |
+| 0.6.0 | Features | **Built 2026-11-10** on `release/0.6.0`, items 1–14: gate state in the QA project and a push hook that blocks from the app clone (Q52); an app error fails a passing case (Q53, `gate.allowErrors`); bindings kept across plans (Q49); every verdict kept; doctor names a second build and the app's own tests; `qam publish --to` several destinations (Q50, accepted); `qam store use`; `az devops` credentials; conflict fields and store-only edits; `qam status`; `qam review` asks on a terminal; `qam plan --all`. Not yet run live. See [0.6.0.md](0.6.0.md) | R1, R2, R4, R17, R22–R28, Q49, Q50, Q52, Q53, A15, W9, W10, W16, W19, E3, K6, K7 | L+ (two L halves) |
+| 0.6.1 | Fixes | The bugs 0.6.0's live run finds (fastapi-react-app again, with imported stories), the checks owed below, and what 0.6.0 left open: see [0.6.0.md r5](0.6.0.md). `--take-store` and ADO credentials from a file (W8) are undecided; whichever is decided as a new flag or setting goes to 0.7.0 (a patch adds none, Q46) | the run | S–M |
 | 0.7.0 | Features | **What QAMaster covers** (crawler, DSM, TestGen, framework templates). Apps with a sign-in: signed-out and signed-in crawls merged, two crawls compared, dialog fields, clickable cards and sidebar links, each screen's own source files, screens named by their heading, then TestGen covers sign-in, sign-up and add/edit forms. A faster DSM; shared step wording; selection presets and a model choice (Q31). Then API and Mobile Web scripts, ported from Autonomous-QE's `framework/TestAutomation/src/api` | R5–R10, R12, R16, R30, S1–S4, S7, W11, Q31, K5 | L+ (two L halves) |
 | 0.7.1 | Fixes | Kept for the bugs a rehearsal on Restful Booker Platform finds before 1.0.0 | the rehearsal | S–M |
 | **1.0.0** | **Major** | **Product v1 proven, no new feature:** the criteria below | below | M |
 | 1.0.x | Fixes | Bugs found after 1.0.0, as they come | | |
 
-Decisions to take before the item that needs them: **Q50** (proposed; 0.6.0's store half), `--take-store` and ADO credentials from a file (W8) in 0.6.0.
+Decisions to take before the item that needs them: `--take-store` (keep the store's copy in a conflict) and ADO credentials from a file (W8), both still open after 0.6.0. Q50 was accepted 2026-11-10 and built in 0.6.0.
 
 **Not v1:** Jira requirements over REST. Q20 keeps Jira to MCP during test design in v1; a Jira `RequirementSource` comes after 1.0.0 unless you change Q20.
 
@@ -60,7 +60,8 @@ Decisions to take before the item that needs them: **Q50** (proposed; 0.6.0's st
 - Load the 0.4.3 zip in Claude desktop, check the catalog lists 8 skills, and re-run setup so the launcher points at the same build (R27 ran two builds labelled 0.4.3).
 - Re-run dummy-static-website's DSM on 0.4.2 or later (W3), and AgentMesh to regenerate its 13 cases with the wrong request body (A12).
 - Run the Docker check once, with Docker and network.
-- `/qamaster:status` and `/qamaster:report` from the uploaded zip; the push hook from a normal desktop push (K8; R25 found it never blocks: 0.6.0).
+- `/qamaster:status` and `/qamaster:report` from the uploaded zip; the push hook from a normal desktop push (K8; R25 found it never blocks: fixed in 0.6.0, not yet seen live).
+- 0.6.0 under `claude --plugin-dir ./plugin`: the push hook blocking from an app clone, a plan binding a recorded script through the real playwright-bdd tools after a store switch (item 3), and the app-error fixture inside a real playwright-bdd project (item 4).
 
 ## 1.0.0: the major release
 

@@ -1,29 +1,23 @@
 # Handoff: where the work stands (2026-11-10)
 
-Read this first in a new session, then [0.6.0.md](0.6.0.md). It's the state, the rules the session learned, and the next steps.
+Read this first in a new session, then [0.6.0.md](0.6.0.md) (r5). It's the state, the rules the session learned, and the next steps.
 
 ## Where things are
 - `main` (pushed): 0.5.0 released, Q49 decided, the 0.6.0 plan.
-- `release/0.6.0` (pushed): `main` plus items 3 and 5 of 0.6.0, the Q54 road, and the 0.6.0 plan r3. Not merged to `main`.
-- Plugin version in `plugin/.claude-plugin/plugin.json` is still **0.5.0**: bump to 0.6.0 at release, with the user's yes.
+- `release/0.6.0` (local, not pushed): **0.6.0 built**, items 1–14, version bumped to 0.6.0 with the user's yes. Not merged to `main`, not tagged. Plan r5 has what shipped and what is open.
+- 0.7.0 is being built in parallel on `wt/0.7.0-*` branches (worktrees under the session scratchpad); it starts from 0.6.0.
 - `docs/demos/demo_guideme/` is untracked and belongs to someone else: leave it.
 
 ## The road (Q54, accepted 2026-11-10)
-0.6.0 gate and store → 0.6.1 fixes → 0.7.0 coverage (sign-in apps, faster DSM, then API and Mobile Web scripts) → 0.7.1 fixes → 1.0.0 proof, no new feature → 1.1.0 native Android and iOS → 1.2.0 product v1.1 (git hook, IDEs, PR checks). Detail: [backlog.md](backlog.md#the-road-to-100-replanned-2026-11-10-q54).
+0.6.0 gate and store (built) → 0.6.1 fixes → 0.7.0 coverage (sign-in apps, faster DSM, then API and Mobile Web scripts) → 0.7.1 fixes → 1.0.0 proof, no new feature → 1.1.0 native Android and iOS → 1.2.0 product v1.1 (git hook, IDEs, PR checks). Detail: [backlog.md](backlog.md#the-road-to-100-replanned-2026-11-10-q54).
 
 ## 0.6.0 status
-| # | Item | State |
-|---|---|---|
-| 1 | Gate state in the QA project (Q52) | **Next.** Read both places for one release, write only to the QA project (decided) |
-| 2 | Push hook blocks from the app clone (Q52) | Next, with item 1 |
-| 3 | Bindings kept per test case (Q49) | Built: `rebind()` in `gate/automate.mts`, called by `rebound()` in `cli/gate.mts` |
-| 4 | An app error fails a passing UI case (Q53) | To do; key `gate.allowErrors` (decided) |
-| 5 | Every verdict kept | Built: `verdicts/<head>-<plan>.json`, the hook takes the newest |
-| 6 | Doctor names a second build of the same version | To do |
-| 7 | The app's own tests noticed | To do |
-| 8–14 | The store half: Q50, switching stores, `az` credentials, conflicts, `qam status`, review confirm, `plan --all` | To do; **Q50 must be accepted first**, and `--take-store` and W8 need decisions |
+All 14 items built and reviewed; 639 tests, typecheck and lint clean. Where the code is: gate state `gate/state.mts`; hook `hooks/pre-push.mts`; app errors `framework/playwright-bdd/src/app-errors.ts`; app tests `gate/apptests.mts`; destinations and `qam store` in `cli/publish.mts`, `cli/project.mts`, `publish/ledger.mts`; az credentials `shared/env.mts`.
 
-Item 3 has a unit test but no end-to-end run through the real BDD tools: the live run must check it. Item 1 touches `stateDir` in `cli/gate.mts`, `reports/inputs.mts`, `pipeline/pipeline.mts` (stage 14 reads the app repo's verdicts) and `reports/types.mts`.
+**Open, for 0.6.1 or a decision** (detail in [0.6.0.md](0.6.0.md) r5):
+- Not seen live: the hook under Claude Code from an app clone; item 3 through the real playwright-bdd tools after a store switch; item 4's fixture inside a real playwright-bdd project.
+- Undecided: `--take-store`, ADO credentials from a file (W8); publish without `--to` always writing the file store too; exempting a push from the QA project itself; `qam review` with no terminal requiring `--yes`; watching a backend origin other than `baseURL`.
+- Small: `allowErrors` missing from the settings template; `qam setup`'s `tty.isatty(0)` change has no test; a QA project set up before `~/.qamaster/installs.json` isn't found from its clone; the doctor test that fails when the shell sets `QAMASTER_ADO_*`.
 
 ## What this session learned
 - **Build order and checks.** One release branch per release, items test-first, `npm run check` before a release. Run the suite with `env -u QAMASTER_ADO_ORG -u QAMASTER_ADO_PROJECT -u QAMASTER_STORE`: the user's shell sets them and one existing doctor test (`tests/project.test.mts`, "doctor checks config…") fails with them. Fixing that test to ignore the environment is still open.
@@ -32,7 +26,9 @@ Item 3 has a unit test but no end-to-end run through the real BDD tools: the liv
 - **macOS sed:** `sed -i ''`. A regex with `app` inside a word needs `\b` (it matched "Apply").
 - **ADO:** the user's four projects (fastapi-react-app, Toolshop, AgentMesh, dummy-static-website) have no stories; a live fetch needs a project with some, or `qam requirements import`. `work/teamsettings` is a team-level call (`{org}/{project}/{team}/_apis`); the fake in `tests/fake-ado.mts` answers it.
 - **Test doubles:** every `requirements()` call now reads the team's bug setting; `tests/ado.test.mts`'s Mock answers "off" when a test doesn't script it.
+- **0.6.0 replay:** three branches cherry-picked in order (gate-a, gate-b, store); the only conflicts were import lines in `cli/publish.mts` and `cli/project.mts` (both sides kept). Reviewers found real faults in two of three branches; both were fixed on the branch before the replay.
+- **`az devops` defaults** live in `~/.azure/azuredevops/config` (or `$AZURE_DEVOPS_EXT_CONFIG_DIR`), not `~/.azure/config`.
 - **Working style the user wants:** short status updates when a step is slow; decisions asked with a recommendation first; docs updated with every release; answers kept plain.
 
 ## Still owed (the user's own runs)
-Load a 0.5.0 zip in Claude desktop and check the catalog (8 skills); run 0.4.4 and 0.5.0 live (fastapi-react-app with imported stories); re-run dummy-static-website's DSM and AgentMesh's TestGen; the Docker check; `/qamaster:status`, `/qamaster:report` and the push hook from the installed plugin.
+Build the 0.6.0 zips (`scripts/package.sh`) and load one in Claude desktop (8 skills); run 0.6.0 live (fastapi-react-app with imported stories); re-run dummy-static-website's DSM and AgentMesh's TestGen; the Docker check; `/qamaster:status`, `/qamaster:report` and the push hook from the installed plugin.

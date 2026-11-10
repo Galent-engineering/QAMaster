@@ -7,7 +7,7 @@ description: Checks a code change against the team's test cases before it's push
 
 The gate reads the app repo's diff, picks the test cases in the test case store that the change touches, and runs them after a person approves. A `git push` from Claude Code is blocked until the verdict for HEAD passes, in repos set up with `qam setup --entry claude-code` (the QA project itself is never gated). To act, use `/qamaster:check`.
 
-Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from the app repo: `plan [--base REF] [--tag GROUP=WHY]`, `approve <id> [--add …] [--remove …]`, `run <id>`. When you hand the person a command to run in their own terminal, give one they can paste: every value (run name, plan id, path) filled in, never a `<placeholder>`, and the launcher by its absolute path, `node <absolute path of the QA project>/.qamaster/bin/qam.mjs <command>` (the launcher exists only in the QA project, written by `qam setup`). If `qam doctor` shows `WARN launcher`, hand over the plugin path instead and suggest running setup again from the plugin. The app repo has no launcher, so a command for the person's terminal always names the QA project.
+Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from the app repo: `plan [--base REF] [--tag GROUP=WHY] [--all]` (`--all` plans every case with a script, with no git change needed: a first run or a nightly check), `approve <id> [--add …] [--remove …]`, `run <id>`. When you hand the person a command to run in their own terminal, give one they can paste: every value (run name, plan id, path) filled in, never a `<placeholder>`, and the launcher by its absolute path, `node <absolute path of the QA project>/.qamaster/bin/qam.mjs <command>` (the launcher exists only in the QA project, written by `qam setup`). If `qam doctor` shows `WARN launcher`, hand over the plugin path instead and suggest running setup again from the plugin. The app repo has no launcher, so a command for the person's terminal always names the QA project.
 
 ## How it decides
 
@@ -22,12 +22,13 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
 5. **Not run:** no link means manual. A link the runner doesn't collect is **BROKEN**, and the check fails until it's fixed.
 6. **Just-in-time scripts (Q39):** `qam automate <id>` lists the selected cases that need a playwright-bdd script drafted or updated. The `AutomationCode` skill writes them, `qam check-scripts` must pass, and `qam automate <id> --done` records them and adds them to the plan. They stay uncommitted. Any edit after that voids the approval.
 7. **Approval** is bound to HEAD and, when the tests live in a QA project, to its commit. A new commit voids it.
-8. **Verdict:** fail if any approved case failed, didn't run or was skipped, or a selected link is BROKEN. Failed then passed on retry is *flaky*: a pass with a warning. A drafted script that fails is labelled *new script failed*: check the script or the app. Nothing matched is a pass with a coverage warning.
+8. **Verdict:** fail if any approved case failed, didn't run or was skipped, or a selected link is BROKEN. Failed then passed on retry is *flaky*: a pass with a warning. A drafted script that fails is labelled *new script failed*: check the script or the app. Nothing matched is a pass with a coverage warning. A UI case whose steps passed still fails when the app answered 5xx from its own origin or threw a page error (Q53); the evidence has `app-errors.json`.
 
 ## Common answers
 
 - **Push blocked:** no passing verdict for HEAD. Run `/qamaster:check`. Every new commit needs a new check.
 - **Not run (manual):** the test case has no automation link. Link it in the store as `pytest:<node id>` or `bdd:@<TC id>`.
+- **App error failed a passing case:** read `app-errors.json` in the evidence. A real backend fault is a fail. Known noise can be allowed by adding a string matching its URL or message to `gate.allowErrors` in `config/qamaster.json`, only after the person agrees.
 - **BROKEN:** the test was renamed or moved. Update the link.
 - **Coverage gap:** the change touches a screen no published case visits. Propose a TestGen run for it; never generate during a check.
 - **A test failed:** the verdict lists its evidence: a screenshot (`.png`, which can be read), a video and a Playwright trace (`npx playwright show-trace <trace.zip>`). Start with the error line and the screenshot.
