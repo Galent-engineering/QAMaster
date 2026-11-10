@@ -85,7 +85,7 @@ function stepPhrases(st: Step): [string, string[]] {
  * - Background: the preconditions and leading steps every scenario shares;
  * - Scenario Outline + Examples: cases whose steps differ only in their test data values (one Examples table per case,
  *   tagged with its @TC id so traceability survives);
- * - Scenario: every other case. Tags: @TC-<id>, category, type, priority.
+ * - Scenario: every other case. Tags: @TC-<id>, category, type, priority, session (@signed-in, @signed-out).
  */
 export function featureText(app: string, comp: string, tcs: TestCase[]): string {
   type L = { kind: 'given' | 'action' | 'expect'; text: string };

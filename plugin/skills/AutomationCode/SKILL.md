@@ -55,6 +55,10 @@ TestGen's `<Component>.feature` (in the run folder) already words its steps in t
 | `I should see the text "Title"` | the text is visible |
 | `the URL should contain "/login"` | the URL has that part |
 
+A step that leads to a screen keeps two checks: `the URL should contain "<route>"` and, after it, the step's own expected text (`And the /cart screen opens with the Coupon field`). The second is in its own words, so it needs a step definition (check what the screen shows; don't just repeat the URL check).
+
+**Signed in or out.** A scenario tagged `@signed-in` starts with the test account signed in, and one tagged `@signed-out` with no session. Keep the tag on the copied scenario. A `@signed-in` scenario signs in through its sign-in precondition (a `Given` whose definition uses the test account, shared by every scenario that needs it, in the feature's `Background` when they all do); if the case has no such precondition, ask rather than leave it signed out.
+
 Copy a case's scenario into `features/<channel>/<module>.feature` **with its step text unchanged**, and write a step definition only for a step no generic one covers (a step in its own words, such as a precondition or a business check). Don't reword a step to a near-synonym: that creates a second definition for the same thing. Where a value is a credential, the step text names it ("the registered user's password") and the definition you write for that step reads `process.env`.
 
 ## Channels
