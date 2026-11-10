@@ -15,6 +15,9 @@ export function tmpDir(prefix = 'qam-'): string {
   return dir;
 }
 
-// Tests never read the developer's own az defaults (~/.azure/config): an empty az config folder for this process and
-// every qam it spawns. A test that wants az defaults passes its own AZURE_CONFIG_DIR.
+// Tests never read the developer's own az defaults (~/.azure/azuredevops/config): an empty az config folder for this
+// process and every qam it spawns, and no az devops override. A test that wants az defaults passes its own.
 process.env.AZURE_CONFIG_DIR = tmpDir('qam-az-');
+delete process.env.AZURE_DEVOPS_EXT_CONFIG_DIR;
+delete process.env.AZURE_DEVOPS_EXT__DEFAULTS_ORGANIZATION;
+delete process.env.AZURE_DEVOPS_EXT__DEFAULTS_PROJECT;

@@ -26,22 +26,26 @@ export function loadEnv(file: string, env: Env = process.env): void {
 }
 
 /**
- * What `az devops configure --defaults` set (R24): the organization and project, from AZURE_DEFAULTS_ORGANIZATION and
- * AZURE_DEFAULTS_PROJECT, else the [defaults] section of az's config file (AZURE_CONFIG_DIR, else ~/.azure). QAMaster's
- * own QAMASTER_ADO_* settings are read first by the caller; these are used only when both of those are unset.
+ * What `az devops configure --defaults` set (R24): the organization and project. The azure-devops extension keeps them
+ * in its own config file, <AZURE_DEVOPS_EXT_CONFIG_DIR, else $AZURE_CONFIG_DIR/azuredevops, else
+ * ~/.azure/azuredevops>/config, under [defaults]; its variables AZURE_DEVOPS_EXT__DEFAULTS_ORGANIZATION and
+ * AZURE_DEVOPS_EXT__DEFAULTS_PROJECT (knack's prefix, then `_`) win over the file. QAMaster's own QAMASTER_ADO_*
+ * settings are read first by the caller; these are used only when both of those are unset.
  */
 export function azDefaults(env: Env = process.env): { organization?: string; project?: string } {
   const out: { organization?: string; project?: string } = {
-    organization: env.AZURE_DEFAULTS_ORGANIZATION || undefined,
-    project: env.AZURE_DEFAULTS_PROJECT || undefined,
+    organization: env.AZURE_DEVOPS_EXT__DEFAULTS_ORGANIZATION || undefined,
+    project: env.AZURE_DEVOPS_EXT__DEFAULTS_PROJECT || undefined,
   };
   if (out.organization && out.project) return out;
   let text = '';
   try {
-    const dir = env.AZURE_CONFIG_DIR || path.join(os.homedir(), '.azure');
+    const dir =
+      env.AZURE_DEVOPS_EXT_CONFIG_DIR ||
+      path.join(env.AZURE_CONFIG_DIR || path.join(os.homedir(), '.azure'), 'azuredevops');
     text = fs.readFileSync(path.join(dir, 'config'), 'utf8');
   } catch {
-    return out; // no az config: nothing to add
+    return out; // no az devops config: nothing to add
   }
   let section = '';
   for (const raw of text.split(/\r?\n/)) {
