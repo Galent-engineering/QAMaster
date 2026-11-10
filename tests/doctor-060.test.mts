@@ -123,3 +123,22 @@ test('item 1: old gate files in the app clone are named, once the QA project kee
   assert.ok(c?.detail.includes(path.join(dir, '.qamaster', 'gate', 'shop')));
   void cfg;
 });
+
+test('item 1: doctor run on the QA project names old gate files in a recorded clone', async () => {
+  const { dir, cfg } = project();
+  const clone = tmpDir('qam-clone-');
+  write(clone, { '.qamaster/drafts.json': '{}', '.qamaster/evidence/x.png': '' });
+  const dsm = path.join(dir, 'config/dsm-config.json');
+  fs.writeFileSync(
+    dsm,
+    JSON.stringify({ ...JSON.parse(fs.readFileSync(dsm, 'utf8')), repositories: [{ name: 'shop', path: clone }] }),
+  );
+  const all = (await checks(cfg())).filter((c) => c.check === 'gate files');
+  assert.equal(all.length, 1);
+  assert.equal(all[0].state, 'unknown');
+  assert.match(all[0].detail, /evidence, drafts\.json/);
+  assert.ok(all[0].detail.includes(path.join(clone, '.qamaster')));
+  assert.ok(all[0].detail.includes(path.join(dir, '.qamaster', 'gate', 'shop')));
+  fs.rmSync(path.join(clone, '.qamaster'), { recursive: true });
+  assert.equal(await find(cfg(), 'gate files'), undefined);
+});

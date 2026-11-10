@@ -475,16 +475,19 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
     checks.push({ check: 'launcher', ok: true, detail, ...(other ? { state: 'unknown' as const } : {}) });
   }
   // 0.6.0 (Q52): the gate's files moved to the QA project; the old ones are still read for one release, never deleted
-  const gateDirs = stateDirs(cfg.root, cfg.qaProject);
-  if (gateDirs.legacy) {
-    const old = ['plans', 'verdicts', 'evidence', 'drafts.json'].filter((n) =>
-      fs.existsSync(path.join(gateDirs.legacy as string, n)),
-    );
+  // the repo doctor runs in, and every recorded code source: `qam --repo <qa-project> doctor` is the usual way to run it
+  const legacy = new Map<string, string>(); // old folder -> new one
+  for (const repo of [cfg.root, ...repos.map((r) => path.resolve(dir, r.path))]) {
+    const d = cfg.qaProject ? stateDirs(repo, cfg.qaProject) : null;
+    if (d?.legacy) legacy.set(d.legacy, d.write);
+  }
+  for (const [from, to] of legacy) {
+    const old = ['plans', 'verdicts', 'evidence', 'drafts.json'].filter((n) => fs.existsSync(path.join(from, n)));
     if (old.length)
       checks.push({
         check: 'gate files',
         ok: true,
-        detail: `${gateDirs.legacy} still holds gate files from before 0.6.0 (${old.join(', ')}). They are read for this release; new ones go to ${gateDirs.write}. QAMaster never deletes them: delete those by hand when you no longer need them (keep integrations.json).`,
+        detail: `${from} still holds gate files from before 0.6.0 (${old.join(', ')}). They are read for this release; new ones go to ${to}. QAMaster never deletes them: delete those by hand when you no longer need them (keep integrations.json).`,
         state: 'unknown',
       });
   }
