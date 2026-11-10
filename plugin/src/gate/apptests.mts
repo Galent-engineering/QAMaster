@@ -30,17 +30,19 @@ const rel = (root: string, dir: string) => path.relative(root, dir) || '.';
 export function findAppTests(root: string): string[] {
   const all = walk(root);
   const out: string[] = [];
-  // pytest: test_*.py and *_test.py, listed by the folder that holds them
+  // pytest: test_*.py and *_test.py, listed by each top folder that holds them (sibling folders each get a line)
   const py = new Map<string, number>();
   for (const f of all)
     if (/(^test_.*|.*_test)\.py$/.test(path.basename(f))) py.set(path.dirname(f), (py.get(path.dirname(f)) ?? 0) + 1);
+  const under = (d: string, top: string) => d === top || d.startsWith(`${top}${path.sep}`);
   const pyDirs = [...py.keys()].sort();
-  const top = pyDirs.length ? pyDirs.reduce((a, b) => (a.length <= b.length ? a : b)) : null;
-  if (top) {
-    const inTop = [...py].filter(([d]) => d === top || d.startsWith(`${top}${path.sep}`));
-    out.push(`pytest: ${files(inTop.reduce((n, [, c]) => n + c, 0))} in ${rel(root, top)}`);
+  for (const top of pyDirs.filter((d) => !pyDirs.some((o) => o !== d && under(d, o)))) {
+    const n = [...py].filter(([d]) => under(d, top)).reduce((sum, [, c]) => sum + c, 0);
+    out.push(`pytest: ${files(n)} in ${rel(root, top)}`);
   }
-  // jest and vitest: a package.json that names the tool, and the *.test.* / *.spec.* files below it
+  // jest and vitest: a package.json that names the tool; each *.test.* / *.spec.* file counts once, under the nearest
+  // such package.json, and for one tool (vitest when it names both)
+  const pkgs = new Map<string, string>();
   for (const pkg of all.filter((f) => path.basename(f) === 'package.json')) {
     let deps: Record<string, unknown> = {};
     try {
@@ -49,14 +51,18 @@ export function findAppTests(root: string): string[] {
     } catch {
       continue;
     }
-    const dir = path.dirname(pkg);
-    for (const tool of ['vitest', 'jest']) {
-      if (!(tool in deps)) continue;
-      const n = all.filter(
-        (f) => f.startsWith(`${dir}${path.sep}`) && /\.(test|spec)\.[cm]?[jt]sx?$/.test(path.basename(f)),
-      ).length;
-      if (n) out.push(`${tool}: ${files(n)} in ${rel(root, dir)}`);
-    }
+    const tool = ['vitest', 'jest'].find((t) => t in deps);
+    if (tool) pkgs.set(path.dirname(pkg), tool);
   }
+  const counts = new Map<string, number>();
+  for (const f of all) {
+    if (!/\.(test|spec)\.[cm]?[jt]sx?$/.test(path.basename(f))) continue;
+    const owner = [...pkgs.keys()]
+      .filter((d) => f.startsWith(`${d}${path.sep}`))
+      .sort((a, b) => b.length - a.length)[0];
+    if (owner) counts.set(owner, (counts.get(owner) ?? 0) + 1);
+  }
+  for (const dir of [...counts.keys()].sort())
+    out.push(`${pkgs.get(dir)}: ${files(counts.get(dir) ?? 0)} in ${rel(root, dir)}`);
   return out;
 }

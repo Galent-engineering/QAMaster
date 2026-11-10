@@ -59,3 +59,31 @@ test('the plan names the suites and how to gate one', async () => {
   assert.match(text, /The app's own tests exist, and the gate doesn't run them\n {2}shop: pytest: 2 test files/);
   assert.match(text, /link a test case to it as pytest:<file>::<test>/);
 });
+
+test('pytest suites in sibling folders are each counted', () => {
+  const dir = tmpDir('qam-apptests-');
+  write(dir, {
+    'api/tests/test_a.py': '',
+    'backend/tests/test_b.py': '',
+    'backend/tests/unit/test_c.py': '',
+  });
+  assert.deepEqual(findAppTests(dir), ['pytest: 1 test file in api/tests', 'pytest: 2 test files in backend/tests']);
+});
+
+test('a jest or vitest file is counted once, under the nearest package.json and one tool', () => {
+  const dir = tmpDir('qam-apptests-');
+  write(dir, {
+    'package.json': JSON.stringify({ devDependencies: { jest: '29' } }),
+    'a.test.js': '',
+    'packages/ui/package.json': JSON.stringify({ devDependencies: { jest: '29' } }),
+    'packages/ui/b.test.js': '',
+    'packages/ui/c.test.js': '',
+    'both/package.json': JSON.stringify({ devDependencies: { jest: '29', vitest: '1' } }),
+    'both/d.test.ts': '',
+  });
+  assert.deepEqual(findAppTests(dir), [
+    'jest: 1 test file in .',
+    'vitest: 1 test file in both',
+    'jest: 2 test files in packages/ui',
+  ]);
+});
