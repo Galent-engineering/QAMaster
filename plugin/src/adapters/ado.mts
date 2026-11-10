@@ -16,6 +16,7 @@
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
 import type { Config } from '../shared/config.mts';
+import { azDefaults } from '../shared/env.mts';
 import { BlockedError, NoPlanError, NoProjectError } from '../shared/errors.mts';
 import {
   type Filter,
@@ -96,14 +97,14 @@ const skippable = (e: unknown): e is AdoStatusError =>
 export type Fetch = (url: string, init: RequestInit) => Promise<Response>;
 export type AdoSettings = { organization: string; project: string; plan?: string; team?: string; repoName: string };
 
-/** A PAT from QAMASTER_ADO_TOKEN, else a token from the Azure CLI login. */
+/** A PAT from QAMASTER_ADO_TOKEN, else `az devops`'s own AZURE_DEVOPS_EXT_PAT (R24), else a token from the Azure CLI login. */
 export function authHeader(env: Record<string, string | undefined>, az = defaultAz): string {
-  const pat = env.QAMASTER_ADO_TOKEN;
+  const pat = env.QAMASTER_ADO_TOKEN || env.AZURE_DEVOPS_EXT_PAT;
   if (pat) return `Basic ${Buffer.from(`:${pat}`).toString('base64')}`;
   const token = az();
   if (!token)
     throw new BlockedError(
-      'No Azure DevOps credentials. Set QAMASTER_ADO_TOKEN to a PAT with Work Items (Read) and Test Management (Read), or run `az login`.',
+      'No Azure DevOps credentials. Set QAMASTER_ADO_TOKEN (or AZURE_DEVOPS_EXT_PAT) to a PAT with Work Items (Read) and Test Management (Read), or run `az login`.',
     );
   return `Bearer ${token}`;
 }
@@ -1291,8 +1292,9 @@ export function orgName(value: string | undefined): string | undefined {
  * null when it can't be asked (no organization, or no credentials), so the plain message stands.
  */
 export async function noProjectError(config: Config): Promise<NoProjectError | null> {
-  const organization = orgName(config.env.QAMASTER_ADO_ORG);
-  if (!organization || config.env.QAMASTER_ADO_PROJECT) return null;
+  const az = azDefaults(config.env);
+  const organization = orgName(config.env.QAMASTER_ADO_ORG || az.organization);
+  if (!organization || config.env.QAMASTER_ADO_PROJECT || az.project) return null;
   try {
     authHeader(config.env);
   } catch {
@@ -1303,8 +1305,9 @@ export async function noProjectError(config: Config): Promise<NoProjectError | n
 
 /** The settings for QAMASTER_STORE=ado and QAMASTER_REQUIREMENTS=ado. */
 export function adoSettings(config: Config): AdoSettings {
-  const organization = orgName(config.env.QAMASTER_ADO_ORG);
-  const project = config.env.QAMASTER_ADO_PROJECT;
+  const az = azDefaults(config.env);
+  const organization = orgName(config.env.QAMASTER_ADO_ORG || az.organization);
+  const project = config.env.QAMASTER_ADO_PROJECT || az.project;
   if (!organization || !project)
     throw new BlockedError(
       `Don't know which Azure DevOps project to use. Add these lines to ${config.root}/.env:\n  QAMASTER_ADO_ORG=<organization> (its name, as in dev.azure.com/<name>)\n  QAMASTER_ADO_PROJECT=<project>`,

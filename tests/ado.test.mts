@@ -1633,7 +1633,7 @@ test('0.4.1 A1: QAMASTER_ADO_ORG takes the name or the organization URL', () => 
 test('0.4.1 A1: the hint for a missing setting shows the organization name form', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-org-hint-'));
   assert.throws(
-    () => adoSettings(loadConfig(dir, { QAMASTER_ADO_ORG: 'org' })),
+    () => adoSettings(loadConfig(dir, { QAMASTER_ADO_ORG: 'org', AZURE_CONFIG_DIR: dir })),
     /QAMASTER_ADO_ORG=<organization> \(its name, as in dev\.azure\.com\/<name>\)/,
   );
 });

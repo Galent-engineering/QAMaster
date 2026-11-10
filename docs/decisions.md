@@ -9,7 +9,7 @@ Each entry says where the choice came from:
 
 Format: **Q<n>. Title** (date, status, source): decision, why, what we gave up.
 
-Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 is **proposed**; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06, Q49 and Q54 on 2026-11-10. To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
+Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 was accepted on 2026-11-10; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06, Q49 and Q54 on 2026-11-10. To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
 
 ---
 
@@ -736,14 +736,14 @@ Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in ea
 - **Why:** on AgentMesh (FastAPI plus Streamlit), 27 of 38 "pages" were API endpoints. TestGen wrote them as UI cases, and the validator then flagged the HTTP verbs as invented UI.
 - **Gave up:** API endpoints in the screen matrix. They come back as API cases with the API channel.
 
-**Q50. Test cases are stored locally first; publish chooses its destinations** (2026-11-04, proposed; would amend the store stage's place in the pipeline)
-- **Decision (proposed):**
+**Q50. Test cases are stored locally first; publish chooses its destinations** (2026-11-04, accepted 2026-11-10; amends the store stage's place in the pipeline)
+- **Decision:**
   - The pipeline order becomes: generate and review test cases, store them locally (the file store), then publish.
   - Publish asks which integration(s) to publish to. Several destinations at once are allowed.
   - A destination already set up (an ADO plan, say) publishes after one approval. A new one first asks for its connection details and checks access before anything else is shown.
   - When every check passes, publish asks for a final apply, and that ends it.
 - **Why:** on dummy-static-website (W9) the store was chosen at setup, before any test case existed, the ADO details were set by hand in `.env`, and only one destination was possible.
-- **Gave up (if accepted):** choosing the store at setup. Built in 0.6.0.
+- **Gave up:** choosing the store at setup. Built in 0.6.0.
 
 **Q51. The 39 `Domain_Test_Design_Skill` sub-skills are reference files, not skills** (2026-11-04, accepted 2026-11-04; amends the 0.4.0 menu fix)
 - **Decision:**
