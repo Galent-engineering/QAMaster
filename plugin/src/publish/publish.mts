@@ -351,7 +351,8 @@ export function diff(i: DiffInput): { changes: PlannedChange[]; declinedSmoke: s
       change.automatedTest = d.automatedTest;
     }
     const add = owned.filter((t) => !hasTag(it.tags, t));
-    const remove = had.filter((t) => !hasTag(owned, t) && hasTag(it.tags, t));
+    // Q56: a republish replaces the stored path: tags with the derived ones; no other tag is ever removed
+    const remove = it.tags.filter((t) => t.toLowerCase().startsWith('path:') && !hasTag(owned, t));
     if (add.length || remove.length) {
       fields.push('tags');
       if (add.length) change.addTags = add;

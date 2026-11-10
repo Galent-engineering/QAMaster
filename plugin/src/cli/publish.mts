@@ -325,7 +325,10 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
   );
   section(
     `Update (${updates.length})`,
-    updates.map((c) => `${tc(c.trackerId ?? 0)} ← ${c.localId}  ${c.fields.join(', ')} changed`),
+    updates.map(
+      (c) =>
+        `${tc(c.trackerId ?? 0)} ← ${c.localId}  ${c.fields.join(', ')} changed${(c.change?.removeTags ?? []).map((t) => `\n    removes tag ${t}`).join('')}`,
+    ),
   );
   const fieldRows = (c: PlannedChange) =>
     (c.differences ?? []).map((d) => `    ${d.field}: store "${d.store}", run "${d.run}"`).join('\n');

@@ -260,6 +260,31 @@ test('K7: an edit made only in the store is reported in the preview, and nothing
   assert.match(p.read(CSV), /Edited by hand/);
 });
 
+test('Q56: a republish with narrower path: tags removes the old ones, the preview lists them, and other tags stay', () => {
+  const p = project();
+  const dsm = (files: string[]) =>
+    fs.writeFileSync(
+      path.join(p.dir, 'dsm/dsm.json'),
+      JSON.stringify({ generated_at: 'D1', page: { nodes: [{ id: '/cart', files }] } }),
+    );
+  dsm(['shop:src/cart/Cart.tsx', 'shop:src/auth/auth.ts']);
+  p.writeRun([kase('TC-CART-001')]);
+  p.qam('publish', RUN, '--apply');
+  const before = row(p.read(CSV), '1000');
+  assert.match(before, /path:src\/auth\/\*/, 'the broad tag is stored');
+  dsm(['shop:src/cart/Cart.tsx']);
+  p.writeRun([kase('TC-CART-001')]);
+  const dry = p.qam('publish', RUN);
+  assert.equal(dry.status, 3);
+  assert.match(dry.out, /TC1000 ← TC-CART-001[\s\S]*removes tag path:src\/auth\/\*/);
+  assert.doesNotMatch(dry.out, /removes tag path:src\/cart/);
+  p.qam('publish', RUN, '--apply');
+  const after = row(p.read(CSV), '1000');
+  assert.doesNotMatch(after, /path:src\/auth\//);
+  assert.match(after, /path:src\/cart\/\*/);
+  assert.match(after, /cart/i, 'the group tag stays');
+});
+
 test('publish: a case no longer generated is listed, and closed only with --retire', () => {
   const p = project();
   p.writeRun([kase('TC-CART-001'), kase('TC-CART-002')]);

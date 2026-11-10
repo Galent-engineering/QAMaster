@@ -317,9 +317,30 @@ test("diff: changed content with the store untouched is an update of only what d
   const c = r.changes[0];
   assert.deepEqual([...c.fields].sort(), ['steps', 'tags', 'title']);
   assert.equal(c.change?.title, 'New title');
-  assert.deepEqual(c.change?.removeTags, ['path:gone/**'], 'only a tag QAMaster owned is removed');
+  assert.deepEqual(c.change?.removeTags, ['path:gone/**'], 'a path: tag that is no longer derived is removed');
   assert.ok(!(c.change?.removeTags ?? []).includes('added-by-qa'));
   assert.equal(c.change?.automatedTest, undefined);
+});
+
+test('diff (Q56): a republish removes every stored path: tag it no longer derives, hand-added too; no other tag', () => {
+  const was = derive(kase('TC-1'), ctx());
+  const now = derive(kase('TC-1', { title: 'New title' }), ctx());
+  const old = entry('TC-1', 7, was.hash, { ownedTags: [...was.tags, 'smoke', 'path:old/**'] });
+  const have = stored(was, 7, {
+    tags: [...was.tags, 'smoke', 'path:old/**', 'path:by-hand/**', 'added-by-qa', 'oldgroup'],
+  });
+  const c = diff(input([now], [old], [have])).changes[0];
+  assert.equal(c.kind, 'update');
+  assert.deepEqual([...(c.change?.removeTags ?? [])].sort(), ['path:by-hand/**', 'path:old/**']);
+  assert.ok(c.fields.includes('tags'));
+});
+
+test('diff (Q56): a derived path: tag stays; a stored one that is derived again is not removed', () => {
+  const was = derive(kase('TC-1'), ctx());
+  const now = derive(kase('TC-1', { title: 'New title' }), ctx());
+  const have = stored(was, 7);
+  const c = diff(input([now], [entry('TC-1', 7, was.hash, { ownedTags: was.tags })], [have])).changes[0];
+  assert.equal(c.change?.removeTags, undefined);
 });
 
 test('diff: something the person changed in the store since the last publish is a conflict, and nothing is written', () => {
