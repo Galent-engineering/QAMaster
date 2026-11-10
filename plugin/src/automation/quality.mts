@@ -105,15 +105,20 @@ export function outlineFindings(feature: string, text: string): string[] {
 /** A direct call on Playwright's request context: only the base client makes one. */
 const REQUEST_CALL = '(fetch|get|post|put|patch|delete|head)';
 const DIRECT_REQUEST = new RegExp(`\\brequest\\.${REQUEST_CALL}\\(`);
-/** Names a file gives the request fixture: `({ page, request: ctx })` (a destructured parameter), `const api = request`. */
+/**
+ * Names a file gives the request fixture: a destructured parameter `({ page, request: ctx }) =>` (or `) {`, or a typed
+ * `}: Fixtures`), a destructured variable `const { request: ctx } = fixtures`, and `const api = request`. An object
+ * literal passed to a call, `send({ request: params })`, is neither.
+ */
 const requestAliases = (text: string): string[] => [
   ...new Set(
     [
-      ...text.matchAll(/\(\s*\{[^}]*\brequest\s*:\s*([A-Za-z_$][\w$]*)/g),
-      ...text.matchAll(/\b([A-Za-z_$][\w$]*)\s*=\s*(?:this\.)?request\s*[;\n]/g),
-    ]
-      .map((m) => m[1])
-      .filter((a): a is string => !!a && a !== 'request'),
+      ...[
+        ...text.matchAll(/\(\s*\{([^{}]*)\}\s*(?:\)\s*(?:=>|\{)|:)/g),
+        ...text.matchAll(/\b(?:const|let|var)\s*\{([^{}]*)\}\s*=/g),
+      ].map((m) => /\brequest\s*:\s*([A-Za-z_$][\w$]*)/.exec(m[1] ?? '')?.[1]),
+      ...[...text.matchAll(/\b([A-Za-z_$][\w$]*)\s*=\s*(?:this\.)?request\s*[;\n]/g)].map((m) => m[1]),
+    ].filter((a): a is string => !!a && a !== 'request'),
   ),
 ];
 /** The channel folders whose features carry the channel's tag, and the Playwright project that runs them. */
