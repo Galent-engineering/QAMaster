@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { bind, folderHash, recordedUnchanged, worklist } from '../plugin/src/gate/automate.mts';
+import { bind, folderHash, rebind, recordedUnchanged, worklist } from '../plugin/src/gate/automate.mts';
 import type { LedgerEntry, Plan } from '../plugin/src/shared/models.mts';
 import { tmpDir } from './tmp.mts';
 
@@ -158,4 +158,39 @@ test('a script needs updating only when its TestGen case changed, not when publi
     worklist(PLAN, { ledger: published, scripts, drafts, caseHash }).find((w) => w.localId === 'TC-A-002')?.action;
   assert.equal(action(new Map([['TC-A-002', 'case-v1']])), 'keep');
   assert.equal(action(new Map([['TC-A-002', 'case-v2']])), 'update');
+});
+
+test('Q49: a later plan runs a recorded, unchanged script with no new --done; an edited one stays manual and says why', () => {
+  const app = fs.realpathSync(tmpDir('qam-automate-'));
+  const feature = path.join(app, 'features/web/a.feature');
+  fs.mkdirSync(path.dirname(feature), { recursive: true });
+  fs.writeFileSync(feature, '@web\nFeature: A\n  @TC-A-001\n  Scenario: one\n');
+  const scripts = new Map([['TC-A-001', ['features/web/a.feature']]]);
+  const link = (id: string) => `bdd:@${id}`;
+  const work = worklist(PLAN, { ledger: LEDGER, scripts, drafts: { cases: {}, files: {} } });
+  const { drafts } = bind(PLAN, { appDir: app, work, ledger: LEDGER, scripts, drafts: { cases: {}, files: {} }, link });
+
+  // a new plan: the store still has no link (nothing pushed), so the case comes in manual
+  const next = rebind({ ...PLAN, id: 'p2' }, { appDir: app, ledger: LEDGER, scripts, drafts, link });
+  assert.deepEqual(next.notRun, []);
+  assert.deepEqual(
+    next.items.filter((i) => i.testCase.id === 1).map((i) => [i.testCase.automatedTest, i.selected]),
+    [['bdd:@TC-A-001', true]],
+  );
+  assert.deepEqual(next.newScripts, [1], 'not yet passed: still new (Q39)');
+  assert.equal(next.scriptsHash, folderHash(app), 'the approval is bound to the folder');
+
+  // the binding is by TestGen ID: after a store switch the tracker ID changes and the script still binds
+  const moved = [entry('TC-A-001', 41, 'h-a')];
+  const other = { ...PLAN, notRun: [{ ...PLAN.notRun[0], testCase: tc(41) }] };
+  assert.equal(rebind(other, { appDir: app, ledger: moved, scripts, drafts, link }).notRun.length, 0);
+
+  fs.appendFileSync(feature, '    Given I changed it by hand\n');
+  const edited = rebind({ ...PLAN, id: 'p3' }, { appDir: app, ledger: LEDGER, scripts, drafts, link });
+  assert.equal(edited.notRun.length, 1);
+  assert.match(
+    edited.notRun[0].why,
+    /script edited since recorded \(features\/web\/a\.feature\): run qam check-scripts, then qam automate p3 --done/,
+  );
+  assert.equal(edited.scriptsHash, undefined);
 });

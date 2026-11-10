@@ -17,7 +17,7 @@ import { defaultBase, GitRepoReader } from '../adapters/git.mts';
 import { buildStore, RUNNERS } from '../adapters/registry.mts';
 import type { RepoConfig } from '../dsm/scan.mts';
 import type { Work } from '../gate/automate.mts';
-import { bind, type Drafts, folderHash, prove, recordedUnchanged, worklist } from '../gate/automate.mts';
+import { bind, type Drafts, folderHash, prove, rebind, recordedUnchanged, worklist } from '../gate/automate.mts';
 import { dsmCases, repoDirs, runCases } from '../gate/dsm.mts';
 import { approve, type Gate, makePlan, runPlan } from '../gate/gate.mts';
 import { linkRunner } from '../gate/select.mts';
@@ -329,7 +329,7 @@ export async function gate(cfg: Config, command: string, argv: string[], json: b
   const { values: v, positionals } = parse(argv, command);
   const g = gateFor(cfg);
   if (command === 'plan' || command === 'check') {
-    const plan = await makePlan(g, v.base ?? defaultBase(cfg.root), tags(v.tag));
+    const plan = rebound(cfg, await makePlan(g, v.base ?? defaultBase(cfg.root), tags(v.tag)));
     savePlan(cfg, plan);
     if (command === 'check' && v.yes) {
       const approved = await approve(g, plan, whoAmI(cfg), [], []);
@@ -359,6 +359,20 @@ export async function gate(cfg: Config, command: string, argv: string[], json: b
  * qam automate <plan-id> [--done] (Q39): without --done, what the AutomationCode skill has to draft, update or keep;
  * with --done, the script check must pass, then the drafts are recorded and the plan is bound to them (exit 3).
  */
+/** Q49: the scripts QAMaster recorded earlier run in this plan too, with no new qam automate --done. */
+function rebound(cfg: Config, plan: Plan): Plan {
+  const dir = automationFolder(cfg);
+  const drafts = readDrafts(cfg);
+  if (!dir || !drafts) return plan;
+  return rebind(plan, {
+    appDir: dir,
+    ledger: readLedger(cfg.qaProject ?? cfg.root)?.entries ?? [],
+    scripts: playwrightBdd.scripts(dir),
+    drafts,
+    link: playwrightBdd.link,
+  });
+}
+
 function automateCommand(cfg: Config, plan: Plan, done: boolean, json: boolean): number {
   const project = cfg.qaProject ?? cfg.root;
   const dir = automationFolder(cfg);

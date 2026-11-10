@@ -12,7 +12,7 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
-import type { LedgerEntry, Plan } from '../shared/models.mts';
+import type { LedgerEntry, NotRun, Plan } from '../shared/models.mts';
 
 export type Drafts = {
   /** TC ID -> the hash of its test case when its script was recorded, and whether the script has passed once. */
@@ -135,4 +135,62 @@ export function prove(drafts: Drafts, ledger: LedgerEntry[], passed: number[]): 
     if (id && cases[id]) cases[id] = { ...cases[id], proven: true };
   }
   return { ...drafts, cases };
+}
+
+/**
+ * Q49: at plan time, a manual case whose script QAMaster recorded runs with its local link, with no new --done: the
+ * binding is the case's TestGen ID, so it outlives the plan and a store switch. A recorded script whose files changed
+ * since stays manual, saying how to record it again (Q39: a later edit voids the approval).
+ */
+export function rebind(
+  plan: Plan,
+  o: {
+    appDir: string;
+    ledger: LedgerEntry[];
+    scripts: Map<string, string[]>;
+    drafts: Drafts;
+    link: (localId: string) => string;
+  },
+): Plan {
+  const local = new Map(o.ledger.map((e) => [e.trackerId, e.localId]));
+  const root = fs.realpathSync(o.appDir);
+  const bound = new Map<number, string>();
+  const notRun = plan.notRun.map((n) => {
+    const id = local.get(n.testCase.id);
+    const files = id ? (o.scripts.get(id) ?? []) : [];
+    if (n.broken || !id || !o.drafts.cases[id] || !files.length) return n;
+    const edited = files.filter((f) => {
+      const abs = path.join(root, f);
+      return !fs.existsSync(abs) || o.drafts.files[abs] !== sha(abs);
+    });
+    if (edited.length)
+      return {
+        ...n,
+        why: `script edited since recorded (${edited.join(', ')}): run qam check-scripts, then qam automate ${plan.id} --done`,
+      };
+    bound.set(n.testCase.id, id);
+    return null;
+  });
+  if (!bound.size) return { ...plan, notRun: notRun.filter((n): n is NotRun => !!n) };
+  return {
+    ...plan,
+    items: [
+      ...plan.items,
+      ...plan.notRun
+        .filter((n) => bound.has(n.testCase.id))
+        .map((n) => ({
+          testCase: { ...n.testCase, automatedTest: o.link(bound.get(n.testCase.id) ?? '') },
+          reasons: n.reasons ?? [],
+          selected: true,
+        })),
+    ],
+    notRun: notRun.filter((n): n is NotRun => !!n),
+    newScripts: [
+      ...new Set([
+        ...(plan.newScripts ?? []),
+        ...[...bound].filter(([, id]) => !o.drafts.cases[id]?.proven).map(([tc]) => tc),
+      ]),
+    ],
+    scriptsHash: folderHash(o.appDir),
+  };
 }
