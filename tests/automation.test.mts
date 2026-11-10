@@ -49,7 +49,13 @@ test('app create copies the template into <App>/ with app.json, and never overwr
     name: 'Juice Shop',
     webUrl: 'http://localhost:3000',
   });
-  for (const f of ['playwright.config.ts', 'package.json', 'src/fixtures.ts', 'steps/shared/common.steps.ts'])
+  for (const f of [
+    'playwright.config.ts',
+    'package.json',
+    'src/fixtures.ts',
+    'src/app-errors.ts',
+    'steps/shared/common.steps.ts',
+  ])
     assert.ok(fs.existsSync(path.join(dir, f)), f);
   fs.writeFileSync(path.join(dir, 'app.json'), '{"mine":true}');
   assert.match(qam(qa, 'app', 'create').out, /already exists; left as it is/);

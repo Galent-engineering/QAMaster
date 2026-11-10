@@ -21,7 +21,7 @@ export type ProjectConfig = {
   smoke: { max: number; priorities: Priority[]; categories: Category[] };
   ai: 'on' | 'off';
   owners: Record<string, string>; // module -> owner's email
-  gate: { retries: number; noMatch: 'pass-with-warning'; sharedShare: number };
+  gate: { retries: number; noMatch: 'pass-with-warning'; sharedShare: number; allowErrors: string[] };
   runners: Record<string, { root: string }>; // runner name -> its folder, relative to the QA project (Q38)
 };
 
@@ -30,7 +30,7 @@ export const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   smoke: { max: 20, priorities: ['P1'], categories: ['Positive', 'E2E'] },
   ai: 'on',
   owners: {},
-  gate: { retries: 1, noMatch: 'pass-with-warning', sharedShare: 0.3 },
+  gate: { retries: 1, noMatch: 'pass-with-warning', sharedShare: 0.3, allowErrors: [] },
   runners: {},
 };
 
@@ -96,6 +96,11 @@ export function asProjectConfig(data: unknown, file: string): ProjectConfig {
     const ok = typeof gate.sharedShare === 'number' && gate.sharedShare > 0 && gate.sharedShare <= 1;
     out.gate.sharedShare = ok ? (gate.sharedShare as number) : bad('gate.sharedShare', 'a fraction above 0, up to 1');
   }
+  if (gate.allowErrors !== undefined)
+    out.gate.allowErrors =
+      Array.isArray(gate.allowErrors) && gate.allowErrors.every((s) => typeof s === 'string' && s)
+        ? (gate.allowErrors as string[])
+        : bad('gate.allowErrors', 'a list of URL parts or error messages');
 
   const runners = section(data, 'runners');
   for (const [name, r] of Object.entries(runners)) {

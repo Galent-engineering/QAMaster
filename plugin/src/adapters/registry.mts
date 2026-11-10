@@ -17,7 +17,7 @@ type Factory<T> = (config: Config) => T;
 export const STORES: Record<string, Factory<TestCaseStore>> = { ado: makeAdoStore, file: makeFileStore };
 export const REQUIREMENTS: Record<string, Factory<RequirementSource>> = { ado: makeAdoRequirements };
 export const RUNNERS: Record<string, Factory<Runner>> = {
-  'playwright-bdd': () => new PlaywrightBddRunner(),
+  'playwright-bdd': (c) => new PlaywrightBddRunner('npx', c.project.gate.allowErrors),
   pytest: () => new PytestRunner(),
 };
 

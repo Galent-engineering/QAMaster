@@ -144,6 +144,18 @@ test('gate.sharedShare defaults to 0.3 and must be a fraction; a runner needs a 
   assert.throws(() => asProjectConfig({ runners: { pytest: {} } }, 'q.json'), /"runners\.pytest" must be/);
 });
 
+test('gate.allowErrors: nothing allowed by default, a list of non-empty strings otherwise (Q53)', () => {
+  assert.deepEqual(asProjectConfig({}, 'q.json').gate.allowErrors, []);
+  assert.deepEqual(DEFAULT_PROJECT_CONFIG.gate.allowErrors, []);
+  const c = asProjectConfig({ gate: { allowErrors: ['/api/telemetry', 'ResizeObserver'] } }, 'q.json');
+  assert.deepEqual(c.gate.allowErrors, ['/api/telemetry', 'ResizeObserver']);
+  for (const bad of ['x', [1], [''], { a: 1 }])
+    assert.throws(
+      () => asProjectConfig({ gate: { allowErrors: bad } }, 'q.json'),
+      /"gate\.allowErrors" must be a list/,
+    );
+});
+
 test('publish.pathDepth defaults to 4, in the schema and in the template qam setup copies', () => {
   // 3 cut Juice Shop's frontend/src/app/address-create to frontend/src/app/**, the whole Angular app
   assert.equal(DEFAULT_PROJECT_CONFIG.publish.pathDepth, 4);

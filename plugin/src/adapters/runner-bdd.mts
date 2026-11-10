@@ -30,9 +30,12 @@ const plain = (t: string) => t.replace(/\x1b\[[0-9;]*m/g, '');
 export class PlaywrightBddRunner implements Runner {
   /** `npx` overrides the command (tests). */
   private readonly npx: string;
+  /** The gate's allowErrors (Q53): app errors the framework's fixture lets pass. Handed over as JSON in the environment. */
+  private readonly allowErrors: string[];
 
-  constructor(npx = 'npx') {
+  constructor(npx = 'npx', allowErrors: string[] = []) {
     this.npx = npx;
+    this.allowErrors = allowErrors;
   }
 
   private exec(root: string, args: string[], json?: string): string {
@@ -44,7 +47,11 @@ export class PlaywrightBddRunner implements Runner {
       cwd: root,
       encoding: 'utf8',
       maxBuffer: 256 * 1024 * 1024,
-      env: { ...process.env, ...(json ? { PLAYWRIGHT_JSON_OUTPUT_NAME: json } : {}) },
+      env: {
+        ...process.env,
+        QAMASTER_ALLOW_ERRORS: JSON.stringify(this.allowErrors),
+        ...(json ? { PLAYWRIGHT_JSON_OUTPUT_NAME: json } : {}),
+      },
     });
     const tail = plain(`${r.stdout ?? ''}\n${r.stderr ?? ''}`)
       .trim()

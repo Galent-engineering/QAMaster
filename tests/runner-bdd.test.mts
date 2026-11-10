@@ -13,7 +13,7 @@ import { tmpDir } from './tmp.mts';
 const FIX = path.resolve(import.meta.dirname, 'fixtures/bdd');
 
 /** A folder with node_modules/playwright-bdd and a stub npx that logs its arguments and replays a report. */
-function folder(code = 1, runFixture = `${FIX}/run.json`) {
+function folder(code = 1, runFixture = `${FIX}/run.json`, allowErrors: string[] = []) {
   const dir = tmpDir('qam-bdd-run-');
   fs.mkdirSync(path.join(dir, 'node_modules/playwright-bdd'), { recursive: true });
   const npx = path.join(dir, 'npx-stub.mjs');
@@ -22,6 +22,7 @@ function folder(code = 1, runFixture = `${FIX}/run.json`) {
     `#!/usr/bin/env node
 import fs from 'node:fs';
 const args = process.argv.slice(2);
+fs.appendFileSync(${JSON.stringify(path.join(dir, 'env.log'))}, (process.env.QAMASTER_ALLOW_ERRORS ?? '-') + '\\n');
 fs.appendFileSync(${JSON.stringify(path.join(dir, 'calls.log'))}, JSON.stringify(args) + '\\n');
 if (args[1] === 'bddgen') process.exit(0);
 const list = args.includes('--list');
@@ -36,7 +37,8 @@ process.exit(list ? 0 : ${code});
       .trim()
       .split('\n')
       .map((l) => JSON.parse(l));
-  return { dir, runner: new PlaywrightBddRunner(npx), calls };
+  const env = () => fs.readFileSync(path.join(dir, 'env.log'), 'utf8').trim().split('\n');
+  return { dir, runner: new PlaywrightBddRunner(npx, allowErrors), calls, env };
 }
 
 test('collected: bddgen, then the list; every scenario tagged @TC-… is bdd:@TC-…', async () => {
@@ -111,4 +113,26 @@ test("0.3.1 F2: a scenario that couldn't launch the browser blocks the run with 
     runner.run(new Map([[2, ['bdd:@TC-HOME-002']]]), dir, '/ev'),
     /Playwright's browser isn't installed .* Run npx playwright install chromium there/,
   );
+});
+
+// Q53: the framework's fixture reads the gate's allow-list from QAMASTER_ALLOW_ERRORS, set for the run only
+test('run: hands gate.allowErrors to the framework as JSON; nothing when none is set', async () => {
+  const sel = new Map([[1, ['bdd:@TC-HOME-001']]]);
+  const none = folder();
+  await none.runner.run(sel, none.dir, '/ev');
+  assert.equal(none.env().at(-1), '[]');
+  const some = folder(1, `${FIX}/run.json`, ['/api/telemetry', 'ResizeObserver']);
+  await some.runner.run(sel, some.dir, '/ev');
+  assert.equal(some.env().at(-1), '["/api/telemetry","ResizeObserver"]');
+  assert.equal(process.env.QAMASTER_ALLOW_ERRORS, undefined);
+});
+
+test('the registry gives the runner the project config allow-list', async () => {
+  const { buildRunner } = await import('../plugin/src/adapters/registry.mts');
+  const { loadConfig } = await import('../plugin/src/shared/config.mts');
+  const qa = tmpDir('qam-bdd-allow-');
+  fs.mkdirSync(path.join(qa, 'config'));
+  fs.writeFileSync(path.join(qa, 'config/qamaster.json'), JSON.stringify({ gate: { allowErrors: ['/health'] } }));
+  const runner = buildRunner(loadConfig(qa, {})) as unknown as { allowErrors: string[] };
+  assert.deepEqual(runner.allowErrors, ['/health']);
 });
