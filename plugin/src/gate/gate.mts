@@ -63,7 +63,7 @@ export async function makePlan(
   g: Gate,
   base: string,
   wanted: Record<string, string>,
-  o: { all?: boolean } = {},
+  o: { all?: boolean; recorded?: Set<number> } = {},
 ): Promise<Plan> {
   const change = await g.repo.diff(base, await g.repo.head());
   const catalog = await g.store.inPlan();
@@ -77,6 +77,7 @@ export async function makePlan(
     shared,
     dsm: dsm?.cases,
     all: o.all,
+    recorded: o.recorded,
   });
   const picked = [...reasons.keys()].map((id) => catalog.get(id)).filter((c): c is TestCase => !!c);
   const runners = runnersFor(g, picked);

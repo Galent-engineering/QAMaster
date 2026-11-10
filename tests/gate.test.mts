@@ -255,3 +255,13 @@ test('0.6.0 item 7: the plan says the app has its own tests and that the gate do
   assert.deepEqual((await makePlan(g, 'main', {})).appTests, ['pytest in api/tests (4 files)']);
   assert.equal((await makePlan(gate().g, 'main', {})).appTests, undefined);
 });
+
+test('0.6.0 item 14 (Q49): all also plans a case whose script was recorded locally but not yet published', async () => {
+  const { g } = gate({ repo: new FakeRepoReader({ ...CHANGE, files: [] }) });
+  const plan = await makePlan(g, 'main', {}, { all: true, recorded: new Set([503]) });
+  // still manual in the store: the plan lists it as not run, and qam plan binds it to its recorded script (rebind)
+  assert.deepEqual(
+    plan.notRun.map((n) => [n.testCase.id, n.reasons?.[0].kind]),
+    [[503, 'all']],
+  );
+});

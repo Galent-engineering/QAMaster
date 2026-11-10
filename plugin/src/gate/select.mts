@@ -63,6 +63,8 @@ export type SelectInput = {
   dsm?: Map<number, string[]>;
   /** qam plan --all: every case with a script, whatever changed (a first run, a nightly check). */
   all?: boolean;
+  /** Q49: cases whose script QAMaster recorded (drafts.json), still manual in the store; --all plans them too. */
+  recorded?: Set<number>;
 };
 
 /** Test case ID -> every reason to run it, in rule order: path, smoke, dsm, group (all, when asked, first). */
@@ -72,7 +74,8 @@ export function candidates(i: SelectInput): Map<number, Reason[]> {
   const cases = [...i.catalog.values()];
   const paths = (tc: TestCase) => tc.tags.filter((t) => t.startsWith(PATH)).map((t) => t.slice(PATH.length));
 
-  if (i.all) for (const tc of cases) if (tc.automatedTest) add(tc.id, { kind: 'all', detail: '' });
+  if (i.all)
+    for (const tc of cases) if (tc.automatedTest || i.recorded?.has(tc.id)) add(tc.id, { kind: 'all', detail: '' });
 
   const byPath = new Set<string>();
   for (const f of i.change.files) {

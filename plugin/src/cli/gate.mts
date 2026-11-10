@@ -359,7 +359,10 @@ export async function gate(cfg: Config, command: string, argv: string[], json: b
   const { values: v, positionals } = parse(argv, command);
   const g = gateFor(cfg);
   if (command === 'plan' || command === 'check') {
-    const plan = rebound(cfg, await makePlan(g, v.base ?? defaultBase(cfg.root), tags(v.tag), { all: !!v.all }));
+    const plan = rebound(
+      cfg,
+      await makePlan(g, v.base ?? defaultBase(cfg.root), tags(v.tag), { all: !!v.all, recorded: recorded(cfg) }),
+    );
     savePlan(cfg, plan);
     if (command === 'check' && v.yes) {
       const approved = await approve(g, plan, whoAmI(cfg), [], []);
@@ -401,6 +404,13 @@ function rebound(cfg: Config, plan: Plan): Plan {
     drafts,
     link: playwrightBdd.link,
   });
+}
+
+/** Q49: the test cases with a script QAMaster recorded, by their store ID, for --all. */
+function recorded(cfg: Config): Set<number> {
+  const drafts = readDrafts(cfg);
+  const ledger = readLedger(cfg.qaProject ?? cfg.root)?.entries ?? [];
+  return new Set(ledger.filter((e) => drafts?.cases[e.localId]).map((e) => e.trackerId));
 }
 
 function automateCommand(cfg: Config, plan: Plan, done: boolean, json: boolean): number {
