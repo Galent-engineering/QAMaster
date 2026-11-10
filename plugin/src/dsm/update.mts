@@ -160,14 +160,17 @@ export function estimate(project: string, dir: string, config: UpdateConfig): Es
   const t = previousUi?.timing;
   const timed = !!t && t.pages > 0 && t.elapsed_ms > 0;
   const pages = Math.min(maxPages, t?.pages ?? previousUi?.pages.length ?? Math.max(routes.length, 1));
-  const secondsPerPage = timed ? t.elapsed_ms / t.pages / 1000 : DEFAULT_SECONDS_PER_PAGE / concurrency;
+  // the last crawl's pace, scaled to crawl.concurrency now (it may have changed since): pages run side by side
+  const secondsPerPage = timed
+    ? ((t.elapsed_ms / t.pages / 1000) * Math.max(1, t.concurrency)) / concurrency
+    : DEFAULT_SECONDS_PER_PAGE / concurrency;
   return {
     routes,
     pages,
     minutes: Math.max(1, Math.ceil((pages * secondsPerPage) / 60)),
     seconds_per_page: Math.round(secondsPerPage * 10) / 10,
     basis: timed ? 'last crawl' : 'default',
-    concurrency: timed ? t.concurrency : concurrency,
+    concurrency,
   };
 }
 

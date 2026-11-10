@@ -206,3 +206,16 @@ test("a feature in a channel folder carries that channel's tag", () => {
     /features\/mobile-web\/login\.feature: a feature in features\/mobile-web should be tagged @mobile-web/,
   );
 });
+
+test('a service imported with double quotes or a .ts extension counts as used', () => {
+  const dir = folder();
+  write(dir, {
+    'steps/api/notes.api.steps.ts':
+      'import { When } from "../../src/fixtures";\nimport { NoteService } from "../../src/api/services/NoteService.ts";\nWhen("I list the notes", async ({ request }) => {\n  await new NoteService(request).list();\n});\n',
+    'src/api/services/NoteService.ts':
+      "import { BaseApiClient } from '../base/BaseApiClient';\nexport class NoteService extends BaseApiClient {}\n",
+  });
+  const out = (staticFindings(dir, KNOWN).api ?? []).join('\n');
+  assert.doesNotMatch(out, /notes\.api\.steps\.ts: does not use a service/);
+  assert.doesNotMatch(out, /NoteService\.ts: no step uses it/);
+});

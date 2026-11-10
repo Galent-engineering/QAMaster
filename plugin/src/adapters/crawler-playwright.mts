@@ -547,8 +547,7 @@ export class PlaywrightCrawler implements Crawler {
       if (signedOutPass) {
         // signed out first: writes are blocked from the start, and no form is ever submitted (Q15)
         phase = 'crawling';
-        const first = await makeContext();
-        observe(first);
+        const first = await makeContext(); // explore() observes it
         let ctxA = first;
         passA = await this.explore(
           first,
@@ -598,8 +597,7 @@ export class PlaywrightCrawler implements Crawler {
         loginRef.route = info.login_route ?? loginRef.route;
         if (!signedOutPass || info.required) {
           phase = 'crawling';
-          current = ensured.context;
-          observe(current);
+          current = ensured.context; // explore() observes it
           const gated = gatedBy(loginRef.route);
           passB = await this.explore(
             current,

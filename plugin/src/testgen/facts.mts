@@ -18,6 +18,7 @@
  */
 import type { Dsm, PageNode } from '../dsm/build.mts';
 import { type Journey, type KnowledgeSettings, Model } from '../knowledge/build.mts';
+import type { Access } from '../shared/models.mts';
 
 export const DOMAIN_SKILL = 'Domain_Test_Design_Skill';
 export const EVIDENCE_FORMATS = [
@@ -32,15 +33,8 @@ export const EVIDENCE_FORMATS = [
   'req:<id>',
 ];
 
-/**
- * The DSM shape 0.7.0 adds, read through local types until the dsm track's PageNode carries it: a screen's access, a
- * form's dialog and a field's declared limits. Every one is optional, so a DSM from 0.6.0 still reads.
- */
-export type Access = 'public' | 'signed-in' | 'both';
-type Limits = { min_length?: number | null; max_length?: number | null; min?: number | null; max?: number | null };
-export type DsmField = PageNode['forms'][number]['fields'][number] & Limits & { pattern?: string | null };
-export type DsmForm = Omit<PageNode['forms'][number], 'fields'> & { dialog?: string; fields: DsmField[] };
-export type Screen = Omit<PageNode, 'forms'> & { access?: Access; forms: DsmForm[] };
+/** A form field as the DSM records it, with the limits the page declares (0.7.0). */
+type DsmField = PageNode['forms'][number]['fields'][number];
 
 const LIMITS = ['min_length', 'max_length', 'min', 'max', 'pattern'] as const;
 /** The limits a field declares, without the ones the page leaves out. */
@@ -65,7 +59,7 @@ export function rpartition(s: string, sep: string): [string, string, string] {
   return i < 0 ? ['', '', s] : [s.slice(0, i), sep, s.slice(i + sep.length)];
 }
 const pair = (a: unknown, b: unknown) => JSON.stringify([a ?? null, b ?? null]);
-const access = (n: PageNode) => (n as Screen).access;
+const access = (n: PageNode) => n.access;
 const sorted = (xs: Iterable<string>) => [...xs].sort();
 
 /** A route of code-model.json (the scan's ScanRoute, the fields TestGen reads). */
@@ -123,7 +117,7 @@ export class Facts {
     for (const n of this.model.nodes) {
       const names = new Set<string>();
       for (const e of this.model.elements.get(n.id) ?? []) names.add(norm(e.label));
-      for (const f of (n as Screen).forms ?? []) {
+      for (const f of n.forms ?? []) {
         names.add(norm(f.name));
         for (const b of f.submits ?? []) names.add(norm(b));
         for (const fd of f.fields ?? []) {
@@ -141,7 +135,7 @@ export class Facts {
     this.apiRoutes = (input.apiRoutes ?? [])
       .filter((r) => r.kind === 'api' && r.method)
       .map((r) => ({ ...r, key: apiKey(r.method, r.route) }));
-    this.hasAccess = this.model.nodes.some((n) => (n as Screen).access);
+    this.hasAccess = this.model.nodes.some((n) => n.access);
     this.relations = new Set([...this.model.out.values()].flatMap((rels) => rels.map((r) => pair(r.from, r.to))));
     this.journeys = this.model.journeys();
     this.entries = new Set([
@@ -171,7 +165,7 @@ export class Facts {
 
   /** Whether a signed-out visitor sees the screen (public), only a signed-in one does, or both; null when unrecorded. */
   access(route: string): Access | null {
-    return (this.model.byId.get(route) as Screen | undefined)?.access ?? null;
+    return this.model.byId.get(route)?.access ?? null;
   }
 
   /** The API route (verb and path) is one the code model found on the server only (Q48). */
@@ -308,7 +302,7 @@ export class Facts {
           url: n.url ?? null,
           flags: n.flags ?? [],
           ...(access(n) ? { access: access(n) } : {}),
-          forms: ((n as Screen).forms ?? []).map((f) => ({
+          forms: (n.forms ?? []).map((f) => ({
             name: f.name ?? null,
             ...(f.dialog ? { dialog: f.dialog } : {}),
             method: f.method ?? null,

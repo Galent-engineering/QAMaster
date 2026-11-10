@@ -97,6 +97,23 @@ test('a step no generic phrasing fits keeps its own wording', () => {
   assert.deepEqual(stepLines(text), ['I drag the card to Done', 'the card moves to the Done column']);
 });
 
+test('a step back to the root asserts its expected text, not a URL every page contains', () => {
+  const text = featureText('Todo', 'Todo', [
+    kase({
+      steps: [
+        {
+          screen: '/todo',
+          action: 'Click the Home link',
+          element: 'Home',
+          leads_to: '/',
+          expected: 'The page shows "Welcome"',
+        },
+      ],
+    }),
+  ]);
+  assert.deepEqual(stepLines(text), ['I click the "Home" link', 'I should see the text "Welcome"']);
+});
+
 test('the published steps and case hashes of an existing run are unchanged by the new wording', () => {
   const cases = read('tests/fixtures/testgen/shop/run/testcases.json') as TestCase[];
   const before = JSON.stringify(cases);

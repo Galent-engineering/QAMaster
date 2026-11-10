@@ -299,6 +299,9 @@ test('item 13: the estimate names the routes, the pages and the minutes from the
     [past.basis, past.pages, past.minutes, past.seconds_per_page, past.concurrency],
     ['last crawl', 8, 12, 90, 3],
   );
+  // crawl.concurrency changed since that crawl: the pace is scaled to the tabs a crawl would use now
+  const one = estimate(qa, dir, { ...config, application: { ...config.application, crawl: { concurrency: 1 } } });
+  assert.deepEqual([one.minutes, one.seconds_per_page, one.concurrency], [36, 270, 1]);
 
   const qam = (...args: string[]) => spawnSync(QAM, ['--repo', qa, ...args], { encoding: 'utf8' });
   const r = qam('dsm', 'run', '--estimate');

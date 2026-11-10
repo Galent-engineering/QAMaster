@@ -127,7 +127,7 @@ function apiFindings(root: string, add: (k: string, msg: string) => void) {
   const steps = files(root, 'steps/api', /\.ts$/);
   for (const f of steps) {
     direct(f);
-    if (!/from '(?:\.\.\/)+src\/api\/services\//.test(read(root, f)))
+    if (!/from ['"](?:\.\.\/)+src\/api\/services\//.test(read(root, f)))
       add('api', `${f}: does not use a service from src/api/services/: an API step calls a service`);
   }
   const used = files(root, 'steps', /\.ts$/).map((f) => read(root, f));
@@ -137,7 +137,7 @@ function apiFindings(root: string, add: (k: string, msg: string) => void) {
     if (!/\bextends BaseApiClient\b/.test(text))
       add('api', `${f}: a service extends BaseApiClient (src/api/base/BaseApiClient.ts)`);
     const name = path.posix.basename(f, '.ts');
-    if (!used.some((t) => new RegExp(`services/${name}'`).test(t)))
+    if (!used.some((t) => new RegExp(`services/${name}(?:\\.(?:ts|js))?['"]`).test(t)))
       add('api', `${f}: no step uses it (steps import a service from src/api/services/)`);
   }
 }

@@ -71,7 +71,8 @@ function stepPhrases(st: Step): [string, string] {
   const shown = /"([^"]+)"/.exec(expected)?.[1];
   const target = s(st.leads_to);
   let e: string | null = null;
-  if (target && plain(target)) e = `the URL should contain ${q(target)}`;
+  // every URL contains "/": a step back to the root keeps its own expected text
+  if (target && target !== '/' && plain(target)) e = `the URL should contain ${q(target)}`;
   else if (shown) e = `I should see the text ${q(shown)}`;
   let free = lowerFirst(action).replace(/\.$/, '');
   if (/^[a-z]/.test(free) && !/^(the|a|an|i|my|user|employee|admin|manager)\b/.test(free)) free = `I ${free}`;
