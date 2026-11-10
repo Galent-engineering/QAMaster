@@ -260,7 +260,7 @@ export function partitionOrder(n: number, adj: number[][], prio: (v: number) => 
  */
 export function labelOf(p: UiPage, titleCount: Map<string, number>): string {
   if (!p.title || (titleCount.get(p.title) ?? 0) < 2) return p.route;
-  return p.heading || p.headings?.[0] || p.route;
+  return p.heading || p.route; // only a crawl from 0.7.0 on records the h1 / h2 split; an older one keeps routes
 }
 
 /** A field's declared limits as the DSM names them, only the ones the page declares. */

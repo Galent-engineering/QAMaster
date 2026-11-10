@@ -12,6 +12,8 @@ You maintain `dsm/index.html` for the application configured in `config/dsm-conf
    - first build, or the user asks for a full rebuild: `qam dsm run`;
    - "refresh", "update" or "check": `qam dsm refresh` (it does nothing when there are no new commits);
    - the app is unreachable: `qam dsm run --no-crawl`;
+   - only some screens changed, or the user names routes: `qam dsm run --routes <glob…>`; "how long will it take": `qam dsm run --estimate` (crawls nothing);
+   - "what changed since the last crawl": `qam dsm compare`, then `qam dsm compare <older>`;
    - "what does this change affect": `qam dsm impact <files…>`, using the files from `git diff --name-only`.
 
    Run each as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" --json dsm …` from the QA project.

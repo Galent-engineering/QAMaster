@@ -10,6 +10,9 @@
 - In the *Partitioned* order the main flow runs above the diagonal. **Marks below the diagonal are backward navigation**, and boxed blocks are **cycles**: screens that can all reach each other.
 - Shaded bands are modules (the first URL segment, or `matrix.module_depth` segments).
 - Click a cell for its evidence: the UI element's text, or `repo:file:line` in code.
+- A screen's `access` is `public` (seen signed out), `signed-in` or `both`. A screen seen in both states holds the signed-in page's elements, plus the signed-out page's extra ones marked `state: signed-out`.
+- A dialog's fields, buttons and submit are a form on the page that opens it, named after the dialog (`dialog: <title>`). A field records `min_length`, `max_length`, `min`, `max` and `pattern` when the page declares them.
+- A sidebar or menu item with no `href` is a `link` element (in the nav) of every page that shows it. When two or more screens share a document title, a screen is labelled by its first `h1`, else `h2`; its id is still its route.
 
 ## Flags
 
@@ -31,7 +34,7 @@
 | `dsm.json` | Both matrices, metrics, the diff against the last build |
 | `ui-model.json`, `code-model.json` | The crawl and the code scan |
 | `CHANGES.md` | The last update: trigger, impacted screens, shared files, matrix changes |
-| `history/` | Earlier `dsm.json` files (`change_detection.keep_history`, default 30) |
+| `history/` | Earlier `dsm.json` files (`change_detection.keep_history`, default 30); `qam dsm compare` reads them |
 | `state.json` | The last commit seen per repository |
 | `.auth/state.json` | The saved sign-in session, owner-only and git-ignored |
 
@@ -39,14 +42,16 @@
 
 - **`application`:**
   - `base_url`, `start_paths`, `allowed_hosts`, `api_hosts`;
-  - `max_pages` (300), `max_depth` (8), `settle_ms`, `page_timeout_ms`;
+  - `max_pages` (300), `max_depth` (8), `settle_ms` (the longest a page may keep changing before it counts as settled), `page_timeout_ms`;
+  - `crawl.concurrency` (3): pages crawled at once, in tabs of one browser session; 1 crawls one page at a time. The DSM is the same whatever the number;
   - `hash_routing` (`auto`), `route_normalization`, `keep_query_params`, `exclude_url_patterns`.
 - **`application.login`:**
   - `mode`: `auto`, `manual` or `none`;
   - `url`: the sign-in page, if not the first page;
   - `username_selector`, `password_selector`, `submit_selector`;
   - `username_env` and `password_env`, default `DSM_APP_USERNAME` and `DSM_APP_PASSWORD`;
-  - `save_session` (default `true`).
+  - `save_session` (default `true`);
+  - `signed_out_pass` (default `true`): crawl signed out first and merge it with the signed-in crawl.
 - **`application.safety`:**
   - `allow_mutating_patterns`: only for read-only endpoints a page needs to render, such as a search POST;
   - `dismiss_dialogs`.

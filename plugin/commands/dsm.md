@@ -1,6 +1,6 @@
 ---
 description: Build, refresh or inspect the UI Design Structure Matrix (dsm/index.html) from a safe crawl of the app and a scan of its code
-argument-hint: "[run|refresh|changes|impact <files…>|render] [--no-crawl] [--login-mode auto|manual|none]"
+argument-hint: "[run|refresh|changes|impact <files…>|compare [<older>] [<newer>]|render] [--no-crawl] [--login-mode auto|manual|none] [--routes <glob…>] [--estimate]"
 allowed-tools: Bash(node:*), Read
 ---
 

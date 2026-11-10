@@ -180,3 +180,132 @@ test('qam dsm blocks with the step to take', () => {
   );
   assert.match(qam('--repo', empty, 'dsm', 'impact').stderr, /Name the changed files/);
 });
+
+// ---- 0.7.0: the DSM shape the crawl adds (R6, R15, R30), without a browser
+
+const spa = (route: string, extra: Record<string, unknown> = {}) => ({
+  route,
+  url: `http://app.test${route}`,
+  title: 'Vite + React + TS',
+  status: 200,
+  elements: [],
+  ...extra,
+});
+const uiOf = (pages: ReturnType<typeof spa>[]) =>
+  ({
+    generated_at: '2026-11-10T00:00:00Z',
+    base_url: 'http://app.test/',
+    mode: 'full',
+    truncated: false,
+    pages,
+    edges: [],
+    api_calls: [],
+  }) as never;
+
+test('item 7: screens that share a document title are labelled by their heading, and their ids do not change', () => {
+  const dsm = build(
+    uiOf([
+      spa('/todo', { heading: 'Todos', headings: ['Todos', 'Add'] }),
+      spa('/users', { heading: 'Users', headings: ['Users'] }),
+      spa('/old', { headings: ['Old crawl'] }),
+      spa('/profile', { heading: 'Profile', headings: ['Profile'] }),
+      spa('/solo', { title: 'Only one', heading: 'Solo', headings: ['Solo'] }),
+      spa('/bare', { title: 'Same', headings: [] }),
+      spa('/bare2', { title: 'Same', headings: [] }),
+    ]),
+    null,
+    { project: 'x', application: { start_paths: ['/todo'] } },
+  );
+  const byId = new Map(dsm.page.nodes.map((n) => [n.id, n.label]));
+  assert.equal(byId.get('/todo'), 'Todos');
+  assert.equal(byId.get('/users'), 'Users');
+  assert.equal(byId.get('/old'), '/old', 'a crawl from before 0.7.0 recorded no h1 / h2 split: the route');
+  assert.equal(byId.get('/profile'), 'Profile');
+  assert.equal(byId.get('/solo'), '/solo', 'a title of its own: the route');
+  assert.equal(byId.get('/bare'), '/bare', 'no heading: the route');
+  assert.deepEqual([...byId.keys()].sort(), ['/bare', '/bare2', '/old', '/profile', '/solo', '/todo', '/users']);
+});
+
+test('item 2: a dialog form and its limits reach the screen and the element matrix; a form without limits is as before', () => {
+  const dsm = build(
+    uiOf([
+      spa('/todo', {
+        title: 'Todos',
+        forms: [
+          {
+            key: '/todo::form:dialog-new-todo',
+            name: 'New todo',
+            dialog: 'New todo',
+            buttons: ['Cancel', 'Save'],
+            submits: ['Save'],
+            fields: [
+              {
+                key: '/todo::field:title',
+                name: 'title',
+                label: 'Title',
+                type: 'text',
+                minlength: 3,
+                maxlength: 50,
+                pattern: null,
+              },
+              { key: '/todo::field:n', name: 'n', label: 'Count', type: 'number', min: 1, max: 5 },
+            ],
+          },
+          {
+            key: '/todo::form:search',
+            name: 'search',
+            fields: [{ key: '/todo::field:q', name: 'q', label: 'Q', type: 'text' }],
+          },
+        ],
+      }),
+    ]),
+    null,
+    { project: 'x' },
+  );
+  const [dialog, search] = dsm.page.nodes[0].forms;
+  assert.equal(dialog.name, 'New todo');
+  assert.equal(dialog.dialog, 'New todo');
+  assert.deepEqual(dialog.buttons, ['Cancel', 'Save']);
+  assert.deepEqual(dialog.fields[0], {
+    label: 'Title',
+    name: 'title',
+    type: 'text',
+    required: null,
+    min_length: 3,
+    max_length: 50,
+  });
+  assert.deepEqual(dialog.fields[1], { label: 'Count', name: 'n', type: 'number', required: null, min: 1, max: 5 });
+  assert.deepEqual(search, {
+    name: 'search',
+    method: null,
+    target: null,
+    fields: [{ label: 'Q', name: 'q', type: 'text', required: null }],
+    submits: [],
+  });
+  assert.equal(dsm.element.nodes.find((n) => n.id === '/todo::field:title')?.max_length, 50);
+});
+
+test('item 3: a start_paths entry with an ID is not an entry screen when its list page is', () => {
+  const pages = [
+    spa('/todo', { depth: 0, discovered_by: 'start', title: 'a' }),
+    spa('/todo/:id', { depth: 0, discovered_by: 'start', title: 'b' }),
+    spa('/other', { depth: 0, discovered_by: 'start', title: 'c' }),
+  ];
+  const both = build(uiOf(pages), null, { project: 'x', application: { start_paths: ['/todo', '/todo/:id'] } });
+  const flags = (id: string) => both.page.nodes.find((n) => n.id === id)?.flags;
+  assert.ok(flags('/todo/:id')?.includes('orphan'), 'not an entry screen: nothing links to it');
+  assert.ok(!flags('/todo')?.includes('orphan'), 'its list page still is one');
+  const order = both.page.orders.partitioned.map((v) => both.page.nodes[v].id);
+  assert.ok(order.indexOf('/todo') < order.indexOf('/todo/:id'), 'and it is not ordered with the entry screens');
+  const alone = build(uiOf(pages.slice(1, 2)), null, { project: 'x', application: { start_paths: ['/todo/:id'] } });
+  assert.ok(
+    !alone.page.nodes[0].flags.includes('orphan'),
+    'with no list page among the start paths it stays an entry screen',
+  );
+});
+
+test('a screen records its access when the crawl did, and not otherwise', () => {
+  const dsm = build(uiOf([spa('/login', { access: 'public' }), spa('/todo')]), null, { project: 'x' });
+  assert.equal(dsm.page.nodes.find((n) => n.id === '/login')?.access, 'public');
+  assert.ok(!('access' in (dsm.page.nodes.find((n) => n.id === '/todo') ?? {})), 'a 0.6.0 crawl has none');
+});

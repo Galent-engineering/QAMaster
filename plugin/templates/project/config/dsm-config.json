@@ -9,7 +9,7 @@
     "allowed_hosts": [],
     "secrets_file": ".env.dsm",
     "login": {
-      "_comment": "mode: auto = sign in on a detected sign-in page (DSM_APP_USERNAME / DSM_APP_PASSWORD from the environment or .env.dsm, else asked in a terminal); manual = sign in yourself in a visible browser; none = no sign-in. save_session keeps the session in dsm/.auth/state.json (owner-only, git-ignored); set it to false to sign in every time.",
+      "_comment": "mode: auto = sign in on a detected sign-in page (DSM_APP_USERNAME / DSM_APP_PASSWORD from the environment or .env.dsm, else asked in a terminal); manual = sign in yourself in a visible browser; none = no sign-in, only the signed-out pass. save_session keeps the session in dsm/.auth/state.json (owner-only, git-ignored); set it to false to sign in every time. signed_out_pass: crawl signed out first (writes blocked, nothing submitted) and merge it with the signed-in crawl, so the public screens (sign-in, sign-up) get their fields and every screen records who can see it (public, signed-in, both); false crawls only signed in.",
       "mode": "auto",
       "url": "",
       "username_selector": "",
@@ -19,12 +19,17 @@
       "password_env": "DSM_APP_PASSWORD",
       "post_login_wait_ms": 3000,
       "manual_timeout_s": 300,
-      "save_session": true
+      "save_session": true,
+      "signed_out_pass": true
     },
     "max_pages": 300,
     "max_depth": 8,
     "page_timeout_ms": 30000,
     "settle_ms": 1200,
+    "crawl": {
+      "_comment": "concurrency: pages crawled at once, in tabs of one browser session (writes still blocked); 1 crawls one page at a time. settle_ms above is now only the longest a page may keep changing before it counts as settled.",
+      "concurrency": 3
+    },
     "headless": true,
     "ignore_https_errors": false,
     "hash_routing": "auto",
