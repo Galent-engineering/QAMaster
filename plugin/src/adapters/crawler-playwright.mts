@@ -397,20 +397,22 @@ export class PlaywrightCrawler implements Crawler {
       const t0 = Date.now();
       const netCap = Math.min(timeout, 10000);
       await page.waitForLoadState('load', { timeout: netCap }).catch(() => {});
+      // one deadline for every round: a long-poll request never costs more than the network cap plus settle_ms
+      const deadline = Date.now() + netCap + settleMs;
       for (let round = 0; round < 3; round++) {
-        const end = Date.now() + netCap;
-        while ((pending.get(page) ?? 0) > 0 && Date.now() < end) await page.waitForTimeout(50);
-        if (settleMs > 0) {
+        while ((pending.get(page) ?? 0) > 0 && Date.now() < deadline - settleMs) await page.waitForTimeout(50);
+        const left = Math.min(settleMs, deadline - Date.now());
+        if (left > 0) {
           for (let attempt = 0; attempt < 2; attempt++) {
             try {
-              await page.evaluate(QUIET_DOM, { quiet: Math.min(QUIET_MS, settleMs), cap: settleMs });
+              await page.evaluate(QUIET_DOM, { quiet: Math.min(QUIET_MS, left), cap: left });
               break;
             } catch {
               await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => {}); // it navigated
             }
           }
         }
-        if ((pending.get(page) ?? 0) === 0) break; // nothing started while the DOM was settling
+        if ((pending.get(page) ?? 0) === 0 || Date.now() >= deadline) break; // nothing started, or out of time
       }
       timing.waits++;
       timing.ms += Date.now() - t0;
@@ -567,23 +569,35 @@ export class PlaywrightCrawler implements Crawler {
       }
       if (mode !== 'none') {
         phase = 'signing-in';
-        const ensured = await this.ensureLogin(
-          (page) => settle(page),
-          makeContext,
-          routes,
-          mode,
-          authFile,
-          loginState,
-          signInHere,
-        );
+        const ensure = (startUrl?: string) =>
+          this.ensureLogin(
+            (page) => settle(page),
+            makeContext,
+            routes,
+            mode,
+            authFile,
+            loginState,
+            signInHere,
+            startUrl,
+          );
+        let ensured = await ensure();
+        // what the signed-out pass saw redirected to sign-in is crawled signed in too, even when nothing links to it
+        const gatedBy = (r: string | null) => (passA?.pages ?? []).filter((p) => p.redirect_to && p.redirect_to === r);
+        if (!ensured.info.required && !login.url && loginRef.route) {
+          // the start page is public, but the signed-out pass found a sign-in route: sign in from there instead
+          const via = gatedBy(loginRef.route)[0] ?? (passA?.pages ?? []).find((p) => p.route === loginRef.route);
+          if (via) {
+            await ensured.context.close().catch(() => {});
+            ensured = await ensure(via.url);
+          }
+        }
         info = ensured.info;
         loginRef.route = info.login_route ?? loginRef.route;
         if (!signedOutPass || info.required) {
           phase = 'crawling';
           current = ensured.context;
           observe(current);
-          // what the signed-out pass saw redirected to sign-in is crawled signed in too, even when nothing links to it
-          const gated = (passA?.pages ?? []).filter((p) => p.redirect_to && p.redirect_to === loginRef.route);
+          const gated = gatedBy(loginRef.route);
           passB = await this.explore(
             current,
             opts,
@@ -637,7 +651,7 @@ export class PlaywrightCrawler implements Crawler {
     const previous = opts.previous ?? null;
     const onlyRoutes = opts.routes?.length ? opts.routes : null;
     const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
-    let { pages: outPages, edges: outEdges } = passA ? mergePasses(passA, passB) : (passB as PassOut);
+    let { pages: outPages, edges: outEdges } = passA ? mergePasses(passA, passB, c.loginRoute) : (passB as PassOut);
     const crawledRoutes = [...new Set([...(passA?.recrawled ?? []), ...(passB?.recrawled ?? [])])].sort(byText);
     let outCalls = [...c.apiCalls].map(([key, rec]) => {
       const sets = c.apiSets.get(key);
@@ -700,10 +714,11 @@ export class PlaywrightCrawler implements Crawler {
     authFile: string | null,
     loginState: (p: Page) => Promise<LoginState>,
     signInHere: (p: Page) => Promise<boolean>,
+    from?: string,
   ): Promise<{ context: BrowserContext; info: LoginInfo }> {
     const { app } = this.s;
     const timeout = app.page_timeout_ms ?? 30000;
-    const startUrl = new URL(app.login?.url || app.start_paths?.[0] || '/', routes.base).href;
+    const startUrl = new URL(from || app.login?.url || app.start_paths?.[0] || '/', routes.base).href;
     if (mode === 'none') return { context: await makeContext(), info: { mode: 'none' } };
     let saved: StorageState | undefined;
     if (authFile && fs.existsSync(authFile)) {

@@ -34,6 +34,7 @@ test('item 1: a route redirected signed out with content signed in is signed-in,
       edges: [gatedEdge],
     },
     { pages: [pg('/todo', { elements: [el('/todo', 'Home')] })], edges: [] },
+    '/login',
   );
   const todo = out.pages.find((p) => p.route === '/todo');
   assert.equal(todo?.access, 'signed-in');
@@ -47,6 +48,7 @@ test('item 1: /login keeps its signed-out fields even though it redirects once s
   const out = mergePasses(
     { pages: [pg('/login', { forms: [{ key: 'f', fields: [{ key: 'k', name: 'username' }] }] })], edges: [] },
     { pages: [moved, pg('/')], edges: [movedEdge] },
+    '/login',
   );
   const login = out.pages.find((p) => p.route === '/');
   assert.equal(login?.access, 'signed-in');
@@ -61,6 +63,7 @@ test('item 1: a screen seen in both states is the signed-in page, plus the eleme
   const out = mergePasses(
     { pages: [pg('/about', { elements: [el('/about', 'Sign in'), el('/about', 'About')] })], edges: [] },
     { pages: [pg('/about', { elements: [el('/about', 'About'), el('/about', 'Log out')] })], edges: [] },
+    '/login',
   );
   const about = out.pages[0];
   assert.equal(about.access, 'both');
@@ -76,7 +79,7 @@ test('item 1: a screen seen in both states is the signed-in page, plus the eleme
 
 test('item 1: with no signed-in pass, content is public and a route that needs sign-in is signed-in', () => {
   const [gated] = redirect('/todo', '/login');
-  const out = mergePasses({ pages: [pg('/'), gated], edges: [] }, null);
+  const out = mergePasses({ pages: [pg('/'), gated], edges: [] }, null, '/login');
   assert.deepEqual(
     out.pages.map((p) => [p.route, p.access]),
     [
@@ -84,6 +87,23 @@ test('item 1: with no signed-in pass, content is public and a route that needs s
       ['/todo', 'signed-in'],
     ],
   );
+});
+
+test('item 1: an ordinary redirect signed out is public, with or without a signed-in pass or a sign-in route', () => {
+  const moved = () => ({ pages: [pg('/old', { redirect_to: '/new' }), pg('/new')], edges: [] });
+  const cases: [{ pages: UiPage[]; edges: UiEdge[] } | null, string | null][] = [
+    [null, null],
+    [null, '/login'],
+    [{ pages: [pg('/new')], edges: [] }, '/login'],
+  ];
+  for (const [signedIn, loginRoute] of cases) {
+    const out = mergePasses(moved(), signedIn, loginRoute);
+    assert.equal(
+      out.pages.find((p) => p.route === '/old')?.access,
+      'public',
+      `signed in: ${!!signedIn}, ${loginRoute}`,
+    );
+  }
 });
 
 // ---- a real crawl of tests/fixtures/crawl/todo-app.mjs
@@ -255,4 +275,17 @@ test('item 12: an incremental crawl of one route keeps the rest of the last craw
     'every other screen is kept',
   );
   assert.equal(route(model, '/login').access, 'public');
+});
+
+test('item 1: a public start page still signs in, from the sign-in route the signed-out pass found', {
+  timeout: 180_000,
+}, async () => {
+  const model = await crawler({ start_paths: ['/about'] }).crawl({ baseUrl: ui });
+  assert.equal(model.login?.required, true, 'signed in');
+  assert.equal(model.login?.login_route, '/login');
+  const todo = route(model, '/todo');
+  assert.ok(todo, 'a private screen was crawled signed in');
+  assert.equal(todo.access, 'signed-in');
+  assert.equal(todo.redirect_to, undefined);
+  assert.equal(route(model, '/about').access, 'both');
 });

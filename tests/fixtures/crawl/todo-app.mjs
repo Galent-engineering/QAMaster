@@ -6,7 +6,8 @@
 // Private (redirect to /login when signed out; /login and /register redirect to / when signed in): /, /todo (cards with
 // no link, a sidebar of divs, an "Add todo" dialog with limits), /todo/<id>, /profile.
 // Every POST and DELETE is recorded; GET /__writes lists them, so a test can prove a crawl changed nothing.
-// /slow shows its content in steps 80 ms apart; /busy changes its DOM until the page is left.
+// /slow shows its content in steps 80 ms apart; /busy changes its DOM until the page is left; /poll starts a request
+// that is never answered (a long poll).
 // Test account (fixture only): qa@example.test / qa-password.
 import http from 'node:http';
 
@@ -33,6 +34,7 @@ const server = http.createServer(async (req, res) => {
   // a sign-in is a write too; the crawl signs in with its guard off, so only the sign-in is allowed to appear here
   if (req.method !== 'GET' && req.method !== 'HEAD') writes.push({ method: req.method, path: url.pathname, body: raw });
   if (url.pathname === '/api/todos') return json([{ id: 1, title: 'Buy milk' }, { id: 2, title: 'Walk dog' }, { id: 3, title: 'Write tests' }]);
+  if (url.pathname === '/api/poll') return; // never answered
   if (url.pathname.startsWith('/api/')) return json({});
   if (url.pathname === '/login') {
     if (req.method === 'POST') {
@@ -61,6 +63,7 @@ const b = document.createElement('button'); b.textContent = 'Step ' + n; documen
   if (url.pathname === '/busy') {
     return send(200, page('Busy', `<div id="ticker"></div><script>setInterval(() => { document.getElementById('ticker').textContent = Date.now(); }, 20);</script>`, user));
   }
+  if (url.pathname === '/poll') return send(200, page('Poll', `<p>Live.</p><script>fetch('/api/poll');</script>`, user));
   if (url.pathname === '/logout') return send(302, '', { location: '/login', 'set-cookie': 'sid=; Max-Age=0; Path=/' });
   if (!user) return send(302, '', { location: '/login' });
   if (url.pathname === '/') return send(200, page('Home', '<p>Welcome back.</p>', true));

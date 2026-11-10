@@ -277,11 +277,12 @@ type PassOut = { pages: UiPage[]; edges: UiEdge[] };
  *   marked `state: signed-out` (D2), so a sign-in case can still click "Sign in";
  * - content signed out, a redirect (or nothing) signed in: `public`, the signed-out page (`/login` keeps its fields);
  * - a redirect signed out, content signed in: `signed-in`, not a redirect;
- * - a redirect signed out and nothing signed in: `signed-in`, as seen.
+ * - a redirect to the sign-in route signed out and nothing signed in: `signed-in`, as seen; any other redirect is
+ *   an ordinary redirect, `public`.
  * A redirect's own edge is dropped whenever the other pass has the content, so no relation says "/login redirects".
- * Pass `signedIn` as null for a crawl with no signed-in pass.
+ * Pass `signedIn` as null for a crawl with no signed-in pass, and `loginRoute` as null when no sign-in route is known.
  */
-export function mergePasses(signedOut: PassOut, signedIn: PassOut | null): PassOut {
+export function mergePasses(signedOut: PassOut, signedIn: PassOut | null, loginRoute: string | null): PassOut {
   const inB = new Map((signedIn?.pages ?? []).map((p) => [p.route, p]));
   const pages: UiPage[] = [];
   const dropRedirectOf = new Set<string>();
@@ -290,7 +291,8 @@ export function mergePasses(signedOut: PassOut, signedIn: PassOut | null): PassO
     done.add(a.route);
     const b = inB.get(a.route);
     if (!b) {
-      pages.push({ ...a, access: a.redirect_to ? 'signed-in' : 'public' });
+      const toSignIn = !!a.redirect_to && a.redirect_to === loginRoute;
+      pages.push({ ...a, access: toSignIn ? 'signed-in' : 'public' });
       continue;
     }
     if (!a.redirect_to && !b.redirect_to) {

@@ -85,3 +85,23 @@ test('item 10: a page whose DOM never stops changing is still settled, at the se
   assert.equal(model.pages[0].error, null);
   assert.ok(model.pages[0].elements?.length);
 });
+
+test('item 10: a request that is never answered costs one network cap plus settle_ms per settle, not three', {
+  timeout: 120_000,
+}, async () => {
+  const netCap = 1500;
+  const settleMs = 300;
+  const model = await crawler({
+    page_timeout_ms: netCap,
+    settle_ms: settleMs,
+    start_paths: ['/poll'],
+    max_pages: 1,
+    login: { mode: 'none' },
+    crawl: { concurrency: 1 },
+  }).crawl({ baseUrl: ui });
+  assert.equal(model.pages[0].error, null);
+  const timing = model.timing;
+  assert.ok(timing && timing.settle_waits >= 1);
+  const each = timing.settle_ms / timing.settle_waits;
+  assert.ok(each < netCap + settleMs + 700, `waited ${Math.round(each)} ms per settle`);
+});
