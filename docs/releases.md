@@ -154,7 +154,7 @@ Not yet run in a live session.
 
 ## 0.4.4: messages and docs from the fastapi-react-app run
 
-Plan: [plans/0.4.4.md](plans/0.4.4.md). Built on `release/0.4.4` on 2026-11-06. Fixes only, so a patch release (Q46).
+Plan: [plans/0.4.4.md](plans/0.4.4.md). Built on `release/0.4.4` on 2026-11-06; released 2026-11-10. Fixes only, so a patch release (Q46).
 
 | Change | Where | Decision |
 |---|---|---|
@@ -169,7 +169,7 @@ Not yet run on fastapi-react-app.
 
 ## 0.5.0: requirements, fetched or imported
 
-Plan: [plans/0.5.0.md](plans/0.5.0.md). Built on `release/0.5.0` on 2026-11-06. A new command, so a minor release (Q46).
+Plan: [plans/0.5.0.md](plans/0.5.0.md). Built on `release/0.5.0` on 2026-11-06; released 2026-11-10. A new command, so a minor release (Q46).
 
 | Change | Where | Decision |
 |---|---|---|
