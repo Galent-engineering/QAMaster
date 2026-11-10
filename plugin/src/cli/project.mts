@@ -11,6 +11,7 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import tty from 'node:tty';
 import { parseArgs } from 'node:util';
 import { noProjectError } from '../adapters/ado.mts';
 import type { TestCaseStore, WriteCheck } from '../adapters/base.mts';
@@ -95,7 +96,8 @@ function readLine(prompt: string): string {
 }
 
 export type SetupIo = { tty: boolean; ask: (prompt: string) => string };
-const REAL_IO: SetupIo = { tty: !!process.stdin.isTTY, ask: readLine };
+// not process.stdin.isTTY: touching process.stdin on a terminal makes fd 0 non-blocking (EAGAIN in readLine)
+const REAL_IO: SetupIo = { tty: tty.isatty(0), ask: readLine };
 
 /** Q47: asks which folder, showing the choices; a number picks one, anything else is taken as a typed path. */
 function askFolder(io: SetupIo, choices: FolderChoice[], what: string): string {

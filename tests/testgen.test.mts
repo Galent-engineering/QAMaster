@@ -412,12 +412,12 @@ test('0.4.4 R14: a step that only opens a URL needs no UI element', () => {
 
 // 0.6.0 item 13 (E3): on a terminal, qam review shows the run and asks; a script passes --yes
 
-function reviewWith(dir: string, args: string[], io: { tty: boolean; ask: (p: string) => string }) {
+function reviewWith(dir: string, args: string[], io: { tty: boolean; ask: (p: string) => string }, json = false) {
   const lines: string[] = [];
   const log = console.log;
   console.log = (...a: unknown[]) => lines.push(a.join(' '));
   try {
-    return { code: review(loadConfig(dir, {}), args, false, io), out: lines.join('\n') };
+    return { code: review(loadConfig(dir, {}), args, json, io), out: lines.join('\n') };
   } finally {
     console.log = log;
   }
@@ -457,4 +457,57 @@ test('item 13: --yes records without asking, and so does a script with no termin
   assert.equal(read(path.join(run, 'run.json')).reviewedBy, 'reviewer@example.test');
   assert.equal(reviewWith(dir, ['--yes', 'cart'], { tty: true, ask: never }).code, 0, '--yes may come first');
   assert.equal(reviewWith(dir, ['cart'], { tty: false, ask: never }).code, 0);
+});
+
+test('item 13: with --json on a terminal, stdout holds only the JSON', () => {
+  const { dir } = project();
+  assert.equal(qam(dir, 'testgen', 'validate', 'cart').status, 0);
+  git(dir, 'config', 'user.email', 'reviewer@example.test');
+  const no = reviewWith(dir, ['cart'], { tty: true, ask: () => 'n' }, true);
+  assert.equal(no.code, 3);
+  assert.deepEqual(JSON.parse(no.out), { result: 'awaiting', run: 'cart' });
+  const yes = reviewWith(dir, ['cart'], { tty: true, ask: () => 'y' }, true);
+  assert.equal(yes.code, 0);
+  assert.equal(JSON.parse(yes.out).reviewedBy, 'reviewer@example.test');
+});
+
+// A real terminal, through Python's pty module: the CLI must not touch process.stdin when it loads, or fd 0 turns
+// non-blocking and the synchronous read of the answer fails with EAGAIN instead of waiting for it. The answer is typed
+// half a second after the question, so the read is already waiting with nothing to read.
+const PTY = `
+import os, pty, sys, time
+pid, fd = pty.fork()
+if pid == 0:
+    os.execv(sys.argv[1], sys.argv[1:])
+out = b''
+typed = False
+while True:
+    try:
+        chunk = os.read(fd, 4096)
+    except OSError:
+        break
+    if not chunk:
+        break
+    out += chunk
+    if not typed and b'[y/N]' in out:
+        typed = True
+        time.sleep(0.5)
+        os.write(fd, b'y\\n')
+os.waitpid(pid, 0)
+sys.stdout.write(out.decode('utf8', 'replace'))
+`;
+const PYTHON = process.platform !== 'win32' && spawnSync('python3', ['-c', 'import pty']).status === 0;
+test('item 13: on a real terminal review waits for the answer', { skip: !PYTHON && 'needs python3' }, () => {
+  const { dir, run } = project();
+  assert.equal(qam(dir, 'testgen', 'validate', 'cart').status, 0);
+  git(dir, 'config', 'user.email', 'reviewer@example.test');
+  const cmd = [process.execPath, path.join(ROOT, 'plugin/src/cli/main.mts'), '--repo', dir, 'review', 'cart'];
+  const r = spawnSync('python3', ['-c', PTY, ...cmd], {
+    encoding: 'utf8',
+    env: { ...process.env, QAMASTER_HOME: HOME },
+    timeout: 20_000,
+  });
+  assert.doesNotMatch(r.stdout, /EAGAIN/);
+  assert.match(r.stdout, /Reviewed cart as reviewer@example.test/);
+  assert.equal(read(path.join(run, 'run.json')).reviewedBy, 'reviewer@example.test');
 });

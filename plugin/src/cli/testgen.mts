@@ -11,6 +11,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import tty from 'node:tty';
 import { parseArgs } from 'node:util';
 import { git } from '../adapters/git.mts';
 import type { Dsm, DsmConfig } from '../dsm/build.mts';
@@ -196,7 +197,9 @@ function readLine(prompt: string): string {
   return line.trim();
 }
 
-const REAL_IO: ReviewIo = { tty: !!process.stdin.isTTY, ask: readLine };
+// tty.isatty, not process.stdin.isTTY: touching process.stdin on a terminal makes fd 0 non-blocking, and readSync then
+// fails with EAGAIN instead of waiting for the answer
+const REAL_IO: ReviewIo = { tty: tty.isatty(0), ask: readLine };
 
 /**
  * Records the person's review of a validated run (Q12). On a terminal it shows the run and asks for a yes first (a
@@ -225,8 +228,9 @@ export function review(cfg: Config, argv: string[], json: boolean, io: ReviewIo 
   if (io.tty && !parsed.values.yes) {
     const v = readJson<Validation>(path.join(dir, 'validation.json'));
     const shown = path.relative(p.dir, path.join(dir, 'testcases.md'));
-    console.log(
-      `Run ${name}: ${v?.cases ?? '?'} test cases, validation ${v?.status ?? 'unknown'}, ${v?.gaps.length ?? 0} coverage gaps.\nRead them in ${shown} first.`,
+    // to stderr, like the question, so --json keeps stdout to JSON
+    process.stderr.write(
+      `Run ${name}: ${v?.cases ?? '?'} test cases, validation ${v?.status ?? 'unknown'}, ${v?.gaps.length ?? 0} coverage gaps.\nRead them in ${shown} first.\n`,
     );
     if (!/^y(es)?$/i.test(io.ask(`Approve run ${name} as reviewed? [y/N] `))) {
       console.log(json ? JSON.stringify({ result: 'awaiting', run: name }) : `Not recorded: ${name} isn't reviewed.`);
