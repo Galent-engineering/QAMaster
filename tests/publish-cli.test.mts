@@ -232,6 +232,34 @@ test('publish: a case someone changed in the store is a conflict, not written, a
   assert.doesNotMatch(p.read(CSV), /Mine/);
 });
 
+test('K6: a conflict lists its fields, the store value beside the run value', () => {
+  const p = project();
+  p.writeRun([kase('TC-CART-001')]);
+  p.qam('publish', RUN, '--apply');
+  fs.writeFileSync(path.join(p.dir, CSV), p.read(CSV).replace('Case TC-CART-001', 'Edited by hand'));
+  p.writeRun([kase('TC-CART-001', { title: 'Mine' })]);
+  const dry = p.qam('publish', RUN);
+  assert.match(dry.out, /Conflict \(1\)[\s\S]*title: store "Edited by hand", run "Mine"/);
+  const data = JSON.parse(p.qam('--json', 'publish', RUN).out);
+  assert.deepEqual(data.changes[0].differences, [{ field: 'title', store: 'Edited by hand', run: 'Mine' }]);
+});
+
+test('K7: an edit made only in the store is reported in the preview, and nothing is written', () => {
+  const p = project();
+  p.writeRun([kase('TC-CART-001')]);
+  p.qam('publish', RUN, '--apply');
+  fs.writeFileSync(path.join(p.dir, CSV), p.read(CSV).replace('Case TC-CART-001', 'Edited by hand'));
+  const dry = p.qam('publish', RUN);
+  assert.equal(dry.status, 0, 'nothing to approve');
+  assert.match(
+    dry.out,
+    /Edited in the store only \(1\), kept as it is[\s\S]*TC1000 ← TC-CART-001[\s\S]*title: store "Edited by hand", run "Case TC-CART-001"/,
+  );
+  const applied = p.qam('publish', RUN, '--apply');
+  assert.match(applied.out, /Edited in the store only \(1\)/);
+  assert.match(p.read(CSV), /Edited by hand/);
+});
+
 test('publish: a case no longer generated is listed, and closed only with --retire', () => {
   const p = project();
   p.writeRun([kase('TC-CART-001'), kase('TC-CART-002')]);

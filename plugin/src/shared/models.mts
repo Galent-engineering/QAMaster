@@ -69,7 +69,12 @@ export type LedgerEntry = {
 };
 
 /** .qamaster/ledger.json: the entries belong to one store, named as the store's where() says (Q34). */
-export type Ledger = { store: string; entries: LedgerEntry[] };
+export type Ledger = {
+  store: string;
+  entries: LedgerEntry[];
+  /** The entries of each store used before, by the name its where() gave: switching back restores them (R23). */
+  other?: Record<string, LedgerEntry[]>;
+};
 
 export type PublishChange = {
   kind: 'create' | 'update' | 'unchanged' | 'retire' | 'conflict';

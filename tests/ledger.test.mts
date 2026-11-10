@@ -9,10 +9,12 @@ import { test } from 'node:test';
 import { FileStore } from '../plugin/src/adapters/file.mts';
 import {
   type Applied,
+  adopt,
   checkStore,
   LEDGER_FILE,
   readLedger,
   record,
+  switchLedger,
   writeLedger,
 } from '../plugin/src/publish/ledger.mts';
 import { derive, diff, type PlannedChange, type PublishCase, suggestSmoke } from '../plugin/src/publish/publish.mts';
@@ -318,4 +320,64 @@ test('loop: switching stores is blocked before anything is written', async () =>
     blocked(/belongs to File testcases.*now File other\.csv/s),
   );
   assert.equal(fs.existsSync(path.join(project, 'other.csv')), false);
+});
+
+// 0.6.0 item 9 (R23): the ledger keeps each store's IDs, so bindings and links survive a switch
+const ADO = 'Azure DevOps galent/Shop';
+
+test('R23: switching parks the entries of the store left, and switching back restores them', () => {
+  const file: Ledger = { store: STORE, entries: [entry('TC-1', 1000)] };
+  const toAdo = switchLedger(file, ADO);
+  assert.deepEqual(toAdo.entries, [], 'a store never used has no IDs yet');
+  assert.equal(toAdo.store, ADO);
+  assert.deepEqual(toAdo.other?.[STORE], file.entries);
+  const ado = record(
+    toAdo,
+    ADO,
+    [{ change: planned('create', 'TC-1', { hash: 'h' }), item: item(77, 'test_case', 't') }],
+    [],
+    NOW,
+  );
+  assert.deepEqual(ado.other?.[STORE], file.entries, 'an apply keeps the parked store');
+  const back = switchLedger(ado, STORE);
+  assert.deepEqual(back.entries, file.entries);
+  assert.deepEqual(
+    back.other?.[ADO]?.map((e) => e.trackerId),
+    [77],
+  );
+  assert.equal(back.other?.[STORE], undefined, 'the active store is not parked too');
+});
+
+test('R23: a ledger with parked stores survives a write and a read', () => {
+  const dir = tmpDir('qam-ledger-other-');
+  const ledger: Ledger = { store: STORE, entries: [entry('TC-1', 1000)], other: { [ADO]: [entry('TC-1', 77)] } };
+  writeLedger(dir, ledger);
+  assert.deepEqual(readLedger(dir), ledger);
+});
+
+test('R23: adopt restores a parked store by name; a new store with entries still blocks; an empty ledger is adopted', () => {
+  const ledger: Ledger = { store: STORE, entries: [entry('TC-1', 1000)], other: { [ADO]: [entry('TC-1', 77)] } };
+  const got = adopt(ledger, ADO);
+  assert.equal(got?.store, ADO);
+  assert.deepEqual(
+    got?.entries.map((e) => e.trackerId),
+    [77],
+  );
+  assert.deepEqual(
+    got?.other?.[STORE]?.map((e) => e.trackerId),
+    [1000],
+  );
+  assert.throws(() => adopt(ledger, 'Azure DevOps galent/Other'), blocked(/belongs to File.*qam store use/s));
+  assert.equal(adopt({ store: STORE, entries: [] }, ADO)?.store, ADO);
+  assert.equal(adopt(null, ADO), null);
+});
+
+test('R23: an entry list in "other" that is damaged blocks like the main one', () => {
+  const dir = tmpDir('qam-ledger-bad-other-');
+  fs.mkdirSync(path.join(dir, '.qamaster'));
+  fs.writeFileSync(
+    path.join(dir, LEDGER_FILE),
+    JSON.stringify({ store: STORE, entries: [], other: { x: [{ localId: 'a' }] } }),
+  );
+  assert.throws(() => readLedger(dir), blocked(/"other" x entry 1/));
 });

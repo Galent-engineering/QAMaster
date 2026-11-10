@@ -36,7 +36,13 @@ export function readLedger(project: string): Ledger | null {
 /** Written whole, sorted by ID so git diffs stay small, through a temporary file so a failed write keeps the old one. */
 export function writeLedger(project: string, ledger: Ledger): void {
   const file = path.join(project, LEDGER_FILE);
-  const sorted = { store: ledger.store, entries: [...ledger.entries].sort((a, b) => (a.localId < b.localId ? -1 : 1)) };
+  const byId = (a: LedgerEntry, b: LedgerEntry) => (a.localId < b.localId ? -1 : 1);
+  const parked = Object.entries(ledger.other ?? {}).filter(([, es]) => es.length);
+  const sorted = {
+    store: ledger.store,
+    entries: [...ledger.entries].sort(byId),
+    ...(parked.length ? { other: Object.fromEntries(parked.map(([n, es]) => [n, [...es].sort(byId)])) } : {}),
+  };
   fs.mkdirSync(path.dirname(file), { recursive: true });
   const tmp = `${file}.${process.pid}.tmp`;
   fs.writeFileSync(tmp, `${JSON.stringify(sorted, null, 1)}\n`);
@@ -47,8 +53,31 @@ export function writeLedger(project: string, ledger: Ledger): void {
 export function checkStore(ledger: Ledger | null, store: string): void {
   if (!ledger || ledger.store === store) return;
   throw new BlockedError(
-    `${SHOWN} belongs to ${ledger.store}, but the store is now ${store}. IDs from one store mean nothing in another. Switch back (QAMASTER_STORE), or move the ledger aside to start a new one: the next publish then creates every test case as new.`,
+    `${SHOWN} belongs to ${ledger.store}, but the store is now ${store}. IDs from one store mean nothing in another. Switch back (qam store use, or QAMASTER_STORE), or move the ledger aside to start a new one: the next publish then creates every test case as new.`,
   );
+}
+
+/**
+ * The ledger as publish uses it for `store` (a where() name): the entries parked for that store when it was used
+ * before (R23), or an empty ledger when the one on file has no IDs to lose. A store with no parked IDs, while the
+ * ledger holds another's, still blocks: switching is `qam store use`, never quiet (Q34).
+ */
+export function adopt(ledger: Ledger | null, store: string): Ledger | null {
+  if (!ledger || ledger.store === store) return ledger;
+  if (ledger.entries.length && !Object.hasOwn(ledger.other ?? {}, store)) {
+    checkStore(ledger, store);
+  }
+  return switchLedger(ledger, store);
+}
+
+/** The ledger with `store` active: the entries of the store left are parked, and those parked for `store` come back. */
+export function switchLedger(ledger: Ledger, store: string): Ledger {
+  if (ledger.store === store) return ledger;
+  const other = { ...(ledger.other ?? {}) };
+  if (ledger.entries.length) other[ledger.store] = ledger.entries;
+  const entries = Object.hasOwn(other, store) ? other[store] : [];
+  delete other[store];
+  return { store, entries, ...(Object.keys(other).length ? { other } : {}) };
 }
 
 /** One change after `--apply` ran it: the store's item for a create or update, and `done` for a retire. */
@@ -100,5 +129,9 @@ export function record(
       entries.set(id, { ...e, smokeDeclined: true, ownedTags: e.ownedTags.filter((t) => t.toLowerCase() !== 'smoke') });
     }
   }
-  return { store, entries: [...entries.values()].sort((a, b) => (a.localId < b.localId ? -1 : 1)) };
+  return {
+    store,
+    entries: [...entries.values()].sort((a, b) => (a.localId < b.localId ? -1 : 1)),
+    ...(prev?.other ? { other: prev.other } : {}),
+  };
 }

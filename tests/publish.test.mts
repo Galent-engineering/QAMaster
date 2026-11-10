@@ -337,6 +337,29 @@ test('diff: a store edit with nothing of ours to write is not a conflict', () =>
   assert.deepEqual(kinds(r), ['unchanged TC-1']);
 });
 
+// 0.6.0 item 11 (K6, K7): a conflict shows its fields, and an edit made only in the store is reported
+test('diff K6: a conflict shows each field, the store value beside the run value', () => {
+  const was = derive(kase('TC-1'), ctx());
+  const now = derive(kase('TC-1', { title: 'Mine' }), ctx());
+  const r = diff(input([now], [entry('TC-1', 7, was.hash)], [stored(was, 7, { rev: 3, title: 'Edited by QA' })]));
+  assert.deepEqual(kinds(r), ['conflict TC-1']);
+  assert.deepEqual(r.changes[0].differences, [{ field: 'title', store: 'Edited by QA', run: 'Mine' }]);
+});
+
+test('diff K7: an edit made only in the store is reported with its fields, and still not written', () => {
+  const d = derive(kase('TC-1'), ctx());
+  const r = diff(input([d], [entry('TC-1', 7, d.hash)], [stored(d, 7, { rev: 3, title: 'Renamed in the store' })]));
+  assert.deepEqual(kinds(r), ['unchanged TC-1']);
+  assert.equal(r.changes[0].change, undefined);
+  assert.deepEqual(r.changes[0].differences, [{ field: 'title', store: 'Renamed in the store', run: d.title }]);
+});
+
+test('diff K7: a store with nothing edited reports no differences', () => {
+  const d = derive(kase('TC-1'), ctx());
+  const r = diff(input([d], [entry('TC-1', 7, d.hash, { ownedTags: d.tags })], [stored(d, 7)]));
+  assert.equal(r.changes[0].differences, undefined);
+});
+
 test('diff: a test case that is gone from the store is reported, never silently created again', () => {
   const d = derive(kase('TC-1'), ctx());
   const r = diff(input([d], [entry('TC-1', 7, d.hash)], []));

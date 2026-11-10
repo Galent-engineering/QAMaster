@@ -234,10 +234,18 @@ export function suggestSmoke(
 
 // ---- diff
 
+/** One field where the store's copy and the run's differ, as one-line text (K6). */
+export type FieldDifference = { field: string; store: string; run: string };
+
 export type PlannedChange = PublishChange & {
   hash: string;
   ownedTags: string[];
   suite: string;
+  /**
+   * What differs between the store and the run: on a conflict, the fields the run wants to write (K6); on an
+   * `unchanged` case, an edit made only in the store, which stays as it is (K7). Absent when nothing differs.
+   */
+  differences?: FieldDifference[];
   change?: ItemChange; // what --apply would write; absent for unchanged, conflict and retire
 };
 
@@ -250,6 +258,29 @@ export type DiffInput = {
 };
 
 const sameSteps = (a: ItemStep[], b: ItemStep[]) => JSON.stringify(a) === JSON.stringify(b);
+
+const oneLine = (t: string, max = 80) => {
+  const s = t.replace(/\s+/g, ' ').trim();
+  return s.length > max ? `${s.slice(0, max - 1)}…` : s;
+};
+const stepsText = (steps: ItemStep[]) =>
+  `${steps.length} step${steps.length === 1 ? '' : 's'}: ${steps.map((s) => s.action).join(' > ')}`;
+
+/** The store's and the run's value of each field in `fields`, for a person to compare (K6, K7). */
+function differences(fields: string[], it: Item, d: Derived, owned: string[]): FieldDifference[] {
+  const show: Record<string, () => [string, string]> = {
+    title: () => [it.title, d.title],
+    description: () => [it.description ?? '', d.description],
+    steps: () => [stepsText(it.steps), stepsText(d.steps)],
+    automatedTest: () => [it.automatedTest ?? '(none)', d.automatedTest ?? '(none)'],
+    tags: () => [it.tags.join(', '), owned.join(', ')],
+    suite: () => [it.suites.join('; ') || '(none)', d.suite],
+  };
+  return fields.map((field) => {
+    const [store, run] = show[field]?.() ?? ['', ''];
+    return { field, store: oneLine(store), run: oneLine(run) };
+  });
+}
 
 export function diff(i: DiffInput): { changes: PlannedChange[]; declinedSmoke: string[] } {
   const byLocal = new Map(i.ledger.map((e) => [e.localId, e]));
@@ -303,38 +334,46 @@ export function diff(i: DiffInput): { changes: PlannedChange[]; declinedSmoke: s
     const wants = d.hash !== entry.hash || addSmoke;
     const fields: string[] = [];
     const change: ItemChange = {};
-    if (wants) {
-      if (it.title !== d.title) {
-        fields.push('title');
-        change.title = d.title;
-      }
-      if (sameText(it.description) !== sameText(d.description)) {
-        fields.push('description');
-        change.description = d.description;
-      }
-      if (!sameSteps(it.steps, d.steps)) {
-        fields.push('steps');
-        change.steps = d.steps;
-      }
-      if (d.automatedTest && it.automatedTest !== d.automatedTest) {
-        fields.push('automatedTest');
-        change.automatedTest = d.automatedTest;
-      }
-      const add = owned.filter((t) => !hasTag(it.tags, t));
-      const remove = had.filter((t) => !hasTag(owned, t) && hasTag(it.tags, t));
-      if (add.length || remove.length) {
-        fields.push('tags');
-        if (add.length) change.addTags = add;
-        if (remove.length) change.removeTags = remove;
-      }
-      if (!it.suites.some((s) => s.toLowerCase().endsWith(` / ${d.suite.toLowerCase()}`))) {
-        fields.push('suite');
-        change.suite = d.suite;
-      }
+    if (it.title !== d.title) {
+      fields.push('title');
+      change.title = d.title;
+    }
+    if (sameText(it.description) !== sameText(d.description)) {
+      fields.push('description');
+      change.description = d.description;
+    }
+    if (!sameSteps(it.steps, d.steps)) {
+      fields.push('steps');
+      change.steps = d.steps;
+    }
+    if (d.automatedTest && it.automatedTest !== d.automatedTest) {
+      fields.push('automatedTest');
+      change.automatedTest = d.automatedTest;
+    }
+    const add = owned.filter((t) => !hasTag(it.tags, t));
+    const remove = had.filter((t) => !hasTag(owned, t) && hasTag(it.tags, t));
+    if (add.length || remove.length) {
+      fields.push('tags');
+      if (add.length) change.addTags = add;
+      if (remove.length) change.removeTags = remove;
+    }
+    if (!it.suites.some((s) => s.toLowerCase().endsWith(` / ${d.suite.toLowerCase()}`))) {
+      fields.push('suite');
+      change.suite = d.suite;
     }
     const common = { ...base, trackerId: entry.trackerId, ownedTags: owned };
 
-    if (!fields.length) {
+    // an edit made only in the store: the run didn't change, so there is nothing to write, but it is reported (K7)
+    const diffs = fields.length ? differences(fields, it, d, owned) : [];
+    if (!wants) {
+      changes.push({
+        ...common,
+        kind: 'unchanged',
+        fields: [],
+        reason: 'nothing to write',
+        ...(diffs.length ? { differences: diffs } : {}),
+      });
+    } else if (!fields.length) {
       changes.push({ ...common, kind: 'unchanged', fields: [], reason: 'nothing to write' });
     } else if (it.rev !== entry.trackerRev) {
       changes.push({
@@ -342,6 +381,7 @@ export function diff(i: DiffInput): { changes: PlannedChange[]; declinedSmoke: s
         kind: 'conflict',
         fields,
         ownedTags: had,
+        differences: diffs,
         reason: `Test case ${entry.trackerId} changed in the store since it was published (rev ${entry.trackerRev} → ${it.rev}), so ${d.id} wasn't written. Review it there, or re-run with the store's version.`,
       });
     } else {

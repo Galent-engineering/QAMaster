@@ -118,25 +118,37 @@ export function asLedger(data: unknown, file: string): Ledger {
   };
   if (!isObj(data)) return bad('the file', 'a JSON object');
   if (typeof data.store !== 'string' || !data.store) bad('"store"', 'the name of the store the IDs belong to');
-  if (!Array.isArray(data.entries)) bad('"entries"', 'a list');
-  const seen = new Set<string>();
-  const entries = (data.entries as unknown[]).map((raw, i) => {
-    const e = isObj(raw) ? raw : bad(`entry ${i + 1}`, 'an object');
-    const id = typeof e.localId === 'string' && e.localId ? e.localId : bad(`entry ${i + 1}: "localId"`, 'a draft ID');
-    const field = (key: string, want: string, ok: boolean) => {
-      if (!ok) bad(`entry ${i + 1} (${id}): "${key}"`, want);
-    };
-    field('trackerId', 'a whole number', Number.isInteger(e.trackerId) && (e.trackerId as number) > 0);
-    field('hash', 'a string', typeof e.hash === 'string' && e.hash !== '');
-    field('ownedTags', 'a list of tags', isStrings(e.ownedTags));
-    field('smokeDeclined', 'true or false', typeof e.smokeDeclined === 'boolean');
-    field('publishedAt', 'a string', typeof e.publishedAt === 'string');
-    field('trackerRev', 'a whole number', Number.isInteger(e.trackerRev) && (e.trackerRev as number) >= 0);
-    if (seen.has(id)) bad(`${id}`, 'in the ledger once, not twice');
-    seen.add(id);
-    return e as unknown as LedgerEntry;
-  });
-  return { store: data.store as string, entries };
+  const list = (raw: unknown, where: string): LedgerEntry[] => {
+    if (!Array.isArray(raw)) return bad(where, 'a list');
+    const seen = new Set<string>();
+    return raw.map((item, i) => {
+      const e = isObj(item) ? item : bad(`${where} entry ${i + 1}`, 'an object');
+      const id =
+        typeof e.localId === 'string' && e.localId
+          ? e.localId
+          : bad(`${where} entry ${i + 1}: "localId"`, 'a draft ID');
+      const field = (key: string, want: string, ok: boolean) => {
+        if (!ok) bad(`${where} entry ${i + 1} (${id}): "${key}"`, want);
+      };
+      field('trackerId', 'a whole number', Number.isInteger(e.trackerId) && (e.trackerId as number) > 0);
+      field('hash', 'a string', typeof e.hash === 'string' && e.hash !== '');
+      field('ownedTags', 'a list of tags', isStrings(e.ownedTags));
+      field('smokeDeclined', 'true or false', typeof e.smokeDeclined === 'boolean');
+      field('publishedAt', 'a string', typeof e.publishedAt === 'string');
+      field('trackerRev', 'a whole number', Number.isInteger(e.trackerRev) && (e.trackerRev as number) >= 0);
+      if (seen.has(id)) bad(`${id}`, 'in the ledger once, not twice');
+      seen.add(id);
+      return e as unknown as LedgerEntry;
+    });
+  };
+  const entries = list(data.entries, '"entries"');
+  if (data.other === undefined) return { store: data.store as string, entries };
+  // the IDs of the stores not in use now (R23), each under its own name
+  if (!isObj(data.other)) return bad('"other"', 'an object of store names to entry lists');
+  const other = Object.fromEntries(
+    Object.entries(data.other).map(([name, raw]) => [name, list(raw, `"other" ${name}`)]),
+  );
+  return { store: data.store as string, entries, other };
 }
 
 /** One test case in the `file` store's JSON form (Q36): the CSV's columns, under these keys. */
