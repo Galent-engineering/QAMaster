@@ -34,11 +34,15 @@ function publishedStore(qaProject: string | null): string | null {
   if (!qaProject) return null;
   try {
     const { store } = JSON.parse(fs.readFileSync(path.join(qaProject, '.qamaster', 'ledger.json'), 'utf8'));
-    if (typeof store !== 'string') return null;
-    return store.startsWith('Azure DevOps') ? 'ado' : store.startsWith('File ') ? 'file' : null;
+    return typeof store === 'string' ? storeKind(store) : null;
   } catch {
     return null;
   }
+}
+
+/** The adapter name behind a ledger's name for a store (a where()), or null for one it doesn't know. */
+export function storeKind(where: string): string | null {
+  return where.startsWith('Azure DevOps') ? 'ado' : where.startsWith('File ') ? 'file' : null;
 }
 
 function readProjectConfig(qaProject: string | null): ProjectConfig {

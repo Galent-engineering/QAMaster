@@ -6,6 +6,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
+import { storeKind } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import type { Item, Ledger, LedgerEntry } from '../shared/models.mts';
 import { asLedger } from '../shared/schema.mts';
@@ -60,11 +61,17 @@ export function checkStore(ledger: Ledger | null, store: string): void {
 /**
  * The ledger as publish uses it for `store` (a where() name): the entries parked for that store when it was used
  * before (R23). A store with nothing parked still blocks while the ledger names another: switching is `qam store use`,
- * never quiet (Q34). `chosen` is the person naming the destination (`publish --to`, Q50): a new one starts empty.
+ * never quiet (Q34). `chosen` is the person naming the destination (`publish --to`, Q50): a store never used starts
+ * empty, but another place in a store the ledger already holds (a new ADO project) still blocks, as Q34 does.
  */
 export function adopt(ledger: Ledger | null, store: string, chosen = false): Ledger | null {
   if (!ledger || ledger.store === store) return ledger;
-  if (!chosen && !Object.hasOwn(ledger.other ?? {}, store)) checkStore(ledger, store);
+  if (!Object.hasOwn(ledger.other ?? {}, store)) {
+    if (!chosen) checkStore(ledger, store);
+    const kind = storeKind(store);
+    const same = [ledger.store, ...Object.keys(ledger.other ?? {})].find((n) => kind && storeKind(n) === kind);
+    if (same) checkStore({ store: same, entries: [] }, store);
+  }
   return switchLedger(ledger, store);
 }
 

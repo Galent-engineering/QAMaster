@@ -742,6 +742,7 @@ Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in ea
   - Publish asks which integration(s) to publish to. Several destinations at once are allowed.
   - A destination already set up (an ADO plan, say) publishes after one approval. A new one first asks for its connection details and checks access before anything else is shown.
   - When every check passes, publish asks for a final apply, and that ends it.
+  - Naming a destination never changes the store the project is set up for: after the apply that store stays active in the ledger and the others' IDs are kept beside it (R23). Changing it is `qam store use`. A destination in a store the ledger already holds under another name (a new ADO project) still blocks, as Q34 does.
 - **Why:** on dummy-static-website (W9) the store was chosen at setup, before any test case existed, the ADO details were set by hand in `.env`, and only one destination was possible.
 - **Gave up:** choosing the store at setup. Built in 0.6.0.
 

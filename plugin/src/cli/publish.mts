@@ -18,7 +18,7 @@ import { playwrightBdd } from '../adapters/framework-bdd.mts';
 import { buildStore, STORES } from '../adapters/registry.mts';
 import type { Dsm } from '../dsm/build.mts';
 import { stateDirs } from '../gate/state.mts';
-import { type Applied, adopt, readLedger, record, writeLedger } from '../publish/ledger.mts';
+import { type Applied, adopt, readLedger, record, switchLedger, writeLedger } from '../publish/ledger.mts';
 import {
   type Derived,
   derive,
@@ -131,6 +131,10 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   const shared: Shared = { cfg, v, dir, run, derived, leftOut, skipSmoke, scripts, multi: destinations.length > 1 };
   const outcomes: Outcome[] = [];
   for (const r of reached) outcomes.push(await publishTo(shared, r));
+  // the store the project is set up for stays active, the others parked: --to never switches stores (Q34, R23)
+  const home = v.apply ? homeStore(cfg, reached) : null;
+  const after = home ? readLedger(dir) : null;
+  if (home && after && after.store !== home) writeLedger(dir, switchLedger(after, home));
 
   const code = outcomes.some((o) => o.code === 3) ? 3 : outcomes.some((o) => o.code === 1) ? 1 : outcomes[0].code;
   if (!shared.multi) {
@@ -193,6 +197,18 @@ function chooseDestinations(cfg: Config, to: string[] | undefined): string[] {
   return [...names.filter((n) => n === 'file'), ...names.filter((n) => n !== 'file')];
 }
 
+/** The where() of the store the project is set up for, or null when it can't be built (then the ledger stays as is). */
+function homeStore(cfg: Config, reached: Reached[]): string | null {
+  const r = reached.find((x) => x.dest === cfg.store);
+  if (r) return r.where;
+  try {
+    return buildStore(cfg).where();
+  } catch (e) {
+    if (e instanceof BlockedError) return null;
+    throw e;
+  }
+}
+
 /**
  * One destination, reached (Q50): its store built and read through the cache (Q34), the ledger checked against it, and
  * the project and plan it would still have to create. Nothing is written.
@@ -235,7 +251,9 @@ async function publishTo(o: Shared, r: Reached): Promise<Outcome> {
   const { cfg, v, dir, run, derived, leftOut, skipSmoke, scripts } = o;
   const { cached, where, planToCreate, projectToCreate } = r;
   const store = cached.store;
-  let ledger: Ledger | null = adopt(readLedger(dir), where, !!v.to); // read afresh: an earlier destination may have written it
+  const before = readLedger(dir); // read afresh: an earlier destination may have written it
+  let ledger: Ledger | null = adopt(before, where, !!v.to);
+  const fresh = !!before && before.store !== where && !Object.hasOwn(before.other ?? {}, where);
   const items = new Map<number, Item>();
   // a project still to be created holds nothing to read
   for (const e of projectToCreate ? [] : (ledger?.entries ?? [])) {
@@ -276,6 +294,7 @@ async function publishTo(o: Shared, r: Reached): Promise<Outcome> {
           `The ADO project '${projectToCreate.name}' doesn't exist (or this token can't see it); --apply will create it (process ${projectToCreate.process}, private).`,
         ]
       : []),
+    ...(fresh ? [`Nothing recorded yet for ${where}: every case is created there.`] : []),
     ...(planToCreate ? [`The test plan '${planToCreate}' doesn't exist yet; --apply will create it.`] : []),
     ...(cached.age() ? [`Store as of ${cached.age()} (from the cache). Run with --refresh to read it again.`] : []),
   ];

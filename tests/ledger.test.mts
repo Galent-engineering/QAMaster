@@ -372,6 +372,22 @@ test('R23: adopt restores a parked store by name; a store with nothing parked st
   assert.equal(adopt(null, ADO), null);
 });
 
+test('Q50, Q34: a destination named with --to starts empty, unless the ledger holds another place in that store', () => {
+  const file: Ledger = { store: STORE, entries: [entry('TC-1', 1000)] };
+  assert.deepEqual(adopt(file, ADO, true)?.entries, [], 'a store never used starts empty');
+  const old = 'Azure DevOps galent/OldProject';
+  // the ADO project changed: its IDs mean nothing in the new one, so --to never starts it empty quietly
+  assert.throws(
+    () => adopt({ store: old, entries: [entry('TC-1', 77)] }, ADO, true),
+    blocked(/belongs to Azure DevOps galent\/OldProject, but the store is now Azure DevOps galent\/Shop/),
+  );
+  assert.throws(
+    () => adopt({ ...file, other: { [old]: [entry('TC-1', 77)] } }, ADO, true),
+    blocked(/belongs to Azure DevOps galent\/OldProject/),
+    'a parked one counts too',
+  );
+});
+
 test('R23: an entry list in "other" that is damaged blocks like the main one', () => {
   const dir = tmpDir('qam-ledger-bad-other-');
   fs.mkdirSync(path.join(dir, '.qamaster'));
