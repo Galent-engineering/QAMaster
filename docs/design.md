@@ -1,6 +1,6 @@
 # QAMaster: Design
 
-> Status: current at 0.6.0 (2026-11-10). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.6.0-setup-guide.html). How QAMaster looks and behaves for each user. For the why, see [product.md](product.md). For how it's built, see [tech.md](tech.md).
+> Status: current at 0.7.0 (2026-11-10). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.7.0-setup-guide.html). How QAMaster looks and behaves for each user. For the why, see [product.md](product.md). For how it's built, see [tech.md](tech.md).
 
 ## Principles
 
@@ -51,6 +51,9 @@ qam pipeline start|status|next|mark|reset ...
 qam status                                    # R2: short for qam pipeline status
 qam doctor                                    # settings, credentials, plan, runner
 qam dsm run|refresh|changes|impact <files…>
+qam dsm run --routes GLOB…                    # 0.7.0: crawl only those routes, merged into the last DSM
+qam dsm run --estimate                        # 0.7.0: routes, pages and minutes a crawl would take; crawls nothing
+qam dsm compare [OLDER] [NEWER]               # 0.7.0: what changed between two DSMs; no argument lists dsm/history/
 qam requirements fetch (--sprint NAME | --current-sprint | --from D --to D) [--module AREA] [--scope NAME]
 qam requirements import --file STORIES.xlsx|.csv|.json|.md [--sheet NAME] [--scope NAME]   # a Jira or spreadsheet export
 qam requirements list                         # the saved scopes; a TestGen manifest names one in requirements_scope
@@ -59,9 +62,12 @@ qam review <run> [--yes]                      # records gate 1 with the ADO acco
                                               # E3: on a terminal it shows the run and asks; --yes (or no terminal) records without asking
 qam publish <run> [--to file,ado] [--apply] [--retire] [--leave-out ID,…] [--skip-smoke ID,…]
 qam store [use ado|file]                      # R23: which store test cases go to; use writes QAMASTER_STORE in .env, the ledger keeps each store's IDs
-qam app create [--app NAME] [--web-url URL]       # <App>/ in the QA project from the playwright-bdd template
+qam app create [--app NAME] [--web-url URL] [--api-url URL]   # <App>/ in the QA project from the playwright-bdd template;
+                                              # 0.7.0: on an existing folder, adds missing template files, never overwrites
 qam check-scripts [--quick]
-qam plan    [--base REF] [--tag GROUP[=WHY]] [--all]   # --all: every case with a script, recorded ones included (Q49)
+qam plan    [--base REF] [--preset fast|standard|full] [--tag GROUP[=WHY]] [--all]
+                                              # Q31 (0.7.0): preset, else gate.preset; --all is --preset full:
+                                              # every case with a script, recorded ones included (Q49)
 qam automate <plan-id> [--done]               # Q39: scripts to draft/update/keep; --done records them, binds the plan
 qam approve <plan-id> [--add TC…|GROUP] [--remove TC…|GROUP] [--by NAME]
 qam run     <plan-id>
@@ -111,6 +117,7 @@ Based on CheckMaster's layout, with one new section, **Coverage gaps**.
 
 ```
 QAMaster plan 3f2a91c0 for feature/coupon-codes vs main (3 files changed)
+Selection: preset standard (path, smoke, dsm, group); groups picked by sonnet
 
 Selected (5 of 212 test cases)
   [x] TC4410  Checkout completes with card payment      covers src/checkout/**
@@ -142,6 +149,7 @@ Layout rules:
 - Groups Claude picked start checked, with a one-line reason tied to the diff.
 - Manual and BROKEN cases are never dropped silently. BROKEN fails the check.
 - Gaps don't change the verdict. They're shown so the person can start a design run.
+- The `Selection:` line (0.7.0) names the preset, the selectors that ran and the model that picked groups. `fast` is path and smoke (the DSM adds nothing), `standard` (the default) all of them, `full` every case with a script whatever changed (the same as `--all`). The model is named only under `standard` with AI on.
 - With `QAMASTER_AI=off`, the plan has no Claude-picked groups, and its header line ends with "Group picking off for this repo".
 
 ## Verdict rules
@@ -192,7 +200,7 @@ QAMASTER_ADO_PROJECT=Shop
   "testgen": { "hallucination_tolerance": 0 },
   "ai": "on",
   "owners": { "Checkout": "a.rao@example.com" },
-  "gate": { "retries": 1, "noMatch": "pass-with-warning", "sharedShare": 0.3, "allowErrors": [] },
+  "gate": { "retries": 1, "noMatch": "pass-with-warning", "sharedShare": 0.3, "allowErrors": [], "preset": "standard", "groupsModel": null },
   "runners": { "pytest": { "root": "../shop/tests" }, "playwright-bdd": { "root": "Shop" } }
 }
 ```
@@ -201,7 +209,11 @@ QAMASTER_ADO_PROJECT=Shop
 
 `gate.allowErrors` (Q53, 0.6.0) lists strings matched against an app error's URL or message; a match is ignored. Empty by default: every 5xx from the app's origin and every uncaught page error fails the case. An empty string is refused, since it would allow everything.
 
-The DSM, TestGen and MCP config files keep Autonomous-QE's formats.
+`gate.preset` (Q31, 0.7.0) is `fast`, `standard` (default) or `full`; `qam plan --preset` overrides it. `gate.groupsModel` names the Claude Code model `/qamaster:check` gives the subagent that picks groups: `sonnet`, `opus`, `haiku`, `fable` or `inherit`; unset (`null`), the session's own. The CLI only records it; CI, the push hook and `QAMASTER_AI=off` never pick groups.
+
+The DSM, TestGen and MCP config files keep Autonomous-QE's formats. 0.7.0 adds to `dsm-config.json`: `application.login.signed_out_pass` (default on: with sign-in configured, crawl signed out first and merge the two passes, each screen recording `access`: `public`, `signed-in` or `both`; `--login-mode none` crawls only signed out) and `application.crawl.concurrency` (tabs crawled at once in one session, default 3; 1 is the old behaviour).
+
+**Channels (0.7.0).** The automation folder has a folder per channel: `features/web` (the `chromium` project), `features/api` with `steps/api` and `src/api` (a base client, a response wrapper, one service per resource; the `api` project, base URL from `app.json`'s API URL) and `features/mobile-web` (the `mobile-chrome` project, Chromium with a `Pixel 7` viewport and touch). A channel's project exists only when its folder has a feature, and a case runs only in its own channel's project. TestGen's API cases cite `dsm:api:<METHOD> <path>`, checked against the code model's API routes; they have no screen.
 
 ## Messages
 

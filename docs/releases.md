@@ -201,6 +201,26 @@ Plan: [plans/0.6.0.md](plans/0.6.0.md). Built on `release/0.6.0` on 2026-11-10 f
 
 639 tests, typecheck and lint clean. Not run under Claude Code or on a live app; the app-error check ran under real Playwright and Chromium in the test suite. Open items and the undecided `--take-store` and W8 are in the plan's r5 row.
 
+## 0.7.0: what QAMaster covers
+
+Plan: [plans/0.7.0.md](plans/0.7.0.md). Built on `release/0.7.0` on 2026-11-10 from two parallel branches (`dsm` and `gen`), each reviewed independently, on top of 0.6.0. New commands, flags, settings keys and an evidence form, so a minor release (Q46).
+
+| Change | Where | Decision |
+|---|---|---|
+| A signed-out pass before sign-in, merged into one DSM; each screen records `access` (`public`, `signed-in`, `both`); `login.signed_out_pass` | `adapters/crawler-playwright.mts`, `dsm/crawl-rules.mts` | R5, D1, D2 |
+| Dialog forms with their fields, buttons and declared limits; clickable cards; sidebar items and text links | `adapters/crawler-playwright.mts`, `dsm/build.mts` | R6–R8, R15 |
+| `qam dsm compare [older] [newer]`: screens, elements, relations and access that changed | `cli/dsm.mts`, `dsm/update.mts` | R9 |
+| Each screen's own source files through wrappers; files most screens use are `shared` | `dsm/scan.mts` | R10, R16 |
+| Screens named by their heading when they share a title | `dsm/build.mts` | R30 |
+| A faster crawl: DOM-quiet settling, `crawl.concurrency` tabs (default 3), `qam dsm run --routes` and `--estimate`, a hint for ID-shaped routes | `adapters/crawler-playwright.mts`, `cli/dsm.mts`, `dsm/update.mts` | S1–S4, S7, D4 |
+| TestGen covers sign-in, sign-up and dialog forms; a case's session matches its screen's access; Boundary cases cite a limit | `testgen/`, `skills/TestGen` | R12 |
+| Rendered features use the framework's generic step wording | `testgen/render.mts`, `framework/playwright-bdd/` | W11 |
+| `qam plan --preset fast\|standard\|full`, `gate.preset`, `gate.groupsModel`; `--all` is `--preset full` | `gate/presets.mts`, `cli/gate.mts`, `commands/check.md` | Q31, D5, D6 |
+| API cases with `dsm:api:<METHOD> <path>` evidence; API scripts (`features/api`, `steps/api`, `src/api`, the `api` project); `qam app create --api-url` | `testgen/`, `framework/playwright-bdd/`, `cli/automation.mts`, `automation/quality.mts` | Q48, K5, D9 |
+| Mobile Web scripts: `features/mobile-web` and the `mobile-chrome` project (Chromium) | `framework/playwright-bdd/playwright.config.ts` | K5, D7, D8 |
+
+728 tests, typecheck and lint clean. Not run on a live app; the generated automation folder wasn't installed or listed by Playwright. D1, D2 and D4–D9 were built to their recommendations and still need your yes; D3 isn't built. Open items are in the plan's [r2 row](plans/0.7.0.md) and [Moved to 0.7.1](plans/0.7.0.md#moved-to-071-or-a-decision).
+
 ## Planned
 
 Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
@@ -208,8 +228,7 @@ Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 | Release | Kind | What | Plan |
 |---|---|---|---|
 | 0.6.1 | Fixes | What 0.6.0's live run finds, and the open items in [0.6.0 r5](plans/0.6.0.md) | |
-| 0.7.0 | Features | What QAMaster covers: apps with a sign-in, a faster DSM, presets, then API and Mobile Web scripts | [backlog](plans/backlog.md#the-road-to-100-replanned-2026-11-10-q54) |
-| 0.7.1 | Fixes | What the Restful Booker rehearsal finds | |
+| 0.7.1 | Fixes | What the Restful Booker rehearsal and 0.7.0's live run find, and [0.7.0's open items](plans/0.7.0.md#moved-to-071-or-a-decision) | |
 | **1.0.0** | **Major** | Product v1 proven: a clean-room Docker run, a walkthrough on a second unknown app, the failure path and the store's life cycle seen live. No new feature | [backlog](plans/backlog.md#100-the-major-release) |
 | 1.1.0 | Features | Native Android and iOS scripts through Appium (Q54) | [backlog](plans/backlog.md#after-100) |
 | 1.2.0 | Features | Product v1.1: the git pre-push hook, each IDE and agent set up by ticking it (Q43), PR checks, ADO Test Run | [backlog](plans/backlog.md#after-100) |

@@ -1,6 +1,6 @@
 # QAMaster: Technical design
 
-> Status: current at 0.6.0 (2026-11-10). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.6.0-setup-guide.html). The diagrams are in [architecture.md](architecture.md); the reasons are in [decisions.md](decisions.md).
+> Status: current at 0.7.0 (2026-11-10). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.7.0-setup-guide.html). The diagrams are in [architecture.md](architecture.md); the reasons are in [decisions.md](decisions.md).
 
 ## Tech stack
 
@@ -89,7 +89,7 @@ type PublishChange = { kind: 'create'|'update'|'unchanged'|'retire'|'conflict';
 // Gate side (from CM)
 type Change = { base: string; head: string; branch: string; files: ChangedFile[] };
 type TestCase = { id: number; title: string; url: string; tags: string[]; automatedTest: string | null };
-type Reason = { kind: 'path'|'smoke'|'group'|'added'|'dsm'; detail: string };
+type Reason = { kind: 'path'|'smoke'|'group'|'added'|'dsm'|'all'; detail: string };
 type PlanItem = { testCase: TestCase; reasons: Reason[]; selected: boolean };
 type NotRun = { testCase: TestCase; why: string; broken: boolean };
 type Gap = { screen: string; files: string[]; why: string };           // new: DSM impact with no case
@@ -97,7 +97,8 @@ type Plan = { id: string; createdAt: string; change: Change;
               testsHead?: string;                // QA project commit when QAMASTER_TEST_ROOT is set (Q22)
               items: PlanItem[]; notRun: NotRun[];
               gaps: Gap[]; catalogSize: number; otherGroups: Record<string, string[]>;
-              approvedBy?: string; approvedAt?: string };
+              approvedBy?: string; approvedAt?: string;
+              selection?: { preset: 'fast'|'standard'|'full'; selectors: string[]; model: string | null } };  // Q31, 0.7.0
 type TestResult = { testCaseId: number; status: 'passed'|'failed'|'flaky'|'skipped'|'not_run';
                     durationS: number; error?: string; testIds: string[]; evidence: string[] };
 type Verdict = { result: 'pass'|'fail'|'blocked'; head: string; testsHead?: string; planId: string;
@@ -147,6 +148,8 @@ interface Crawler {
 }
 ```
 
+**The crawl and the DSM shape (0.7.0).** With sign-in configured and `login.signed_out_pass` on, the Playwright crawler runs two passes in one browser, signed out then signed in, writes blocked in both; `mergePasses` (`dsm/crawl-rules.mts`) joins them, and each page records `access` (`public`, `signed-in`, `both`). A route that redirects signed out and has content signed in is `signed-in`, not a redirect. Up to `crawl.concurrency` pages (default 3) are crawled side by side in one context; pages, elements and relations are sorted before they're written, so the DSM doesn't depend on order. A page is settled when its DOM is quiet for a short time, under one deadline. The DSM's `PageNode` (`dsm/build.mts`) gains, all optional so a 0.6.0 DSM still reads: `access`; on a form `dialog` (its title) and `buttons`; on a field `min_length`, `max_length`, `min`, `max`, `pattern`. `label` is the first heading when screens share a title; `id` is still the route. Each crawl writes `timing` to `ui-model.json` for `--estimate`. The code scan (`dsm/scan.mts`) owns a route by the component its route definition renders through wrappers, and a file most screens reach is `shared` rather than a source file of each.
+
 A sixth interface, `Framework`, puts test generation behind an adapter: automation folder, script gate, locator sync, tag and link format (Q25). Its methods are designed in feature 8's Learn phase; v1 ships playwright-bdd only.
 
 Integrations (Q27) are adapters of their own kind: where QAMaster is installed, not an outside system it talks to. Each kind (`claude-hooks` in v1; `git-hook`, and `pr-check:<ci>:<host>` for GitHub Actions or Azure Pipelines in v1.1; `branch-policy` later) has `install`, `remove`, `status` and `verify`. Every install is recorded in the repo's `.qamaster/integrations.json` and in `~/.qamaster/installs.json`.
@@ -157,7 +160,7 @@ Pull requests go through a seventh interface, `CodeHost` (Q28): read the PR, pos
 
 Three more choices are swappable:
 - **Repository reader:** local git, or a code host's API with no clone (Q30).
-- **Plan selectors:** `path`, `smoke`, `groups`, `dsm`, with presets `fast`, `standard` and `full`, and the model for `groups` (Q31).
+- **Plan selectors:** `path`, `smoke`, `groups`, `dsm`, with presets `fast`, `standard` and `full`, and the model for `groups` (Q31). Built in 0.7.0 (`gate/presets.mts`): `fast` drops the DSM, `full` is makePlan's `all` (the same as `--all`), and the plan records `selection`.
 - **Runners and execution targets:** each framework lists the ones compatible with it, and mismatches are blocked (Q32).
 
 `src/adapters/registry.mts` maps names to factories:
@@ -267,6 +270,7 @@ feedback  gaps + BROKEN + stale cases → .qamaster/feedback/<sha>.json, defect 
 - It reads results from the JSON reporter.
 - The framework's auto fixture (`framework/playwright-bdd/src/app-errors.ts`, Q53) records 5xx answers from the app's own origin (`baseURL`) and uncaught page errors; any not matched by `gate.allowErrors` (passed in `QAMASTER_ALLOW_ERRORS`) fails the case and attaches `app-errors.json`.
 - A case passes only if every scenario linked to it passed, in every Playwright project selected for its channel.
+- Projects per channel (0.7.0, `framework/playwright-bdd/playwright.config.ts`): `chromium` for `features/web`, `api` for `features/api` (no browser; a `request` context at the API URL), `mobile-chrome` for `features/mobile-web` (Chromium, `Pixel 7`). Each comes from `defineBddProject` and exists only when its folder has a feature. API steps call a service in `src/api/services/` (extends `BaseApiClient`), never `request.fetch` directly; `check-scripts` checks it.
 
 **pytest** (`adapters/runner-pytest.mts` + `runners/pytest/qamaster_pytest.py`), CheckMaster's runner unchanged in behavior:
 - `uv run pytest` if the test root has `uv.lock`, else `python -m pytest`, with `-p qamaster_pytest` and the plugin's folder on `PYTHONPATH`.

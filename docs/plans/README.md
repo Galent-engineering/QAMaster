@@ -17,6 +17,7 @@ There's one plan per plugin release. Each plan is the working source of truth fo
 | 0.4.4 | [0.4.4.md](0.4.4.md): messages and docs from the fastapi-react-app run (R1–R30) | Released 2026-11-10, r2 |
 | 0.5.0 | [0.5.0.md](0.5.0.md): requirements fetch from Azure Boards and import from a file | Released 2026-11-10, r3 |
 | 0.6.0 | [0.6.0.md](0.6.0.md): the gate and the store you can trust: Q52, Q53, Q49, every verdict kept, then the local store first (Q50), switching stores, conflicts, `qam status` (Q54 merged 0.8.0's store half in) | Built 2026-11-10, r5 |
+| 0.7.0 | [0.7.0.md](0.7.0.md): what QAMaster covers: apps with a sign-in, a faster DSM, selection presets (Q31), API and Mobile Web scripts | Built 2026-11-10, r2 |
 | — | [handoff.md](handoff.md): where the work stands and what a new session should do first | Kept current |
 | — | [backlog.md](backlog.md): every open fix and to-do, with its source and target release, up to 1.0.0 and after | Kept current |
 

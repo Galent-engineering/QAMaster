@@ -36,7 +36,7 @@ code ───┤ scan ──┘                (AUT skills)   (TestGen)        
 
 The important idea: **the DSM connects the two halves**. It knows which screens exist (from the crawl) and which code files belong to which screen (from the scan). That lets QAMaster tag each test case with the files it covers (`path:src/checkout/**`), so when those files change, the gate knows which tests to run.
 
-**Try it:** open [v0.6.0-setup-guide.html](v0.6.0-setup-guide.html), the setup guide. It walks the setup step by step with the integration at each step, the roadmap and the latest decisions; options marked planned or proposed are not built yet.
+**Try it:** open [v0.7.0-setup-guide.html](v0.7.0-setup-guide.html), the setup guide. It walks the setup step by step with the integration at each step, the roadmap and the latest decisions; options marked planned or proposed are not built yet.
 
 **The current picture:** the setup guide also shows decisions Q26 to Q32:
 - the entry-point checklist;
@@ -738,6 +738,53 @@ The fastapi-react-app run showed four ways the gate could say green when it shou
 
 ---
 
+## Lesson: what QAMaster covers (0.7.0)
+
+### What it's for
+
+On fastapi-react-app, QAMaster covered one module of six. The crawl signed in first, so the two public forms (`/login`, `/register`) were never seen; the add and edit dialogs were seen but not their fields; cards and sidebar items weren't clicked; every screen's "source files" were the auth plumbing, so every case got the same path tags. 0.7.0 makes the map match the app, then lets TestGen and the automation use it: sign-in and dialog forms are covered, step wording is shared with the framework, the gate's selection has presets, and API and Mobile Web cases get their own scripts.
+
+### The split of work
+
+| Piece | Does |
+|---|---|
+| `dsm/crawl-rules.mts` (`mergePasses`) | Joins a signed-out pass and a signed-in one into one model; each page gets `access` (`public`, `signed-in`, `both`) |
+| `adapters/crawler-playwright.mts` | The two passes, dialog forms and limits, cards, sidebar items, DOM-quiet settling, `crawl.concurrency` tabs in one session, `timing` for estimates |
+| `dsm/scan.mts` | A route owns the component it renders through wrappers; files most screens reach are `shared` |
+| `dsm/update.mts`, `cli/dsm.mts` | `qam dsm compare`, `--routes` (merged into the last DSM) and `--estimate` (crawls nothing) |
+| `testgen/facts.mts`, `testgen/validate.mts` | Dialog forms to cover, a case's session against its screen's access, Boundary cases citing a declared limit, `dsm:api:` evidence against the code's API routes |
+| `testgen/render.mts` | Steps in the framework's generic wording, so a script reuses the scenario as it is |
+| `gate/presets.mts` | `fast`, `standard`, `full`; `full` is the same set as 0.6.0's `--all`; the plan records `selection` |
+| `framework/playwright-bdd/` | `features/api` and `features/mobile-web`, each with its own Playwright project, created only when the folder has a feature |
+
+### Three ideas worth keeping
+
+- **Two views of one thing are merged once, in a pure function.** Signed out and signed in are two crawls of the same app. Keeping the merge in `mergePasses`, with the crawler only producing passes, means the rule for a screen seen both ways (D2) is tested without a browser, and parallel tabs can't change it: the output is sorted before it's written.
+- **Two tracks built in parallel need a written contract.** The DSM track produced fields that the TestGen track read before either existed. The plan wrote down the shape (all fields optional, so an old DSM still reads); `gen` used local types until the merge, and the integrator then deleted them in favour of the real `PageNode`. Without the written shape the merge would have been a guess.
+- **A new option should be an old one under a new name when they mean the same.** 0.6.0 built `qam plan --all`; 0.7.0 planned `--preset full` for the same set. The first draft rebuilt it a second way, with its own reasons, and labelled manual cases with a reason that didn't apply. After the merge, `full` simply calls makePlan's `all`, and `--all` is `--preset full`.
+
+### What the reviews found
+
+- **An observer registered twice does the work twice and hides it.** The crawler attached its response listener before `explore()`, which attached it again. The DSM was right (everything was de-duplicated), so no test failed; only reading the code showed it.
+- **A pattern that matches one quoting style misses the other.** `check-scripts` looked for `from '../../src/api/services/X'`; double quotes or a `.ts` extension made a correct step look wrong.
+- **An assertion that always passes is worse than none.** A step leading to `/` became `the URL should contain "/"`, true on every page. It now keeps its expected text.
+- **An estimate must use today's settings.** `--estimate` reused the last crawl's tab count after `crawl.concurrency` changed; it now scales the pace to the current value.
+
+### Check yourself
+
+1. `/login` redirects to `/` once signed in. With `login.signed_out_pass` on, what does the DSM record for `/login`, and why does TestGen care?
+2. Why are `qam plan --all` and `qam plan --preset full` one code path rather than two?
+3. A Web case and an API case are both selected. Which Playwright projects run each?
+
+<details><summary>Answers</summary>
+
+1. Its signed-out fields, with `access: public`, not a redirect. TestGen starts a case on a `public` screen signed out, so it can write sign-in cases with wrong-password, empty and duplicate values against fields the DSM really saw.
+2. They select the same cases. Two implementations drift (the first draft gave manual cases a wrong reason); one means the reasons, the recorded scripts (Q49) and the tests are shared.
+3. The Web case runs in `chromium` only, the API case in `api` only (D8: a case runs in its own channel's project); `mobile-chrome` runs only Mobile Web cases.
+</details>
+
+---
+
 ## Journal
 
 | Date | Feature | What we learned |
@@ -756,6 +803,7 @@ The fastapi-react-app run showed four ways the gate could say green when it shou
 | 2026-10-30 | 0.2.0 fixes | An error is a menu, not a dead end: a missing project lists the real ones and the ways forward. An org-level write (creating a project) goes through the same preview and yes as any other write; reviewers caught a fix text that skipped the preview |
 | 2026-11-02 | Gate and just-in-time automation (0.3.0) | Bind approval to what will run (HEAD, QA commit, script hash). The link's prefix picks the runner. A new script is labelled until it passes once. Real runs found five design bugs that unit tests didn't |
 | 2026-11-10 | A gate and store you can trust (0.6.0) | One function decides where gate state lives, for the CLI and the hook alike. An app error fails a passing case. Naming a destination never moves the project's store. A test that writes its own fixture can test the wrong path |
+| 2026-11-10 | What QAMaster covers (0.7.0) | Merge two crawls in one pure function. Parallel tracks need the shared data shape written down first. An option that means an old one should call it, not rebuild it. Watch for listeners registered twice and assertions that always pass |
 
 ## Lesson: building a release with parallel sessions (2026-11-04)
 
