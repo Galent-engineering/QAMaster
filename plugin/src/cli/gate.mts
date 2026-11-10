@@ -357,6 +357,8 @@ export function appHint(cfg: Config, plan: Plan): string {
 
 export async function gate(cfg: Config, command: string, argv: string[], json: boolean): Promise<number> {
   const { values: v, positionals } = parse(argv, command);
+  if (v.all && command !== 'plan' && command !== 'check')
+    throw new BlockedError(`qam ${command}: Unknown option '--all'. Only qam plan and qam check take it.`);
   const g = gateFor(cfg);
   if (command === 'plan' || command === 'check') {
     const plan = rebound(

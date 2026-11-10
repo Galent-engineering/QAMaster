@@ -132,3 +132,13 @@ test('0.6.0 item 14: qam plan --all selects every case with a script, and says w
   assert.match(plan.out, /\(0 files changed\)/);
   assert.match(plan.out, /\[x\] TC\d+\s+Cart total\s+every case with a script \(--all\)/);
 });
+
+test('0.6.0 item 14: --all belongs to qam plan and check; approve, run and automate refuse it', async (t) => {
+  const w = await world();
+  if (!w) return t.skip('uv cannot lock pytest offline here');
+  for (const command of ['approve', 'run', 'automate']) {
+    const r = qam(w.home, w.clone, command, 'ab12', '--all');
+    assert.equal(r.status, 2, `${command}: ${r.out}${r.err}`);
+    assert.match(r.err, new RegExp(`qam ${command}: Unknown option '--all'`));
+  }
+});
