@@ -2,7 +2,8 @@
  * 0.6.0 item 3 (Q49) and item 14 through the real CLI, from a recorded app clone: qam plan, qam automate --done, then a
  * second qam plan runs the recorded script with no new --done, now that drafts.json lives in the QA project's gate
  * folder. playwright-bdd is not installed offline, so a stub npx stands in for bddgen and `playwright test --list`; the
- * live run of the real BDD tools is part of the end-to-end check.
+ * live run of the real BDD tools is part of the end-to-end check. A store switch is modelled as a new file store and a
+ * new ledger: the same TestGen ID under a new store ID.
  */
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
@@ -83,7 +84,21 @@ async function world() {
     });
     return { status: r.status, out: r.stdout, err: r.stderr };
   };
-  return { clone, qa, id: made.id, qam };
+  /** A switch of test case store: the old store and ledger moved aside, the case published again under a new ID. */
+  const switchStore = async () => {
+    fs.renameSync(path.join(qa, 'testcases'), path.join(qa, 'testcases.old'));
+    const fresh = buildStore(loadConfig(qa, { QAMASTER_STORE: 'file' }));
+    await fresh.ensureSuite('Cart');
+    await fresh.create({ title: 'Other', addTags: ['other'] }); // so the new ID differs from the old one
+    const again = await fresh.create({ title: 'Cart total', addTags: ['cart', 'path:site/cart.js'] });
+    await fresh.addToSuite(again.id, 'Cart');
+    const ledgerFile = path.join(qa, '.qamaster', 'ledger.json');
+    const ledger = JSON.parse(fs.readFileSync(ledgerFile, 'utf8'));
+    ledger.entries[0].trackerId = again.id;
+    fs.writeFileSync(ledgerFile, JSON.stringify(ledger));
+    return again.id;
+  };
+  return { clone, qa, id: made.id, qam, switchStore };
 }
 
 type PlanJson = {
@@ -120,6 +135,13 @@ test('Q49 via the CLI: plan, automate --done, then a later plan and plan --all r
   // item 14: --all on a change that touches nothing plans it too
   const all = planOf(w.qam('--json', 'plan', '--base', 'feature/cart', '--all'));
   assert.deepEqual(links(all), [[w.id, 'bdd:@TC-CART-001']]);
+
+  // after a store switch the binding holds: it is by TestGen ID, not store ID
+  const newId = await w.switchStore();
+  assert.notEqual(newId, w.id);
+  const switched = planOf(w.qam('--json', 'plan', '--base', 'main'));
+  assert.deepEqual(links(switched), [[newId, 'bdd:@TC-CART-001']]);
+  assert.deepEqual(switched.notRun, []);
 
   // an edit by hand unbinds it until it is recorded again
   fs.appendFileSync(path.join(w.qa, 'Shop/features/web/cart.feature'), '    Then it changed\n');
