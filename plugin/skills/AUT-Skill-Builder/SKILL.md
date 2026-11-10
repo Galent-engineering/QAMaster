@@ -35,6 +35,8 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
    If it blocks on a damaged curated block, show the user the file. Don't repair the markers by guessing.
 3. **Write the curated blocks from the code**, for each skill in `needs_curation` and for parts whose source files changed:
    - Read the files under "Source files" and "Route defined at" in the generated facts, from the local clones in `config/dsm-config.json` `repositories`. They're read-only: read them with `git show` or the file tools, never commit, push or check out.
+   - "Source files" are the screen's own components: the one its route renders (inside wrappers such as `<Authenticated>`) and the files only a few screens import. The auth context, the HTTP client and utils that most screens use are shared and aren't listed; open one only when a rule depends on it, and cite it. Screens a heading names read as `/route (Heading)`.
+   - A dialog's form is listed as "Dialog form" with its fields' declared limits (`min 3 chars`, `max 50 chars`, `pattern`): cite those, don't guess them.
    - Write only inside the curated block: a `Summary:` sentence, the business understanding (roles, business objects and their states, rules, calculations, validations, limits, integrations), and end-to-end business cases.
    - Cite `repo:path:line` for every rule. Mark anything you didn't read in the code **(inferred)**.
 

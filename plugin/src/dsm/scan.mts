@@ -43,6 +43,7 @@ export type ScanRoute = {
   kind: string; // route, page-file, action, or api (server-only: an HTTP verb, no page, no link to it)
   framework: string;
   component: string | null;
+  wrappers?: string[]; // components its element renders around `component`, outermost first (0.7.0)
   redirect_to?: string | null;
   lazy?: string;
   controller?: string;
@@ -200,10 +201,36 @@ export const JSX_ROUTE_TAG = /<\w*Route\b/;
 const CHILD_RE = /<\/?\w*Route\b|<([A-Z]\w*)/g;
 const ATTR_PATH_RE = /\bpath\s*=\s*\{?\s*['"`]([^'"`]*)['"`]/;
 const ATTR_COMP_RE = /\b(?:element\s*=\s*\{\s*<\s*([A-Z]\w*)|component\s*=\s*\{\s*([A-Z]\w*))/;
+const ELEMENT_ATTR_RE = /\belement\s*=\s*\{\s*(?=<\s*[A-Z])/;
+
+/**
+ * The components a route's element renders, outermost first: `<Authenticated><TodoList /></Authenticated>` is
+ * `["Authenticated", "TodoList"]`; the screen is the last, the others are its wrappers (0.7.0 item 6, R10). Starting at a
+ * `<Name` in `text`, it follows the first child of each open component tag, skipping attribute values in {…}
+ * (`fallback={<Spinner />}`), and stops at a self-closing tag, text, an expression or a closing tag. Empty when `text`
+ * does not start a component there.
+ */
+export function renderChain(text: string, from: number): string[] {
+  const tag = /<\s*([A-Z]\w*)\b((?:[^>{]|\{(?:[^{}]|\{[^{}]*\})*\})*?)(\/?)>/y;
+  const chain: string[] = [];
+  for (let pos = from; ; ) {
+    tag.lastIndex = pos;
+    const m = tag.exec(text);
+    if (!m) return chain;
+    chain.push(m[1]);
+    if (m[3] === '/') return chain;
+    pos = m.index + m[0].length;
+    while (/\s/.test(text[pos] ?? '')) pos++;
+  }
+}
+
+/** The screen's own component of a render chain: the innermost. */
+export const innermostComponent = (text: string, from: number): string | null => renderChain(text, from).pop() ?? null;
 
 type RouterObj = {
   route: string;
   component: string | null;
+  wrappers: string[];
   lazy: string | null;
   redirect: string | null;
   line: number;
@@ -211,12 +238,19 @@ type RouterObj = {
 
 /** Router config objects with nested children (Angular, Vue, React data routers). */
 export function scanRouterObjects(text: string): RouterObj[] {
-  type Frame = { path: string | null; comp: string | null; lazy: string | null; redirect: string | null; pidx: number };
+  type Frame = {
+    path: string | null;
+    comp: string | null;
+    wrappers: string[];
+    lazy: string | null;
+    redirect: string | null;
+    pidx: number;
+  };
   const out: RouterObj[] = [];
   const stack: Frame[] = [];
   for (const m of text.matchAll(OBJ_TOKEN_RE)) {
     const g = m.groups as Record<string, string | undefined>;
-    if (g.open) stack.push({ path: null, comp: null, lazy: null, redirect: null, pidx: 0 });
+    if (g.open) stack.push({ path: null, comp: null, wrappers: [], lazy: null, redirect: null, pidx: 0 });
     else if (g.close) {
       const frame = stack.pop();
       if (!frame || frame.path === null) continue;
@@ -225,6 +259,7 @@ export function scanRouterObjects(text: string): RouterObj[] {
       out.push({
         route,
         component: frame.comp,
+        wrappers: frame.wrappers,
         lazy: frame.lazy,
         redirect: frame.redirect,
         line: lineOf(text, frame.pidx),
@@ -234,7 +269,11 @@ export function scanRouterObjects(text: string): RouterObj[] {
       if (g.path !== undefined && top.path === null) {
         top.path = g.path;
         top.pidx = m.index;
-      } else if (g.comp || g.elem) top.comp = (g.comp || g.elem) as string;
+      } else if (g.elem) {
+        const chain = renderChain(text, text.indexOf('<', m.index));
+        top.comp = chain.pop() ?? g.elem;
+        top.wrappers = chain;
+      } else if (g.comp) top.comp = g.comp;
       else if (g.lazy || g.lazyold || g.lazycomp) top.lazy = (g.lazy || g.lazyold || g.lazycomp) as string;
       else if (g.redirect !== undefined) top.redirect = g.redirect;
     }
@@ -255,8 +294,10 @@ export function expandPath(path: string): string[] {
 }
 
 /** JSX route elements, nested by their closing tags. */
-export function scanJsxRoutes(text: string): { route: string; component: string | null; line: number }[] {
-  const out: { route: string; component: string | null; line: number }[] = [];
+export function scanJsxRoutes(
+  text: string,
+): { route: string; component: string | null; wrappers: string[]; line: number }[] {
+  const out: { route: string; component: string | null; wrappers: string[]; line: number }[] = [];
   const stack: (string | null)[] = [];
   for (const m of text.matchAll(JSX_ROUTE_RE)) {
     if (m[0].startsWith('</')) {
@@ -267,14 +308,26 @@ export function scanJsxRoutes(text: string): { route: string; component: string 
     const path = ATTR_PATH_RE.exec(attrs)?.[1] ?? null;
     const cm = ATTR_COMP_RE.exec(attrs);
     let component = cm ? cm[1] || cm[2] || null : null;
+    let wrappers: string[] = [];
+    const el = cm?.[1] ? ELEMENT_ATTR_RE.exec(attrs) : null;
+    if (el) {
+      const chain = renderChain(attrs, el.index + el[0].length);
+      component = chain.pop() ?? component;
+      wrappers = chain;
+    }
     if (!component && !self) {
       CHILD_RE.lastIndex = m.index + m[0].length;
-      component = CHILD_RE.exec(text)?.[1] ?? null;
+      const child = CHILD_RE.exec(text);
+      if (child?.[1]) {
+        const chain = renderChain(text, child.index);
+        component = chain.pop() ?? child[1];
+        wrappers = chain;
+      }
     }
     if (path !== null || attrs.includes('index')) {
       const parents = stack.filter((p): p is string => !!p);
       for (const p of expandPath(path || '')) {
-        out.push({ route: joinRoute(...parents, p), component, line: lineOf(text, m.index) });
+        out.push({ route: joinRoute(...parents, p), component, wrappers, line: lineOf(text, m.index) });
       }
     }
     if (!self) stack.push(path);
@@ -573,6 +626,9 @@ export function importedFile(from: string, name: string, files: Map<string, stri
 type FileInfo = { owners: string[]; confidence: string; nav?: NavRef[]; elements?: Record<string, string[] | number> };
 type CodeEdge = NonNullable<CodeModel['edges']>[number];
 
+/** A file reached by at least this many screens, and by more than half of them, is shared (item 6). */
+export const MOST_MIN_SCREENS = 4;
+
 export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]) {
   const { name } = repo;
   const { files } = snapshot;
@@ -630,11 +686,22 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
           lazyLinks.push([r.route, rel, target]);
           extra.lazy = target;
         }
+        if (r.wrappers.length) extra.wrappers = r.wrappers;
         addRoute(r.route, rel, r.line, 'route', fw, r.component, extra);
       }
     }
     if (['.tsx', '.jsx', '.js'].includes(ext) && JSX_ROUTE_TAG.test(text)) {
-      for (const r of scanJsxRoutes(text)) addRoute(r.route, rel, r.line, 'route', 'react-router', r.component);
+      for (const r of scanJsxRoutes(text)) {
+        addRoute(
+          r.route,
+          rel,
+          r.line,
+          'route',
+          'react-router',
+          r.component,
+          r.wrappers.length ? { wrappers: r.wrappers } : {},
+        );
+      }
     }
     if (
       RE.pagesDir.test(rel) &&
@@ -783,8 +850,10 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
       }
     }
   }
-  // anything else: what a screen's files import, followed all the way down (relative imports only). A component
-  // used on many screens owns them all, so a change to it impacts each. Files no screen reaches stay shared.
+  // anything else: what a screen's files import, followed all the way down (relative imports only). A file only a few
+  // screens reach is owned by each of them, so a change to it impacts each. A file most screens reach (the auth
+  // context, the HTTP client, utils) is shared, not a source file of every screen (0.7.0 item 6, R10, R16). Files no
+  // screen reaches stay shared.
   const imports = new Map<string, string[]>();
   for (const [rel, text] of files) {
     if (!IMPORT_EXTS.has(extOf(rel).toLowerCase())) continue;
@@ -795,8 +864,11 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
     );
   }
   const isSeed = (rel: string) => ['direct', 'module'].includes(confidence.get(rel) ?? '');
+  const reached = new Map<string, Set<string>>(); // file -> the screens whose components reach it
+  const screens = new Set<string>();
   for (const [seed, rs] of owners) {
     if (!rs.size || !isSeed(seed)) continue;
+    for (const x of rs) screens.add(x);
     const seen = new Set([seed]);
     const queue = [seed];
     while (queue.length) {
@@ -805,10 +877,35 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
         seen.add(dep);
         queue.push(dep);
         if (isSeed(dep)) continue; // its own screens are already known
-        for (const x of rs) own(dep).add(x);
-        confidence.set(dep, 'imported');
+        const set = reached.get(dep) ?? new Set<string>();
+        for (const x of rs) set.add(x);
+        reached.set(dep, set);
       }
     }
+  }
+  // what a route renders around its screen (<Authenticated>) is used by that screen too
+  for (const r of routes) {
+    for (const w of r.wrappers ?? []) {
+      const start = importedFile(r.file, w, files) ?? classFile.get(w);
+      if (!start) continue;
+      screens.add(r.route);
+      const seen = new Set([start]);
+      const queue = [start];
+      while (queue.length) {
+        const file = queue.shift() as string;
+        if (!isSeed(file)) reached.set(file, (reached.get(file) ?? new Set<string>()).add(r.route));
+        for (const dep of imports.get(file) ?? []) {
+          if (seen.has(dep)) continue;
+          seen.add(dep);
+          queue.push(dep);
+        }
+      }
+    }
+  }
+  for (const [dep, rs] of reached) {
+    if (rs.size >= MOST_MIN_SCREENS && rs.size * 2 > screens.size) continue; // most screens use it: shared
+    for (const x of rs) own(dep).add(x);
+    confidence.set(dep, 'imported');
   }
   for (const [rel, rs] of owners) if (!rs.size) confidence.set(rel, 'shared');
 
