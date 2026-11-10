@@ -12,7 +12,8 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { recordingProject, stateDirs } from '../src/gate/state.mts';
+import { qaProjectFor, recordedIn, stateDirs } from '../src/gate/state.mts';
+import { loadEnv } from '../src/shared/env.mts';
 
 /** git options that take a separate value, e.g. `git -C repo push`. */
 const WITH_VALUE = new Set(['-C', '-c', '--git-dir', '--work-tree', '--namespace']);
@@ -98,14 +99,17 @@ function gated(root: string): boolean {
 function judge(dir: string): string | null {
   const root = git(dir, 'rev-parse', '--show-toplevel');
   if (!root) return null;
-  // gated by its own record, or by the QA project that recorded it (Q52); the verdicts are where that project keeps them
-  const rec = recordingProject(root);
-  if (!gated(root) && !(rec && gated(rec.project))) return null;
+  // the QA project the CLI would use (its .env's QAMASTER_TEST_ROOT, then upwards, then the index: Q52), so the hook
+  // reads the verdicts where qam wrote them; gated by the repo's own record, or by that project if it recorded the repo
+  const env = { ...process.env };
+  loadEnv(path.join(root, '.env'), env);
+  const project = qaProjectFor(root, path.resolve(root, env.QAMASTER_TEST_ROOT || '.'), env.QAMASTER_HOME);
+  if (!gated(root) && !(project && recordedIn(project, root) && gated(project))) return null;
   const head = git(root, 'rev-parse', 'HEAD');
   if (!head) return null; // no commits yet: nothing to check
   try {
     // every run keeps its own verdict (<head>-<plan>.json; <head>.json before 0.6.0): the newest one decides
-    const newest = stateDirs(root, rec?.project ?? null)
+    const newest = stateDirs(root, project)
       .read.flatMap((d) => {
         const dir = path.join(d, 'verdicts');
         try {

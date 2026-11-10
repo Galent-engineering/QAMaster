@@ -9,6 +9,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
 import { pushDirs } from '../plugin/hooks/pre-push.mts';
+import { stateDirs } from '../plugin/src/gate/state.mts';
+import { loadConfig } from '../plugin/src/shared/config.mts';
 import { tmpDir } from './tmp.mts';
 
 const HOOK = path.resolve(import.meta.dirname, '..', 'plugin/hooks/pre-push.mts');
@@ -126,6 +128,48 @@ test('a verdict left in the clone by an older version still counts; other repos 
   // a QA project that never recorded the claude-hooks integration gates nothing
   const bare = world(false);
   assert.equal(hook(bare.home, bare.clone, 'git push').status, 0);
+});
+
+test('the hook reads verdicts where the CLI writes them: a clone whose .env points into the QA project, hooks in the clone', () => {
+  const w = world(false);
+  // claude-hooks installed in the clone, so the index lists the clone and not the QA project (0.4.2 W14 layout)
+  write(
+    path.join(w.clone, '.qamaster/integrations.json'),
+    JSON.stringify({ integrations: [{ id: 'claude-hooks:Shop', kind: 'claude-hooks' }] }),
+  );
+  write(path.join(w.clone, '.env'), `QAMASTER_TEST_ROOT=${w.qa}\n`);
+  write(
+    path.join(w.home, 'installs.json'),
+    JSON.stringify({ repos: { [w.clone]: { app: 'Shop', integrations: ['claude-hooks:Shop'], updated_at: 'x' } } }),
+  );
+  const cfg = loadConfig(w.clone, { QAMASTER_HOME: w.home });
+  const where = stateDirs(cfg.root, cfg.qaProject).write;
+  assert.equal(where, path.join(w.qa, '.qamaster/gate/shop'));
+  assert.equal(hook(w.home, w.clone, 'git push').status, 2);
+  verdict(w, 'pass', where);
+  assert.equal(hook(w.home, w.clone, 'git push').status, 0);
+});
+
+test('two indexed QA projects record the clone: the hook uses the one the CLI finds from the test root', () => {
+  const w = world();
+  // a second QA project, first in the index, records the same clone and gates it too
+  const other = tmpDir('qam-qa2-');
+  write(path.join(other, 'config/qamaster.json'), '{}');
+  write(
+    path.join(other, 'config/dsm-config.json'),
+    JSON.stringify({ repositories: [{ name: 'shop', path: path.relative(other, w.clone) }] }),
+  );
+  write(
+    path.join(other, '.qamaster/integrations.json'),
+    JSON.stringify({ integrations: [{ id: 'claude-hooks:Shop', kind: 'claude-hooks' }] }),
+  );
+  const rec = { app: 'Shop', integrations: ['claude-hooks:Shop'], updated_at: 'x' };
+  write(path.join(w.home, 'installs.json'), JSON.stringify({ repos: { [other]: rec, [w.qa]: rec } }));
+  write(path.join(w.clone, '.env'), `QAMASTER_TEST_ROOT=${w.qa}\n`);
+  const cfg = loadConfig(w.clone, { QAMASTER_HOME: w.home });
+  assert.equal(fs.realpathSync(cfg.qaProject ?? ''), fs.realpathSync(w.qa));
+  verdict(w, 'pass', stateDirs(cfg.root, cfg.qaProject).write);
+  assert.equal(hook(w.home, w.clone, 'git push').status, 0);
 });
 
 test('pushDirs: the folder each push runs in', () => {

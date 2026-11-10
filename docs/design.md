@@ -72,7 +72,7 @@ qam mcp-serve [--project DIR]
 
 Global flags are `--repo <path>` and `--json`. Exit codes: `0` pass, `1` fail, `2` blocked, `3` awaiting approval. Without a TTY or `--yes`, `check` stops after the plan with exit code 3.
 
-Where the gate keeps its files (Q52): run from an app clone that a QA project recorded, plans, verdicts, evidence and `drafts.json` go to that QA project's `.qamaster/gate/<source name>/`. From the clone, the QA project is found through the per-user index (`~/.qamaster/installs.json`), which lists only QA projects with an integration installed (the push hook, for one). A QA project with none isn't found from its clone, so a run there keeps its files in the clone's own `.qamaster/`, as before 0.6.0, until an integration is installed in the QA project (`qam integrations add`).
+Where the gate keeps its files (Q52): run from an app clone that a QA project recorded, plans, verdicts, evidence and `drafts.json` go to that QA project's `.qamaster/gate/<source name>/`. From the clone, the QA project is found first from `QAMASTER_TEST_ROOT` in the clone's `.env` (then upwards from the clone), else through the per-user index (`~/.qamaster/installs.json`), which lists only QA projects with an integration installed (the push hook, for one). A QA project with none isn't found from its clone, so a run there keeps its files in the clone's own `.qamaster/`, as before 0.6.0, until an integration is installed in the QA project (`qam integrations add`). The push hook finds the QA project the same way as `qam`, so it reads the verdict where `qam` wrote it.
 
 ## The publish preview
 

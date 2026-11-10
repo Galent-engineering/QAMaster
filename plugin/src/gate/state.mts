@@ -1,7 +1,7 @@
 /**
  * Where the gate keeps its files (Q52, 0.6.0). A repo that a QA project recorded as a code source (config/dsm-config.json
- * repositories[]) keeps plans, verdicts, evidence and drafts.json in that QA project, under .qamaster/gate/<name>/, and
- * the push hook finds the project through the per-user index of QA projects. Any other repo keeps them in its own
+ * repositories[]) keeps plans, verdicts, evidence and drafts.json in that QA project, under .qamaster/gate/<name>/; the
+ * CLI and the push hook find the project the same way (qaProjectFor). Any other repo keeps them in its own
  * .qamaster/. For one release the old place is still read; nothing is ever written or deleted there.
  *
  * Node standard library only: the push hook imports this on every Bash call.
@@ -58,6 +58,22 @@ export function recordingProject(appRepo: string, home?: string): Recorded | nul
     if (name) return { project, name };
   }
   return null;
+}
+
+/** The nearest folder at or above `start` that has config/qamaster.json. */
+export function findQaProject(start: string): string | null {
+  for (let dir = start; ; dir = path.dirname(dir)) {
+    if (fs.existsSync(path.join(dir, 'config', 'qamaster.json'))) return dir;
+    if (path.dirname(dir) === dir) return null;
+  }
+}
+
+/**
+ * The QA project a repo belongs to: from the test root upwards, then the repo upwards, then the QA project that
+ * recorded it (Q52). The CLI and the push hook both find it here, so the hook reads verdicts where the CLI wrote them.
+ */
+export function qaProjectFor(root: string, testRoot: string, home?: string): string | null {
+  return findQaProject(testRoot) ?? findQaProject(root) ?? recordingProject(root, home)?.project ?? null;
 }
 
 const safe = (name: string) => name.replace(/[^\w.-]+/g, '_');
