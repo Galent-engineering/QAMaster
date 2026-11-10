@@ -134,20 +134,24 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   for (const r of reached) prepared.push(await prepare(shared, r));
   const stopped = prepared.flatMap((p) => (p.stop ? [p.stop] : []));
   const outcomes: Outcome[] = stopped.length ? stopped : [];
-  for (const p of stopped.length ? [] : prepared) {
-    try {
-      outcomes.push(await p.finish());
-    } catch (e) {
-      if (!(e instanceof BlockedError) || !outcomes.length) throw e;
-      throw new BlockedError(
-        `${p.dest} stopped part way: ${e.message}\nWritten: ${destinations.slice(0, outcomes.length).join(', ')}. What was written is recorded, so once that's fixed, publish again with the same --to: only the rest is written.`,
-      );
+  try {
+    for (const p of stopped.length ? [] : prepared) {
+      try {
+        outcomes.push(await p.finish());
+      } catch (e) {
+        if (!outcomes.length) throw e;
+        throw new BlockedError(
+          `${p.dest} stopped part way: ${(e as Error).message}\nWritten: ${destinations.slice(0, outcomes.length).join(', ')}. What was written is recorded, so once that's fixed, publish again with the same --to: only the rest is written.`,
+        );
+      }
     }
+  } finally {
+    // the store the project is set up for stays active, the others parked: --to never switches stores, even when a
+    // destination stops part way (Q34, R23)
+    const home = v.apply && !stopped.length ? homeStore(cfg, reached) : null;
+    const after = home ? readLedger(dir) : null;
+    if (home && after && after.store !== home) writeLedger(dir, switchLedger(after, home));
   }
-  // the store the project is set up for stays active, the others parked: --to never switches stores (Q34, R23)
-  const home = v.apply && !stopped.length ? homeStore(cfg, reached) : null;
-  const after = home ? readLedger(dir) : null;
-  if (home && after && after.store !== home) writeLedger(dir, switchLedger(after, home));
 
   const code = outcomes.some((o) => o.code === 3) ? 3 : outcomes.some((o) => o.code === 1) ? 1 : outcomes[0].code;
   if (!shared.multi) {

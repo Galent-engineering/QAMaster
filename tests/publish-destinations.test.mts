@@ -256,3 +256,29 @@ test('Q50: a destination that fails part way says which destinations were writte
   );
   assert.match(fs.readFileSync(p.csv, 'utf8'), /Case TC-CART-001/);
 });
+
+test('Q50: a failure after a case was written to ADO keeps the project on its own store', async () => {
+  const p = project(new FakeAdo());
+  const make = STORES.ado;
+  STORES.ado = (cfg) => {
+    const s = make(cfg);
+    const create = s.create.bind(s);
+    let n = 0;
+    s.create = async (change) => {
+      if (++n === 2) throw new TypeError('fetch failed');
+      return create(change);
+    };
+    return s;
+  };
+  await assert.rejects(
+    p.run('--to', 'file,ado', '--apply'),
+    (e: unknown) =>
+      e instanceof BlockedError &&
+      /fetch failed/.test(e.message) &&
+      /Written: file/.test(e.message) &&
+      /ado stopped part way/.test(e.message),
+  );
+  // the ADO case written is recorded, parked; the file store stays the project's store (Q34, R23)
+  assert.match(p.ledger().store, /^File testcases\/testcases\.csv/);
+  assert.equal(p.store(), 'file');
+});
