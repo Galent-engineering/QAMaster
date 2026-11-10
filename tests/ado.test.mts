@@ -25,6 +25,7 @@ import { loadConfig } from '../plugin/src/shared/config.mts';
 import { BlockedError, NoPlanError, NoProjectError } from '../plugin/src/shared/errors.mts';
 import { requirementSourceContract, testCaseStoreContract } from './contracts.mts';
 import { FakeAdo } from './fake-ado.mts';
+import './tmp.mts';
 
 const FIX = path.join(import.meta.dirname, 'fixtures/ado');
 const BASE = 'https://dev.azure.com/org/Shop/_apis';

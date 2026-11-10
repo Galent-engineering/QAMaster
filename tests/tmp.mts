@@ -14,3 +14,7 @@ export function tmpDir(prefix = 'qam-'): string {
   made.push(dir);
   return dir;
 }
+
+// Tests never read the developer's own az defaults (~/.azure/config): an empty az config folder for this process and
+// every qam it spawns. A test that wants az defaults passes its own AZURE_CONFIG_DIR.
+process.env.AZURE_CONFIG_DIR = tmpDir('qam-az-');
