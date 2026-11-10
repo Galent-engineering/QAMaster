@@ -1,0 +1,125 @@
+/**
+ * 0.7.0 item 9 (W11): a rendered .feature uses the fixed step phrasings the framework's generic steps define, and the
+ * published steps and case hashes do not change (Q39).
+ */
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import { test } from 'node:test';
+import { derive } from '../plugin/src/publish/publish.mts';
+import { featureText } from '../plugin/src/testgen/render.mts';
+import type { TestCase } from '../plugin/src/testgen/validate.mts';
+
+const ROOT = path.resolve(import.meta.dirname, '..');
+const read = (f: string) => JSON.parse(fs.readFileSync(path.join(ROOT, f), 'utf8'));
+const COMMON = fs.readFileSync(path.join(ROOT, 'plugin/framework/playwright-bdd/steps/shared/common.steps.ts'), 'utf8');
+
+/** The generic steps' patterns as regexes: {string} is a double-quoted value. */
+const PATTERNS = [...COMMON.matchAll(/\b(?:Given|When|Then)\(\s*'((?:\\.|[^'\\])*)'/g)].map(
+  (m) => new RegExp(`^${m[1].replace(/[.*+?^$()|[\]\\]/g, '\\$&').replace(/\{string\}/g, '"[^"]*"')}$`),
+);
+const stepLines = (feature: string) =>
+  feature
+    .split('\n')
+    .map((l) => /^\s*(?:Given|When|Then|And|But)\s+(.*)$/.exec(l)?.[1])
+    .filter((l): l is string => !!l);
+
+const kase = (over: Partial<TestCase> = {}): TestCase => ({
+  id: 'TC-TODO-001',
+  title: 'Adding a todo from the Add todo dialog',
+  component: 'Todo',
+  type: 'Functional',
+  category: 'Positive',
+  priority: 'P1',
+  steps: [
+    { screen: '/todo', action: 'Open the Todo screen', expected: 'The page shows "Todo"' },
+    {
+      screen: '/todo',
+      action: 'Click the Add todo button',
+      element: 'Add todo',
+      expected: 'The dialog shows "Title"',
+    },
+    {
+      screen: '/todo',
+      action: 'Fill the Title field',
+      element: 'Title',
+      data: 'Buy milk',
+      expected: 'The Title field shows "Buy milk"',
+    },
+    {
+      screen: '/todo',
+      action: 'Click the Back to sign in link',
+      element: 'Back to sign in',
+      leads_to: '/login',
+      expected: 'The Sign in screen opens',
+    },
+  ],
+  ...over,
+});
+
+test('the template defines the generic phrasings', () => {
+  // open a path, click a button, click a link, fill a field, see a text, the URL contains
+  assert.equal(PATTERNS.length, 6);
+});
+
+test('a rendered case uses only the generic step phrasings where one fits', () => {
+  const text = featureText('Todo', 'Todo', [kase()]);
+  assert.deepEqual(stepLines(text), [
+    'I open the path "/todo"',
+    'I should see the text "Todo"',
+    'I click the "Add todo" button',
+    'I should see the text "Title"',
+    'I fill the "Title" field with "Buy milk"',
+    'I should see the text "Buy milk"',
+    'I click the "Back to sign in" link',
+    'the URL should contain "/login"',
+  ]);
+  for (const l of stepLines(text))
+    assert.ok(
+      PATTERNS.some((p) => p.test(l)),
+      `no generic step matches: ${l}`,
+    );
+});
+
+test('a step no generic phrasing fits keeps its own wording', () => {
+  const text = featureText('Todo', 'Todo', [
+    kase({
+      steps: [
+        {
+          screen: '/todo',
+          action: 'Drag the card to Done',
+          element: 'Card',
+          expected: 'The card moves to the Done column',
+        },
+      ],
+    }),
+  ]);
+  assert.deepEqual(stepLines(text), ['I drag the card to Done', 'the card moves to the Done column']);
+});
+
+test('the published steps and case hashes of an existing run are unchanged by the new wording', () => {
+  const cases = read('tests/fixtures/testgen/shop/run/testcases.json') as TestCase[];
+  const before = JSON.stringify(cases);
+  const ctx = {
+    scope: { module: 'Cart', subModule: '' },
+    dsm: { page: { nodes: [] } },
+    settings: { publish: { pathDepth: 2, suiteBy: 'module' } },
+    scenarios: new Set<string>(),
+  } as never;
+  featureText('Shop', 'Cart', cases);
+  assert.equal(JSON.stringify(cases), before, 'render does not touch the cases');
+  const hashes = cases.map((c) => derive({ preconditions: [], test_data: {}, evidence: [], ...c } as never, ctx).hash);
+  // recorded from 0.6.0 (a3b042d), before the feature wording changed
+  assert.deepEqual(hashes, [
+    '056317dcda7f5a8e',
+    '8b7248d5690a3359',
+    '1efc08189896ed8f',
+    '122a8af7e7c1c58f',
+    '88e6f8b55e8a4837',
+    '2ead222a58f6398b',
+  ]);
+  assert.deepEqual(derive({ preconditions: [], test_data: {}, evidence: [], ...cases[0] } as never, ctx).steps[0], {
+    action: 'Open the shop home page',
+    expected: 'The home page shows the Products link',
+  });
+});

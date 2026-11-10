@@ -47,11 +47,35 @@ export function csvRow(values: unknown[]): string {
   return `${cells.join(',')}\r\n`;
 }
 
-/** Gherkin text of one step: imperative actions read as first-person steps ("When I open the cart"). */
+/**
+ * Gherkin text of one step. A step the framework's generic steps cover (steps/shared/common.steps.ts) is written in
+ * their fixed phrasing, so a script reuses it as it is (W11): open a path, click a named button or link, fill a named
+ * field, see a text, the URL contains. Any other step keeps its own wording as a first-person phrase. Only this
+ * rendered text changes; the published steps and the case hash come from the case itself (Q39).
+ */
 function stepPhrases(st: Step): [string, string] {
-  let action = lowerFirst(st.action).replace(/\.$/, '');
-  if (/^[a-z]/.test(action) && !/^(the|a|an|i|my|user|employee|admin|manager)\b/.test(action)) action = `I ${action}`;
-  return [action, lowerFirst(st.expected).replace(/\.$/, '')];
+  const action = String(st.action ?? '');
+  const el = s(st.element);
+  const q = (v: string) => `"${v}"`;
+  const plain = (v: string) => !v.includes('"');
+  let a: string | null = null;
+  if (!el && st.screen && /^\s*open\b/i.test(action)) a = `I open the path ${q(s(st.screen))}`;
+  // an action that does two things ("type X and submit") is not one generic step: it keeps its own wording
+  else if (el && plain(el) && !/\b(and|then)\b/i.test(action)) {
+    if (typeof st.data === 'string' && st.data && plain(st.data) && /\b(type|enter|fill)\b/i.test(action))
+      a = `I fill the ${q(el)} field with ${q(st.data)}`;
+    else if (/\b(click|tap|press)\b/i.test(action) && /\blink\b/i.test(action)) a = `I click the ${q(el)} link`;
+    else if (/\b(click|tap|press)\b/i.test(action) && /\bbutton\b/i.test(action)) a = `I click the ${q(el)} button`;
+  }
+  const expected = s(st.expected);
+  const shown = /"([^"]+)"/.exec(expected)?.[1];
+  const target = s(st.leads_to);
+  let e: string | null = null;
+  if (target && plain(target)) e = `the URL should contain ${q(target)}`;
+  else if (shown) e = `I should see the text ${q(shown)}`;
+  let free = lowerFirst(action).replace(/\.$/, '');
+  if (/^[a-z]/.test(free) && !/^(the|a|an|i|my|user|employee|admin|manager)\b/.test(free)) free = `I ${free}`;
+  return [a ?? free, e ?? lowerFirst(expected).replace(/\.$/, '')];
 }
 
 /**

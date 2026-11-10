@@ -74,7 +74,9 @@ test("golden: the rendered files are AQE's", () => {
   const { manifest, cases } = run();
   const files = render(manifest, cases, validate(manifest, cases, facts(), settings()));
   assert.deepEqual([...files.keys()].sort(), ['Cart.feature', 'testcases.csv', 'testcases.md']);
-  for (const [name, body] of files) assert.equal(body, text(path.join(FIX, 'shop/aqe', name)), name);
+  // the feature is the 0.7.0 wording (W11): generic step phrasings; the other two files are AQE's
+  for (const [name, body] of files)
+    assert.equal(body, text(path.join(FIX, name === 'Cart.feature' ? 'shop' : 'shop/aqe', name)), name);
 });
 
 // One test per fix, each the matching case in tests/fixtures/testgen/aqe-runs.json, which AQE passed.

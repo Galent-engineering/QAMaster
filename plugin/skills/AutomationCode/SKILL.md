@@ -39,6 +39,20 @@ export const L = { save: { role: 'button', name: 'Save' } } as const;
 await this.page.getByRole(L.save.role, { name: L.save.name }).click();
 ```
 
+## Reuse the scenario text as it is
+
+TestGen's `<Component>.feature` (in the run folder) already words its steps in the phrasings the template's generic steps (`steps/shared/common.steps.ts`) define:
+
+| Step text | Generic step |
+|---|---|
+| `I open the path "/todo"` | goes to the path |
+| `I click the "Save" button` / `I click the "Back" link` | clicks the named button or link |
+| `I fill the "Title" field with "Buy milk"` | fills the named field |
+| `I should see the text "Title"` | the text is visible |
+| `the URL should contain "/login"` | the URL has that part |
+
+Copy a case's scenario into `features/<channel>/<module>.feature` **with its step text unchanged**, and write a step definition only for a step no generic one covers (a step in its own words, such as a precondition or a business check). Don't reword a step to a near-synonym: that creates a second definition for the same thing. Where a value is a credential, the step text names it ("the registered user's password") and the definition you write for that step reads `process.env`.
+
 ## Rules the check enforces (`qam check-scripts`)
 
 - No inline selectors in page objects or steps.
