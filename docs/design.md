@@ -56,6 +56,7 @@ qam requirements list                         # the saved scopes; a TestGen mani
 qam testgen context|validate|render <run>
 qam review <run>                              # records gate 1 with the ADO account + git email; commands call it only after the person's yes
 qam publish <run> [--to file,ado] [--apply] [--retire] [--leave-out ID,…] [--skip-smoke ID,…]
+qam store [use ado|file]                      # R23: which store test cases go to; use writes QAMASTER_STORE in .env, the ledger keeps each store's IDs
 qam app create [--app NAME] [--web-url URL]       # <App>/ in the QA project from the playwright-bdd template
 qam check-scripts [--quick]
 qam plan    [--base REF] [--tag GROUP[=WHY]] [--all]   # --all: every case with a script, recorded ones included (Q49)

@@ -104,11 +104,21 @@ test('Q44: doctor warns when Azure DevOps settings exist but the store is the lo
   qam(home, qa, ['setup', '--no-install']);
   const w = qam(home, qa, ['doctor'], { QAMASTER_ADO_ORG: 'https://dev.azure.com/x', QAMASTER_STORE: '' });
   assert.match(w.out, /WARN +store setting +Azure DevOps settings are set, but test cases go to the local CSV file/);
-  assert.match(w.out, /QAMASTER_STORE=ado/);
+  assert.match(w.out, /Run qam store use ado to publish to Azure DevOps/);
   const none = qam(home, qa, ['doctor'], { QAMASTER_ADO_ORG: '', QAMASTER_ADO_PROJECT: '' });
   assert.doesNotMatch(none.out, /store setting/);
   const set = qam(home, qa, ['doctor'], { QAMASTER_ADO_ORG: 'x', QAMASTER_STORE: 'file' });
   assert.doesNotMatch(set.out, /store setting/);
+});
+
+test('Q44: doctor warns too when the Azure DevOps settings are az defaults (item 10)', () => {
+  const home = tmp();
+  const qa = tmp();
+  const az = tmp();
+  fs.writeFileSync(path.join(az, 'config'), '[defaults]\norganization = https://dev.azure.com/x\nproject = Shop\n');
+  qam(home, qa, ['setup', '--no-install']);
+  const env = { AZURE_CONFIG_DIR: az, QAMASTER_ADO_ORG: '', QAMASTER_ADO_PROJECT: '', QAMASTER_STORE: '' };
+  assert.match(qam(home, qa, ['doctor'], env).out, /WARN +store setting +Azure DevOps settings are set/);
 });
 
 test('E4: setup with a new --app replaces the claude-hooks record', () => {

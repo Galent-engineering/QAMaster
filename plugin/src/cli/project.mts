@@ -44,6 +44,7 @@ import {
 } from '../pipeline/sources.mts';
 import { readLedger, switchLedger, writeLedger } from '../publish/ledger.mts';
 import type { Config } from '../shared/config.mts';
+import { azDefaults } from '../shared/env.mts';
 import { BlockedError, NoPlanError, NoProjectError } from '../shared/errors.mts';
 import { DEFAULT_PROJECT_CONFIG } from '../shared/schema.mts';
 import { automationFolder, runnerRoot } from './gate.mts';
@@ -574,17 +575,19 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
   storeCheck.ok = store.ok;
   storeCheck.detail ||= store.detail;
   checks.push(storeCheck);
-  // Q44: ADO settings with the local file store means test cases never reach Azure DevOps, which is easy to miss
+  // Q44: ADO settings (QAMaster's, or az defaults as a pair, R24) with the local file store means test cases never reach
+  // Azure DevOps, which is easy to miss
+  const az = azDefaults(cfg.env);
   if (
-    (process.env.QAMASTER_ADO_ORG || process.env.QAMASTER_ADO_PROJECT) &&
-    !process.env.QAMASTER_STORE &&
+    (cfg.env.QAMASTER_ADO_ORG || cfg.env.QAMASTER_ADO_PROJECT || (az.organization && az.project)) &&
+    !cfg.env.QAMASTER_STORE &&
     cfg.store === 'file'
   )
     checks.push({
       check: 'store setting',
       ok: true,
       detail:
-        'Azure DevOps settings are set, but test cases go to the local CSV file. Add QAMASTER_STORE=ado to .env to publish to Azure DevOps.',
+        'Azure DevOps settings are set, but test cases go to the local CSV file. Run qam store use ado to publish to Azure DevOps.',
       state: 'unknown',
     });
   // the gate's prerequisites (F4): each runner the plan's links use, then the app the tests open
