@@ -32,13 +32,17 @@ const readJson = (file: string): unknown => {
   }
 };
 
+const repositories = (project: string) =>
+  (
+    readJson(path.join(project, 'config', 'dsm-config.json')) as {
+      repositories?: { name?: unknown; path?: unknown }[];
+    } | null
+  )?.repositories ?? [];
+
 /** The name a QA project gave the repository at `appRepo` in its dsm-config.json, or null. */
 export function recordedIn(project: string, appRepo: string): string | null {
-  const d = readJson(path.join(project, 'config', 'dsm-config.json')) as {
-    repositories?: { name?: unknown; path?: unknown }[];
-  } | null;
   const here = real(appRepo);
-  for (const r of d?.repositories ?? [])
+  for (const r of repositories(project))
     if (typeof r.name === 'string' && typeof r.path === 'string' && real(path.resolve(project, r.path)) === here)
       return r.name;
   return null;
@@ -66,12 +70,20 @@ export function stateDirs(appRepo: string, project: string | null): StateDirs {
   return { write, read: [write, own], legacy: own };
 }
 
-/** Every place reports and status read from: this repo's (see stateDirs) and every app a QA project keeps gate files for. */
+/**
+ * Every place reports and status read from: this repo's (see stateDirs), every app a QA project keeps gate files for,
+ * and, for one release, each recorded clone's own .qamaster/ from before 0.6.0.
+ */
 export function readAll(appRepo: string, project: string | null): string[] {
   const dirs = [...stateDirs(appRepo, project).read];
   const gate = project ? path.join(project, '.qamaster', 'gate') : null;
   try {
     if (gate) for (const d of fs.readdirSync(gate).sort()) dirs.push(path.join(gate, d));
   } catch {} // no gate files in the QA project yet
+  if (project)
+    for (const r of repositories(project)) {
+      const legacy = typeof r.path === 'string' ? stateDirs(path.resolve(project, r.path), project).legacy : null;
+      if (legacy) dirs.push(legacy);
+    }
   return [...new Set(dirs)];
 }

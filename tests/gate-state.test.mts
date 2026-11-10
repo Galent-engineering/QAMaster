@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { recordedIn, recordingProject, stateDirs } from '../plugin/src/gate/state.mts';
+import { readAll, recordedIn, recordingProject, stateDirs } from '../plugin/src/gate/state.mts';
 import { tmpDir } from './tmp.mts';
 
 /** A QA project that recorded `clone` as its code source `shop`, listed in the home index. */
@@ -50,4 +50,19 @@ test('a recorded clone writes to the QA project and reads the old folder too; an
   assert.equal(own.legacy, null);
   // the QA project that is itself the repo keeps its own folder
   assert.equal(stateDirs(qa, qa).write, path.join(qa, '.qamaster'));
+});
+
+test("readAll in the QA project also reads each recorded clone's old .qamaster/ (one release)", () => {
+  const { qa, clone } = world();
+  fs.mkdirSync(path.join(qa, '.qamaster', 'gate', 'shop'), { recursive: true });
+  assert.deepEqual(readAll(qa, qa), [
+    path.join(qa, '.qamaster'),
+    path.join(qa, '.qamaster', 'gate', 'shop'),
+    path.join(clone, '.qamaster'),
+  ]);
+  // from the clone, the same places, each once
+  assert.deepEqual(
+    new Set(readAll(clone, qa)),
+    new Set([path.join(qa, '.qamaster', 'gate', 'shop'), path.join(clone, '.qamaster')]),
+  );
 });

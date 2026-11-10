@@ -111,6 +111,19 @@ test('a plan and a verdict left in the clone by an older version are still read,
   assert.match(doc.out, /delete/);
 });
 
+test("a verdict only in the clone's old .qamaster/ shows in report all and pipeline status run from the QA project", async (t) => {
+  const w = await world();
+  if (!w) return t.skip('uv cannot lock pytest offline here');
+  assert.equal(qam(w.home, w.clone, 'check', '--yes').status, 0);
+  fs.cpSync(path.join(w.qa, '.qamaster', 'gate', 'shop'), path.join(w.clone, '.qamaster'), { recursive: true });
+  fs.rmSync(path.join(w.qa, '.qamaster', 'gate'), { recursive: true });
+  const rep = qam(w.home, w.qa, 'report', 'all');
+  assert.equal(rep.status, 0, rep.out + rep.err);
+  assert.doesNotMatch(rep.out + rep.err, /No verdict yet/);
+  const status = qam(w.home, w.qa, '--json', 'pipeline', 'status');
+  assert.match(status.out, /latest: pass, 1 of 1 passed/);
+});
+
 test('0.6.0 item 14: qam plan --all selects every case with a script, and says why', async (t) => {
   const w = await world();
   if (!w) return t.skip('uv cannot lock pytest offline here');
