@@ -9,7 +9,7 @@ Each entry says where the choice came from:
 
 Format: **Q<n>. Title** (date, status, source): decision, why, what we gave up.
 
-Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 is **proposed**; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06, Q49 on 2026-11-10. To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
+Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 is **proposed**; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06, Q49 and Q54 on 2026-11-10. To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
 
 ---
 
@@ -778,6 +778,15 @@ Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in ea
   - Store links are unchanged (Q39, Q40): a link reaches the test case store only once the script is committed, pushed and published again.
 - **Why:** on AgentMesh (A15), dummy-static-website (W16, W19) and fastapi-react-app (R25), every new plan selected 0 automated cases until `--done` was run again, though the scripts were there and unchanged. With no push access, the gate never selected a script at all.
 - **Gave up:** a link in the store for a script that teammates can't pull (rejected option: local links in publish). Built in 0.6.0.
+
+**Q54. Two feature releases to 1.0.0, a patch after each, and native mobile in 1.1.0** (2026-11-10, accepted 2026-11-10; amends the 2026-11-06 order and product v1's scope)
+- **Decision:**
+  - The feature releases left before 1.0.0 are two, grouped by the code they touch: **0.6.0** the gate and the store (gate, hook, publish, store adapters, CLI), and **0.7.0** what QAMaster covers (crawler, DSM, TestGen, framework templates, the API and Mobile Web channels).
+  - Each is followed by a patch release (0.6.1, 0.7.1) kept for what its live run finds: fixes only (Q46).
+  - **1.0.0 adds no feature.** It proves v1: the clean-room Docker run, a walkthrough on a second unknown app through the slash commands, the failure path and the store's life cycle seen live.
+  - **Native Android and iOS move from v1 to 1.1.0.** Product v1.1's scope (the git hook, IDE set-up, PR checks, ADO Test Run) ships as 1.2.0.
+- **Why:** four small releases (0.6.0 to 0.9.0) each touched the same modules twice; two releases by area halve the reviews and the live runs. Native mobile needs an Android SDK or Xcode machine and is the largest single item; out of v1 it no longer holds 1.0.0 back.
+- **Gave up:** native apps in v1, and the smaller steps between 0.6.0 and 0.9.0.
 
 ---
 

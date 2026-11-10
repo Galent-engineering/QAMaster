@@ -36,7 +36,7 @@ Plugin releases inside this scope, and the next one's plan: [releases.md](releas
 ### v1
 The plugin reaches this scope at version 1.0.0 ([Q46](decisions.md)); [releases.md](releases.md) shows the versions on the way.
 - One Claude Code plugin, `qamaster`, and the `qam` CLI behind it.
-- Build stages from Autonomous-QE: DSM, AUT skills, requirements, TestGen with tolerance 0, playwright-bdd scripts for Web, Mobile Web, API, Android and iOS, the script gate. Scripts are drafted just in time by the gate, for the cases a change touches; automating every case up front stays an option (Q39).
+- Build stages from Autonomous-QE: DSM, AUT skills, requirements, TestGen with tolerance 0, playwright-bdd scripts for Web, Mobile Web and API, the script gate. Native Android and iOS follow in plugin 1.1.0 (Q54). Scripts are drafted just in time by the gate, for the cases a change touches; automating every case up front stays an option (Q39).
 - Publish to Azure DevOps Test Plans, with derived tags and automation links.
 - The CheckMaster gate: plan, approve, run, verdict, push hook. Runners: playwright-bdd and pytest.
 - Feedback: coverage gaps, stale cases, BROKEN links, defect drafts.
@@ -44,6 +44,7 @@ The plugin reaches this scope at version 1.0.0 ([Q46](decisions.md)); [releases.
 - Built from the better of Autonomous-QE 0.1.5 and 0.2.0, module by module ([porting-step3.md](porting-step3.md)).
 
 ### v1.1
+Ships as plugin 1.2.0 (Q54), after native Android and iOS in 1.1.0.
 - git pre-push hook (`qam install-hooks`), so pushes from any terminal are gated.
 - Each IDE and agent set up by ticking it (Q43): Kiro, Cursor, GitHub Copilot, Visual Studio, JetBrains, Gemini CLI and Codex CLI get their own rules or steering file and a hook where the tool has one, kept out of commits. Their MCP registration waits for the MCP server in v2.
 - PR checks with one plan comment per PR and approval by comment, behind a replaceable code host (Q28): GitHub and Azure Repos first, run from GitHub Actions or Azure Pipelines.

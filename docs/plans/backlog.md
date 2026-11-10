@@ -37,18 +37,22 @@ The dummy-static-website fixes, items 1–10 of [0.4.2.md](0.4.2.md#what-shipped
 
 The 39 domain sub-skills as reference files (Q51). See [0.4.3.md](0.4.3.md#what-shipped).
 
-## The road to 1.0.0 (planned 2026-11-06)
+## The road to 1.0.0 (replanned 2026-11-10, Q54)
 
-Ordered with you on 2026-11-06: fixes from the [fastapi-react-app run](../demos/2026-11-04-0.4.3-fastapi-react-todo.md) (R1–R30) first, then requirements, then the gate's trust, apps with a sign-in, daily use and the other channels.
+Ordered with you on 2026-11-06 and regrouped on 2026-11-10 (Q54): the four feature releases left (0.6.0 to 0.9.0) become two, grouped by the code they touch, each followed by a patch release for what its live run finds. 1.0.0 adds no feature: it proves v1 on a second app. Native Android and iOS move to 1.1.0.
 
 | Release | Kind | What | Source | Effort |
 |---|---|---|---|---|
 | 0.4.4 | Fixes | **Released 2026-11-10.** The run's messages and docs. See [0.4.4.md](0.4.4.md) | R2–R4, R11, R13–R15, R18–R20, R29 | M |
-| 0.5.0 | Features | **Released 2026-11-10.** Requirements fetch from Azure Boards (`qam requirements fetch`, stage 6), so `req:` evidence and the requirements in the reports are real; completes demo step 6. See [0.5.0.md](0.5.0.md) | K4, product v1 | L |
-| 0.6.0 | Features | **A gate you can trust.** Its state in the QA project and a push hook that blocks from the app clone (Q52); an app error during a passing case fails it (Q53); every verdict kept, not one per commit; script bindings kept per test case across plans (Q49, decided 2026-11-10); doctor names a second, different build of the same version; the app's own test suite noticed by doctor and offered to the plan | R22, R25–R28, R17, R1, R4, Q49, A15, W16, W19 | L; see [0.6.0.md](0.6.0.md) |
-| 0.7.0 | Features | **Apps with a sign-in.** A signed-out crawl merged with the signed-in one, so public forms keep their fields; two crawls kept and compared; fields inside dialogs; clickable cards and sidebar links followed; each screen's own source files, not the shared sign-in code, so tags narrow; screens named by their heading. Then TestGen covers sign-in, sign-up and add/edit forms | R5–R10, R12, R16, R30 | L |
-| 0.8.0 | Features | **Daily use.** Q50, the local store first and several publish destinations (W9); switching stores with a command (R23); `az devops`'s own credential variables read (R24); `qam status` as a short name (R2); a conflict shows its fields; a store-only edit reported; `--take-store` (needs a decision); `qam review` confirms on a terminal (E3); selection presets and a model choice (Q31); DSM speed (S1–S4, S7); a verdict with no git change (W10); shared step wording (W11); ADO credentials from a file, after a decision (W8) | K6, K7, E3, S1–S7, W8–W11, R2, R23, R24 | L in all |
-| 0.9.0 | Features | **The other v1 channels.** API and Mobile Web scripts, then Android and iOS through Appium, ported from Autonomous-QE's `framework/TestAutomation/src/api` and `src/mobile`. Native runs need a machine with the Android SDK or Xcode | product v1, K5, Q20 | L |
+| 0.5.0 | Features | **Released 2026-11-10.** Requirements fetch from Azure Boards and import from a file; completes demo step 6. See [0.5.0.md](0.5.0.md) | K4, product v1 | L |
+| 0.6.0 | Features | **The gate and the store you can trust** (gate, hook, publish, store adapters, CLI). The gate: its state in the QA project and a push hook that blocks from the app clone (Q52); an app error fails a passing case (Q53); bindings kept across plans (Q49, **built**); every verdict kept (**built**); doctor names a second build; the app's own tests noticed. The store: the local store first and several publish destinations (Q50, to accept first); switching stores with a command; `az devops` credential variables; a conflict shows its fields and a store-only edit is reported; `qam status`; `qam review` confirms on a terminal; a verdict with no git change. See [0.6.0.md](0.6.0.md) | R1, R2, R4, R17, R22–R28, Q49, Q50, Q52, Q53, A15, W9, W10, W16, W19, E3, K6, K7 | L+ (two L halves) |
+| 0.6.1 | Fixes | Kept for the bugs 0.6.0's live run finds (fastapi-react-app again, with imported stories), and the checks owed below | the run | S–M |
+| 0.7.0 | Features | **What QAMaster covers** (crawler, DSM, TestGen, framework templates). Apps with a sign-in: signed-out and signed-in crawls merged, two crawls compared, dialog fields, clickable cards and sidebar links, each screen's own source files, screens named by their heading, then TestGen covers sign-in, sign-up and add/edit forms. A faster DSM; shared step wording; selection presets and a model choice (Q31). Then API and Mobile Web scripts, ported from Autonomous-QE's `framework/TestAutomation/src/api` | R5–R10, R12, R16, R30, S1–S4, S7, W11, Q31, K5 | L+ (two L halves) |
+| 0.7.1 | Fixes | Kept for the bugs a rehearsal on Restful Booker Platform finds before 1.0.0 | the rehearsal | S–M |
+| **1.0.0** | **Major** | **Product v1 proven, no new feature:** the criteria below | below | M |
+| 1.0.x | Fixes | Bugs found after 1.0.0, as they come | | |
+
+Decisions to take before the item that needs them: **Q50** (proposed; 0.6.0's store half), `--take-store` and ADO credentials from a file (W8) in 0.6.0.
 
 **Not v1:** Jira requirements over REST. Q20 keeps Jira to MCP during test design in v1; a Jira `RequirementSource` comes after 1.0.0 unless you change Q20.
 
@@ -60,7 +64,7 @@ Ordered with you on 2026-11-06: fixes from the [fastapi-react-app run](../demos/
 
 ## 1.0.0: the major release
 
-Product v1 as [product.md](../product.md#v1) describes it, all of it, plus:
+Product v1 as [product.md](../product.md#v1) describes it, all of it (native Android and iOS are 1.1.0, Q54), plus:
 - the clean-room Docker run passes from a plain checkout;
 - the walkthrough passes on a second unknown app (Restful Booker Platform is saved for this), with the slash commands and skills as the front end, not direct `qam` calls;
 - the failure path seen live: a FAIL, a retry and a flaky case, a BROKEN case, screenshots, defect drafts, and the defect and root-cause reports with real data (no run has failed yet);
@@ -72,7 +76,9 @@ Product v1 as [product.md](../product.md#v1) describes it, all of it, plus:
 
 | Release | Scope | Source |
 |---|---|---|
-| 1.1.0 | The git pre-push hook for any terminal; each IDE and agent set up by ticking it, hooks included (Q43); PR checks on GitHub and Azure Repos; results published back to ADO as a Test Run | product v1.1, Q43, K8 |
+| 1.1.0 | Native Android and iOS scripts through Appium, ported from Autonomous-QE's `framework/TestAutomation/src/mobile`; needs a machine with the Android SDK or Xcode (moved from v1 by Q54) | Q54, K5 |
+| 1.2.0 | Product v1.1: the git pre-push hook for any terminal; each IDE and agent set up by ticking it, hooks included (Q43); PR checks on GitHub and Azure Repos; results published back to ADO as a Test Run | product v1.1, Q43, K8 |
+| 1.x.y | A patch after each of these for what its first live use finds | |
 | 2.0.0 | Context sources through MCP; the QAMaster MCP server and exports to other AI tools; importing existing cases and gap analysis; locators from the crawl; API discovery | product v2 |
 | 3.0.0 | Generate into a team's existing framework; impact and traceability matrices; root-cause evidence; value metrics; a secrets vault and security scan; a Visio MCP server | product v3 |
 
@@ -96,6 +102,7 @@ Signed-in crawls need your `.env.dsm` and block writes (K3, Q15) · a file count
 4. ~~**Merge and push.**~~ **Done 2026-11-04:** `main` holds 0.4.3 and is pushed to GitHub, with `release/0.4.2` and `release/0.4.3`.
 5. ~~**The order to 1.0.0.**~~ **Decided 2026-11-06:** fixes (0.4.4), requirements (0.5.0), the gate's trust (0.6.0, Q52, Q53), apps with a sign-in (0.7.0), daily use (0.8.0), the other channels with native Android and iOS kept in v1 (0.9.0).
 6. ~~**Merge and push 0.4.4 and 0.5.0.**~~ **Done 2026-11-10:** `main` holds 0.5.0 and is pushed. Next: run 0.4.4 and 0.5.0 on a live app (fastapi-react-app with imported stories), then build 0.6.0 ([plan](0.6.0.md)); Q49 was decided 2026-11-10.
+7. ~~**Fewer releases to 1.0.0.**~~ **Decided 2026-11-10 (Q54):** 0.6.0 (gate and store), 0.6.1, 0.7.0 (coverage and the API and Mobile Web channels), 0.7.1, 1.0.0 (proof, no feature), then 1.1.0 native Android and iOS, 1.2.0 product v1.1.
 
 ## Sessions reviewed
 

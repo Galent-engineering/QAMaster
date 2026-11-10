@@ -186,9 +186,10 @@ Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.6.0 | Features | A gate you can trust: its state in the QA project and a push hook that blocks (Q52), app errors fail a case (Q53), every verdict kept, script bindings kept (Q49) | [plans/0.6.0.md](plans/0.6.0.md) |
-| 0.7.0 | Features | Apps with a sign-in: signed-out and signed-in crawls merged, dialog fields, clickable cards, each screen's own source files | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
-| 0.8.0 | Features | Daily use: the local store first with several destinations (Q50), switching stores, `az` credentials, conflicts, review confirmation, presets, faster DSM | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
-| 0.9.0 | Features | Scripts for API, Mobile Web, Android and iOS | [backlog](plans/backlog.md#the-road-to-100-planned-2026-11-06) |
-| **1.0.0** | **Major** | Product v1 complete, a clean-room Docker run, and a walkthrough on a second unknown app | [backlog](plans/backlog.md#100-the-major-release) |
-| 1.1.0 | Features | The git pre-push hook, each IDE and agent set up by ticking it (Q43), PR checks, ADO Test Run | [backlog](plans/backlog.md#after-100) |
+| 0.6.0 | Features | The gate and the store you can trust: Q52, Q53, Q49, every verdict kept; the local store first with several destinations (Q50), switching stores, `az` credentials, conflicts, `qam status` | [plans/0.6.0.md](plans/0.6.0.md) |
+| 0.6.1 | Fixes | What 0.6.0's live run finds | |
+| 0.7.0 | Features | What QAMaster covers: apps with a sign-in, a faster DSM, presets, then API and Mobile Web scripts | [backlog](plans/backlog.md#the-road-to-100-replanned-2026-11-10-q54) |
+| 0.7.1 | Fixes | What the Restful Booker rehearsal finds | |
+| **1.0.0** | **Major** | Product v1 proven: a clean-room Docker run, a walkthrough on a second unknown app, the failure path and the store's life cycle seen live. No new feature | [backlog](plans/backlog.md#100-the-major-release) |
+| 1.1.0 | Features | Native Android and iOS scripts through Appium (Q54) | [backlog](plans/backlog.md#after-100) |
+| 1.2.0 | Features | Product v1.1: the git pre-push hook, each IDE and agent set up by ticking it (Q43), PR checks, ADO Test Run | [backlog](plans/backlog.md#after-100) |
