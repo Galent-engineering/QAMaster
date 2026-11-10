@@ -360,6 +360,14 @@ test('diff K7: a store with nothing edited reports no differences', () => {
   assert.equal(r.changes[0].differences, undefined);
 });
 
+test('diff K7: a read-back that differs at the revision we wrote is not reported as a store edit', () => {
+  // a store that formats what it was given (ADO's HTML steps, say) reads back differently with nobody editing it
+  const d = derive(kase('TC-1'), ctx());
+  const r = diff(input([d], [entry('TC-1', 7, d.hash)], [stored(d, 7, { title: 'Reformatted by the store' })]));
+  assert.deepEqual(kinds(r), ['unchanged TC-1']);
+  assert.equal(r.changes[0].differences, undefined);
+});
+
 test('diff: a test case that is gone from the store is reported, never silently created again', () => {
   const d = derive(kase('TC-1'), ctx());
   const r = diff(input([d], [entry('TC-1', 7, d.hash)], []));

@@ -363,8 +363,10 @@ export function diff(i: DiffInput): { changes: PlannedChange[]; declinedSmoke: s
     }
     const common = { ...base, trackerId: entry.trackerId, ownedTags: owned };
 
-    // an edit made only in the store: the run didn't change, so there is nothing to write, but it is reported (K7)
-    const diffs = fields.length ? differences(fields, it, d, owned) : [];
+    // an edit made only in the store: the run didn't change, so there is nothing to write, but it is reported (K7).
+    // Only at a new revision: a store that formats what it was given reads back differently with nobody editing it.
+    const edited = it.rev !== entry.trackerRev;
+    const diffs = edited && fields.length ? differences(fields, it, d, owned) : [];
     if (!wants) {
       changes.push({
         ...common,
@@ -375,7 +377,7 @@ export function diff(i: DiffInput): { changes: PlannedChange[]; declinedSmoke: s
       });
     } else if (!fields.length) {
       changes.push({ ...common, kind: 'unchanged', fields: [], reason: 'nothing to write' });
-    } else if (it.rev !== entry.trackerRev) {
+    } else if (edited) {
       changes.push({
         ...common,
         kind: 'conflict',
