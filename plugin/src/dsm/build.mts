@@ -653,6 +653,8 @@ export function diff(prev: Dsm, cur: Dsm): DsmDiff {
       what.push(`elements ${total(a.counts)} -> ${total(b.counts)}`);
     }
     if (!isDeepStrictEqual(sortStrings(a.flags ?? []), sortStrings(b.flags ?? []))) what.push('flags');
+    // a DSM built before 0.7.0 has no access, and is not "changed" for that
+    if (a.access && b.access && a.access !== b.access) what.push(`access ${a.access} -> ${b.access}`);
     if (what.length) changed.push({ id: k, what });
   }
   return {
@@ -663,5 +665,23 @@ export function diff(prev: Dsm, cur: Dsm): DsmDiff {
     relations_added: sortStrings(ce.keys().filter((k) => !pe.has(k))),
     relations_removed: sortStrings(pe.keys().filter((k) => !ce.has(k))),
     relations_changed: sortStrings(ce.keys().filter((k) => pe.has(k) && !isDeepStrictEqual(ce.get(k), pe.get(k)))),
+  };
+}
+
+/** What `qam dsm compare` shows: the diff of two DSMs, and the elements (not screens) added and removed. */
+export type DsmCompare = Exclude<DsmDiff, { first_run: true }> & {
+  elements_added: string[];
+  elements_removed: string[];
+};
+
+export function compareDsm(older: Dsm, newer: Dsm): DsmCompare {
+  const d = diff(older, newer) as Exclude<DsmDiff, { first_run: true }>;
+  const ids = (x: Dsm) => new Set(x.element.nodes.filter((n) => n.kind !== 'page').map((n) => n.id));
+  const a = ids(older);
+  const b = ids(newer);
+  return {
+    ...d,
+    elements_added: sortStrings([...b].filter((k) => !a.has(k))),
+    elements_removed: sortStrings([...a].filter((k) => !b.has(k))),
   };
 }

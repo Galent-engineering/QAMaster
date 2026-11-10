@@ -2,6 +2,9 @@
  * qam dsm: the Design Structure Matrix in the QA project's dsm/ folder (config/dsm-config.json sets output_dir).
  *
  *     qam dsm run     [--config F] [--no-crawl] [--no-fetch] [--login-mode auto|manual|none]   full rebuild now
+ *     qam dsm run     --routes <glob…>          crawl only those routes, merged into the last DSM (--routes /todo '/users/*')
+ *     qam dsm run     --estimate                the routes, pages and minutes a crawl takes; crawls nothing
+ *     qam dsm compare [<older>] [<newer>]       what changed between two DSMs of dsm/history/ (newer: the current DSM); no argument lists the history
  *     qam dsm refresh [--config F] [--no-crawl] [--no-fetch]   rebuild only if a repository has new commits; never asks
  *     qam dsm changes [--config F] [--no-fetch]                new commits per repository, without building
  *     qam dsm impact  [--config F] <files…>                    the screens those files touch, and shared files
@@ -16,17 +19,17 @@ import { parseArgs } from 'node:util';
 import type { Crawler } from '../adapters/base.mts';
 import { PlaywrightCrawler } from '../adapters/crawler-playwright.mts';
 import { changesSince, readRepo } from '../adapters/git.mts';
-import { build, type Dsm, type DsmConfig } from '../dsm/build.mts';
+import { build, compareDsm, type Dsm, type DsmConfig } from '../dsm/build.mts';
 import { render } from '../dsm/render.mts';
 import { MAX_FILE_BYTES, type ScanConfig, scan, wanted } from '../dsm/scan.mts';
-import { impact, type State, type UpdateConfig, update } from '../dsm/update.mts';
+import { compareText, estimate, impact, type State, type UpdateConfig, update } from '../dsm/update.mts';
 import type { Config } from '../shared/config.mts';
 import { loadEnv } from '../shared/env.mts';
 import { BlockedError } from '../shared/errors.mts';
 import type { CodeModel, UiModel } from '../shared/models.mts';
 
 export const DSM_CONFIG = path.join('config', 'dsm-config.json');
-const SUBCOMMANDS = ['run', 'refresh', 'changes', 'impact', 'scan', 'build', 'render'];
+const SUBCOMMANDS = ['run', 'refresh', 'changes', 'impact', 'scan', 'build', 'render', 'compare'];
 
 function readJson<T>(file: string): T | null {
   if (!fs.existsSync(file)) return null;
@@ -91,6 +94,33 @@ function crawlerFor(project: string, dir: string, config: UpdateConfig, interact
   };
 }
 
+/** A DSM named on the command line: a file of dsm/history/ (with or without .json, or the start of its name), `current`, or a path. */
+function findDsm(dir: string, name: string): { file: string; label: string } {
+  const history = path.join(dir, 'history');
+  const names = fs.existsSync(history)
+    ? fs
+        .readdirSync(history)
+        .filter((f) => f.endsWith('.json'))
+        .sort()
+    : [];
+  if (name === 'current' || name === 'dsm.json') return { file: path.join(dir, 'dsm.json'), label: 'the current DSM' };
+  const exact = names.find((f) => f === name || f === `${name}.json`);
+  const starts = names.filter((f) => f.startsWith(name));
+  const one = exact ?? (starts.length === 1 ? starts[0] : undefined);
+  if (one) return { file: path.join(history, one), label: one };
+  if (starts.length > 1) {
+    throw new BlockedError(`"${name}" starts ${starts.length} history files (${starts.join(', ')}). Name one in full.`);
+  }
+  if (fs.existsSync(name)) return { file: path.resolve(name), label: name };
+  throw new BlockedError(`No DSM "${name}" in ${history}. Run qam dsm compare with no argument to list them.`);
+}
+
+function readDsm(found: { file: string; label: string }): Dsm {
+  const dsmFile = readJson<Dsm>(found.file);
+  if (!dsmFile?.page) throw new BlockedError(`${found.file} (${found.label}) isn't a DSM. Run qam dsm run first.`);
+  return dsmFile;
+}
+
 /** "<repo>:<path>" keys for files given on the command line, relative to the app repo or absolute. */
 function repoKeys(
   cfg: Config,
@@ -122,30 +152,117 @@ export async function dsm(cfg: Config, argv: string[], json: boolean): Promise<n
     'no-crawl'?: boolean;
     'no-fetch'?: boolean;
     'login-mode'?: string;
+    routes?: string[];
+    estimate?: boolean;
   };
   let positionals: string[];
   try {
     ({ values, positionals } = parseArgs({
       args: rest,
-      allowPositionals: sub === 'impact',
+      allowPositionals: sub === 'impact' || sub === 'compare' || sub === 'run',
       options: {
         config: { type: 'string' },
         out: { type: 'string' },
         'no-crawl': { type: 'boolean' },
         'no-fetch': { type: 'boolean' },
         'login-mode': { type: 'string' },
+        routes: { type: 'string', multiple: true },
+        estimate: { type: 'boolean' },
       },
     }));
   } catch (e) {
     throw new BlockedError(`qam dsm ${sub}: ${(e as Error).message}`);
   }
   if (values.out && sub !== 'scan' && sub !== 'render') throw new BlockedError(`--out is for qam dsm scan or render.`);
+  if ((values.routes || values.estimate) && sub !== 'run')
+    throw new BlockedError('--routes and --estimate are for qam dsm run.');
+  if (sub === 'run' && positionals.length && !values.routes) {
+    throw new BlockedError(
+      `qam dsm run: unexpected "${positionals[0]}". Routes go after --routes: qam dsm run --routes /todo '/users/*'.`,
+    );
+  }
+  if (values.routes && values.estimate)
+    throw new BlockedError('--estimate crawls nothing; it cannot be used with --routes.');
+  const routeGlobs = [...(values.routes ?? []), ...(values.routes ? positionals : [])]
+    .flatMap((g) => g.split(','))
+    .map((g) => g.trim())
+    .filter(Boolean);
+  if (values.routes && !routeGlobs.length)
+    throw new BlockedError('--routes needs a route or a glob: --routes /todo or --routes "/users/*".');
   const loginMode = values['login-mode'];
   if (loginMode !== undefined && !['auto', 'manual', 'none'].includes(loginMode)) {
     throw new BlockedError(`--login-mode must be auto, manual or none, not "${loginMode}".`);
   }
   const { config, dir, project } = locate(cfg, values.config);
   const dsmFile = path.join(dir, 'dsm.json');
+
+  if (sub === 'compare') {
+    if (positionals.length > 2) throw new BlockedError('qam dsm compare takes at most two DSMs: [<older>] [<newer>].');
+    const history = path.join(dir, 'history');
+    const names = fs.existsSync(history)
+      ? fs
+          .readdirSync(history)
+          .filter((f) => f.endsWith('.json'))
+          .sort()
+      : [];
+    if (!positionals.length) {
+      const rows = names.map((f) => {
+        const d = readJson<Dsm>(path.join(history, f));
+        return {
+          name: f,
+          generated_at: d?.generated_at ?? null,
+          screens: d?.stats?.pages ?? null,
+          elements: d?.stats?.elements ?? null,
+        };
+      });
+      const current = readJson<Dsm>(dsmFile);
+      if (json) {
+        console.log(
+          JSON.stringify({
+            result: 'pass',
+            history: rows,
+            current: current ? { generated_at: current.generated_at } : null,
+          }),
+        );
+      } else {
+        if (!rows.length) console.log(`No history yet in ${history}: it fills from the second qam dsm run.`);
+        for (const r of rows)
+          console.log(
+            `${r.name}  ${r.generated_at}  ${plural(r.screens ?? 0, 'screen')}, ${plural(r.elements ?? 0, 'element')}`,
+          );
+        if (current)
+          console.log(
+            `current  ${current.generated_at}  ${plural(current.stats.pages, 'screen')}, ${plural(current.stats.elements, 'element')}`,
+          );
+        if (rows.length) console.log('Compare: qam dsm compare <older> [<newer>] (newer defaults to the current DSM).');
+      }
+      return 0;
+    }
+    const older = findDsm(dir, positionals[0]);
+    const newer = findDsm(dir, positionals[1] ?? 'current');
+    const a = readDsm(older);
+    const b = readDsm(newer);
+    if (json)
+      console.log(JSON.stringify({ result: 'pass', older: older.label, newer: newer.label, ...compareDsm(a, b) }));
+    else process.stdout.write(compareText(a, b, { older: older.label, newer: newer.label }));
+    return 0;
+  }
+
+  if (sub === 'run' && values.estimate) {
+    const e = estimate(project, dir, config);
+    if (json) console.log(JSON.stringify({ result: 'pass', estimate: e }));
+    else {
+      const shown = e.routes.slice(0, 15).join(', ');
+      console.log(
+        `Routes from the code scan: ${e.routes.length}${e.routes.length ? ` (${shown}${e.routes.length > 15 ? ', ...' : ''})` : ''}.`,
+      );
+      console.log(
+        `Expected: about ${plural(e.pages, 'page')}, about ${e.minutes} min at ${plural(e.concurrency, 'tab')}, ${e.seconds_per_page} s a page (${e.basis === 'last crawl' ? "from the last crawl's timings" : 'no past crawl: a default'}).`,
+      );
+      console.log('Nothing was crawled.');
+    }
+    return 0;
+  }
 
   if (sub === 'run' || sub === 'refresh') {
     if (!config.application?.base_url && !(config.repositories ?? []).length) {
@@ -159,6 +276,7 @@ export async function dsm(cfg: Config, argv: string[], json: boolean): Promise<n
       noCrawl: values['no-crawl'],
       fetch: !values['no-fetch'],
       loginMode: loginMode as 'auto' | 'manual' | 'none' | undefined,
+      routes: routeGlobs.length ? routeGlobs : undefined,
     });
     if (json) console.log(JSON.stringify({ result: 'pass', ...r, html: path.join(dir, 'index.html') }));
     else if (r.status === 'no-change') {

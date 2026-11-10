@@ -13,8 +13,8 @@ import type { Crawler } from '../adapters/base.mts';
 import { changesSince, type RepoChange, readRepo } from '../adapters/git.mts';
 import { BlockedError } from '../shared/errors.mts';
 import type { CodeModel, UiModel } from '../shared/models.mts';
-import { build, type Dsm, type DsmConfig, matchKey } from './build.mts';
-import type { CrawlApp } from './crawl-rules.mts';
+import { build, compareDsm, type Dsm, type DsmCompare, type DsmConfig, matchKey } from './build.mts';
+import { type CrawlApp, DEFAULT_CONCURRENCY, idHints, matchRoutes } from './crawl-rules.mts';
 import { render } from './render.mts';
 import { MAX_FILE_BYTES, type ScanConfig, scan, wanted } from './scan.mts';
 
@@ -107,6 +107,95 @@ export function planCrawl(a: {
   };
 }
 
+/** `qam dsm run --routes <glob...>` (0.7.0 item 12): crawl the routes the globs match and merge them into the last crawl. */
+export function routesPlan(
+  globs: string[],
+  baseUrl: string | null,
+  noCrawl: boolean,
+  previousUi: UiModel | null,
+  codeRoutes: string[],
+): CrawlPlan {
+  if (noCrawl) throw new BlockedError('--routes crawls; it cannot be used with --no-crawl.');
+  if (!baseUrl) throw new BlockedError('--routes needs application.base_url in dsm-config.json. Run qam setup.');
+  if (!previousUi) {
+    throw new BlockedError(
+      '--routes crawls only those routes and merges them into the last crawl, and there is none yet. Run qam dsm run first.',
+    );
+  }
+  const known = sorted([...previousUi.pages.map((p) => p.route), ...codeRoutes]);
+  const routes = matchRoutes(globs, known);
+  if (!routes.length) {
+    const some = known.slice(0, 12).join(', ');
+    throw new BlockedError(
+      `--routes ${globs.join(' ')} matches no route. Routes known so far: ${some}${known.length > 12 ? `, and ${known.length - 12} more` : ''}. * stays inside one path segment, ** crosses them.`,
+    );
+  }
+  return { crawl: 'incremental', why: `crawled ${routes.length} route(s) matching --routes`, routes, seeds: [] };
+}
+
+/** What `qam dsm run --estimate` says: the routes the code has, the pages a crawl expects and the minutes it takes. */
+export type Estimate = {
+  routes: string[];
+  pages: number;
+  minutes: number;
+  seconds_per_page: number;
+  basis: 'last crawl' | 'default';
+  concurrency: number;
+};
+
+/** Seconds a page costs when no past crawl says (settle, sign-in checks and clicks), before the tabs share it. */
+export const DEFAULT_SECONDS_PER_PAGE = 6;
+
+/** The estimate of a full crawl. Scans the code in memory, reads the last ui-model.json, crawls nothing, writes nothing. */
+export function estimate(project: string, dir: string, config: UpdateConfig): Estimate {
+  const repoDir = (p: string) => path.resolve(project, p);
+  const code = (config.repositories ?? []).length
+    ? scan(config, (r) => readRepo(repoDir(r.path), r.branch ?? 'main', (p) => wanted(p, r), MAX_FILE_BYTES))
+    : null;
+  const previousUi = readJson<UiModel>(path.join(dir, 'ui-model.json'));
+  const fromCode = (code?.routes ?? []).filter((r) => r.kind !== 'api').map((r) => r.route);
+  const routes = sorted(fromCode.length ? fromCode : (previousUi?.pages ?? []).map((p) => p.route));
+  const concurrency = Math.max(1, Math.floor(Number(config.application?.crawl?.concurrency) || DEFAULT_CONCURRENCY));
+  const maxPages = config.application?.max_pages ?? 300;
+  const t = previousUi?.timing;
+  const timed = !!t && t.pages > 0 && t.elapsed_ms > 0;
+  const pages = Math.min(maxPages, t?.pages ?? previousUi?.pages.length ?? Math.max(routes.length, 1));
+  const secondsPerPage = timed ? t.elapsed_ms / t.pages / 1000 : DEFAULT_SECONDS_PER_PAGE / concurrency;
+  return {
+    routes,
+    pages,
+    minutes: Math.max(1, Math.ceil((pages * secondsPerPage) / 60)),
+    seconds_per_page: Math.round(secondsPerPage * 10) / 10,
+    basis: timed ? 'last crawl' : 'default',
+    concurrency: timed ? t.concurrency : concurrency,
+  };
+}
+
+/** The text of `qam dsm compare`: what changed between two DSMs. */
+export function compareText(older: Dsm, newer: Dsm, label: { older: string; newer: string }): string {
+  const d: DsmCompare = compareDsm(older, newer);
+  const lines = [`Compared ${label.older} (${older.generated_at}) with ${label.newer} (${newer.generated_at}).`];
+  const sections: [string, string[]][] = [
+    ['Screens added', d.nodes_added],
+    ['Screens removed', d.nodes_removed],
+    ['Screens changed', d.nodes_changed.map((x) => `${x.id}: ${x.what.join(', ')}`)],
+    ['Relations added', d.relations_added],
+    ['Relations removed', d.relations_removed],
+    ['Relations changed', d.relations_changed],
+    ['Elements added', d.elements_added],
+    ['Elements removed', d.elements_removed],
+  ];
+  let any = false;
+  for (const [title, items] of sections) {
+    if (!items.length) continue;
+    any = true;
+    lines.push('', `${title} (${items.length})`, ...items.slice(0, 50).map((x) => `  ${x}`));
+    if (items.length > 50) lines.push(`  and ${items.length - 50} more`);
+  }
+  if (!any) lines.push('', 'No difference in screens, elements, relations or access.');
+  return `${lines.join('\n')}\n`;
+}
+
 export type Change = {
   reason: string;
   crawl: string;
@@ -186,6 +275,7 @@ export type UpdateOptions = {
   noCrawl?: boolean;
   fetch?: boolean;
   loginMode?: 'auto' | 'manual' | 'none';
+  routes?: string[]; // 0.7.0: crawl only the routes these globs match, merged into the last DSM (run only)
   now?: Date;
 };
 
@@ -296,17 +386,19 @@ async function updateLocked(
   const screenRoutes = (code.routes ?? []).filter((r) => r.kind !== 'api').map((r) => r.route);
   const newRoutes = sorted(screenRoutes.filter((r) => !previousRoutes.has(r)));
   const baseUrl = config.application?.base_url || null;
-  const plan = planCrawl({
-    baseUrl,
-    noCrawl: !!opts.noCrawl,
-    full: opts.mode === 'run',
-    config,
-    state,
-    previousUi,
-    rewritten: changes.some((c) => c.rewritten),
-    impact: touched,
-    newRoutes,
-  });
+  const plan = opts.routes?.length
+    ? routesPlan(opts.routes, baseUrl, !!opts.noCrawl, previousUi, screenRoutes)
+    : planCrawl({
+        baseUrl,
+        noCrawl: !!opts.noCrawl,
+        full: opts.mode === 'run',
+        config,
+        state,
+        previousUi,
+        rewritten: changes.some((c) => c.rewritten),
+        impact: touched,
+        newRoutes,
+      });
   let why = plan.why;
   if (!baseUrl) warnings.push(why);
 
@@ -324,6 +416,7 @@ async function updateLocked(
       });
       writeJson(file('ui-model.json'), ui);
       why += ` (${ui.pages.length} pages, ${ui.edges.length} navigations)`;
+      warnings.push(...idHints(ui.pages.map((p) => p.route)));
       if (ui.truncated)
         warnings.push('the crawl stopped at application.max_pages; raise it to cover the remaining routes');
       if (ui.blocked_requests?.length) {
