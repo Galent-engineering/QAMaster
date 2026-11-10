@@ -129,10 +129,23 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     );
   }
   const shared: Shared = { cfg, v, dir, run, derived, leftOut, skipSmoke, scripts, multi: destinations.length > 1 };
-  const outcomes: Outcome[] = [];
-  for (const r of reached) outcomes.push(await publishTo(shared, r));
+  // every destination is read and its smoke checked before any is written: one yes applies to all, or to none (Q50)
+  const prepared: Prepared[] = [];
+  for (const r of reached) prepared.push(await prepare(shared, r));
+  const stopped = prepared.flatMap((p) => (p.stop ? [p.stop] : []));
+  const outcomes: Outcome[] = stopped.length ? stopped : [];
+  for (const p of stopped.length ? [] : prepared) {
+    try {
+      outcomes.push(await p.finish());
+    } catch (e) {
+      if (!(e instanceof BlockedError) || !outcomes.length) throw e;
+      throw new BlockedError(
+        `${p.dest} stopped part way: ${e.message}\nWritten: ${destinations.slice(0, outcomes.length).join(', ')}. What was written is recorded, so once that's fixed, publish again with the same --to: only the rest is written.`,
+      );
+    }
+  }
   // the store the project is set up for stays active, the others parked: --to never switches stores (Q34, R23)
-  const home = v.apply ? homeStore(cfg, reached) : null;
+  const home = v.apply && !stopped.length ? homeStore(cfg, reached) : null;
   const after = home ? readLedger(dir) : null;
   if (home && after && after.store !== home) writeLedger(dir, switchLedger(after, home));
 
@@ -157,9 +170,11 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     [
       ...outcomes.map((o) => o.text),
       '',
-      !v.apply && code === 3
-        ? `Reply yes once to apply to all ${destinations.length} destinations (${destinations.join(', ')}, in that order): publish ${run.name} --to ${dests} --apply.`
-        : `Destinations: ${destinations.join(', ')}.`,
+      stopped.length
+        ? `Nothing was written to any destination. Run the dry run again: publish ${run.name} --to ${dests}.`
+        : !v.apply && code === 3
+          ? `Reply yes once to apply to all ${destinations.length} destinations (${destinations.join(', ')}, in that order): publish ${run.name} --to ${dests} --apply.`
+          : `Destinations: ${destinations.join(', ')}.`,
     ].join('\n\n'),
   );
   return code;
@@ -185,6 +200,8 @@ type Reached = {
   projectToCreate: NewProject | null;
 };
 type Outcome = { code: number; text: string; data: Record<string, unknown> };
+/** One destination read and diffed: `stop` when apply must not go on (smoke changed), else `finish` writes it. */
+type Prepared = { dest: string; stop: Outcome | null; finish: () => Promise<Outcome> };
 
 /** The stores to publish to: `--to`, local file first (Q50), else the one the project is set up for. */
 function chooseDestinations(cfg: Config, to: string[] | undefined): string[] {
@@ -246,13 +263,13 @@ async function reach(cfg: Config, dest: string, dir: string, live: boolean, chos
   return { dest, cached, where, planToCreate, projectToCreate };
 }
 
-/** What one destination would write, or wrote with --apply: its text and its data. */
-async function publishTo(o: Shared, r: Reached): Promise<Outcome> {
+/** What one destination would write: read and checked now, written (with --apply) only by `finish`. */
+async function prepare(o: Shared, r: Reached): Promise<Prepared> {
   const { cfg, v, dir, run, derived, leftOut, skipSmoke, scripts } = o;
   const { cached, where, planToCreate, projectToCreate } = r;
   const store = cached.store;
-  const before = readLedger(dir); // read afresh: an earlier destination may have written it
-  let ledger: Ledger | null = adopt(before, where, !!v.to);
+  const before = readLedger(dir);
+  const ledger = adopt(before, where, !!v.to);
   const fresh = !!before && before.store !== where && !Object.hasOwn(before.other ?? {}, where);
   const items = new Map<number, Item>();
   // a project still to be created holds nothing to read
@@ -281,7 +298,6 @@ async function publishTo(o: Shared, r: Reached): Promise<Outcome> {
   const [creates, updates, conflicts, retires, unchanged] = (
     ['create', 'update', 'conflict', 'retire', 'unchanged'] as const
   ).map(by);
-  const pending = creates.length + updates.length + (v.retire ? retires.length : 0);
   const notLinked = derived.filter((d) => d.notLinked).map((d) => d.id);
   const title = new Map(derived.map((d) => [d.id, d.title]));
 
@@ -367,12 +383,45 @@ async function publishTo(o: Shared, r: Reached): Promise<Outcome> {
       '',
       `Smoke changed since the dry run: the plan has ${smokeInStore} smoke now, so ${(offered ?? []).length - lost.length} of the ${(offered ?? []).length} suggested fit (max ${max}). Nothing was written. Run the dry run again and review the new smoke list.`,
     );
-    return {
+    const stop = {
       code: 3,
       text: lines.join('\n'),
       data: { result: 'awaiting approval', apply: true, run: run.name, store: where, smokeChanged: lost },
     };
+    return { dest: r.dest, stop, finish: async () => stop };
   }
+  return {
+    dest: r.dest,
+    stop: null,
+    finish: () => finish(o, r, { items, lines, result, suggestion, confirmed, smokeInStore, previewFile }),
+  };
+}
+
+type Read = {
+  items: Map<number, Item>;
+  lines: string[];
+  result: ReturnType<typeof diff>;
+  suggestion: ReturnType<typeof suggestSmoke>;
+  confirmed: Set<string>;
+  smokeInStore: number;
+  previewFile: string;
+};
+
+/** One prepared destination finished: its preview recorded, or with --apply, written. */
+async function finish(o: Shared, r: Reached, read: Read): Promise<Outcome> {
+  const { cfg, v, dir, run, derived, skipSmoke } = o;
+  const { cached, where, projectToCreate } = r;
+  const { items, lines, result, suggestion, confirmed, smokeInStore, previewFile } = read;
+  const store = cached.store;
+  // read afresh: an earlier destination may have written the ledger since this one was prepared
+  let ledger: Ledger | null = adopt(readLedger(dir), where, !!v.to);
+  const by = (kind: PlannedChange['kind']) => result.changes.filter((c) => c.kind === kind);
+  const [creates, updates, conflicts, retires, unchanged] = (
+    ['create', 'update', 'conflict', 'retire', 'unchanged'] as const
+  ).map(by);
+  const pending = creates.length + updates.length + (v.retire ? retires.length : 0);
+  const notLinked = derived.filter((d) => d.notLinked).map((d) => d.id);
+  const { max } = cfg.project.smoke;
   if (!v.apply) writePreview(previewFile, suggestion.ids);
   lines.push('');
   if (!pending && !conflicts.length) lines.push('Nothing to publish.');

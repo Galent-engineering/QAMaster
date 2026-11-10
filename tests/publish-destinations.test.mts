@@ -15,6 +15,7 @@ import { loadConfig } from '../plugin/src/shared/config.mts';
 import { BlockedError } from '../plugin/src/shared/errors.mts';
 import { runHash } from '../plugin/src/testgen/run.mts';
 import { FakeAdo } from './fake-ado.mts';
+import { item } from './fakes.mts';
 import { tmpDir } from './tmp.mts';
 
 const REAL = STORES.ado;
@@ -212,4 +213,46 @@ test('Q50: --json for several destinations gives one entry each', async () => {
     data.destinations.map((d: { store: string }) => d.store.split(' ')[0]),
     ['File', 'Azure'],
   );
+});
+
+// review of item 8: one yes applies to all, or to none; a later destination's refusal must not leave the file written
+test('Q50: smoke that changed in ADO since the dry run writes no destination, the file included', async () => {
+  const p = project(new FakeAdo());
+  const preview = await p.run('--to', 'file,ado');
+  assert.match(preview.out, /\[x\] TC-CART-001/);
+  // someone fills ADO's smoke set (max 20) between the dry run and the yes
+  const full = Array.from({ length: 20 }, (_, i) => item(i + 1, 'test_case', `Smoke ${i}`));
+  const make = STORES.ado;
+  STORES.ado = (cfg) => {
+    const s = make(cfg);
+    const find = s.find.bind(s);
+    s.find = async (f) => [...(await find(f)), ...(f.tag === 'smoke' ? full : [])];
+    return s;
+  };
+  const r = await p.run('--to', 'file,ado', '--apply');
+  assert.equal(r.code, 3, r.out);
+  assert.match(r.out, /Smoke changed since the dry run/);
+  assert.match(r.out, /Nothing was written to any destination/);
+  assert.equal(fs.existsSync(p.csv), false, 'the file store was not written');
+});
+
+test('Q50: a destination that fails part way says which destinations were written', async () => {
+  const p = project(new FakeAdo());
+  const make = STORES.ado;
+  STORES.ado = (cfg) => {
+    const s = make(cfg);
+    s.ensurePlan = async () => {
+      throw new BlockedError('This token cannot create a test plan.');
+    };
+    return s;
+  };
+  await assert.rejects(
+    p.run('--to', 'file,ado', '--apply'),
+    (e: unknown) =>
+      e instanceof BlockedError &&
+      /This token cannot create a test plan/.test(e.message) &&
+      /Written: file/.test(e.message) &&
+      /ado stopped part way/.test(e.message),
+  );
+  assert.match(fs.readFileSync(p.csv, 'utf8'), /Case TC-CART-001/);
 });
