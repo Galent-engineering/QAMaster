@@ -97,6 +97,7 @@ Create (3)
 
 Update (1)
   TC5101 ← TC-CHECKOUT-002  steps changed (3 → 4)          automation link added: bdd:@TC-CHECKOUT-002, script link added (Q40)
+    removes tag path:src/**                                 a path: tag the run no longer derives (Q56)
 
 Conflict (1), not written
   TC5104 ← TC-CHECKOUT-007  changed in ADO by A. Rao on 2026-10-27; review it there or re-run with the ADO version
@@ -110,6 +111,8 @@ Smoke suggestions (P1, Positive or E2E; the plan has 5 smoke, 2 ticked here: 7 o
 
 Reply yes to apply, untick smoke suggestions you don't want, or name the cases to leave out.
 ```
+
+An update replaces the case's `path:` tags (Q56): every stored `path:` tag the run no longer derives is removed, including one added by hand in the store, and each removal is listed under the case as `removes tag …`. Other tags are removed only when QAMaster owned them and no longer derives them (Q8); tags people added stay. A case edited in the store since the last publish is a conflict, and nothing is removed from it.
 
 ## The plan
 
@@ -209,7 +212,7 @@ QAMASTER_ADO_PROJECT=Shop
 
 `gate.allowErrors` (Q53, 0.6.0) lists strings matched against an app error's URL or message; a match is ignored. Empty by default: every 5xx from the app's origin and every uncaught page error fails the case. An empty string is refused, since it would allow everything.
 
-`gate.preset` (Q31, 0.7.0) is `fast`, `standard` (default) or `full`; `qam plan --preset` overrides it. `gate.groupsModel` names the Claude Code model `/qamaster:check` gives the subagent that picks groups: `sonnet`, `opus`, `haiku`, `fable` or `inherit`; unset (`null`), the session's own. The CLI only records it; CI, the push hook and `QAMASTER_AI=off` never pick groups.
+`gate.preset` (Q31, 0.7.0) is `fast`, `standard` (default) or `full`; `qam plan --preset` overrides it. `gate.groupsModel` names the Claude Code model `/qamaster:check` gives the subagent that picks groups: `sonnet`, `opus`, `haiku`, `fable` or `inherit`; unset (`null`), the session's own. The CLI only records it; CI, the push hook and `QAMASTER_AI=off` never pick groups. The plan's `Selection:` line names the model only when one can pick groups: not in CI (`CI` set, or Azure Pipelines' `TF_BUILD=True`) and not with AI off (0.7.1).
 
 The DSM, TestGen and MCP config files keep Autonomous-QE's formats. 0.7.0 adds to `dsm-config.json`: `application.login.signed_out_pass` (default on: with sign-in configured, crawl signed out first and merge the two passes, each screen recording `access`: `public`, `signed-in` or `both`; `--login-mode none` crawls only signed out) and `application.crawl.concurrency` (tabs crawled at once in one session, default 3; 1 is the old behaviour).
 

@@ -227,6 +227,8 @@ derive    tags:   path:<glob>   from DSM evidence on every screen the case visit
 diff      against the ledger and the tracker:
                   no ledger entry                     → create
                   hash changed, tracker rev unchanged → update (only QAMaster-owned fields and tags)
+                                                        removes every stored path: tag no longer derived,
+                                                        hand-added ones too (Q56), and owned tags no longer derived (Q8)
                   tracker rev changed by someone else → conflict (reported, not written)
                   in ledger, not in any current run   → retire (only with --retire)
 apply     only with --apply: create/update work items, add to the suite named after the module,

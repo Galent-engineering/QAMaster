@@ -114,7 +114,7 @@ const requestAliases = (text: string): string[] => [
   ...new Set(
     [
       ...[
-        ...text.matchAll(/\(\s*\{([^{}]*)\}\s*(?:\)\s*(?:=>|\{)|:)/g),
+        ...text.matchAll(/\(\s*\{([^{}]*)\}\s*(?:(?:,[^()]*)?\)\s*(?:=>|\{)|:)/g),
         ...text.matchAll(/\b(?:const|let|var)\s*\{([^{}]*)\}\s*=/g),
       ].map((m) => /\brequest\s*:\s*([A-Za-z_$][\w$]*)/.exec(m[1] ?? '')?.[1]),
       ...[...text.matchAll(/\b([A-Za-z_$][\w$]*)\s*=\s*(?:this\.)?request\s*[;\n]/g)].map((m) => m[1]),

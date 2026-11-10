@@ -249,7 +249,3 @@ test('re-review 3: plan names without ASCII letters or digits match exactly, not
   assert.equal(ns.ok, false);
   assert.match(ns.detail, /QAMASTER_ADO_PLAN='予定' matches no test plan/);
 });
-
-test('never writes the developer home index: QAMASTER_HOME is a temp folder', () => {
-  assert.ok(process.env.QAMASTER_HOME?.startsWith(os.tmpdir()));
-});

@@ -200,6 +200,18 @@ test('a variable destructure that renames the request fixture still makes a dire
   assert.match(out, /todos\.api\.steps\.ts:12: calls typed\.put directly/);
 });
 
+test('a step with arguments that renames the request fixture still makes a direct call', () => {
+  const dir = folder();
+  write(dir, {
+    'steps/api/todos.api.steps.ts':
+      "import { When } from '../../src/fixtures';\nimport { TodoService } from '../../src/api/services/TodoService';\nWhen('I get todo {string}', async ({ request: ctx }, id) => {\n  new TodoService(ctx);\n  await ctx.get('/api/todos/' + id);\n});\nWhen('I add todo {string}', async function ({ page, request: api }, name: string) {\n  await api.post('/api/todos', { data: { name } });\n});\nWhen('I send {string}', async ({ request }) => {\n  const params = new URLSearchParams();\n  await new TodoService(request).send({ request: params }, 'x');\n  params.get('q');\n});\n",
+  });
+  const out = (staticFindings(dir, KNOWN).api ?? []).join('\n');
+  assert.match(out, /todos\.api\.steps\.ts:5: calls ctx\.get directly/);
+  assert.match(out, /todos\.api\.steps\.ts:8: calls api\.post directly/);
+  assert.doesNotMatch(out, /params\.get/);
+});
+
 test('an object literal passed as a call argument is not a rename of the request fixture', () => {
   const dir = folder();
   write(dir, {

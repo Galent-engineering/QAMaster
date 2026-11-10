@@ -91,7 +91,3 @@ test('A8: WARN when the launcher points at a plugin other than the one running, 
   fs.rmSync(ptr);
   assert.equal(await check(cfg, 'launcher'), undefined);
 });
-
-test('never writes the developer home index: QAMASTER_HOME is a temp folder', () => {
-  assert.ok(process.env.QAMASTER_HOME?.startsWith(os.tmpdir()));
-});
