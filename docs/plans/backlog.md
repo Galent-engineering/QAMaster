@@ -10,7 +10,7 @@ The 0.3.3 fixes (items 1–11), the demo's missing pieces (the test summary repo
 
 ## The demo path
 
-Ten steps from install to report. After 0.4.0 every step is built except requirements.
+Ten steps from install to report. Every step is built as of 0.5.0.
 
 | # | Demo step | Status |
 |---|---|---|
@@ -19,7 +19,7 @@ Ten steps from install to report. After 0.4.0 every step is built except require
 | 3 | Doctor | Shipped |
 | 4 | Map the app (DSM) | Shipped; forms, a closed browser, a 503 and an ETA in 0.4.0 |
 | 5 | App knowledge | Shipped |
-| 6 | Requirements | **Not built: 0.5.0** |
+| 6 | Requirements | Shipped (0.5.0): fetch from Azure Boards or import a file; never run on a live app with stories |
 | 7 | Test design and review | Shipped |
 | 8 | Publish | Shipped |
 | 9 | Gate a change | Shipped |
