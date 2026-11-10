@@ -102,6 +102,46 @@ export function outlineFindings(feature: string, text: string): string[] {
     );
 }
 
+/** A direct call on Playwright's request context: only the base client makes one. */
+const DIRECT_REQUEST = /\brequest\.(fetch|get|post|put|patch|delete|head)\(/;
+/** The channel folders whose features carry the channel's tag, and the Playwright project that runs them. */
+const CHANNEL = {
+  api: { tag: '@api', project: 'api' },
+  'mobile-web': { tag: '@mobile-web', project: 'mobile-chrome' },
+};
+
+/** The API layers (0.7.0): steps call a service, a service extends the base client, only the base client fetches. */
+function apiFindings(root: string, add: (k: string, msg: string) => void) {
+  const direct = (f: string) =>
+    read(root, f)
+      .split('\n')
+      .forEach((line, i) => {
+        const t = line.trim();
+        const m = DIRECT_REQUEST.exec(line);
+        if (m && !t.startsWith('//') && !t.startsWith('*'))
+          add(
+            'api',
+            `${f}:${i + 1}: calls request.${m[1]} directly; call a service from src/api/services/ (one service per resource), and let its base client make the request`,
+          );
+      });
+  const steps = files(root, 'steps/api', /\.ts$/);
+  for (const f of steps) {
+    direct(f);
+    if (!/from '(?:\.\.\/)+src\/api\/services\//.test(read(root, f)))
+      add('api', `${f}: does not use a service from src/api/services/: an API step calls a service`);
+  }
+  const used = files(root, 'steps', /\.ts$/).map((f) => read(root, f));
+  for (const f of files(root, 'src/api/services', /\.ts$/)) {
+    const text = read(root, f);
+    direct(f);
+    if (!/\bextends BaseApiClient\b/.test(text))
+      add('api', `${f}: a service extends BaseApiClient (src/api/base/BaseApiClient.ts)`);
+    const name = path.posix.basename(f, '.ts');
+    if (!used.some((t) => new RegExp(`services/${name}'`).test(t)))
+      add('api', `${f}: no step uses it (steps import a service from src/api/services/)`);
+  }
+}
+
 /** The static gates; `known` is every TC ID of the TestGen runs. */
 // a string literal that is exactly 'form': it opens after : , ( [ or a space (not inside a longer selector after =),
 // closes before , ) ] } ; // as const or the end of the line, and is not a role (role: 'form', getByRole('form', ...))
@@ -140,6 +180,8 @@ export function staticFindings(root: string, known: Set<string>): Record<string,
           );
       });
 
+  apiFindings(root, add);
+
   const used = new Set<string>();
   for (const f of files(root, 'src/web/pages', /\.ts$/)) {
     const text = read(root, f);
@@ -163,6 +205,12 @@ export function staticFindings(root: string, known: Set<string>): Record<string,
     const head = text.includes('Feature:') ? text.slice(0, text.indexOf('Feature:')) : '';
     if (!(head.match(/@[\w:.-]+/g) ?? []).some((t) => PLATFORM_TAGS.has(t)))
       add('features', `${f}: the feature has no platform tag (${[...PLATFORM_TAGS].sort().join(', ')})`);
+    const channel = CHANNEL[f.split('/')[1] as keyof typeof CHANNEL];
+    if (channel && !((head.match(/@[\w:.-]+/g) ?? []) as string[]).includes(channel.tag))
+      add(
+        'features',
+        `${f}: a feature in ${f.split('/').slice(0, 2).join('/')} should be tagged ${channel.tag} (it runs in the ${channel.project} project)`,
+      );
     for (const m of text.matchAll(/@(TC-[\w-]+)/g))
       if (!known.has(m[1])) add('features', `${f}: @${m[1]} is not a test case in any TestGen run`);
     for (const o of outlineFindings(f, text)) add('reuse', o);

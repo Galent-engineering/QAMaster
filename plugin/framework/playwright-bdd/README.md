@@ -3,8 +3,22 @@
 Playwright + BDD ([playwright-bdd](https://vitalets.github.io/playwright-bdd/)) scripts for the application, created by `qam app create` and drafted by QAMaster from reviewed test cases.
 
 - `features/web/<module>.feature`: one scenario per test case, tagged `@TC-<id>` and `@web`.
-- `steps/pages/<page>.page.steps.ts`: the steps of one screen; `steps/shared/`: generic steps.
+- `steps/pages/<page>.page.steps.ts`: the steps of one screen; `steps/shared/`: generic steps (open a path, click a named button or link, fill a named field, see a text, the URL contains).
 - `src/web/pages/<Page>.ts`: page objects; `src/web/locators/<page>.page.locators.ts`: their selectors, and nowhere else.
-- `app.json`: the application and its base URL (`WEB_BASE_URL` overrides it).
+- `app.json`: the application, its base URL (`WEB_BASE_URL` overrides it) and, for API scripts, `apiUrl` (`API_BASE_URL` overrides it).
+
+## Channels
+
+Each channel has a folder and its own Playwright project, made only when the folder has a feature. A test case runs in its channel's project and nowhere else.
+
+| Channel | Features | Project | Tag |
+|---|---|---|---|
+| Web | `features/web/` | `chromium` (desktop Chrome) | `@web` |
+| API | `features/api/` | `api` (no browser) | `@api` |
+| Mobile Web | `features/mobile-web/` | `mobile-chrome` (Chromium as a Pixel 7: phone viewport and touch) | `@mobile-web` |
+
+**API scripts:** `steps/api/<service>.api.steps.ts` call a service in `src/api/services/` (one per resource, extending `src/api/base/BaseApiClient.ts`), which is the only code that calls Playwright's request context. A scenario's last response is kept with `lastResponse` from `src/api/state.ts`. Set the API's base URL with `qam app create --api-url <URL>`.
+
+**Mobile Web scripts** use the same steps, page objects and locators as Web. The page's elements come from the desktop crawl: on a phone a menu may hide a link a desktop page shows, so open the menu first in the scenario.
 
 `npm install` once, then `npm test`. QAMaster's gate runs the scenarios a change touches; `qam check-scripts` checks the rules above.

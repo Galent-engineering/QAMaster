@@ -3,7 +3,7 @@ name: AutomationCode
 description: Writes playwright-bdd automation scripts (feature files, step definitions, page objects and locator files) for reviewed test cases, in the QA project's automation folder, following its layers and reuse rules. Use when qam automate lists cases to draft or update, when asked to automate test cases, write or fix BDD scenarios or step definitions, or when /qamaster:check reaches its automate step.
 ---
 
-# Automation code (playwright-bdd, web)
+# Automation code (playwright-bdd: web, API, mobile web)
 
 Scripts are written only from **reviewed test cases** (a TestGen run under `testgen/output/<run>/`), only for the cases `qam automate <plan-id>` lists as **draft** or **update**, and only into the QA project's automation folder (`<App>/`, made by `qam app create`). Never into the app's repository, and never into the plugin's template.
 
@@ -20,6 +20,10 @@ Run the CLI as `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" <command>` from th
 | What | Where |
 |---|---|
 | One feature per module, tagged `@web` | `features/web/<module>.feature` |
+| An API case's feature, tagged `@api` | `features/api/<module>.feature` |
+| A Mobile Web case's feature, tagged `@mobile-web` | `features/mobile-web/<module>.feature` |
+| API steps, calling a service | `steps/api/<service>.api.steps.ts` |
+| One API service per resource, `extends BaseApiClient` | `src/api/services/<Resource>Service.ts` |
 | One scenario per test case, tagged `@TC-<id>`, named after it | in that feature |
 | Steps of one screen | `steps/pages/<page>.page.steps.ts` (generic ones in `steps/shared/`) |
 | A page object per screen, business-level methods, `extends BasePage` | `src/web/pages/<Page>.ts` |
@@ -53,9 +57,39 @@ TestGen's `<Component>.feature` (in the run folder) already words its steps in t
 
 Copy a case's scenario into `features/<channel>/<module>.feature` **with its step text unchanged**, and write a step definition only for a step no generic one covers (a step in its own words, such as a precondition or a business check). Don't reword a step to a near-synonym: that creates a second definition for the same thing. Where a value is a credential, the step text names it ("the registered user's password") and the definition you write for that step reads `process.env`.
 
+## Channels
+
+The case's `channel` (in its run's `testcases.json`) says where its script goes: **Web** to `features/web/`, **API** to `features/api/`, **Mobile Web** to `features/mobile-web/`. A case belongs to one channel; write it once, there. Each folder runs in its own Playwright project, made only when the folder has a feature (`chromium`, `api`, `mobile-chrome`), so a case runs in its channel's project and nowhere else. A folder that doesn't exist in an older automation folder is added by `qam app create` (it never overwrites a file).
+
+### API cases
+
+An API case has no screen, so there is no page object, locator or browser:
+- A **service** per resource in `src/api/services/<Resource>Service.ts` extends `BaseApiClient` and has one method per route the cases call. Its method calls `this.get`, `this.post`, `this.put`, `this.patch` or `this.delete` with the route's path and body; the path and body field names come from the case and its cited `dsm:api:` and `code:` evidence.
+- A **step** in `steps/api/<service>.api.steps.ts` creates the service from Playwright's `request` fixture, calls it and keeps the response with `lastResponse.set(request, response)`; a Then reads `lastResponse.get(request)` and asserts with `expectStatus`, `expectBody` or `expectHeader` of `ApiResponse`.
+- A step **never calls `request.fetch`** (or `request.get`, `.post` and so on) itself, and a service never does either: only `BaseApiClient` makes the request. `qam check-scripts` flags it.
+- The base URL is the API's (`apiUrl` in `app.json`, set with `qam app create --api-url`); paths in services are relative to it. A token or credential is read from `process.env`, set on the client with `setAuth`, and never written into a script.
+- Expected results come from the case: the status code and body fields it states. Add no checks of your own.
+
+```ts
+// src/api/services/TodoService.ts
+export class TodoService extends BaseApiClient {
+  create(title: string) { return this.post<{ id: number; title: string }>('/api/todos', { data: { title } }); }
+}
+// steps/api/todos.api.steps.ts
+When('I create a todo with the title {string}', async ({ request }, title: string) => {
+  lastResponse.set(request, await new TodoService(request).create(title));
+});
+```
+
+### Mobile Web cases
+
+A Mobile Web case's scenario goes in `features/mobile-web/` tagged `@mobile-web`, and runs only in the `mobile-chrome` project: Chromium with a Pixel 7's viewport and touch. Steps, page objects and locators are the same ones the Web scripts use (reuse them, don't copy). The DSM's elements come from the **desktop** crawl, so what a phone's narrow layout hides behind a menu is still in the DSM but not on screen: open the menu first (a step such as `I click the "Menu" button`, from the app's code or the page), then click the link. Don't guess a phone-only control the DSM doesn't have; ask, or mark it `// custom: <why>`.
+
 ## Rules the check enforces (`qam check-scripts`)
 
 - No inline selectors in page objects or steps.
+- API layers: steps in `steps/api/` use a service from `src/api/services/`, a service extends `BaseApiClient` and is used by a step, and nothing but the base client calls `request.fetch` or its siblings.
+- A feature in `features/api/` is tagged `@api`, and one in `features/mobile-web/` is tagged `@mobile-web`.
 - Every page object imports its locator file, and every locator file is used.
 - Steps sit in their place.
 - Every feature has a platform tag, and every `@TC-<id>` exists in a TestGen run.

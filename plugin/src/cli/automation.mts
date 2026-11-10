@@ -1,6 +1,8 @@
 /**
  * The automation folder (Q25):
- *     qam app create [--app NAME] [--web-url URL]     <App>/ in the QA project from the playwright-bdd template
+ *     qam app create [--app NAME] [--web-url URL] [--api-url URL]
+ *                                                     <App>/ in the QA project from the playwright-bdd template; in an
+ *                                                     existing folder it adds the template files that are missing
  *     qam check-scripts [--quick]                     the scripts' quality gate (0 pass, 1 fail, 2 blocked: packages missing)
  * The app name and URL default to config/qamaster.json's app.name and app.url.
  */
@@ -21,13 +23,22 @@ export function appFolder(cfg: Config): string {
   return path.join(cfg.qaProject ?? cfg.root, pascal(name));
 }
 
+/** A playwright.config.ts from before 0.7.0 has no api or mobile-chrome project; it is the person's file, so say so. */
+function stale(dir: string): string {
+  const file = path.join(dir, 'playwright.config.ts');
+  return fs.existsSync(file) && !fs.readFileSync(file, 'utf8').includes('defineBddProject')
+    ? ' playwright.config.ts was not changed: it has no api or mobile-chrome project; compare it with the template (framework/playwright-bdd/playwright.config.ts in the plugin).'
+    : '';
+}
+
 export function app(cfg: Config, argv: string[], json: boolean): number {
   const { values: v, positionals } = parseArgs({
     args: argv,
     allowPositionals: true,
-    options: { app: { type: 'string' }, 'web-url': { type: 'string' } },
+    options: { app: { type: 'string' }, 'web-url': { type: 'string' }, 'api-url': { type: 'string' } },
   });
-  if (positionals[0] !== 'create') throw new BlockedError('Usage: qam app create [--app NAME] [--web-url URL]');
+  if (positionals[0] !== 'create')
+    throw new BlockedError('Usage: qam app create [--app NAME] [--web-url URL] [--api-url URL]');
   const name = v.app ?? cfg.project.app?.name;
   const url = v['web-url'] ?? cfg.project.app?.url;
   if (!name)
@@ -36,15 +47,22 @@ export function app(cfg: Config, argv: string[], json: boolean): number {
     throw new BlockedError(
       "Give the application's URL: qam app create --web-url <http(s) URL> (or set app.url with qam setup).",
     );
+  const apiUrl = v['api-url'];
+  if (apiUrl !== undefined && !/^https?:\/\/\S+$/.test(apiUrl))
+    throw new BlockedError(
+      "Give the API's base URL as an http(s) URL: qam app create --api-url http://localhost:8000.",
+    );
   const dir = path.join(cfg.qaProject ?? cfg.root, pascal(name));
-  const { created } = playwrightBdd.create?.(dir, name, url) ?? { created: false };
+  const { created, added } = playwrightBdd.create(dir, name, url, { apiUrl });
   const rel = path.relative(cfg.qaProject ?? cfg.root, dir) || '.';
   console.log(
     json
-      ? JSON.stringify({ folder: dir, created })
+      ? JSON.stringify({ folder: dir, created, added })
       : created
-        ? `Created ${rel}/ from the playwright-bdd template for ${url}. Next: npm install in ${rel}/ (it downloads @playwright/test and playwright-bdd).`
-        : `${rel}/ already exists; left as it is.`,
+        ? `Created ${rel}/ from the playwright-bdd template for ${url}${apiUrl ? ` (API ${apiUrl})` : ''}. Next: npm install in ${rel}/ (it downloads @playwright/test and playwright-bdd).`
+        : added.length
+          ? `${rel}/ already exists. Added to ${rel}/: ${added.join(', ')}. Nothing that was there changed.${stale(dir)}`
+          : `${rel}/ already exists; left as it is.`,
   );
   return 0;
 }

@@ -23,21 +23,65 @@ function copy(from: string, to: string) {
   }
 }
 
+/**
+ * The template's files that are not in `to` yet, copied there (D9: a folder made before 0.7.0 gains the API and Mobile
+ * Web layers). A file that exists is never touched, and a .gitkeep is not brought back into a folder that exists: it
+ * only keeps an empty folder in git. Returns the added paths, relative with /.
+ */
+function addMissing(from: string, to: string, rel = ''): string[] {
+  const added: string[] = [];
+  const present = fs.existsSync(to);
+  fs.mkdirSync(to, { recursive: true });
+  for (const e of fs.readdirSync(from, { withFileTypes: true })) {
+    if (SKIP.has(e.name)) continue;
+    const [src, dst, name] = [path.join(from, e.name), path.join(to, e.name), path.posix.join(rel, e.name)];
+    if (e.isDirectory()) added.push(...addMissing(src, dst, name));
+    else if (!fs.existsSync(dst) && !(present && e.name === '.gitkeep')) {
+      fs.copyFileSync(src, dst);
+      added.push(name);
+    }
+  }
+  return added;
+}
+
 /** Runs npx in the folder; [exit code, output]. A missing npx or package is the caller's blocked case. */
 function npx(dir: string, args: string[]): [number, string] {
   const r = spawnSync('npx', ['--no-install', ...args], { cwd: dir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   return [r.status ?? 1, `${r.stdout ?? ''}\n${r.stderr ?? ''}`.trim()];
 }
 
-export const playwrightBdd: Framework = {
+/** The framework, with a create that takes the API's base URL and reports what it added to an existing folder. */
+export const playwrightBdd: Framework & {
+  create(dir: string, app: string, webUrl: string, o?: { apiUrl?: string }): { created: boolean; added: string[] };
+} = {
   name: 'playwright-bdd',
   runners: ['playwright-bdd'],
 
-  create(dir, app, webUrl) {
-    if (fs.existsSync(dir)) return { created: false };
-    copy(TEMPLATE, dir);
-    fs.writeFileSync(path.join(dir, 'app.json'), `${JSON.stringify({ name: app, webUrl }, null, 1)}\n`);
-    return { created: true };
+  /**
+   * A new folder is the template plus app.json. In an existing folder only what the template has and the folder
+   * lacks is added (`added`), and `apiUrl` is recorded when app.json has none; nothing else changes.
+   */
+  create(dir, app, webUrl, o: { apiUrl?: string } = {}): { created: boolean; added: string[] } {
+    const appJson = path.join(dir, 'app.json');
+    if (!fs.existsSync(dir)) {
+      copy(TEMPLATE, dir);
+      const record = { name: app, webUrl, ...(o.apiUrl ? { apiUrl: o.apiUrl } : {}) };
+      fs.writeFileSync(appJson, `${JSON.stringify(record, null, 1)}\n`);
+      return { created: true, added: [] };
+    }
+    const added = addMissing(TEMPLATE, dir);
+    if (o.apiUrl && fs.existsSync(appJson)) {
+      try {
+        const record = JSON.parse(fs.readFileSync(appJson, 'utf8')) as Record<string, unknown>;
+        if (!('apiUrl' in record)) {
+          fs.writeFileSync(appJson, `${JSON.stringify({ ...record, apiUrl: o.apiUrl }, null, 1)}\n`);
+          added.push('app.json (apiUrl)');
+        }
+      } catch {
+        /* an app.json that isn't JSON is the person's to fix; it is left as it is */
+      }
+    }
+    return { created: false, added };
   },
 
   check(dir, o): ScriptCheck {
