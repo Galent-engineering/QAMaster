@@ -22,7 +22,7 @@ import type { Work } from '../gate/automate.mts';
 import { bind, type Drafts, folderHash, prove, rebind, recordedUnchanged, worklist } from '../gate/automate.mts';
 import { dsmCases, repoDirs, runCases } from '../gate/dsm.mts';
 import { approve, type Gate, runPlan } from '../gate/gate.mts';
-import { choosePreset, planWith, renderSelection } from '../gate/presets.mts';
+import { choosePreset, inCI, planWith, renderSelection } from '../gate/presets.mts';
 import { linkRunner } from '../gate/select.mts';
 import { stateDirs } from '../gate/state.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
@@ -372,6 +372,7 @@ export async function gate(cfg: Config, command: string, argv: string[], json: b
         preset,
         ai: cfg.project.ai,
         groupsModel: cfg.project.gate.groupsModel,
+        ci: inCI(),
         recorded: recorded(cfg),
       }),
     );

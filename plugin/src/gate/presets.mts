@@ -26,6 +26,10 @@ export function choosePreset(flag: string | undefined, configured: Preset, all =
   return flag as Preset;
 }
 
+/** Whether the run is in CI (the CI variable CI systems set), where no model picks groups. */
+export const inCI = (env: Record<string, string | undefined> = process.env): boolean =>
+  !!env.CI && !['false', '0'].includes(env.CI.toLowerCase());
+
 /**
  * A plan under a preset. `fast` drops the DSM; `full` is makePlan's `all` (D5: 0.6.0's `qam plan --all`), every case
  * with a bound or recorded script, whatever changed.
@@ -34,7 +38,7 @@ export async function planWith(
   g: Gate,
   base: string,
   wanted: Record<string, string>,
-  o: { preset: Preset; ai: 'on' | 'off'; groupsModel: string | null; recorded?: Set<number> },
+  o: { preset: Preset; ai: 'on' | 'off'; groupsModel: string | null; ci?: boolean; recorded?: Set<number> },
 ): Promise<Plan> {
   const gate = o.preset === 'fast' ? { ...g, dsm: undefined } : g;
   const plan = await makePlan(gate, base, wanted, { all: o.preset === 'full', recorded: o.recorded });
@@ -48,7 +52,7 @@ export async function planWith(
       ...(o.preset !== 'fast' && g.dsm ? ['dsm'] : []),
       ...groups,
     ],
-    model: o.preset === 'standard' && o.ai === 'on' ? (o.groupsModel ?? 'inherit') : null,
+    model: o.preset === 'standard' && o.ai === 'on' && !o.ci ? (o.groupsModel ?? 'inherit') : null,
   };
   return plan;
 }

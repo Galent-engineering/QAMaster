@@ -10,7 +10,7 @@ import { test } from 'node:test';
 import type { Runner } from '../plugin/src/adapters/base.mts';
 import type { Gate } from '../plugin/src/gate/gate.mts';
 import { makePlan } from '../plugin/src/gate/gate.mts';
-import { choosePreset, planWith, renderSelection } from '../plugin/src/gate/presets.mts';
+import { choosePreset, inCI, planWith, renderSelection } from '../plugin/src/gate/presets.mts';
 import { BlockedError } from '../plugin/src/shared/errors.mts';
 import { GROUPS_MODELS, PRESETS } from '../plugin/src/shared/models.mts';
 import { asProjectConfig, DEFAULT_PROJECT_CONFIG } from '../plugin/src/shared/schema.mts';
@@ -82,6 +82,15 @@ test('--all is --preset full, and clashes with any other preset', () => {
     () => choosePreset('fast', 'standard', true),
     (e) => e instanceof BlockedError && /--all is --preset full/.test(e.message),
   );
+});
+
+test('in CI no model picks groups, so the plan names none (0.7.1)', async () => {
+  const p = await planWith(gate(), 'main', {}, { preset: 'standard', ai: 'on', groupsModel: 'haiku', ci: true });
+  assert.equal(p.selection?.model, null);
+  assert.doesNotMatch(renderSelection(p), /groups picked by/);
+  assert.equal(inCI({ CI: 'true' }), true);
+  assert.equal(inCI({ CI: '1' }), true);
+  for (const off of [{}, { CI: '' }, { CI: 'false' }, { CI: '0' }]) assert.equal(inCI(off), false);
 });
 
 test('the groups model is named only when a model picks groups: standard, with AI on', async () => {
