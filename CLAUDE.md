@@ -10,6 +10,7 @@ Read before working on a feature:
 - [docs/decisions.md](docs/decisions.md): settled decisions. Don't reverse one silently; propose a new entry.
 - [docs/data-handling.md](docs/data-handling.md): what goes to Claude, and `QAMASTER_AI=off`
 - [docs/releases.md](docs/releases.md): what each plugin version holds, and the next one's plan
+- [docs/plans/handoff.md](docs/plans/handoff.md): where the work stands now; read it first in a new session
 - [docs/plans/](docs/plans/README.md): one versioned plan per release, the working source of truth for that release. A change of scope adds a revision row. [docs/plans/backlog.md](docs/plans/backlog.md) lists every open fix and to-do with its target release
 - [docs/demos/](docs/demos/README.md): the live runs, their findings, and where each finding went. Keep a record until its findings are in a plan
 - [docs/install.md](docs/install.md): load a release as a zip in Claude desktop or the Claude CLI, and what the machine needs
