@@ -9,7 +9,7 @@ Each entry says where the choice came from:
 
 Format: **Q<n>. Title** (date, status, source): decision, why, what we gave up.
 
-Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 was accepted on 2026-11-10; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06, Q49 and Q54 on 2026-11-10. To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
+Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 was accepted on 2026-11-10; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06, Q49, Q54, Q55 and Q56 on 2026-11-10. To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
 
 ---
 
@@ -788,6 +788,27 @@ Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in ea
   - **Native Android and iOS move from v1 to 1.1.0.** Product v1.1's scope (the git hook, IDE set-up, PR checks, ADO Test Run) ships as 1.2.0.
 - **Why:** four small releases (0.6.0 to 0.9.0) each touched the same modules twice; two releases by area halve the reviews and the live runs. Native mobile needs an Android SDK or Xcode machine and is the largest single item; out of v1 it no longer holds 1.0.0 back.
 - **Gave up:** native apps in v1, and the smaller steps between 0.6.0 and 0.9.0.
+
+**Q55. 0.7.0's names and behaviours, as built** (2026-11-10, accepted 2026-11-10, New; records [0.7.0's](plans/0.7.0.md#decisions-to-take) D1, D2 and D4–D9; builds on Q31 and Q37)
+- **Decision:**
+  - **Names (D1).** `login.signed_out_pass` (on unless `false`) and `crawl.concurrency` in `dsm-config.json`; `gate.preset` and `gate.groupsModel` in `config/qamaster.json`; `qam dsm compare`, `qam dsm run --routes` and `--estimate`, `qam plan --preset`, `qam app create --api-url`; the evidence form `dsm:api:<METHOD> <path>`. They are a contract from 0.7.0 (Q31: names are fixed at Build).
+  - **A screen seen in both states (D2)** holds the signed-in page's elements; elements only the signed-out page shows stay on the screen marked `state: signed-out`, so a sign-in case can still click "Sign in".
+  - **`crawl.concurrency` defaults to 3 tabs (D4)**; 1 keeps the one-tab crawl.
+  - **`--preset full` and `qam plan --all` are one behaviour (D5).** `--all` means `--preset full`; `--all` with another preset is blocked. Q37's "every case under a shared glob" is part of `full`.
+  - **The groups model (D6)** takes the Claude Code subagent aliases `sonnet`, `opus`, `haiku`, `fable` and `inherit` (checked against the Claude Code docs on 2026-11-10).
+  - **Mobile Web runs on Chromium only (D7)**, emulating a `Pixel 7`, in the `mobile-chrome` project.
+  - **A case runs only in its own channel's project (D8):** Web cases don't also run on the phone project.
+  - **An automation folder made before 0.7.0 (D9):** `qam app create` on it adds the missing template folders and files, never overwrites one, and says what it added.
+- **Why:** each was built to the plan's recommendation and reviewed with the user after the build. Two flags with near meanings (D5) would confuse; running every Web case on the phone too (D8) would double the gate's time before every push; Safari (D7) needs a browser install doctor doesn't check yet.
+- **Gave up:** Safari on Mobile Web, and Web cases on the phone, until a release adds them; renaming any D1 name without a breaking change.
+
+**Q56. A republish replaces a case's `path:` tags** (2026-11-10, accepted 2026-11-10, New; amends Q37; [0.7.0's](plans/0.7.0.md#decisions-to-take) D3)
+- **Decision:**
+  - When publish re-derives a case's `path:` tags, it replaces the stored `path:` tags with the new ones. The preview lists each tag it removes, per case.
+  - Only `path:` tags. Smoke, group and every other tag are never removed (Q8 still holds for them).
+  - Built in 0.7.1: it completes R16's fix and adds no command, flag, setting or file format, so Q46 allows it in a patch.
+- **Why:** 0.7.0 derives narrower `path:` tags (each screen's own files, not the shared auth code, R16). Under Q37 a republish kept the old broad tags, so cases published before 0.7.0 would still be selected by any change to `axios.ts` until someone removed the tags by hand.
+- **Gave up:** Q37's "nothing is removed from the store" for `path:` tags. A `path:` tag added by hand in the store is removed on the next republish; the preview shows it first.
 
 ---
 

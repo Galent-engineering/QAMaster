@@ -97,7 +97,7 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
 </head>
 <body>
 <main>
-<p><span class="b now">Plugin 0.7.0</span><span class="b v11">Decisions to Q54</span><span class="b later">Checked 2026-11-10</span></p>
+<p><span class="b now">Plugin 0.7.0</span><span class="b v11">Decisions to Q56</span><span class="b later">Checked 2026-11-10</span></p>
 <h1>QAMaster setup guide, 0.7.0</h1>
 <p class="lead">How a team sets QAMaster up, step by step: what each step does, the integration it plugs into, the decisions behind it, and what arrives at that step later.</p>
 
@@ -258,7 +258,8 @@ footer{margin-top:2.5rem;padding-top:1rem;border-top:1px solid var(--border);fon
     <tr><td>Q53</td><td><span class="b now">Accepted</span> A 5xx from the app or an uncaught page error during a passing UI case fails it, with the request as evidence; known noise on an allow-list. Built in 0.6.0.</td></tr>
     <tr><td>Q49</td><td><span class="b now">Accepted 2026-11-10</span> A script recorded by <code>qam automate --done</code> stays bound to its test case for every later plan; an edited script stays manual until recorded again; store links still need a push. Built in 0.6.0.</td></tr>
     <tr><td>Q54</td><td><span class="b now">Accepted 2026-11-10</span> Two feature releases to 1.0.0 (0.6.0 gate and store, 0.7.0 coverage and API and Mobile Web), a patch after each, 1.0.0 with no new feature; native Android and iOS in 1.1.0, product v1.1 in 1.2.0.</td></tr>
-    <tr><td>0.7.0 D1–D9</td><td><span class="b prop">To confirm</span> The new names (<code>login.signed_out_pass</code>, <code>crawl.concurrency</code>, <code>qam dsm compare</code>, <code>--routes</code>, <code>--estimate</code>, <code>--preset</code>, <code>gate.preset</code>, <code>gate.groupsModel</code>, <code>--api-url</code>, <code>dsm:api:</code>), 3 tabs by default, <code>--all</code> as <code>--preset full</code>, Chromium only for Mobile Web: built to the plan's recommendations, waiting for your yes. D3 (narrower <code>path:</code> tags on a republish) isn't built.</td></tr>
+    <tr><td>Q55</td><td><span class="b now">Accepted 2026-11-10</span> The new names (<code>login.signed_out_pass</code>, <code>crawl.concurrency</code>, <code>qam dsm compare</code>, <code>--routes</code>, <code>--estimate</code>, <code>--preset</code>, <code>gate.preset</code>, <code>gate.groupsModel</code>, <code>--api-url</code>, <code>dsm:api:</code>), 3 tabs by default, <code>--all</code> as <code>--preset full</code>, Chromium only for Mobile Web, each case in its own channel only: 0.7.0's D1, D2 and D4–D9 as built.</td></tr>
+    <tr><td>Q56</td><td><span class="b now">Accepted 2026-11-10</span> A republish replaces a case's <code>path:</code> tags (only those), and the preview lists each removed tag; amends Q37. Built in 0.7.1.</td></tr>
   </tbody>
 </table></div>
 

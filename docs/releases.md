@@ -219,7 +219,7 @@ Plan: [plans/0.7.0.md](plans/0.7.0.md). Built on `release/0.7.0` on 2026-11-10 f
 | API cases with `dsm:api:<METHOD> <path>` evidence; API scripts (`features/api`, `steps/api`, `src/api`, the `api` project); `qam app create --api-url` | `testgen/`, `framework/playwright-bdd/`, `cli/automation.mts`, `automation/quality.mts` | Q48, K5, D9 |
 | Mobile Web scripts: `features/mobile-web` and the `mobile-chrome` project (Chromium) | `framework/playwright-bdd/playwright.config.ts` | K5, D7, D8 |
 
-728 tests, typecheck and lint clean. Not run on a live app; the generated automation folder wasn't installed or listed by Playwright. D1, D2 and D4–D9 were built to their recommendations and still need your yes; D3 isn't built. Open items are in the plan's [r2 row](plans/0.7.0.md) and [Moved to 0.7.1](plans/0.7.0.md#moved-to-071-or-a-decision).
+728 tests, typecheck and lint clean. Not run on a live app; the generated automation folder wasn't installed or listed by Playwright. D1, D2 and D4–D9 were built to their recommendations and accepted as Q55; D3 was accepted as Q56 and is built in 0.7.1. Open items are in the plan's [r2 row](plans/0.7.0.md) and [Moved to 0.7.1](plans/0.7.0.md#moved-to-071-or-a-decision).
 
 ## Planned
 

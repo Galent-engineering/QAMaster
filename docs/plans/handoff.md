@@ -25,7 +25,7 @@ All 14 items built and reviewed; 639 tests, typecheck and lint clean. Where the 
 All 17 items built and reviewed; 728 tests, typecheck and lint clean. Where the code is: the signed-out pass and merge `dsm/crawl-rules.mts` (`mergePasses`) and `adapters/crawler-playwright.mts`; compare and estimate `dsm/update.mts`, `cli/dsm.mts`; source ownership `dsm/scan.mts`; presets `gate/presets.mts` (types in `shared/models.mts`); TestGen access, dialogs and API evidence `testgen/facts.mts`, `testgen/validate.mts`; step wording `testgen/render.mts`; API and Mobile Web template `plugin/framework/playwright-bdd/`, checks `automation/quality.mts`.
 
 **Open, for 0.7.1 or a decision** (detail in [0.7.0.md](0.7.0.md#moved-to-071-or-a-decision)):
-- Decisions: confirm D1, D2, D4–D9 as built (D6 includes `fable`, which the Claude Code subagent docs list) and record them in decisions.md; D3 (narrower `path:` tags on a republish) needs a decision entry before it's built.
+- Decisions: D1, D2 and D4–D9 accepted as built (Q55, D6 includes `fable`); D3 accepted as Q56 (a republish replaces `path:` tags, preview lists removals): **build it in 0.7.1**.
 - Not seen live: a signed-in crawl of fastapi-react-app; a generated folder through `npm install`, `bddgen` and `playwright test --list`; the changed skills under `--plugin-dir`.
 
 ## What this session learned
