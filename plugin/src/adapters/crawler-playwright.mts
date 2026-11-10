@@ -583,8 +583,11 @@ export class PlaywrightCrawler implements Crawler {
         let ensured = await ensure();
         // what the signed-out pass saw redirected to sign-in is crawled signed in too, even when nothing links to it
         const gatedBy = (r: string | null) => (passA?.pages ?? []).filter((p) => p.redirect_to && p.redirect_to === r);
-        if (!ensured.info.required && !login.url && loginRef.route) {
+        const canSignIn =
+          mode === 'manual' || !!this.s.ask || !!(this.s.credentials.username && this.s.credentials.password);
+        if (!ensured.info.required && !login.url && loginRef.route && canSignIn) {
           // the start page is public, but the signed-out pass found a sign-in route: sign in from there instead
+          // (with no way to sign in, the crawl stays signed out and warns once, as before)
           const via = gatedBy(loginRef.route)[0] ?? (passA?.pages ?? []).find((p) => p.route === loginRef.route);
           if (via) {
             await ensured.context.close().catch(() => {});
