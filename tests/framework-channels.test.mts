@@ -179,6 +179,15 @@ test('an API step that renames the request fixture still makes a direct call (0.
   assert.match(out, /todos\.api\.steps\.ts:8: calls api\.post directly/);
 });
 
+test('a request key in an object literal is not a rename of the request fixture', () => {
+  const dir = folder();
+  write(dir, {
+    'steps/api/todos.api.steps.ts':
+      "import { When } from '../../src/fixtures';\nimport { TodoService } from '../../src/api/services/TodoService';\nWhen('I list the todos', async ({ request }) => {\n  const payload = new TodoService(request);\n  const body = { request: payload };\n  await payload.post(body);\n});\n",
+  });
+  assert.doesNotMatch((staticFindings(dir, KNOWN).api ?? []).join('\n'), /payload\.post/);
+});
+
 test('an API step file that imports no service, a service that is not a BaseApiClient, and an unused service are findings', () => {
   const dir = folder();
   write(dir, {

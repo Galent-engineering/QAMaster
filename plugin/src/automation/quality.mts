@@ -105,11 +105,11 @@ export function outlineFindings(feature: string, text: string): string[] {
 /** A direct call on Playwright's request context: only the base client makes one. */
 const REQUEST_CALL = '(fetch|get|post|put|patch|delete|head)';
 const DIRECT_REQUEST = new RegExp(`\\brequest\\.${REQUEST_CALL}\\(`);
-/** Names a file gives the request fixture: `({ request: ctx })`, `const api = request`. */
+/** Names a file gives the request fixture: `({ page, request: ctx })` (a destructured parameter), `const api = request`. */
 const requestAliases = (text: string): string[] => [
   ...new Set(
     [
-      ...text.matchAll(/\brequest\s*:\s*([A-Za-z_$][\w$]*)/g),
+      ...text.matchAll(/\(\s*\{[^}]*\brequest\s*:\s*([A-Za-z_$][\w$]*)/g),
       ...text.matchAll(/\b([A-Za-z_$][\w$]*)\s*=\s*(?:this\.)?request\s*[;\n]/g),
     ]
       .map((m) => m[1])
