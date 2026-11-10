@@ -228,3 +228,30 @@ test('a plan bound to drafted scripts refuses approval when they changed, and la
   assert.equal(v.result, 'fail');
   assert.match(v.reasons.join(' '), /TC502 failed: new script failed: check the script or the app\./);
 });
+
+test('0.6.0 item 14: all plans every case with a bound script, whatever the change touches', async () => {
+  const { g } = gate({ repo: new FakeRepoReader({ ...CHANGE, files: [] }) });
+  const none = await makePlan(g, 'main', {});
+  assert.deepEqual(
+    none.items.map((i) => i.testCase.id),
+    [601], // the smoke case only
+  );
+  const plan = await makePlan(g, 'main', {}, { all: true });
+  assert.deepEqual(
+    plan.items.map((i) => [i.testCase.id, i.selected, i.reasons[0].kind]),
+    [
+      [501, true, 'all'],
+      [502, true, 'all'],
+      [601, true, 'all'],
+      [701, true, 'all'],
+    ],
+  );
+  // 503 is manual: it has no script to run, so it is not part of the plan
+  assert.deepEqual(plan.notRun, []);
+});
+
+test('0.6.0 item 7: the plan says the app has its own tests and that the gate does not run them', async () => {
+  const { g } = gate({ appTests: () => ['pytest in api/tests (4 files)'] });
+  assert.deepEqual((await makePlan(g, 'main', {})).appTests, ['pytest in api/tests (4 files)']);
+  assert.equal((await makePlan(gate().g, 'main', {})).appTests, undefined);
+});

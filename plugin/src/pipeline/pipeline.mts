@@ -9,6 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveRef } from '../adapters/git.mts';
+import { readAll } from '../gate/state.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
 import { pascal } from '../knowledge/build.mts';
 import { BlockedError } from '../shared/errors.mts';
@@ -307,10 +308,11 @@ export const STAGES: Stage[] = [
     id: 'first-gate',
     title: 'First gate run',
     detect: (c) => {
-      // the gate's verdicts (step 5), in the app repo (Q22)
+      // the gate's verdicts (step 5): in the QA project that recorded the app repo, else in the repo itself (Q52)
       // 0.4.1 A14: a verdict counts once it ran test cases; a pass over 0 of 0 is not a first gate run
       type V = { head: string; result: string; results: { status: string }[] };
-      const verdicts = files(path.join(c.appRepo, QAMASTER_DIR, 'verdicts'), /\.json$/)
+      const verdicts = readAll(c.appRepo, c.project)
+        .flatMap((d) => files(path.join(d, 'verdicts'), /\.json$/))
         .map((f) => ({ v: readJson<V>(f), t: mtime(f) }))
         .filter((x): x is { v: V; t: number } => !!x.v?.head && Array.isArray(x.v.results))
         .sort((a, b) => b.t - a.t)

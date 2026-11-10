@@ -25,6 +25,8 @@ export type Gate = {
   testsHead?: () => string | undefined;
   /** The cases on the screens the changed files touch, and the touched screens no case visits. */
   dsm?: (files: string[]) => { cases: Map<number, string[]>; gaps: Gap[] };
+  /** The app's own test suites (pytest, jest, vitest), said in the plan: they aren't part of the gate. */
+  appTests?: () => string[];
   retries: number;
   sharedShare?: number;
   /** The current hash of the automation folder, when a plan was bound to drafted scripts (Q39). */
@@ -57,12 +59,25 @@ async function collect(g: Gate, runners: Map<string, Runner>): Promise<string[]>
   return (await Promise.all([...runners].map(([name, r]) => r.collected(g.root(name))))).flat();
 }
 
-export async function makePlan(g: Gate, base: string, wanted: Record<string, string>): Promise<Plan> {
+export async function makePlan(
+  g: Gate,
+  base: string,
+  wanted: Record<string, string>,
+  o: { all?: boolean } = {},
+): Promise<Plan> {
   const change = await g.repo.diff(base, await g.repo.head());
   const catalog = await g.store.inPlan();
   const dsm = g.dsm?.(change.files.map((f) => f.path));
   const shared: { file: string; cases: number }[] = [];
-  const reasons = candidates({ change, catalog, wanted, sharedShare: g.sharedShare, shared, dsm: dsm?.cases });
+  const reasons = candidates({
+    change,
+    catalog,
+    wanted,
+    sharedShare: g.sharedShare,
+    shared,
+    dsm: dsm?.cases,
+    all: o.all,
+  });
   const picked = [...reasons.keys()].map((id) => catalog.get(id)).filter((c): c is TestCase => !!c);
   const runners = runnersFor(g, picked);
   const { items, notRun } = split(reasons, catalog, await collect(g, runners), (id) => g.store.url(id));
@@ -72,6 +87,7 @@ export async function makePlan(g: Gate, base: string, wanted: Record<string, str
       .map(([tag, cs]) => [tag, cs.filter((id) => !reasons.has(id)).map((id) => catalog.get(id)?.title ?? `TC${id}`)]),
   );
   const testsHead = g.testsHead?.();
+  const appTests = g.appTests?.() ?? [];
   return {
     id: randomBytes(4).toString('hex'),
     createdAt: new Date().toISOString(),
@@ -83,6 +99,7 @@ export async function makePlan(g: Gate, base: string, wanted: Record<string, str
     ...(shared.length ? { shared } : {}),
     catalogSize: catalog.size,
     otherGroups,
+    ...(appTests.length ? { appTests } : {}),
   };
 }
 

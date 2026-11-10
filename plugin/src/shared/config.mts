@@ -4,6 +4,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { recordingProject } from '../gate/state.mts';
 import { type Env, loadEnv } from './env.mts';
 import { BlockedError } from './errors.mts';
 import { asProjectConfig, DEFAULT_PROJECT_CONFIG, type ProjectConfig } from './schema.mts';
@@ -76,7 +77,9 @@ export function loadConfig(root: string, env: Env = process.env): Config {
         : `${root} doesn't exist. Check --repo; to start a QA project there, create the folder first.`,
     );
   }
-  const qaProject = findQaProject(testRoot) ?? findQaProject(root);
+  // an app clone a QA project recorded as a code source belongs to that project, wherever the clone lives (Q52)
+  const qaProject =
+    findQaProject(testRoot) ?? findQaProject(root) ?? recordingProject(root, env.QAMASTER_HOME)?.project ?? null;
   // a repo inside or pointing into a QA project takes the QA project's .env for what its own leaves out, so the
   // store's token never has to go into a team repo (0.4.2 W14)
   if (qaProject && qaProject !== root) loadEnv(path.join(qaProject, ENV_FILE), env);

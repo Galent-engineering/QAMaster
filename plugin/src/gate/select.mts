@@ -61,14 +61,18 @@ export type SelectInput = {
   shared?: { file: string; cases: number }[];
   /** Test case ID -> the impacted screens it visits (Q31 `dsm`). */
   dsm?: Map<number, string[]>;
+  /** qam plan --all: every case with a script, whatever changed (a first run, a nightly check). */
+  all?: boolean;
 };
 
-/** Test case ID -> every reason to run it, in rule order: path, smoke, dsm, group. */
+/** Test case ID -> every reason to run it, in rule order: path, smoke, dsm, group (all, when asked, first). */
 export function candidates(i: SelectInput): Map<number, Reason[]> {
   const reasons = new Map<number, Reason[]>();
   const add = (id: number, r: Reason) => reasons.set(id, [...(reasons.get(id) ?? []), r]);
   const cases = [...i.catalog.values()];
   const paths = (tc: TestCase) => tc.tags.filter((t) => t.startsWith(PATH)).map((t) => t.slice(PATH.length));
+
+  if (i.all) for (const tc of cases) if (tc.automatedTest) add(tc.id, { kind: 'all', detail: '' });
 
   const byPath = new Set<string>();
   for (const f of i.change.files) {

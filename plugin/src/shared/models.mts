@@ -85,7 +85,7 @@ export type ChangedFile = { path: string; status: string };
 export type Change = { base: string; head: string; branch: string; files: ChangedFile[] };
 /** A test case as the gate sees it. `automatedTest` is `bdd:@TC-…` or `pytest:<nodeid>` (Q9), null when manual. */
 export type TestCase = { id: number; title: string; url: string; tags: string[]; automatedTest: string | null };
-export type Reason = { kind: 'path' | 'smoke' | 'group' | 'added' | 'dsm'; detail: string };
+export type Reason = { kind: 'path' | 'smoke' | 'group' | 'added' | 'dsm' | 'all'; detail: string };
 export type PlanItem = { testCase: TestCase; reasons: Reason[]; selected: boolean };
 /** `broken`: the automated test named in the store isn't in the test root, so the check fails until it's fixed. */
 export type NotRun = { testCase: TestCase; why: string; broken: boolean; reasons?: Reason[] }; // reasons: why it was selected
@@ -102,6 +102,7 @@ export type Plan = {
   shared?: { file: string; cases: number }[]; // changed files whose path tags cover too much of the plan (Q37)
   catalogSize: number;
   otherGroups: Record<string, string[]>; // group tag -> titles of the test cases it would add
+  appTests?: string[]; // the app's own test suites found in its code source: they exist, and the gate doesn't run them (0.6.0)
   /** Q39: cases whose scripts this check drafted or updated, and the hash of those scripts the approval is bound to. */
   newScripts?: number[];
   scriptsHash?: string;

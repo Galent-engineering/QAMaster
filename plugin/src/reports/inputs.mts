@@ -1,5 +1,5 @@
 /**
- * What reports and feedback read from disk: the gate's verdicts and plans (the app repo's .qamaster/, Q22), the QA
+ * What reports and feedback read from disk: the gate's verdicts and plans (the QA project's .qamaster/gate/, else the app repo's .qamaster/, Q52), the QA
  * project's TestGen runs, ledger, DSM and saved feedback. A missing input is null or empty, never a guess: the
  * builders say which input they lack.
  */
@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Dsm } from '../dsm/build.mts';
 import type { Feedback, RunCase, RunCases } from '../feedback/feedback.mts';
-import { QAMASTER_DIR } from '../integrations/integrations.mts';
+import { readAll } from '../gate/state.mts';
 import { readLedger } from '../publish/ledger.mts';
 import type { Config } from '../shared/config.mts';
 import type { Plan, Verdict } from '../shared/models.mts';
@@ -49,19 +49,20 @@ function jsonFiles(dir: string): string[] {
 
 export function loadInputs(cfg: Config, now = new Date()): Inputs {
   const project = cfg.qaProject ?? cfg.root;
-  const vdir = path.join(cfg.root, QAMASTER_DIR, 'verdicts');
-  const verdicts = jsonFiles(vdir)
-    .map((f) => ({ v: readJson<Verdict>(path.join(vdir, f)), t: fs.statSync(path.join(vdir, f)).mtimeMs }))
+  const gateDirs = readAll(cfg.root, cfg.qaProject);
+  const verdicts = gateDirs
+    .flatMap((d) => jsonFiles(path.join(d, 'verdicts')).map((f) => path.join(d, 'verdicts', f)))
+    .map((f) => ({ v: readJson<Verdict>(f), t: fs.statSync(f).mtimeMs }))
     .filter((x): x is { v: Verdict; t: number } => !!x.v?.head && Array.isArray(x.v.results))
     .sort((a, b) => b.t - a.t)
     .map((x) => x.v);
 
   const plans = new Map<string, Plan>();
-  const pdir = path.join(cfg.root, QAMASTER_DIR, 'plans');
-  for (const f of jsonFiles(pdir)) {
-    const p = readJson<Plan>(path.join(pdir, f));
-    if (p?.id) plans.set(p.id, p);
-  }
+  for (const d of gateDirs)
+    for (const f of jsonFiles(path.join(d, 'plans'))) {
+      const p = readJson<Plan>(path.join(d, 'plans', f));
+      if (p?.id && !plans.has(p.id)) plans.set(p.id, p);
+    }
 
   const runs: RunCases[] = [];
   const out = path.join(project, 'testgen', 'output');

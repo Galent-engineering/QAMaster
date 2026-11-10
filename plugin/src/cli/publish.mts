@@ -16,6 +16,7 @@ import { cacheFile, withCache } from '../adapters/cache.mts';
 import { playwrightBdd } from '../adapters/framework-bdd.mts';
 import { buildStore } from '../adapters/registry.mts';
 import type { Dsm } from '../dsm/build.mts';
+import { stateDirs } from '../gate/state.mts';
 import { type Applied, checkStore, readLedger, record, writeLedger } from '../publish/ledger.mts';
 import {
   type Derived,
@@ -42,16 +43,18 @@ const tc = (id: number) => `TC${id}`;
 
 /** How to gate scripts that can't be pushed: the newest plan's id (by mtime), or how to get one. */
 function gateHint(cfg: Config): string {
-  const plans = path.join(cfg.root, '.qamaster', 'plans');
   let newest = '';
   let at = -1;
-  try {
-    for (const f of fs.readdirSync(plans)) {
-      if (!f.endsWith('.json')) continue;
-      const m = fs.statSync(path.join(plans, f)).mtimeMs;
-      if (m > at) [newest, at] = [f.slice(0, -'.json'.length), m];
-    }
-  } catch {}
+  for (const dir of stateDirs(cfg.root, cfg.qaProject).read) {
+    const plans = path.join(dir, 'plans');
+    try {
+      for (const f of fs.readdirSync(plans)) {
+        if (!f.endsWith('.json')) continue;
+        const m = fs.statSync(path.join(plans, f)).mtimeMs;
+        if (m > at) [newest, at] = [f.slice(0, -'.json'.length), m];
+      }
+    } catch {}
+  }
   return newest
     ? `Run 'qam automate ${newest} --done' to gate them now.`
     : 'Run qam plan, then qam automate with its id and --done, to gate them now.';

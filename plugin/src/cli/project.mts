@@ -8,6 +8,7 @@
  *     qam doctor [--check-write]
  *     qam integrations list [--all] | add <entry…> | remove <id> | verify
  */
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
@@ -15,7 +16,9 @@ import { noProjectError } from '../adapters/ado.mts';
 import type { TestCaseStore, WriteCheck } from '../adapters/base.mts';
 import { withCache } from '../adapters/cache.mts';
 import { buildStore, RUNNERS } from '../adapters/registry.mts';
+import { findAppTests } from '../gate/apptests.mts';
 import { linkRunner } from '../gate/select.mts';
+import { stateDirs } from '../gate/state.mts';
 import {
   add,
   type Context,
@@ -361,6 +364,36 @@ export function pipeline(cfg: Config, argv: string[], json: boolean): number {
   return 0;
 }
 
+/** Every file of a plugin build, by relative path, with its hash (R27). */
+function buildFiles(root: string, rel = ''): Map<string, string> {
+  const out = new Map<string, string>();
+  for (const e of fs.readdirSync(path.join(root, rel), { withFileTypes: true })) {
+    if (['node_modules', '.git', '__pycache__', '.venv'].includes(e.name)) continue;
+    const r = path.join(rel, e.name);
+    if (e.isDirectory()) for (const [k, v] of buildFiles(root, r)) out.set(k, v);
+    else
+      out.set(
+        r,
+        createHash('sha1')
+          .update(fs.readFileSync(path.join(root, r)))
+          .digest('hex'),
+      );
+  }
+  return out;
+}
+/** What differs between two plugin builds, or null when either can't be read as a plugin. */
+function compareBuilds(a: string, b: string): { version: string; differ: string[] } | null {
+  try {
+    const version = (root: string): string =>
+      JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin', 'plugin.json'), 'utf8')).version;
+    const [fa, fb] = [buildFiles(a), buildFiles(b)];
+    const differ = [...new Set([...fa.keys(), ...fb.keys()])].filter((f) => fa.get(f) !== fb.get(f)).sort();
+    return { version: version(a), differ };
+  } catch {
+    return null;
+  }
+}
+
 export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Promise<number> {
   // doctor used to ignore its argv, so a --json after the command must still work
   const { values: v } = parse<{ 'check-write'?: boolean; json?: boolean }>(
@@ -426,14 +459,45 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
       }
     };
     const other = real(recorded) !== real(PLUGIN_ROOT);
-    checks.push({
-      check: 'launcher',
-      ok: true,
-      detail: other
+    // R27: say what the other build is, not only that it is another folder
+    const cmp = other ? compareBuilds(recorded, PLUGIN_ROOT) : null;
+    const detail = !other
+      ? 'runs this plugin'
+      : !cmp
         ? `${QAMASTER_DIR}/bin/qam runs ${recorded}, not the plugin running now (${PLUGIN_ROOT}): run qam setup again from the installed plugin.`
-        : 'runs this plugin',
-      ...(other ? { state: 'unknown' as const } : {}),
-    });
+        : !cmp.differ.length
+          ? `${QAMASTER_DIR}/bin/qam runs ${recorded}, another copy of this plugin with the same files (version ${cmp.version}); the plugin running now is ${PLUGIN_ROOT}. Run qam setup again from the installed plugin to use one copy.`
+          : `${QAMASTER_DIR}/bin/qam runs ${recorded}, ${
+              cmp.version === pluginVersion()
+                ? `a second build of the same version (${cmp.version})`
+                : `version ${cmp.version}, not the running ${pluginVersion()}`
+            }: ${cmp.differ.length === 1 ? '1 file differs' : `${cmp.differ.length} files differ`} from the plugin running now (${PLUGIN_ROOT}), first ${cmp.differ.slice(0, 3).join(', ')}. Commands and skills come from one build and the launcher and gate from the other: run qam setup again from the installed plugin.`;
+    checks.push({ check: 'launcher', ok: true, detail, ...(other ? { state: 'unknown' as const } : {}) });
+  }
+  // 0.6.0 (Q52): the gate's files moved to the QA project; the old ones are still read for one release, never deleted
+  const gateDirs = stateDirs(cfg.root, cfg.qaProject);
+  if (gateDirs.legacy) {
+    const old = ['plans', 'verdicts', 'evidence', 'drafts.json'].filter((n) =>
+      fs.existsSync(path.join(gateDirs.legacy as string, n)),
+    );
+    if (old.length)
+      checks.push({
+        check: 'gate files',
+        ok: true,
+        detail: `${gateDirs.legacy} still holds gate files from before 0.6.0 (${old.join(', ')}). They are read for this release; new ones go to ${gateDirs.write}. QAMaster never deletes them: delete those by hand when you no longer need them (keep integrations.json).`,
+        state: 'unknown',
+      });
+  }
+  // 0.6.0 (R1, R4, R17): the app's own tests exist, and the gate doesn't run them
+  const gateRoot = path.resolve(cfg.testRoot);
+  for (const r of repos) {
+    const found = path.resolve(dir, r.path) === gateRoot ? [] : findAppTests(path.resolve(dir, r.path));
+    if (found.length)
+      checks.push({
+        check: `app tests ${r.name}`,
+        ok: true,
+        detail: `${found.join('; ')}. They are not part of the gate; to gate one, link a test case to it as pytest:<file>::<test> in the test case store.`,
+      });
   }
   // a config written by an older QAMaster keeps its values (setup never overwrites), so say which defaults moved on
   const qamFile = path.join(dir, 'config', 'qamaster.json');

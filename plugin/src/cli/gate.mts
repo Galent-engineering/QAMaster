@@ -1,11 +1,11 @@
 /**
  * The gate's commands (Q11–Q13, Q22, Q38), run in the app repo:
- *     qam plan    [--base REF] [--tag GROUP[=WHY]]…      the cases this change selects; runs nothing (exit 3)
+ *     qam plan    [--base REF] [--tag GROUP[=WHY]]… [--all]   the cases this change selects (--all: every case with a script); runs nothing (exit 3)
  *     qam approve <plan-id> [--add TC…|GROUP] [--remove TC…|GROUP]
  *     qam run     <plan-id>                              exit 0 pass, 1 fail
  *     qam check   [--base REF] [--tag …] [--yes]         plan, then with --yes approve and run; without, stops at 3
- * Plans and verdicts live in the app repo's .qamaster/ (plans/<id>.json, verdicts/<head>-<plan>.json); the push hook reads the
- * verdict. The store is read live (settled 2026-11-02).
+ * Plans and verdicts live in the QA project that recorded the app repo, .qamaster/gate/<name>/ (plans/<id>.json,
+ * verdicts/<head>-<plan>.json), else in the repo's own .qamaster/ (Q52); the push hook reads the verdict. The store is read live (settled 2026-11-02).
  */
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -16,11 +16,13 @@ import { playwrightBdd } from '../adapters/framework-bdd.mts';
 import { defaultBase, GitRepoReader } from '../adapters/git.mts';
 import { buildStore, RUNNERS } from '../adapters/registry.mts';
 import type { RepoConfig } from '../dsm/scan.mts';
+import { findAppTests } from '../gate/apptests.mts';
 import type { Work } from '../gate/automate.mts';
 import { bind, type Drafts, folderHash, prove, rebind, recordedUnchanged, worklist } from '../gate/automate.mts';
 import { dsmCases, repoDirs, runCases } from '../gate/dsm.mts';
 import { approve, type Gate, makePlan, runPlan } from '../gate/gate.mts';
 import { linkRunner } from '../gate/select.mts';
+import { stateDirs } from '../gate/state.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
 import { readLedger } from '../publish/ledger.mts';
 import type { Config } from '../shared/config.mts';
@@ -75,7 +77,15 @@ function testsHead(cfg: Config): string | undefined {
 }
 
 const DRAFTS = 'drafts.json';
-const readDrafts = (cfg: Config): Drafts | null => readJson<Drafts>(path.join(cfg.root, QAMASTER_DIR, DRAFTS));
+/** The first of this repo's gate folders (the new place, then the pre-0.6.0 one) that holds a file. */
+const readState = <T,>(cfg: Config, ...rel: string[]): T | null => {
+  for (const dir of stateDirs(cfg.root, cfg.qaProject).read) {
+    const found = readJson<T>(path.join(dir, ...rel));
+    if (found) return found;
+  }
+  return null;
+};
+const readDrafts = (cfg: Config): Drafts | null => readState<Drafts>(cfg, DRAFTS);
 /** The automation folder, when the QA project has one. */
 export const automationFolder = (cfg: Config): string | null => {
   try {
@@ -122,6 +132,11 @@ export function gateFor(cfg: Config): Gate {
             }),
         }
       : {}),
+    // a suite in a code source that isn't the test root itself (there its tests are linked, so they are gated)
+    appTests: () =>
+      repoDirs(project, dsmConfig?.repositories)
+        .filter((r) => path.resolve(r.dir) !== path.resolve(cfg.testRoot))
+        .flatMap((r) => findAppTests(r.dir).map((t) => `${r.name}: ${t}`)),
     retries: cfg.project.gate.retries,
     sharedShare: cfg.project.gate.sharedShare,
     scriptsHash: () => {
@@ -152,20 +167,28 @@ function excludeLocal(root: string): void {
   fs.appendFileSync(file, `${sep}# QAMaster: this clone's own gate files (Q42)\n${missing.join('\n')}\n`);
 }
 
-const stateDir = (cfg: Config, kind: 'plans' | 'verdicts' | 'evidence') => {
-  excludeLocal(cfg.root);
-  const dir = path.join(cfg.root, QAMASTER_DIR, kind);
-  fs.mkdirSync(dir, { recursive: true });
-  // plans, verdicts and evidence are this machine's; .qamaster/integrations.json is the shared part
+/** The folder this run writes to: the QA project that recorded the repo, else the repo itself (Q52). */
+const stateBase = (cfg: Config) => stateDirs(cfg.root, cfg.qaProject).write;
+const ignoreAll = (dir: string) => {
   const ignore = path.join(dir, '.gitignore');
   if (!fs.existsSync(ignore)) fs.writeFileSync(ignore, '*\n');
+};
+const stateDir = (cfg: Config, kind: 'plans' | 'verdicts' | 'evidence') => {
+  const base = stateBase(cfg);
+  const own = base === path.join(cfg.root, QAMASTER_DIR);
+  if (own) excludeLocal(cfg.root);
+  const dir = path.join(base, kind);
+  fs.mkdirSync(dir, { recursive: true });
+  // plans, verdicts and evidence are this machine's; .qamaster/integrations.json is the shared part
+  ignoreAll(dir);
+  if (!own) ignoreAll(base); // in the QA project, the whole gate/<name>/ folder, drafts.json included
   return dir;
 };
 const savePlan = (cfg: Config, plan: Plan) =>
   fs.writeFileSync(path.join(stateDir(cfg, 'plans'), `${plan.id}.json`), `${JSON.stringify(plan, null, 1)}\n`);
 function loadPlan(cfg: Config, id: string | undefined): Plan {
   if (!id) throw new BlockedError('Name the plan: qam approve <plan-id> (qam plan prints it).');
-  const plan = readJson<Plan>(path.join(cfg.root, QAMASTER_DIR, 'plans', `${id}.json`));
+  const plan = readState<Plan>(cfg, 'plans', `${id}.json`);
   if (!plan) throw new BlockedError(`No plan ${id}. Run qam plan first.`);
   return plan;
 }
@@ -185,6 +208,7 @@ const why = (kind: string, detail: string) =>
     dsm: `visits ${detail}`,
     group: `group ${detail}`,
     added: `added by ${detail}`,
+    all: 'every case with a script (--all)',
   })[kind] ?? detail;
 
 export function renderPlan(plan: Plan): string {
@@ -232,6 +256,13 @@ export function renderPlan(plan: Plan): string {
           `  ${tag}: ${titles.slice(0, 3).join('; ')}${titles.length > 3 ? `; and ${titles.length - 3} more` : ''}`,
       ),
     );
+  if (plan.appTests?.length)
+    lines.push(
+      '',
+      "The app's own tests exist, and the gate doesn't run them",
+      ...plan.appTests.map((t) => `  ${t}`),
+      '  To gate one, link a test case to it as pytest:<file>::<test> in the test case store.',
+    );
   if (plan.approvedBy)
     lines.push('', `Approved by ${plan.approvedBy} at ${plan.approvedAt?.slice(0, 16).replace('T', ' ')}.`);
   return lines.join('\n');
@@ -268,6 +299,7 @@ function parse(argv: string[], command: string) {
         add: { type: 'string', multiple: true },
         remove: { type: 'string', multiple: true },
         yes: { type: 'boolean' },
+        all: { type: 'boolean' },
         done: { type: 'boolean' },
       },
     });
@@ -301,10 +333,8 @@ async function finish(cfg: Config, g: Gate, plan: Plan, json: boolean): Promise<
       .filter((r) => r.status === 'passed' || r.status === 'flaky')
       .map((r) => r.testCaseId);
     const ledger = readLedger(cfg.qaProject ?? cfg.root)?.entries ?? [];
-    fs.writeFileSync(
-      path.join(cfg.root, QAMASTER_DIR, DRAFTS),
-      `${JSON.stringify(prove(drafts, ledger, passed), null, 1)}\n`,
-    );
+    fs.mkdirSync(stateBase(cfg), { recursive: true });
+    fs.writeFileSync(path.join(stateBase(cfg), DRAFTS), `${JSON.stringify(prove(drafts, ledger, passed), null, 1)}\n`);
   }
   fs.writeFileSync(
     path.join(stateDir(cfg, 'verdicts'), `${verdict.head}-${verdict.planId}.json`), // one per run, all kept (R28)
@@ -329,7 +359,7 @@ export async function gate(cfg: Config, command: string, argv: string[], json: b
   const { values: v, positionals } = parse(argv, command);
   const g = gateFor(cfg);
   if (command === 'plan' || command === 'check') {
-    const plan = rebound(cfg, await makePlan(g, v.base ?? defaultBase(cfg.root), tags(v.tag)));
+    const plan = rebound(cfg, await makePlan(g, v.base ?? defaultBase(cfg.root), tags(v.tag), { all: !!v.all }));
     savePlan(cfg, plan);
     if (command === 'check' && v.yes) {
       const approved = await approve(g, plan, whoAmI(cfg), [], []);
