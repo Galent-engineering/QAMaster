@@ -73,8 +73,9 @@ test('a rendered case uses only the generic step phrasings where one fits', () =
     'I should see the text "Buy milk"',
     'I click the "Back to sign in" link',
     'the URL should contain "/login"',
+    'the Sign in screen opens',
   ]);
-  for (const l of stepLines(text))
+  for (const l of stepLines(text).filter((l) => l !== 'the Sign in screen opens'))
     assert.ok(
       PATTERNS.some((p) => p.test(l)),
       `no generic step matches: ${l}`,
@@ -112,6 +113,68 @@ test('a step back to the root asserts its expected text, not a URL every page co
     }),
   ]);
   assert.deepEqual(stepLines(text), ['I click the "Home" link', 'I should see the text "Welcome"']);
+});
+
+test('a step that leads to a route keeps its own expected text beside the route check (0.7.1)', () => {
+  const text = featureText('Todo', 'Todo', [
+    kase({
+      steps: [
+        {
+          screen: '/todo',
+          action: 'Click the Back to sign in link',
+          element: 'Back to sign in',
+          leads_to: '/login',
+          expected: 'The page shows "Sign in"',
+        },
+      ],
+    }),
+  ]);
+  assert.deepEqual(stepLines(text), [
+    'I click the "Back to sign in" link',
+    'the URL should contain "/login"',
+    'I should see the text "Sign in"',
+  ]);
+});
+
+test('cases that reach the same route but expect different text stay separate scenarios (0.7.1)', () => {
+  const step = (expected: string) => ({
+    screen: '/todo',
+    action: 'Type the title',
+    element: 'Title',
+    data: 'Buy milk',
+    leads_to: '/todo/saved',
+    expected,
+  });
+  const text = featureText('Todo', 'Todo', [
+    kase({
+      id: 'TC-TODO-001',
+      title: 'Save a todo',
+      steps: [step('The page shows "Saved"')],
+      test_data: { title: 'Buy milk' },
+    }),
+    kase({
+      id: 'TC-TODO-002',
+      title: 'Save a long todo',
+      steps: [step('The page shows "Too long"')],
+      test_data: { title: 'Buy milk' },
+    }),
+  ]);
+  assert.doesNotMatch(text, /Scenario Outline/);
+  assert.equal((text.match(/^\s*Scenario:/gm) ?? []).length, 2);
+});
+
+test("a case's session is a tag in the feature, and the published case does not change (0.7.1)", () => {
+  const signedIn = kase({ session: 'signed-in' });
+  const before = JSON.stringify(signedIn);
+  const text = featureText('Todo', 'Todo', [
+    signedIn,
+    kase({ id: 'TC-TODO-002', session: 'signed-out' }),
+    kase({ id: 'TC-TODO-003' }),
+  ]);
+  assert.match(text, /@TC-TODO-001 .*@signed-in\b/);
+  assert.match(text, /@TC-TODO-002 .*@signed-out\b/);
+  assert.doesNotMatch(text.split('@TC-TODO-003')[1].split('\n')[0], /@signed-/);
+  assert.equal(JSON.stringify(signedIn), before);
 });
 
 test('the published steps and case hashes of an existing run are unchanged by the new wording', () => {

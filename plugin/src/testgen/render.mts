@@ -53,7 +53,7 @@ export function csvRow(values: unknown[]): string {
  * field, see a text, the URL contains. Any other step keeps its own wording as a first-person phrase. Only this
  * rendered text changes; the published steps and the case hash come from the case itself (Q39).
  */
-function stepPhrases(st: Step): [string, string] {
+function stepPhrases(st: Step): [string, string[]] {
   const action = String(st.action ?? '');
   const el = s(st.element);
   const q = (v: string) => `"${v}"`;
@@ -70,13 +70,14 @@ function stepPhrases(st: Step): [string, string] {
   const expected = s(st.expected);
   const shown = /"([^"]+)"/.exec(expected)?.[1];
   const target = s(st.leads_to);
-  let e: string | null = null;
-  // every URL contains "/": a step back to the root keeps its own expected text
-  if (target && target !== '/' && plain(target)) e = `the URL should contain ${q(target)}`;
-  else if (shown) e = `I should see the text ${q(shown)}`;
+  const own = shown ? `I should see the text ${q(shown)}` : lowerFirst(expected).replace(/\.$/, '');
+  const e: string[] = [];
+  // every URL contains "/": a step back to the root has no route check. A step to a route keeps its own text beside it
+  if (target && target !== '/' && plain(target)) e.push(`the URL should contain ${q(target)}`);
+  if (own || !e.length) e.push(own);
   let free = lowerFirst(action).replace(/\.$/, '');
   if (/^[a-z]/.test(free) && !/^(the|a|an|i|my|user|employee|admin|manager)\b/.test(free)) free = `I ${free}`;
-  return [a ?? free, e ?? lowerFirst(expected).replace(/\.$/, '')];
+  return [a ?? free, e];
 }
 
 /**
@@ -93,7 +94,7 @@ export function featureText(app: string, comp: string, tcs: TestCase[]): string 
     const out: L[] = (tc.preconditions ?? []).map((p) => ({ kind: 'given', text: s(p).replace(/\.$/, '') }));
     for (const st of tc.steps ?? []) {
       const [a, e] = stepPhrases(st);
-      out.push({ kind: 'action', text: a }, { kind: 'expect', text: e });
+      out.push({ kind: 'action', text: a }, ...e.map((text): L => ({ kind: 'expect', text })));
     }
     return out;
   };
@@ -148,7 +149,7 @@ export function featureText(app: string, comp: string, tcs: TestCase[]): string 
     groups.set(id, g);
   });
   const tags = (tc: TestCase) =>
-    [`@${s(tc.id)}`, `@${tagOf(tc.category)}`, `@${tagOf(tc.type)}`, `@${tagOf(tc.priority)}`]
+    [`@${s(tc.id)}`, `@${tagOf(tc.category)}`, `@${tagOf(tc.type)}`, `@${tagOf(tc.priority)}`, `@${tagOf(tc.session)}`]
       .filter((t) => t !== '@')
       .join(' ');
   for (const g of groups.values()) {
