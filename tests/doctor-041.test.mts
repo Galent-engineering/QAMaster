@@ -13,6 +13,7 @@ import { doctor } from '../plugin/src/cli/project.mts';
 import { setupProject } from '../plugin/src/pipeline/setup.mts';
 import { loadConfig } from '../plugin/src/shared/config.mts';
 import { FakeAdo } from './fake-ado.mts';
+import './tmp.mts'; // a temp QAMASTER_HOME: doctor writes the home index
 
 const REAL_STORE = STORES.ado;
 RUNNERS['playwright-bdd'] = () => ({ collected: async () => [], run: async () => [], check: async () => [] });
@@ -89,4 +90,8 @@ test('A8: WARN when the launcher points at a plugin other than the one running, 
   assert.match(await run(cfg), /WARN +launcher/);
   fs.rmSync(ptr);
   assert.equal(await check(cfg, 'launcher'), undefined);
+});
+
+test('never writes the developer home index: QAMASTER_HOME is a temp folder', () => {
+  assert.ok(process.env.QAMASTER_HOME?.startsWith(os.tmpdir()));
 });

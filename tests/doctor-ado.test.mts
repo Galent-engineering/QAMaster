@@ -13,6 +13,7 @@ import { doctor } from '../plugin/src/cli/project.mts';
 import { setupProject } from '../plugin/src/pipeline/setup.mts';
 import { loadConfig } from '../plugin/src/shared/config.mts';
 import { FakeAdo } from './fake-ado.mts';
+import './tmp.mts'; // a temp QAMASTER_HOME: doctor writes the home index
 
 const NODE = 'vstfs:///Classification/Node/';
 const REAL_STORE = STORES.ado;
@@ -247,4 +248,8 @@ test('re-review 3: plan names without ASCII letters or digits match exactly, not
   const ns = JSON.parse(nr.out).checks.find((c: { check: string }) => c.check === 'test case store');
   assert.equal(ns.ok, false);
   assert.match(ns.detail, /QAMASTER_ADO_PLAN='予定' matches no test plan/);
+});
+
+test('never writes the developer home index: QAMASTER_HOME is a temp folder', () => {
+  assert.ok(process.env.QAMASTER_HOME?.startsWith(os.tmpdir()));
 });

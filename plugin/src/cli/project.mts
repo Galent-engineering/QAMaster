@@ -705,6 +705,7 @@ export function integrations(cfg: Config, argv: string[], json: boolean): number
       else
         console.log(
           Object.entries(all)
+            .filter(([, r]) => r.integrations.length) // doctor lists QA projects with none (0.7.1 item 12)
             .map(([repo, r]) => `${repo} (${r.app}): ${r.integrations.join(', ')}`)
             .join('\n') || 'No repos on this machine have QAMaster integrations.',
         );

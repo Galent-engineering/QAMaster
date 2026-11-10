@@ -18,6 +18,8 @@ export function tmpDir(prefix = 'qam-'): string {
 // Tests never read the developer's own az defaults (~/.azure/azuredevops/config): an empty az config folder for this
 // process and every qam it spawns, and no az devops override. A test that wants az defaults passes its own.
 process.env.AZURE_CONFIG_DIR = tmpDir('qam-az-');
+// Nor write the developer's home index (~/.qamaster/installs.json): doctor lists the QA project there (0.7.1 item 12).
+process.env.QAMASTER_HOME = tmpDir('qam-home-');
 delete process.env.AZURE_DEVOPS_EXT_CONFIG_DIR;
 delete process.env.AZURE_DEVOPS_EXT__DEFAULTS_ORGANIZATION;
 delete process.env.AZURE_DEVOPS_EXT__DEFAULTS_PROJECT;

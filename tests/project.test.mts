@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { test } from 'node:test';
 import { recordingProject } from '../plugin/src/gate/state.mts';
@@ -507,4 +508,23 @@ test('doctor lists a QA project in the home index, so a clone is found from it w
   );
   run('doctor');
   assert.deepEqual(read(path.join(home, 'installs.json')).repos[qa].integrations, ['claude-hooks:Shop']);
+});
+
+test('integrations list --all leaves out projects doctor listed with no integrations (0.7.1 item 12)', () => {
+  const home = tmp('qam-home-');
+  const qa = tmp();
+  const run = (...args: string[]) =>
+    spawnSync(QAM, ['--repo', qa, ...args], { encoding: 'utf8', env: { ...process.env, QAMASTER_HOME: home } });
+  fs.writeFileSync(
+    path.join(home, 'installs.json'),
+    JSON.stringify({ repos: { [qa]: { app: 'Shop', integrations: [], updated_at: 'x' } } }),
+  );
+  assert.equal(
+    run('integrations', 'list', '--all').stdout.trim(),
+    'No repos on this machine have QAMaster integrations.',
+  );
+});
+
+test('tests never write the developer home index: tmp.mts points QAMASTER_HOME at a temp folder', () => {
+  assert.ok(process.env.QAMASTER_HOME?.startsWith(os.tmpdir()));
 });
