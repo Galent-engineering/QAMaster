@@ -7,10 +7,14 @@ import { BlockedError } from './errors.mts';
 import {
   CATEGORIES,
   type Category,
+  GROUPS_MODELS,
+  type GroupsModel,
   type ItemStep,
   type Ledger,
   type LedgerEntry,
+  PRESETS,
   PRIORITIES,
+  type Preset,
   type Priority,
 } from './models.mts';
 
@@ -21,7 +25,14 @@ export type ProjectConfig = {
   smoke: { max: number; priorities: Priority[]; categories: Category[] };
   ai: 'on' | 'off';
   owners: Record<string, string>; // module -> owner's email
-  gate: { retries: number; noMatch: 'pass-with-warning'; sharedShare: number; allowErrors: string[] };
+  gate: {
+    retries: number;
+    noMatch: 'pass-with-warning';
+    sharedShare: number;
+    allowErrors: string[];
+    preset: Preset;
+    groupsModel: GroupsModel | null;
+  };
   runners: Record<string, { root: string }>; // runner name -> its folder, relative to the QA project (Q38)
 };
 
@@ -30,7 +41,14 @@ export const DEFAULT_PROJECT_CONFIG: ProjectConfig = {
   smoke: { max: 20, priorities: ['P1'], categories: ['Positive', 'E2E'] },
   ai: 'on',
   owners: {},
-  gate: { retries: 1, noMatch: 'pass-with-warning', sharedShare: 0.3, allowErrors: [] },
+  gate: {
+    retries: 1,
+    noMatch: 'pass-with-warning',
+    sharedShare: 0.3,
+    allowErrors: [],
+    preset: 'standard',
+    groupsModel: null,
+  },
   runners: {},
 };
 
@@ -101,6 +119,15 @@ export function asProjectConfig(data: unknown, file: string): ProjectConfig {
       Array.isArray(gate.allowErrors) && gate.allowErrors.every((s) => typeof s === 'string' && s)
         ? (gate.allowErrors as string[])
         : bad('gate.allowErrors', 'a list of URL parts or error messages');
+
+  if (gate.preset !== undefined)
+    out.gate.preset = (PRESETS as readonly string[]).includes(gate.preset as string)
+      ? (gate.preset as Preset)
+      : bad('gate.preset', `one of ${PRESETS.join(', ')}`);
+  if (gate.groupsModel !== undefined && gate.groupsModel !== null)
+    out.gate.groupsModel = (GROUPS_MODELS as readonly string[]).includes(gate.groupsModel as string)
+      ? (gate.groupsModel as GroupsModel)
+      : bad('gate.groupsModel', `one of ${GROUPS_MODELS.join(', ')}`);
 
   const runners = section(data, 'runners');
   for (const [name, r] of Object.entries(runners)) {

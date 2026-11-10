@@ -1,13 +1,16 @@
 ---
 description: Plan the test cases behind this change, wait for your approval, run them, and report pass or fail
 argument-hint: "[base-branch]"
-allowed-tools: Bash(node:*), Bash(git diff:*), Bash(git log:*), Bash(uv sync:*), Bash(npx playwright install:*), Bash(npm install:*), Read, Glob, Grep, Write, Edit
+allowed-tools: Bash(node:*), Bash(git diff:*), Bash(git log:*), Bash(uv sync:*), Bash(npx playwright install:*), Bash(npm install:*), Read, Glob, Grep, Write, Edit, Agent
 ---
 
 Check the current change with QAMaster's gate. You approve what runs before anything runs. Follow the `Gate` skill. The CLI is `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts"`, run from the app repo.
 
-1. Run `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" plan`, adding `--base $ARGUMENTS` if an argument was given. Its first line names the base branch. Exit 3 means a plan is waiting for approval.
-2. If the plan lists **Other groups** and AI is on for this repo, run `git diff <base>...HEAD`. Read the change. For each listed group the change could affect, run the plan again with `--tag '<group>=<one-line reason tied to the diff>'`, one `--tag` per group. Use only group names from the list; never invent one.
+1. Run `node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" plan`, adding `--base $ARGUMENTS` if an argument was given, and `--preset fast|standard|full` if the person asked for one (otherwise `gate.preset` decides, `standard` by default). Its first line names the base branch, and its `Selection:` line names the preset, the selectors and the model that picks groups. Exit 3 means a plan is waiting for approval.
+2. If the `Selection:` line says `groups picked by …` and the plan lists **Other groups**, pick groups. (A `fast` or `full` preset, `QAMASTER_AI=off`, CI and the pre-push hook never pick groups, and then the line has no `groups picked by`.) Run `git diff <base>...HEAD`, then choose which listed groups the change could affect:
+   - if the line names a model (`sonnet`, `opus`, `haiku`, `fable`), start a subagent with the Agent tool and pass that name as its `model`; give it the diff and the **Other groups** list and ask for each group the change could affect, with a one-line reason tied to the diff;
+   - if it says `the session's model`, make the choice yourself.
+   Then run the plan again with `--tag '<group>=<reason>'`, one `--tag` per group, keeping the same `--preset`. Use only group names from the list; never invent one, and never take a group a subagent names that isn't in the list.
 3. **Automate (Q39).** If the QA project has an automation folder, run `… automate <plan-id>`. If it lists cases to **draft** or **update**, write their scripts with the `AutomationCode` skill, run `… check-scripts` until it passes, then run `… automate <plan-id> --done`. It prints the plan again, now with the drafted cases in it. Say which scripts are new or changed, and that they're uncommitted.
 4. Show the final plan exactly as printed, in a code block, and note its plan ID. Say which groups you added and why. Point out **Not run** (manual or BROKEN), **Shared files** and **Coverage gaps**.
 5. Ask: **"Do you approve plan `<id>`?"** The person can approve it as is, add test cases or groups ("add TC5103", "add the cart group"), remove some ("drop TC4410"), or stop. **Then end your turn and wait.** Approving the plan also approves the scripts drafted for it. Never approve on their behalf. Only their reply to this question counts.

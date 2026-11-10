@@ -12,6 +12,8 @@
   "owners": {},
   "gate": {
     "retries": 1,
-    "noMatch": "pass-with-warning"
+    "noMatch": "pass-with-warning",
+    "preset": "standard",
+    "groupsModel": "inherit"
   }
 }

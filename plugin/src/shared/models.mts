@@ -96,6 +96,15 @@ export type PlanItem = { testCase: TestCase; reasons: Reason[]; selected: boolea
 export type NotRun = { testCase: TestCase; why: string; broken: boolean; reasons?: Reason[] }; // reasons: why it was selected
 export type Gap = { screen: string; files: string[]; why: string }; // new: DSM impact with no case
 
+/** Selection presets (Q31, 0.7.0 item 14): `qam plan --preset`, `gate.preset`. */
+export const PRESETS = ['fast', 'standard', 'full'] as const;
+export type Preset = (typeof PRESETS)[number];
+/** The aliases Claude Code's subagent `model` option takes, and `inherit` for the session's own (checked 2026-11-10). */
+export const GROUPS_MODELS = ['sonnet', 'opus', 'haiku', 'fable', 'inherit'] as const;
+export type GroupsModel = (typeof GROUPS_MODELS)[number];
+/** What a plan used: the preset, the selectors that ran, and the model that picked groups (null: none did). */
+export type Selection = { preset: Preset; selectors: string[]; model: string | null };
+
 export type Plan = {
   id: string;
   createdAt: string;
@@ -113,6 +122,7 @@ export type Plan = {
   scriptsHash?: string;
   approvedBy?: string;
   approvedAt?: string;
+  selection?: Selection; // 0.7.0 item 14: the preset, selectors and groups model this plan used
 };
 
 export type TestStatus = 'passed' | 'failed' | 'flaky' | 'skipped' | 'not_run';

@@ -1,6 +1,7 @@
 /**
  * The gate's commands (Q11–Q13, Q22, Q38), run in the app repo:
- *     qam plan    [--base REF] [--tag GROUP[=WHY]]… [--all]   the cases this change selects (--all: every case with a script); runs nothing (exit 3)
+ *     qam plan    [--base REF] [--preset fast|standard|full] [--tag GROUP[=WHY]]… [--all]
+ *                                                        the cases this change selects (--all: --preset full); runs nothing (exit 3)
  *     qam approve <plan-id> [--add TC…|GROUP] [--remove TC…|GROUP]
  *     qam run     <plan-id>                              exit 0 pass, 1 fail
  *     qam check   [--base REF] [--tag …] [--yes]         plan, then with --yes approve and run; without, stops at 3
@@ -20,7 +21,8 @@ import { findAppTests } from '../gate/apptests.mts';
 import type { Work } from '../gate/automate.mts';
 import { bind, type Drafts, folderHash, prove, rebind, recordedUnchanged, worklist } from '../gate/automate.mts';
 import { dsmCases, repoDirs, runCases } from '../gate/dsm.mts';
-import { approve, type Gate, makePlan, runPlan } from '../gate/gate.mts';
+import { approve, type Gate, runPlan } from '../gate/gate.mts';
+import { choosePreset, planWith, renderSelection } from '../gate/presets.mts';
 import { linkRunner } from '../gate/select.mts';
 import { stateDirs } from '../gate/state.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
@@ -216,6 +218,7 @@ export function renderPlan(plan: Plan): string {
   const selected = plan.items.filter((i) => i.selected).length;
   const lines = [
     `QAMaster plan ${plan.id} for ${c.branch} vs ${c.base} (${c.files.length} file${c.files.length === 1 ? '' : 's'} changed)`,
+    ...(renderSelection(plan) ? [renderSelection(plan)] : []),
     '',
     `Selected (${selected} of ${plan.catalogSize} test cases)`,
     ...(plan.items.length
@@ -296,6 +299,7 @@ function parse(argv: string[], command: string) {
       options: {
         base: { type: 'string' },
         tag: { type: 'string', multiple: true },
+        preset: { type: 'string' },
         add: { type: 'string', multiple: true },
         remove: { type: 'string', multiple: true },
         yes: { type: 'boolean' },
@@ -361,9 +365,15 @@ export async function gate(cfg: Config, command: string, argv: string[], json: b
     throw new BlockedError(`qam ${command}: Unknown option '--all'. Only qam plan and qam check take it.`);
   const g = gateFor(cfg);
   if (command === 'plan' || command === 'check') {
+    const preset = choosePreset(v.preset, cfg.project.gate.preset, !!v.all);
     const plan = rebound(
       cfg,
-      await makePlan(g, v.base ?? defaultBase(cfg.root), tags(v.tag), { all: !!v.all, recorded: recorded(cfg) }),
+      await planWith(g, v.base ?? defaultBase(cfg.root), tags(v.tag), {
+        preset,
+        ai: cfg.project.ai,
+        groupsModel: cfg.project.gate.groupsModel,
+        recorded: recorded(cfg),
+      }),
     );
     savePlan(cfg, plan);
     if (command === 'check' && v.yes) {
