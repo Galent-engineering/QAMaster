@@ -1,9 +1,10 @@
 /**
  * qam publish (Q7, Q8, Q34): what a reviewed run would write to the test case store, and with --apply, writing it.
  *
- *     qam publish <run> [--apply] [--retire]  [--refresh] [--leave-out ID,…] [--skip-smoke ID,…]
+ *     qam publish <run> [--to file,ado] [--apply] [--retire]  [--refresh] [--leave-out ID,…] [--skip-smoke ID,…]
  *
- * <run> is a folder, or a name under testgen/output/. Without --apply nothing is written. A store that isn't a local
+ * <run> is a folder, or a name under testgen/output/. `--to` names the destinations (Q50; default: the store the project
+ * is set up for): each is reached first, each gets a preview, and one --apply writes them all, the local file first. Without --apply nothing is written. A store that isn't a local
  * file is read through the cache (Q34) in a dry run, and --refresh, like --apply, reads it live. Exit codes: 0 nothing to
  * write, 3 something awaits the person's yes, 1 a conflict is left (the store was changed by someone since the last
  * publish), 2 blocked. The ledger is saved after every write, so a failure half way can't lose a created test case.
