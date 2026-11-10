@@ -60,11 +60,11 @@ export function checkStore(ledger: Ledger | null, store: string): void {
 /**
  * The ledger as publish uses it for `store` (a where() name): the entries parked for that store when it was used
  * before (R23). A store with nothing parked still blocks while the ledger names another: switching is `qam store use`,
- * never quiet (Q34).
+ * never quiet (Q34). `chosen` is the person naming the destination (`publish --to`, Q50): a new one starts empty.
  */
-export function adopt(ledger: Ledger | null, store: string): Ledger | null {
+export function adopt(ledger: Ledger | null, store: string, chosen = false): Ledger | null {
   if (!ledger || ledger.store === store) return ledger;
-  if (!Object.hasOwn(ledger.other ?? {}, store)) checkStore(ledger, store);
+  if (!chosen && !Object.hasOwn(ledger.other ?? {}, store)) checkStore(ledger, store);
   return switchLedger(ledger, store);
 }
 

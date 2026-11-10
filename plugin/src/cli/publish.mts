@@ -111,7 +111,7 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   const failed: { dest: string; error: BlockedError }[] = [];
   for (const dest of destinations) {
     try {
-      reached.push(await reach(cfg, dest, dir, !!(v.refresh || v.apply)));
+      reached.push(await reach(cfg, dest, dir, !!(v.refresh || v.apply), !!v.to));
     } catch (e) {
       if (!(e instanceof BlockedError)) throw e;
       failed.push({ dest, error: e });
@@ -196,11 +196,11 @@ function chooseDestinations(cfg: Config, to: string[] | undefined): string[] {
  * One destination, reached (Q50): its store built and read through the cache (Q34), the ledger checked against it, and
  * the project and plan it would still have to create. Nothing is written.
  */
-async function reach(cfg: Config, dest: string, dir: string, live: boolean): Promise<Reached> {
+async function reach(cfg: Config, dest: string, dir: string, live: boolean, chosen: boolean): Promise<Reached> {
   const cached = withCache(buildStore({ ...cfg, store: dest }), dir, live);
   const store = cached.store;
   const where = store.where();
-  adopt(readLedger(dir), where); // a ledger of another store blocks before anything is read from this one
+  adopt(readLedger(dir), where, chosen); // a ledger of another store blocks before anything is read from this one
   // inPlan first: it fails loudly when the store can't be reached, so an ID missing below really is gone. A store with
   // no plan at all gets one on --apply (Q33); one with other plans is the person's choice, which doctor lists. A missing
   // project is created on --apply too, and then its plan (Q35).
@@ -234,7 +234,7 @@ async function publishTo(o: Shared, r: Reached): Promise<Outcome> {
   const { cfg, v, dir, run, derived, leftOut, skipSmoke, scripts } = o;
   const { cached, where, planToCreate, projectToCreate } = r;
   const store = cached.store;
-  let ledger: Ledger | null = adopt(readLedger(dir), where); // read afresh: an earlier destination may have written it
+  let ledger: Ledger | null = adopt(readLedger(dir), where, !!v.to); // read afresh: an earlier destination may have written it
   const items = new Map<number, Item>();
   // a project still to be created holds nothing to read
   for (const e of projectToCreate ? [] : (ledger?.entries ?? [])) {
