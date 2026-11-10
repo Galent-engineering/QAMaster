@@ -14,10 +14,10 @@ import { parseArgs } from 'node:util';
 import type { NewProject } from '../adapters/base.mts';
 import { cacheFile, withCache } from '../adapters/cache.mts';
 import { playwrightBdd } from '../adapters/framework-bdd.mts';
-import { buildStore } from '../adapters/registry.mts';
+import { buildStore, STORES } from '../adapters/registry.mts';
 import type { Dsm } from '../dsm/build.mts';
 import { stateDirs } from '../gate/state.mts';
-import { type Applied, checkStore, readLedger, record, writeLedger } from '../publish/ledger.mts';
+import { type Applied, adopt, readLedger, record, writeLedger } from '../publish/ledger.mts';
 import {
   type Derived,
   derive,
@@ -84,12 +84,7 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   const dir = cfg.qaProject ?? cfg.root;
   const dsm = readDsm(dir);
   const run = loadRun(runDir(dir, positionals[0]), { dsmGeneratedAt: dsm.generated_at, owners: cfg.project.owners });
-  const cached = withCache(buildStore(cfg), dir, !!(v.refresh || v.apply));
-  const store = cached.store;
-  const where = store.where();
-  let ledger: Ledger | null = readLedger(dir);
-  checkStore(ledger, where);
-
+  const destinations = chooseDestinations(cfg, v.to);
   const known = new Set(run.cases.map((c) => c.id));
   const leftOut = new Set(ids(v['leave-out']));
   const skipSmoke = new Set(ids(v['skip-smoke']));
@@ -111,6 +106,101 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   };
   const derived: Derived[] = run.cases.filter((c) => !leftOut.has(c.id)).map((c) => derive(c, ctx));
 
+  // every destination is reached, and its access checked, before anything is shown or written (Q50)
+  const reached: Reached[] = [];
+  const failed: { dest: string; error: BlockedError }[] = [];
+  for (const dest of destinations) {
+    try {
+      reached.push(await reach(cfg, dest, dir, !!(v.refresh || v.apply)));
+    } catch (e) {
+      if (!(e instanceof BlockedError)) throw e;
+      failed.push({ dest, error: e });
+    }
+  }
+  if (failed.length) {
+    if (destinations.length === 1) throw failed[0].error;
+    throw new BlockedError(
+      [
+        `Can't publish to ${failed.map((f) => f.dest).join(' and ')}: access to ${failed.length} of ${destinations.length} destinations failed, so nothing was previewed or written.`,
+        ...failed.map((f) => `${f.dest}: ${f.error.message}`),
+        `Fix that, or leave it out with --to ${destinations.filter((d) => !failed.some((f) => f.dest === d)).join(',')}.`,
+      ].join('\n'),
+    );
+  }
+  const shared: Shared = { cfg, v, dir, run, derived, leftOut, skipSmoke, scripts, multi: destinations.length > 1 };
+  const outcomes: Outcome[] = [];
+  for (const r of reached) outcomes.push(await publishTo(shared, r));
+
+  const code = outcomes.some((o) => o.code === 3) ? 3 : outcomes.some((o) => o.code === 1) ? 1 : outcomes[0].code;
+  if (!shared.multi) {
+    console.log(json ? JSON.stringify(outcomes[0].data) : outcomes[0].text);
+    return code;
+  }
+  if (json) {
+    console.log(
+      JSON.stringify({
+        result: code === 0 ? 'pass' : code === 3 ? 'awaiting approval' : 'fail',
+        apply: !!v.apply,
+        run: run.name,
+        destinations: outcomes.map((o) => o.data),
+      }),
+    );
+    return code;
+  }
+  const dests = destinations.join(',');
+  console.log(
+    [
+      ...outcomes.map((o) => o.text),
+      '',
+      !v.apply && code === 3
+        ? `Reply yes once to apply to all ${destinations.length} destinations (${destinations.join(', ')}, in that order): publish ${run.name} --to ${dests} --apply.`
+        : `Destinations: ${destinations.join(', ')}.`,
+    ].join('\n\n'),
+  );
+  return code;
+}
+
+type Values = ReturnType<typeof parse>['values'];
+type Shared = {
+  cfg: Config;
+  v: Values;
+  dir: string;
+  run: ReturnType<typeof loadRun>;
+  derived: Derived[];
+  leftOut: Set<string>;
+  skipSmoke: Set<string>;
+  scripts: ReturnType<typeof publishable> | null;
+  multi: boolean;
+};
+type Reached = {
+  dest: string;
+  cached: ReturnType<typeof withCache>;
+  where: string;
+  planToCreate: string | null;
+  projectToCreate: NewProject | null;
+};
+type Outcome = { code: number; text: string; data: Record<string, unknown> };
+
+/** The stores to publish to: `--to`, local file first (Q50), else the one the project is set up for. */
+function chooseDestinations(cfg: Config, to: string[] | undefined): string[] {
+  const names = [...new Set(ids(to))];
+  if (!names.length) return [cfg.store];
+  const known = Object.keys(STORES).sort();
+  for (const n of names) {
+    if (!known.includes(n)) throw new BlockedError(`--to ${n} isn't a store. Use one or more of: ${known.join(', ')}.`);
+  }
+  return [...names.filter((n) => n === 'file'), ...names.filter((n) => n !== 'file')];
+}
+
+/**
+ * One destination, reached (Q50): its store built and read through the cache (Q34), the ledger checked against it, and
+ * the project and plan it would still have to create. Nothing is written.
+ */
+async function reach(cfg: Config, dest: string, dir: string, live: boolean): Promise<Reached> {
+  const cached = withCache(buildStore({ ...cfg, store: dest }), dir, live);
+  const store = cached.store;
+  const where = store.where();
+  adopt(readLedger(dir), where); // a ledger of another store blocks before anything is read from this one
   // inPlan first: it fails loudly when the store can't be reached, so an ID missing below really is gone. A store with
   // no plan at all gets one on --apply (Q33); one with other plans is the person's choice, which doctor lists. A missing
   // project is created on --apply too, and then its plan (Q35).
@@ -136,6 +226,15 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     } else if (e instanceof NoPlanError && e.plans.length === 0) planToCreate = e.createName;
     else throw e;
   }
+  return { dest, cached, where, planToCreate, projectToCreate };
+}
+
+/** What one destination would write, or wrote with --apply: its text and its data. */
+async function publishTo(o: Shared, r: Reached): Promise<Outcome> {
+  const { cfg, v, dir, run, derived, leftOut, skipSmoke, scripts } = o;
+  const { cached, where, planToCreate, projectToCreate } = r;
+  const store = cached.store;
+  let ledger: Ledger | null = adopt(readLedger(dir), where); // read afresh: an earlier destination may have written it
   const items = new Map<number, Item>();
   // a project still to be created holds nothing to read
   for (const e of projectToCreate ? [] : (ledger?.entries ?? [])) {
@@ -154,7 +253,7 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   const confirmed = new Set(suggestion.ids.filter((id) => !skipSmoke.has(id)));
   // the dry run records the smoke it offered; apply reads the store live, and a cap filled in between (another run
   // applied first) would otherwise write fewer smoke cases than the person approved, without a word
-  const previewFile = path.join(path.dirname(cacheFile(dir)), `preview-${run.name}.json`);
+  const previewFile = path.join(path.dirname(cacheFile(dir)), `preview-${run.name}${o.multi ? `-${r.dest}` : ''}.json`);
   const offered = v.apply ? readPreview(previewFile) : null;
   const lost = (offered ?? []).filter((id) => !skipSmoke.has(id) && !confirmed.has(id));
   const result = diff({ derived, ledger: entries, items, module: run.scope.module, confirmedSmoke: confirmed });
@@ -188,9 +287,23 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
     `Update (${updates.length})`,
     updates.map((c) => `${tc(c.trackerId ?? 0)} ← ${c.localId}  ${c.fields.join(', ')} changed`),
   );
+  const fieldRows = (c: PlannedChange) =>
+    (c.differences ?? []).map((d) => `    ${d.field}: store "${d.store}", run "${d.run}"`).join('\n');
   section(
     `Conflict (${conflicts.length}), not written`,
-    conflicts.map((c) => `${c.trackerId ? `${tc(c.trackerId)} ← ` : ''}${c.localId}  ${c.reason}`),
+    conflicts.map(
+      (c) =>
+        `${c.trackerId ? `${tc(c.trackerId)} ← ` : ''}${c.localId}  ${c.reason}${c.differences?.length ? `\n${fieldRows(c)}` : ''}`,
+    ),
+  );
+  // an edit made only in the store: nothing of ours to write, so it stays as it is, and the person is told (K7)
+  const storeOnly = unchanged.filter((c) => c.differences?.length);
+  section(
+    `Edited in the store only (${storeOnly.length}), kept as it is`,
+    storeOnly.map(
+      (c) =>
+        `${tc(c.trackerId ?? 0)} ← ${c.localId}  differs from the run in ${c.differences?.map((d) => d.field).join(', ')}\n${fieldRows(c)}`,
+    ),
   );
   section(
     `Retire (${retires.length}), only with --retire`,
@@ -234,12 +347,11 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
       '',
       `Smoke changed since the dry run: the plan has ${smokeInStore} smoke now, so ${(offered ?? []).length - lost.length} of the ${(offered ?? []).length} suggested fit (max ${max}). Nothing was written. Run the dry run again and review the new smoke list.`,
     );
-    console.log(
-      json
-        ? JSON.stringify({ result: 'awaiting approval', apply: true, run: run.name, smokeChanged: lost })
-        : lines.join('\n'),
-    );
-    return 3;
+    return {
+      code: 3,
+      text: lines.join('\n'),
+      data: { result: 'awaiting approval', apply: true, run: run.name, store: where, smokeChanged: lost },
+    };
   }
   if (!v.apply) writePreview(previewFile, suggestion.ids);
   lines.push('');
@@ -330,34 +442,33 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   }
 
   const code = v.apply ? (heldBack ? 1 : 0) : pending ? 3 : conflicts.length ? 1 : 0;
-  if (json) {
-    console.log(
-      JSON.stringify({
-        result: code === 0 ? 'pass' : code === 3 ? 'awaiting approval' : 'fail',
-        apply: !!v.apply,
-        run: run.name,
-        store: where,
-        storeAsOf: cached.age(),
-        reviewedBy: run.reviewedBy,
-        ...(run.ownerWarning ? { warning: run.ownerWarning } : {}),
-        ...(projectToCreate
-          ? { createProject: { name: projectToCreate.name, process: projectToCreate.process, visibility: 'private' } }
-          : {}),
-        changes: result.changes.map(({ change: _write, ...c }) => c),
-        notLinked,
-        smoke: {
-          suggested: suggestion.ids,
-          skipped: [...skipSmoke],
-          max,
-          inPlan: smokeInStore,
-          notOffered: suggestion.notOffered,
-          ...(v.apply ? { written: smokeWritten } : {}),
-        },
-        ...(v.apply ? { applied, heldBack } : {}),
-      }),
-    );
-  } else console.log(lines.join('\n'));
-  return code;
+  return {
+    code,
+    text: lines.join('\n'),
+    data: {
+      result: code === 0 ? 'pass' : code === 3 ? 'awaiting approval' : 'fail',
+      apply: !!v.apply,
+      run: run.name,
+      store: where,
+      storeAsOf: cached.age(),
+      reviewedBy: run.reviewedBy,
+      ...(run.ownerWarning ? { warning: run.ownerWarning } : {}),
+      ...(projectToCreate
+        ? { createProject: { name: projectToCreate.name, process: projectToCreate.process, visibility: 'private' } }
+        : {}),
+      changes: result.changes.map(({ change: _write, ...c }) => c),
+      notLinked,
+      smoke: {
+        suggested: suggestion.ids,
+        skipped: [...skipSmoke],
+        max,
+        inPlan: smokeInStore,
+        notOffered: suggestion.notOffered,
+        ...(v.apply ? { written: smokeWritten } : {}),
+      },
+      ...(v.apply ? { applied, heldBack } : {}),
+    },
+  };
 }
 
 function parse(argv: string[]) {
@@ -369,6 +480,7 @@ function parse(argv: string[]) {
       retire: { type: 'boolean' },
       'leave-out': { type: 'string', multiple: true },
       'skip-smoke': { type: 'string', multiple: true },
+      to: { type: 'string', multiple: true },
     },
     allowPositionals: true,
   });

@@ -59,14 +59,12 @@ export function checkStore(ledger: Ledger | null, store: string): void {
 
 /**
  * The ledger as publish uses it for `store` (a where() name): the entries parked for that store when it was used
- * before (R23), or an empty ledger when the one on file has no IDs to lose. A store with no parked IDs, while the
- * ledger holds another's, still blocks: switching is `qam store use`, never quiet (Q34).
+ * before (R23). A store with nothing parked still blocks while the ledger names another: switching is `qam store use`,
+ * never quiet (Q34).
  */
 export function adopt(ledger: Ledger | null, store: string): Ledger | null {
   if (!ledger || ledger.store === store) return ledger;
-  if (ledger.entries.length && !Object.hasOwn(ledger.other ?? {}, store)) {
-    checkStore(ledger, store);
-  }
+  if (!Object.hasOwn(ledger.other ?? {}, store)) checkStore(ledger, store);
   return switchLedger(ledger, store);
 }
 

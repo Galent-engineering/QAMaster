@@ -355,7 +355,7 @@ test('R23: a ledger with parked stores survives a write and a read', () => {
   assert.deepEqual(readLedger(dir), ledger);
 });
 
-test('R23: adopt restores a parked store by name; a new store with entries still blocks; an empty ledger is adopted', () => {
+test('R23: adopt restores a parked store by name; a store with nothing parked still blocks', () => {
   const ledger: Ledger = { store: STORE, entries: [entry('TC-1', 1000)], other: { [ADO]: [entry('TC-1', 77)] } };
   const got = adopt(ledger, ADO);
   assert.equal(got?.store, ADO);
@@ -368,7 +368,7 @@ test('R23: adopt restores a parked store by name; a new store with entries still
     [1000],
   );
   assert.throws(() => adopt(ledger, 'Azure DevOps galent/Other'), blocked(/belongs to File.*qam store use/s));
-  assert.equal(adopt({ store: STORE, entries: [] }, ADO)?.store, ADO);
+  assert.throws(() => adopt({ store: STORE, entries: [] }, ADO), blocked(/belongs to File/), 'never quietly');
   assert.equal(adopt(null, ADO), null);
 });
 
