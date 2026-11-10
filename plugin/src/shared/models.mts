@@ -224,6 +224,15 @@ export type CrawlOptions = {
   now?: Date;
 };
 
+/** What a crawl cost: wall time, pages, tabs and the time spent waiting for pages to settle. */
+export type CrawlTiming = {
+  elapsed_ms: number;
+  pages: number;
+  concurrency: number;
+  settle_waits: number;
+  settle_ms: number;
+};
+
 /** A link, button, tab or menu item the crawler saw. `key` is "<route>::<kind>:<name>". */
 export type UiElement = {
   key: string;
@@ -233,6 +242,8 @@ export type UiElement = {
   selector?: string | null;
   visible?: boolean | null;
   target?: string | null;
+  in_nav?: boolean | null; // a link in a shared nav or aside
+  state?: 'signed-out' | null; // 0.7.0: seen only on the signed-out page of a screen seen in both states (D2)
 };
 
 export type UiField = {
@@ -242,6 +253,12 @@ export type UiField = {
   id?: string | null;
   type?: string | null;
   required?: boolean | null;
+  // 0.7.0: what the page declares (HTML attribute names); null or absent when it declares none
+  minlength?: number | null;
+  maxlength?: number | null;
+  min?: number | string | null;
+  max?: number | string | null;
+  pattern?: string | null;
 };
 
 export type UiForm = {
@@ -252,7 +269,12 @@ export type UiForm = {
   target?: string | null; // the route it submits to
   fields?: UiField[];
   submits?: unknown[];
+  dialog?: string | null; // 0.7.0: the dialog's title when the form sits in a dialog (its name is the title)
+  buttons?: string[]; // 0.7.0: a dialog form's buttons
 };
+
+/** Who may see a screen (0.7.0): public (signed out), signed-in, or both. */
+export type Access = 'public' | 'signed-in' | 'both';
 
 export type UiPage = {
   route: string;
@@ -263,6 +285,8 @@ export type UiPage = {
   depth?: number | null;
   discovered_by?: string | null;
   redirect_to?: string | null;
+  access?: Access; // 0.7.0
+  heading?: string | null; // 0.7.0: the first h1, else the first h2
   headings?: string[];
   tables?: unknown[];
   elements?: UiElement[];
@@ -291,6 +315,7 @@ export type UiModel = {
   truncated: boolean;
   browser_restarts?: number; // times the browser closed mid-crawl and was started again
   pending_routes?: string[];
+  timing?: CrawlTiming; // 0.7.0: what the crawl cost, for `qam dsm run --estimate`
   pages: UiPage[];
   edges: UiEdge[];
   api_calls: { method: string; path: string; [key: string]: unknown }[];

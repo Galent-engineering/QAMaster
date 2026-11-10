@@ -9,7 +9,7 @@
  *   2. the write guard was switched off to sign in again, and stayed off when that sign-in failed;
  *   3. the write guard only covered the app's own host, so an API on another host or port was never guarded.
  */
-import type { UiEdge, UiModel } from '../shared/models.mts';
+import type { Access, UiEdge, UiElement, UiModel, UiPage } from '../shared/models.mts';
 
 /** The `application` section of config/dsm-config.json, as the crawl reads it. */
 export type CrawlApp = {
@@ -39,7 +39,9 @@ export type CrawlApp = {
     post_login_wait_ms?: number;
     manual_timeout_s?: number;
     save_session?: boolean;
+    signed_out_pass?: boolean; // 0.7.0 (D1): crawl signed out first and merge; on unless false
   };
+  crawl?: { concurrency?: number }; // 0.7.0 (D1, D4): pages crawled at once in one browser context
   safety?: { block_mutating_requests?: boolean; allow_mutating_patterns?: string[]; dismiss_dialogs?: boolean };
   explore_clicks?: { enabled?: boolean; max_per_page?: number; selectors?: string[]; deny_text_patterns?: string[] };
   [key: string]: unknown;
@@ -257,4 +259,124 @@ export function mergeIncremental(previous: UiModel, crawled: Pick<UiModel, 'page
     edges: dedupeEdges([...previous.edges.filter((e) => !redone.has(e.from.split('::')[0])), ...crawled.edges]),
     api_calls: [...calls.values()],
   };
+}
+
+// ---- 0.7.0: the signed-out pass, merged before sign-in (R5)
+
+/** Pages crawled at once when `application.crawl.concurrency` is not set (D4). 1 keeps the one-page-at-a-time crawl. */
+export const DEFAULT_CONCURRENCY = 3;
+
+/** How long the DOM must be still for a page to count as settled, up to `settle_ms` (item 10). */
+export const QUIET_MS = 200;
+
+type PassOut = { pages: UiPage[]; edges: UiEdge[] };
+
+/**
+ * Merges the signed-out crawl and the signed-in crawl into one set of screens, each with its `access`.
+ * - content signed out and signed in: `both`, the signed-in page, plus the elements only the signed-out page showed
+ *   marked `state: signed-out` (D2), so a sign-in case can still click "Sign in";
+ * - content signed out, a redirect (or nothing) signed in: `public`, the signed-out page (`/login` keeps its fields);
+ * - a redirect signed out, content signed in: `signed-in`, not a redirect;
+ * - a redirect signed out and nothing signed in: `signed-in`, as seen.
+ * A redirect's own edge is dropped whenever the other pass has the content, so no relation says "/login redirects".
+ * Pass `signedIn` as null for a crawl with no signed-in pass.
+ */
+export function mergePasses(signedOut: PassOut, signedIn: PassOut | null): PassOut {
+  const inB = new Map((signedIn?.pages ?? []).map((p) => [p.route, p]));
+  const pages: UiPage[] = [];
+  const dropRedirectOf = new Set<string>();
+  const done = new Set<string>();
+  for (const a of signedOut.pages) {
+    done.add(a.route);
+    const b = inB.get(a.route);
+    if (!b) {
+      pages.push({ ...a, access: a.redirect_to ? 'signed-in' : 'public' });
+      continue;
+    }
+    if (!a.redirect_to && !b.redirect_to) {
+      const have = new Set((b.elements ?? []).map((e) => e.key));
+      const extra: UiElement[] = (a.elements ?? [])
+        .filter((e) => !have.has(e.key))
+        .map((e) => ({ ...e, state: 'signed-out' }));
+      pages.push({ ...b, access: 'both', elements: [...(b.elements ?? []), ...extra] });
+    } else if (!a.redirect_to) {
+      pages.push({ ...a, access: 'public' });
+      dropRedirectOf.add(b.route);
+    } else if (!b.redirect_to) {
+      pages.push({ ...b, access: 'signed-in' });
+      dropRedirectOf.add(a.route);
+    } else {
+      pages.push({ ...b, access: a.redirect_to === b.redirect_to ? 'both' : 'signed-in' });
+    }
+  }
+  for (const b of signedIn?.pages ?? []) if (!done.has(b.route)) pages.push({ ...b, access: 'signed-in' as Access });
+  const keep = (e: UiEdge) => !(e.type === 'redirect' && dropRedirectOf.has(e.from));
+  return { pages, edges: dedupeEdges([...signedOut.edges, ...(signedIn?.edges ?? [])].filter(keep)) };
+}
+
+// ---- 0.7.0: what a hundred sibling pages say about the route rules (S1 hint)
+
+const HEX = /^[0-9a-f]+$/i;
+
+/** Whether a path segment looks like an ID rather than a word: a UUID, a long hex value, or a code with a digit. */
+function idLike(seg: string): boolean {
+  if (seg.startsWith(':')) return false; // already normalised
+  if (/^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(seg)) return true;
+  if (seg.length >= 8 && HEX.test(seg)) return true;
+  return seg.length >= 6 && /\d/.test(seg) && /^[A-Za-z0-9_-]+$/.test(seg);
+}
+
+/** How many sibling pages differing in one ID-like segment make a hint. */
+export const ID_HINT_SIBLINGS = 5;
+
+/**
+ * A hint for each place where many crawled routes differ only in one ID-like segment (the crawl's `route_normalization`
+ * did not collapse them), naming the rule to add. Empty when there is none.
+ */
+export function idHints(routes: string[]): string[] {
+  const groups = new Map<string, { at: number; segs: string[]; values: Set<string> }>();
+  for (const route of routes) {
+    const path = route.split(/[?#]/)[0];
+    const segs = path.split('/');
+    segs.forEach((seg, at) => {
+      if (!seg || !idLike(seg)) return;
+      const shape = segs.map((x, i) => (i === at ? '*' : x)).join('/');
+      const g = groups.get(shape) ?? { at, segs, values: new Set<string>() };
+      g.values.add(seg);
+      groups.set(shape, g);
+    });
+  }
+  const hints: string[] = [];
+  for (const [shape, g] of groups) {
+    if (g.values.size < ID_HINT_SIBLINGS) continue;
+    const sample = [...g.values].sort()[0];
+    const pattern = /^[0-9a-f]{8}-/i.test(sample)
+      ? '/[0-9a-fA-F]{8}-[0-9a-fA-F-]{27}(?=/|$)'
+      : HEX.test(sample) && sample.length >= 8
+        ? `/[0-9a-fA-F]{${sample.length}}(?=/|$)`
+        : `/(?=[A-Za-z_-]*\\d)[A-Za-z0-9_-]{${sample.length},}(?=/|$)`;
+    hints.push(
+      `${g.values.size} pages differ only in an ID-like segment (${shape.replace('*', sample)} ...): add { "pattern": ${JSON.stringify(pattern)}, "replace": "/:id" } to application.route_normalization so they count as one screen`,
+    );
+  }
+  return hints;
+}
+
+// ---- 0.7.0: --routes <glob...>
+
+/** A route glob as a RegExp: `*` stays inside a path segment, `**` crosses them, `?` is one character. */
+export function routeGlob(glob: string): RegExp {
+  const re = glob
+    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
+    .replace(/\*\*/g, '\uE000')
+    .replace(/\*/g, '[^/]*')
+    .replace(/\uE000/g, '.*')
+    .replace(/\?/g, '.');
+  return new RegExp(`^${re}$`);
+}
+
+/** The routes among `known` that any of the globs matches, in order. */
+export function matchRoutes(globs: string[], known: string[]): string[] {
+  const res = globs.map(routeGlob);
+  return known.filter((r) => res.some((re) => re.test(r)));
 }

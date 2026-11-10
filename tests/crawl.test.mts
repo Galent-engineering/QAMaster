@@ -137,7 +137,9 @@ test('the crawl signs in, maps the app, and changes nothing', { timeout: 120_000
   assert.ok(byRoute.has('/orders/:id'));
   assert.equal(byRoute.get('/broken')?.status, 500);
   assert.equal(byRoute.get('/old-orders')?.redirect_to, '/orders');
-  assert.ok(!byRoute.has('/login') && !byRoute.has('/logout'), 'never crawls the sign-in page or logs out');
+  assert.ok(!byRoute.has('/logout'), 'never logs out');
+  assert.equal(byRoute.get('/login')?.access, 'public', '0.7.0: the sign-in page is crawled signed out');
+  assert.equal(byRoute.get('/orders')?.access, 'signed-in');
   assert.equal(model.login?.login_route, '/login');
   assert.ok(
     model.edges.some((e) => e.type === 'opens'),

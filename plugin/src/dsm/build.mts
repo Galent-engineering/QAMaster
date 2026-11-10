@@ -13,7 +13,7 @@
  * navigation: cycles.
  */
 import { isDeepStrictEqual } from 'node:util';
-import type { CodeModel, UiModel } from '../shared/models.mts';
+import type { Access, CodeModel, UiModel, UiPage } from '../shared/models.mts';
 
 export type DsmConfig = {
   project?: string;
@@ -38,11 +38,25 @@ export type PageNode = {
   depth: number | null;
   discovered_by: string | null;
   counts: Record<string, number>;
+  access?: Access; // 0.7.0: who may see the screen; absent in a DSM built before
   forms: {
     name: string;
     method: string | null;
     target: string | null;
-    fields: { label: string | null; name: string | null; type: string | null; required: boolean | null }[];
+    dialog?: string; // 0.7.0: the dialog's title when the form sits in a dialog (its name is then the title)
+    buttons?: string[];
+    fields: {
+      label: string | null;
+      name: string | null;
+      type: string | null;
+      required: boolean | null;
+      // 0.7.0: what the page declares, present only when it declares something
+      min_length?: number;
+      max_length?: number;
+      min?: number | string;
+      max?: number | string;
+      pattern?: string;
+    }[];
     submits: unknown[];
   }[];
   dialogs: (string | null)[];
@@ -240,6 +254,38 @@ export function partitionOrder(n: number, adj: number[][], prio: (v: number) => 
   return [order, comp];
 }
 
+/**
+ * A screen's label: its route, or, when two or more screens share a document title (a single-page app says the same
+ * on every path), its first h1, else its first h2, else the route (0.7.0 item 7, R30). The id stays the route.
+ */
+export function labelOf(p: UiPage, titleCount: Map<string, number>): string {
+  if (!p.title || (titleCount.get(p.title) ?? 0) < 2) return p.route;
+  return p.heading || p.headings?.[0] || p.route;
+}
+
+/** A field's declared limits as the DSM names them, only the ones the page declares. */
+function limitsOf(fd: {
+  minlength?: number | null;
+  maxlength?: number | null;
+  min?: unknown;
+  max?: unknown;
+  pattern?: string | null;
+}) {
+  const out: {
+    min_length?: number;
+    max_length?: number;
+    min?: number | string;
+    max?: number | string;
+    pattern?: string;
+  } = {};
+  if (fd.minlength != null) out.min_length = fd.minlength;
+  if (fd.maxlength != null) out.max_length = fd.maxlength;
+  if (fd.min != null) out.min = fd.min as number | string;
+  if (fd.max != null) out.max = fd.max as number | string;
+  if (fd.pattern) out.pattern = fd.pattern;
+  return out;
+}
+
 const last = (key: string) => key.split(':').pop() as string;
 
 export type BuildOptions = {
@@ -257,6 +303,8 @@ export function build(
   const mdepth = config.matrix?.module_depth ?? 1;
   const maxEl = config.matrix?.max_element_nodes ?? 4000;
   const uiPages = ui?.pages ?? [];
+  const titleCount = new Map<string, number>();
+  for (const p of uiPages) if (p.title) titleCount.set(p.title, (titleCount.get(p.title) ?? 0) + 1);
   const nodes: PageNode[] = [];
   const byKey = new Map<string, number>();
   const at = (key: string) => byKey.get(key) as number;
@@ -298,7 +346,8 @@ export function build(
   // ---- screens from the crawl, then from the code
   for (const p of uiPages) {
     const nd = node(matchKey(p.route), p.route);
-    nd.label = p.route;
+    nd.label = labelOf(p, titleCount);
+    if (p.access) nd.access = p.access;
     if (!nd.sources.includes('ui')) nd.sources.push('ui');
     nd.routes.push(p.route);
     const counts: Record<string, number> = {};
@@ -322,11 +371,14 @@ export function build(
         name: f.id || f.name || last(f.key),
         method: f.method ?? null,
         target: f.target != null ? matchKey(f.target) : null,
+        ...(f.dialog ? { dialog: f.dialog } : {}),
+        ...(f.dialog && f.buttons ? { buttons: f.buttons } : {}),
         fields: (f.fields ?? []).map((fd) => ({
           label: fd.label ?? null,
           name: fd.name ?? null,
           type: fd.type ?? null,
           required: fd.required ?? null,
+          ...limitsOf(fd),
         })),
         submits: f.submits ?? [],
       })),
@@ -396,10 +448,25 @@ export function build(
   }
   const startPaths = config.application?.start_paths;
   const startKeys = new Set((startPaths?.length ? startPaths : ['/']).map(matchKey));
+  // R15: a start_paths entry with an ID (a real todo's page, added to reach the detail screen) is not an entry screen
+  // when its list page is
+  const idOfList = (k: string) => {
+    const segs = k.split('/');
+    const tail = segs[segs.length - 1];
+    return segs.length > 2 && (tail.startsWith(':') || /^\d+$/.test(tail)) ? segs.slice(0, -1).join('/') || '/' : null;
+  };
+  const isDemoted = (k: string) => {
+    const list = idOfList(k);
+    return list !== null && startKeys.has(list);
+  };
+  const demoted = new Set(
+    uiPages.filter((p) => p.discovered_by === 'start' && isDemoted(matchKey(p.route))).map((p) => matchKey(p.route)),
+  );
+  for (const k of [...startKeys]) if (isDemoted(k)) startKeys.delete(k);
   // Start pages first, then by crawl depth, module and label.
   const prio = (v: number): SortKey => {
     const nd = nodes[v];
-    return [startKeys.has(nd.id) ? 0 : 1, nd.depth ?? 99, nd.module, nd.label];
+    return [startKeys.has(nd.id) ? 0 : 1, demoted.has(nd.id) ? 1 : (nd.depth ?? 99), nd.module, nd.label];
   };
   const [order, comp] = partitionOrder(n, adj, prio);
 
@@ -479,6 +546,7 @@ export function build(
         href: e.href ?? null,
         selector: e.selector ?? null,
         visible: e.visible ?? null,
+        ...(e.state ? { state: e.state } : {}),
       });
       elCell(pi, ei, 'contains');
     }
@@ -491,7 +559,7 @@ export function build(
         const label = fd.label || fd.name || fd.id || 'field';
         elCell(
           fi,
-          elNode(fd.key, label, 'field', pk, { type: fd.type ?? null, required: fd.required ?? null }),
+          elNode(fd.key, label, 'field', pk, { type: fd.type ?? null, required: fd.required ?? null, ...limitsOf(fd) }),
           'contains',
         );
       }
