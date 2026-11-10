@@ -428,3 +428,54 @@ test('item 12: qam status is qam pipeline status, listed in help', () => {
   assert.equal(qam(qa, 'status').out, qam(qa, 'pipeline', 'status').out);
   assert.match(qam(qa, 'help').out, /^ {2}status {2}/m);
 });
+
+// 0.6.0 item 11 / 0.7.1 item 11: setup finds out whether fd 0 is a terminal with tty.isatty(0), not process.stdin.isTTY,
+// which makes fd 0 non-blocking so the synchronous read of the answer fails with EAGAIN. Off a terminal it never asks.
+const PTY = `
+import os, pty, sys, time
+pid, fd = pty.fork()
+if pid == 0:
+    os.execv(sys.argv[1], sys.argv[1:])
+out = b''
+typed = False
+while True:
+    try:
+        chunk = os.read(fd, 4096)
+    except OSError:
+        break
+    if not chunk:
+        break
+    out += chunk
+    if not typed and b'type a path:' in out:
+        typed = True
+        time.sleep(0.5)
+        os.write(fd, b'1\\n')
+os.waitpid(pid, 0)
+sys.stdout.write(out.decode('utf8', 'replace'))
+`;
+const PYTHON = process.platform !== 'win32' && spawnSync('python3', ['-c', 'import pty']).status === 0;
+
+test('setup off a terminal never asks for the code folder, and says to add --source', () => {
+  const qa = tmp();
+  const r = spawnSync(QAM, ['--repo', qa, 'setup', '--no-install', '--url', 'https://shop.example.test/'], {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    env: { ...process.env, QAMASTER_HOME: HOME },
+    timeout: 20_000,
+  });
+  assert.equal(r.status, 0, r.stderr);
+  assert.doesNotMatch(r.stdout, /Choose 1-/);
+  assert.match(r.stdout, /Add --source <folder>/);
+});
+
+test('setup on a real terminal waits for the folder answer', { skip: !PYTHON && 'needs python3' }, () => {
+  const qa = tmp();
+  const r = spawnSync(
+    'python3',
+    ['-c', PTY, QAM, '--repo', qa, 'setup', '--no-install', '--url', 'https://shop.example.test/'],
+    { encoding: 'utf8', cwd: qa, env: { ...process.env, QAMASTER_HOME: HOME }, timeout: 20_000 },
+  );
+  assert.doesNotMatch(r.stdout, /EAGAIN/);
+  assert.match(r.stdout, /Choose 1-\d+, or type a path/);
+  assert.equal(read(path.join(qa, 'config/dsm-config.json')).repositories.length, 1);
+});
