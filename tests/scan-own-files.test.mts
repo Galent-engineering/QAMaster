@@ -82,7 +82,7 @@ test('a screen owns its component and the files it alone imports; the auth plumb
 });
 
 test('a file most screens import is shared; one only a few import is not', () => {
-  assert.equal(MOST_MIN_SCREENS, 4);
+  assert.equal(MOST_MIN_SCREENS, 2);
   const routes = ['a', 'b', 'c', 'd', 'e'];
   const app = routes.map((r) => `<Route path="/${r}" element={<${r.toUpperCase()}Page />} />`).join('\n');
   const src = new Map<string, string>([
@@ -102,6 +102,30 @@ test('a file most screens import is shared; one only a few import is not', () =>
   assert.deepEqual(code.files?.['r:src/http.ts']?.owners, [], 'five of five screens');
   assert.equal(code.files?.['r:src/http.ts']?.confidence, 'shared');
   assert.deepEqual(code.files?.['r:src/chart.ts']?.owners, ['/a', '/b'], 'two of five screens');
+});
+
+test('in an app of three screens, a file two of them import is shared; one only one imports is its own', () => {
+  const src = new Map<string, string>([
+    [
+      'src/App.tsx',
+      `import { Routes } from 'react-router-dom';
+import APage from './a';
+import BPage from './b';
+import CPage from './c';
+<Routes><Route path="/a" element={<APage />} />
+<Route path="/b" element={<BPage />} />
+<Route path="/c" element={<CPage />} /></Routes>`,
+    ],
+    ['src/a.tsx', "import auth from './auth';\nimport chart from './chart';\nexport default function APage() {}"],
+    ['src/b.tsx', "import auth from './auth';\nexport default function BPage() {}"],
+    ['src/c.tsx', 'export default function CPage() {}'],
+    ['src/auth.ts', 'export default {};'],
+    ['src/chart.ts', 'export default {};'],
+  ]);
+  const repo: RepoConfig = { name: 'r', path: 'x', branch: 'main', include: [], exclude: [] };
+  const code = scan({ repositories: [repo] }, () => ({ ref: null, commit: null, files: src }));
+  assert.equal(code.files?.['r:src/auth.ts']?.confidence, 'shared', 'two of three screens');
+  assert.deepEqual(code.files?.['r:src/chart.ts']?.owners, ['/a']);
 });
 
 test('a change to the HTTP client is a shared change; a change to a screen is that screen', () => {

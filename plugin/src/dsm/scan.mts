@@ -626,8 +626,13 @@ export function importedFile(from: string, name: string, files: Map<string, stri
 type FileInfo = { owners: string[]; confidence: string; nav?: NavRef[]; elements?: Record<string, string[] | number> };
 type CodeEdge = NonNullable<CodeModel['edges']>[number];
 
-/** A file reached by at least this many screens, and by more than half of them, is shared (item 6). */
-export const MOST_MIN_SCREENS = 4;
+/**
+ * A file reached by at least this many screens, and by more than half of them, is shared (item 6): "most screens",
+ * so in a three-screen app the auth context two screens use is shared too. 2 keeps a one-screen app's files its own.
+ * A file fewer screens reach is owned by each of them wherever it lives, not only in the component's folder: a
+ * component two screens import from another folder still impacts both (a deliberate widening of the plan's wording).
+ */
+export const MOST_MIN_SCREENS = 2;
 
 export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]) {
   const { name } = repo;
