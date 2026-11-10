@@ -6,6 +6,7 @@
  *               [--entry claude-code,vscode,…]
  *     qam pipeline start [--url URL] [--source S] [--app NAME] [--channels web,api] | status | next | mark <stage> <status> [--note T] | reset [<stage>]
  *     qam doctor [--check-write]
+ *     qam store [use ado|file]
  *     qam integrations list [--all] | add <entry…> | remove <id> | verify
  */
 import { createHash } from 'node:crypto';
@@ -16,7 +17,7 @@ import { parseArgs } from 'node:util';
 import { noProjectError } from '../adapters/ado.mts';
 import type { TestCaseStore, WriteCheck } from '../adapters/base.mts';
 import { withCache } from '../adapters/cache.mts';
-import { buildStore, RUNNERS } from '../adapters/registry.mts';
+import { buildStore, RUNNERS, STORES } from '../adapters/registry.mts';
 import { findAppTests } from '../gate/apptests.mts';
 import { linkRunner } from '../gate/select.mts';
 import { stateDirs } from '../gate/state.mts';
@@ -41,6 +42,7 @@ import {
   recordFolder,
   showChoices,
 } from '../pipeline/sources.mts';
+import { readLedger, switchLedger, writeLedger } from '../publish/ledger.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError, NoPlanError, NoProjectError } from '../shared/errors.mts';
 import { DEFAULT_PROJECT_CONFIG } from '../shared/schema.mts';
@@ -279,8 +281,8 @@ export function setup(cfg: Config, argv: string[], json: boolean, io: SetupIo = 
   if (!opts.check)
     notes.push(
       cfg.store === 'ado'
-        ? 'Test cases go to Azure DevOps (QAMASTER_STORE=ado). To use the local CSV file instead, set QAMASTER_STORE=file in .env.'
-        : 'Test cases go to the local CSV file store. To publish to Azure DevOps instead, set QAMASTER_STORE=ado, QAMASTER_ADO_ORG and QAMASTER_ADO_PROJECT in .env, then run qam doctor.',
+        ? 'Test cases go to Azure DevOps (QAMASTER_STORE=ado). To use the local CSV file instead, run qam store use file.'
+        : 'Test cases go to the local CSV file store. To publish to Azure DevOps instead, set QAMASTER_ADO_ORG and QAMASTER_ADO_PROJECT in .env, run qam store use ado (it sets QAMASTER_STORE=ado), then qam doctor; qam publish --to file,ado writes to both.',
     );
   if (pending)
     notes.push(`No code folder was given. Add --source <folder>, for example one of:\n${showChoices(pending)}`);
@@ -756,4 +758,66 @@ export function integrations(cfg: Config, argv: string[], json: boolean): number
     return ok ? 0 : 2;
   }
   throw new BlockedError('Use qam integrations list [--all] | add <entry…> | remove <id> | verify.');
+}
+
+/**
+ * qam store [use <name>] (R23): which store test cases go to. `use` writes QAMASTER_STORE in the QA project's .env,
+ * so nobody edits it by hand, and moves the ledger with it: the IDs of the store left are parked under its name and
+ * those of the store switched to come back, so bindings and links survive a switch there and back.
+ */
+export function store(cfg: Config, argv: string[], json: boolean): number {
+  const known = Object.keys(STORES).sort();
+  const [sub, name] = argv;
+  const dir = project(cfg);
+  if (!sub || sub === 'show') {
+    const ledger = readLedger(dir);
+    const where = buildStore(cfg).where();
+    const parked = Object.entries(ledger?.other ?? {}).map(([n, es]) => ({ store: n, cases: es.length }));
+    if (json) console.log(JSON.stringify({ result: 'pass', store: cfg.store, where, parked }));
+    else {
+      console.log(`Test cases go to ${where} (QAMASTER_STORE=${cfg.store}). Stores: ${known.join(', ')}.`);
+      for (const p of parked) console.log(`Kept IDs for ${p.store}: ${p.cases} test case(s).`);
+    }
+    return 0;
+  }
+  if (sub !== 'use' || !name) throw new BlockedError(`Usage: qam store [use <${known.join('|')}>]`);
+  if (!known.includes(name)) throw new BlockedError(`${name} isn't a store. Use one of: ${known.join(', ')}.`);
+  const where = buildStore({ ...cfg, store: name }).where(); // blocks, saying what to set, when the store isn't set up
+  const ledger = readLedger(dir);
+  const now = ledger ? switchLedger(ledger, where) : null;
+  if (ledger && now && now !== ledger) writeLedger(dir, now);
+  // the line goes where one already is, else into the QA project's .env
+  const files = [...new Set([path.join(dir, '.env'), path.join(cfg.root, '.env')])];
+  const has = (f: string) =>
+    /^\s*(export\s+)?QAMASTER_STORE\s*=/m.test(fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '');
+  const edited = files.filter(has);
+  for (const file of edited.length ? edited : [files[0]]) setEnvLine(file, 'QAMASTER_STORE', name);
+  const shell =
+    !edited.length && cfg.env.QAMASTER_STORE && cfg.env.QAMASTER_STORE !== name ? cfg.env.QAMASTER_STORE : null;
+  const cases = now?.entries.length ?? 0;
+  const lines = [
+    `Test cases now go to ${where} (QAMASTER_STORE=${name} in .env).`,
+    ...(ledger
+      ? [`Its ledger has ${cases} test case(s)${now?.other ? `; kept for ${Object.keys(now.other).join(', ')}` : ''}.`]
+      : []),
+    ...(shell
+      ? [`QAMASTER_STORE=${shell} is set in the shell and wins over .env: unset it for this to take effect.`]
+      : []),
+  ];
+  if (json)
+    console.log(
+      JSON.stringify({ result: 'pass', store: name, where, cases, ...(shell ? { shellOverride: shell } : {}) }),
+    );
+  else console.log(lines.join('\n'));
+  return 0;
+}
+
+/** Sets KEY=value in a .env file: the line is replaced where it is, else added; other lines are left as they are. */
+function setEnvLine(file: string, key: string, value: string): void {
+  const text = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+  const line = new RegExp(`^\\s*(export\\s+)?${key}\\s*=.*$`, 'm');
+  const next = line.test(text)
+    ? text.replace(line, `${key}=${value}`)
+    : `${text}${text && !text.endsWith('\n') ? '\n' : ''}${key}=${value}\n`;
+  fs.writeFileSync(file, next);
 }

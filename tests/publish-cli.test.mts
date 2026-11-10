@@ -429,3 +429,58 @@ test('E1: the dry run says how much smoke other previewed runs are also holding'
   assert.equal(p.qam('publish', RUN, '--apply').status, 0);
   assert.doesNotMatch(p.qam('publish', B).out, /other previewed run/, 'an applied run no longer holds a preview');
 });
+
+// 0.6.0 item 9 (R23): switch stores with a command, and each store keeps its IDs
+test('R23: qam store use switches the store and the ledger keeps each store IDs, so switching back restores them', () => {
+  const p = project();
+  p.writeRun([kase('TC-CART-001')]);
+  assert.equal(p.qam('publish', RUN, '--apply').status, 0);
+  // the project's own settings decide the store from here: no QAMASTER_STORE in the shell
+  const { QAMASTER_STORE: _shell, ...base } = process.env;
+  const env = {
+    ...base,
+    QAMASTER_HOME: HOME,
+    QAMASTER_ADO_ORG: 'org',
+    QAMASTER_ADO_PROJECT: 'Shop',
+    AZURE_CONFIG_DIR: p.dir,
+  };
+  const qam = (...args: string[]) => {
+    const r = spawnSync(QAM, ['--repo', p.dir, ...args], { encoding: 'utf8', env });
+    return { status: r.status, out: r.stdout, err: r.stderr };
+  };
+  const ledger = () => JSON.parse(p.read(LEDGER));
+
+  const toAdo = qam('store', 'use', 'ado');
+  assert.equal(toAdo.status, 0, toAdo.err + toAdo.out);
+  assert.match(toAdo.out, /Test cases now go to Azure DevOps org\/Shop/);
+  assert.match(p.read('.env'), /^QAMASTER_STORE=ado$/m);
+  assert.equal(ledger().store, 'Azure DevOps org/Shop');
+  assert.deepEqual(ledger().entries, []);
+  assert.equal(
+    Object.values(ledger().other as Record<string, unknown[]>)[0].length,
+    1,
+    "the file store's ID is parked",
+  );
+  assert.match(qam('store').out, /Azure DevOps org\/Shop/);
+
+  const back = qam('store', 'use', 'file');
+  assert.equal(back.status, 0, back.err);
+  assert.match(p.read('.env'), /^QAMASTER_STORE=file$/m);
+  assert.doesNotMatch(p.read('.env'), /QAMASTER_STORE=ado/);
+  assert.match(ledger().store, /^File testcases/);
+  assert.equal(ledger().entries.length, 1, 'the file store IDs came back');
+  assert.match(back.out, /1 test case/);
+  // and publish sees nothing to do: the bindings survived
+  assert.equal(qam('publish', RUN).status, 0);
+});
+
+test('R23: qam store use blocks on a store that is not known, and warns when the shell setting would win', () => {
+  const p = project();
+  const bad = p.qam('store', 'use', 'jira');
+  assert.equal(bad.status, 2);
+  assert.match(bad.err, /jira isn't a store\. Use one of: ado, file/);
+  const env = { ...process.env, QAMASTER_HOME: HOME, QAMASTER_STORE: 'ado' };
+  const r = spawnSync(QAM, ['--repo', p.dir, 'store', 'use', 'file'], { encoding: 'utf8', env });
+  assert.equal(r.status, 0, r.stderr);
+  assert.match(r.stdout, /QAMASTER_STORE=ado is set in the shell and wins/);
+});

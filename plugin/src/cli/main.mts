@@ -16,7 +16,7 @@ import { app, checkScripts } from './automation.mts';
 import { dsm } from './dsm.mts';
 import { gate } from './gate.mts';
 import { autSkills } from './knowledge.mts';
-import { doctor, integrations, pipeline, setup } from './project.mts';
+import { doctor, integrations, pipeline, setup, store } from './project.mts';
 import { publish } from './publish.mts';
 import { feedback, report } from './reports.mts';
 import { requirements } from './requirements.mts';
@@ -36,6 +36,7 @@ export const COMMANDS: Record<string, string> = {
   status: 'Where the onboarding pipeline stands: the same as pipeline status',
   doctor:
     'Check settings, credentials, the test plan and the runner; --check-write asks whether the user may write (reads only)',
+  store: "Which store test cases go to: (no argument) shows it | use ado|file switches it, keeping each store's IDs",
   integrations: 'Where QAMaster is plugged in: list [--all] | add <entry…> | remove <id> | verify',
   dsm: 'Design Structure Matrix: run | refresh | changes | impact <files…> | scan | build | render',
   'aut-skills': 'Application knowledge skills (AUT_<App>) from the DSM; --check says whether they are current',
@@ -75,6 +76,7 @@ const HANDLERS: Record<string, (opts: Options, args: string[]) => number | Promi
   pipeline: (opts, args) => pipeline(loadConfig(opts.repo), args, opts.json),
   status: (opts, args) => pipeline(loadConfig(opts.repo), ['status', ...args], opts.json),
   doctor: (opts, args) => doctor(loadConfig(opts.repo), args, opts.json),
+  store: (opts, args) => store(loadConfig(opts.repo), args, opts.json),
   integrations: (opts, args) => integrations(loadConfig(opts.repo), args, opts.json),
   app: (opts, args) => app(loadConfig(opts.repo), args, opts.json),
   'check-scripts': (opts, args) => checkScripts(loadConfig(opts.repo), args, opts.json),
