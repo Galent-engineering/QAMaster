@@ -170,7 +170,13 @@ const EXTRACT = `(() => {
   return { title: document.title, headings, heading, textHash, links, forms, looseFields, buttons, tabs, menus, tables };
 })()`;
 
-/** Clickable elements without a link, to find menus, dialogs and JavaScript navigation. */
+/** In the page: the ancestors that make an element a sidebar item. */
+const SIDEBAR = JSON.stringify('nav, [role=navigation], aside, .sidebar, .side-nav, .menu, .navbar');
+
+/**
+ * Clickable elements without a link, to find menus, dialogs and JavaScript navigation. `navItem`: a sidebar item
+ * that is not a button, menu item or tab (those are recorded as such).
+ */
 const CLICK_CANDIDATES = (selectors: string[]) => `(() => {
   const visible = ${VISIBLE}; const cssPath = ${CSS_PATH}; const seen = new Set(); const out = [];
   for (const sel of ${JSON.stringify(selectors)}) {
@@ -178,7 +184,9 @@ const CLICK_CANDIDATES = (selectors: string[]) => `(() => {
     for (const el of nodes) {
       if (!visible(el) || el.disabled || (el.closest('form') && el.type === 'submit')) continue;
       const selector = cssPath(el); if (seen.has(selector)) continue; seen.add(selector);
-      out.push({ selector, text: (el.innerText || el.getAttribute('aria-label') || el.title || '').trim().replace(/\\s+/g, ' ').slice(0, 80) });
+      const inNav = !!el.closest(${SIDEBAR});
+      const navItem = inNav && !el.matches('button, [role=button], [role=menuitem], [role=tab]');
+      out.push({ selector, text: (el.innerText || el.getAttribute('aria-label') || el.title || '').trim().replace(/\\s+/g, ' ').slice(0, 80), inNav, navItem });
     }
   }
   return out; })()`;
@@ -186,27 +194,29 @@ const CLICK_CANDIDATES = (selectors: string[]) => `(() => {
 /**
  * Clickable cards (0.7.0 item 3, R7) and sidebar items: an element with a pointer cursor and no link or button role,
  * found by its computed style because the crawler cannot see a React onClick. Also (0.7.1): an element with an onclick
- * attribute, a role=link without an href, or a focusable one (tabindex >= 0) that has text. Only the outermost
- * element of a pointer region counts. Outside a nav or aside, one card per group of repeated siblings (same parent, tag and class); in a nav or
+ * attribute, a role=link without an href, or a focusable one (tabindex >= 0) with a short text, not a code block.
+ * Only the outermost element of a pointer region counts, and nothing inside another candidate (an onclick on the body
+ * or on a page-wide wrapper does not count). Outside a nav or aside, one card per group of repeated siblings (same parent, tag and class); in a nav or
  * aside every item. A card's text leaves out the buttons and links inside it, so a "Delete" in it does not hide it.
  */
 const CARD_CANDIDATES = `(() => {
   ${HELPERS}
-  const navAncestor = 'nav, [role=navigation], aside, .sidebar, .side-nav, .menu, .navbar';
   const area = innerWidth * innerHeight; const groups = new Set(); const out = [];
+  const sized = (n) => { const r = n.getBoundingClientRect(); return r.width >= 24 && r.height >= 16 && r.width * r.height <= area * 0.8; };
   for (const el of document.body ? document.body.querySelectorAll('*') : []) {
     if (el.closest('svg') || el.matches('a[href], button, input, select, textarea, label, summary, option')) continue;
     if (el.matches('[role]') && !el.matches('[role=link]')) continue;
-    if (el.closest('a[href], button, [role=button]') || (el.parentElement && el.parentElement.closest('[role=link], [onclick]'))) continue;
+    const holder = el.parentElement && el.parentElement.closest('[role=link], [onclick]');
+    if (el.closest('a[href], button, [role=button]') || (holder && holder !== document.body && sized(holder))) continue;
     const parent = el.parentElement;
     const pointer = (n) => getComputedStyle(n).cursor === 'pointer';
-    const focusable = el.hasAttribute('tabindex') && el.tabIndex >= 0 && (el.textContent || '').trim().length > 0;
+    const words = (el.textContent || '').trim().length;
+    const focusable = el.hasAttribute('tabindex') && el.tabIndex >= 0 && words > 0 && words <= 100 && !el.matches('pre, code');
     const signal = pointer(el) ? 'pointer' : el.hasAttribute('onclick') ? 'onclick' : el.matches('[role=link]') ? 'link' : focusable ? 'tabindex' : '';
     if (!signal) continue;
     if (parent && pointer(parent) && pointer(el)) continue;
-    const r = el.getBoundingClientRect();
-    if (!visible(el) || r.width < 24 || r.height < 16 || r.width * r.height > area * 0.8) continue;
-    const inNav = !!el.closest(navAncestor);
+    if (!visible(el) || !sized(el)) continue;
+    const inNav = !!el.closest(${SIDEBAR});
     if (!inNav) { const g = cssPath(parent) + '>' + el.tagName + '.' + el.className + '.' + signal; if (groups.has(g)) continue; groups.add(g); }
     const copy = el.cloneNode(true); copy.querySelectorAll('button, a, [role=button], input, select, textarea').forEach((n) => n.remove());
     out.push({ selector: cssPath(el), text: (copy.textContent || '').trim().replace(/\\s+/g, ' ').slice(0, 80), card: !inNav, inNav });
@@ -1226,20 +1236,21 @@ export class PlaywrightCrawler implements Crawler {
     }
     if (explore.enabled === false) return;
 
-    type Candidate = { selector: string; text: string; card?: boolean; inNav?: boolean };
-    const fromSelectors = (
-      (await page.evaluate(CLICK_CANDIDATES(explore.selectors ?? DEFAULT_CLICK_SELECTORS))) as Candidate[]
-    ).filter((c) => !deny.some((re) => re.test(c.text)));
+    type Candidate = { selector: string; text: string; card?: boolean; inNav?: boolean; navItem?: boolean };
+    const allSelected = (await page.evaluate(
+      CLICK_CANDIDATES(explore.selectors ?? DEFAULT_CLICK_SELECTORS),
+    )) as Candidate[];
     // cards and sidebar items the selectors do not name: a pointer cursor and no link or role (R7, R8)
-    const taken = new Set(fromSelectors.map((c) => c.selector));
-    const cards = ((await page.evaluate(CARD_CANDIDATES)) as Candidate[]).filter(
-      (c) => !taken.has(c.selector) && !deny.some((re) => re.test(c.text)),
-    );
-    // every sidebar item is an element of this page, the item for the current page included; a click that
-    // navigates adds its target below (0.7.1)
+    const taken = new Set(allSelected.map((c) => c.selector));
+    const allCards = ((await page.evaluate(CARD_CANDIDATES)) as Candidate[]).filter((c) => !taken.has(c.selector));
+    const allowed = (c: Candidate) => !deny.some((re) => re.test(c.text));
+    const fromSelectors = allSelected.filter(allowed);
+    const cards = allCards.filter(allowed);
+    // every sidebar item is an element of this page, the item for the current page and a denied one included (it
+    // is not clicked); a click that navigates adds its target below (0.7.1)
     const sidebarItems = new Map<string, UiElement>();
-    for (const c of cards) {
-      if (!c.inNav || elements.some((e) => e.selector === c.selector)) continue;
+    for (const c of [...allSelected.filter((x) => x.navItem), ...allCards.filter((x) => x.inNav)]) {
+      if (elements.some((e) => e.selector === c.selector)) continue;
       const own = {
         key: keyOf('link', c.text || c.selector),
         kind: 'link',

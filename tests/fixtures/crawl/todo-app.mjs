@@ -5,6 +5,8 @@
 // Public: /login (a text link to /register), /register (a sign-up form with limits), /about (shows "Sign in" signed out).
 // Private (redirect to /login when signed out; /login and /register redirect to / when signed in): /, /todo (cards with
 // no link, a sidebar of divs, an "Add todo" dialog with limits), /todo/<id>, /profile, /signals (clickables without a pointer cursor).
+// Public either way: /wrapped (a body with an onclick, a pointer card, a pointer sidebar), /plain and /reports (a nav of
+// <a> with no href that navigate by click handler, and a "Sign out" in it).
 // Every POST and DELETE is recorded; GET /__writes lists them, so a test can prove a crawl changed nothing.
 // /slow shows its content in steps 80 ms apart; /busy changes its DOM until the page is left; /poll starts a request
 // that is never answered (a long poll).
@@ -64,6 +66,23 @@ const b = document.createElement('button'); b.textContent = 'Step ' + n; documen
     return send(200, page('Busy', `<div id="ticker"></div><script>setInterval(() => { document.getElementById('ticker').textContent = Date.now(); }, 20);</script>`, user));
   }
   if (url.pathname === '/poll') return send(200, page('Poll', `<p>Live.</p><script>fetch('/api/poll');</script>`, user));
+  if (url.pathname === '/wrapped') {
+    // an app wrapper that closes menus on any click: its onclick must not hide the cards and sidebar items inside it
+    return send(200, `<!doctype html><html><head><title>Wrapped</title></head><body onclick="void 0">
+<aside><div style="cursor:pointer" onclick="location.href='/plain'">Plain page</div>
+<div style="cursor:pointer" onclick="location.href='/reports'">Reports page</div></aside>
+<main><h1>Wrapped</h1><div style="cursor:pointer;width:200px;padding:12px" onclick="location.href='/about'">About card</div></main></body></html>`);
+  }
+  if (url.pathname === '/plain' || url.pathname === '/reports') {
+    const title = url.pathname === '/plain' ? 'Plain' : 'Reports';
+    return send(200, `<!doctype html><html><head><title>${title}</title></head><body>
+<nav><a id="n1">Plain</a> <a id="n2">Reports</a> <a id="n3">Sign out</a></nav><main><h1>${title}</h1></main>
+<script>
+document.getElementById('n1').addEventListener('click', () => { location.href = '/plain'; });
+document.getElementById('n2').addEventListener('click', () => { location.href = '/reports'; });
+document.getElementById('n3').addEventListener('click', () => { fetch('/api/session', { method: 'DELETE' }); });
+</script></body></html>`);
+  }
   if (url.pathname === '/logout') return send(302, '', { location: '/login', 'set-cookie': 'sid=; Max-Age=0; Path=/' });
   if (!user) return send(302, '', { location: '/login' });
   if (url.pathname === '/') return send(200, page('Home', '<p>Welcome back.</p>', true));
@@ -96,11 +115,13 @@ document.getElementById('add').onclick = () => {
     return send(200, page('Signals', `<div role="link" tabindex="0" id="s1">Open about</div>
 <span onclick="location.href='/profile'">Go profile</span>
 <div tabindex="0" id="tile">Open todos</div>
+<pre tabindex="0" id="code">${'const answer = 42; // a long focusable code block, not a click target\n'.repeat(4)}</pre>
 <div onclick="fetch('/api/todos/1', { method: 'DELETE' })">Trash it</div>
 <div role="button" onclick="fetch('/api/todos/1', { method: 'DELETE' })">Delete everything</div>
 <script>
 document.getElementById('s1').addEventListener('click', () => { location.href = '/about'; });
 document.getElementById('tile').addEventListener('click', () => { location.href = '/todo'; });
+document.getElementById('code').addEventListener('click', () => { location.href = '/todo/1'; });
 </script>`, true));
   }
   if (url.pathname === '/profile') return send(200, page('Profile', '<p>qa@example.test</p>', true));

@@ -318,9 +318,41 @@ test('0.7.1 item 3: role=link, onclick and focusable elements without a pointer 
   assert.ok(to('/about'), 'role=link');
   assert.ok(to('/profile'), 'onclick attribute');
   assert.ok(to('/todo'), 'tabindex tile');
+  assert.ok(!to('/todo/:id'), 'a long focusable code block is not clicked as a card');
   assert.ok(
-    (model.blocked_requests ?? []).every((b) => b.method !== 'DELETE') || (await writes()).length === before,
-    'a DELETE never reached the server',
+    (model.blocked_requests ?? []).some((b) => b.method === 'DELETE'),
+    'the onclick that sends a DELETE was clicked, and the write guard stopped it',
   );
+  assert.equal((await writes()).length, before, 'nothing was written');
+});
+
+test('0.7.1 item 3: an onclick on the body or an app wrapper does not hide the cards and sidebar items inside it', {
+  timeout: 180_000,
+}, async () => {
+  const model = await crawler({ start_paths: ['/wrapped'], max_pages: 4 }).crawl({ baseUrl: ui });
+  const to = (t: string) => model.edges.some((e) => e.from === '/wrapped' && e.to === t && e.type === 'click');
+  assert.ok(to('/about'), 'the card');
+  assert.ok(to('/plain') && to('/reports'), 'both sidebar items');
+  const links = (route(model, '/wrapped').elements ?? []).filter((e) => e.kind === 'link' && e.in_nav);
+  assert.deepEqual(links.map((e) => e.text).sort(), ['Plain page', 'Reports page']);
+});
+
+test('0.7.1 item 2: nav links with no href are elements of each page, the current page and a denied item included', {
+  timeout: 180_000,
+}, async () => {
+  const before = (await writes()).length;
+  const model = await crawler({ start_paths: ['/plain'], max_pages: 4 }).crawl({ baseUrl: ui });
+  for (const r of ['/plain', '/reports']) {
+    const links = (route(model, r).elements ?? []).filter((e) => e.kind === 'link' && e.in_nav);
+    for (const t of ['Plain', 'Reports', 'Sign out']) {
+      assert.equal(links.filter((e) => e.text === t).length, 1, `${r}: nav item ${t}, once`);
+    }
+  }
+  const own = (route(model, '/plain').elements ?? []).find((e) => e.in_nav && e.text === 'Plain');
+  assert.equal(own?.target ?? null, null, 'the item for the current page goes nowhere');
+  const other = (route(model, '/plain').elements ?? []).find((e) => e.in_nav && e.text === 'Reports');
+  assert.equal(other?.target, '/reports');
+  assert.ok(model.edges.some((e) => e.from === '/plain' && e.to === '/reports' && e.via === other?.key));
+  assert.ok(!(model.blocked_requests ?? []).some((b) => b.method === 'DELETE'), 'Sign out was not clicked');
   assert.equal((await writes()).length, before, 'nothing was written');
 });
