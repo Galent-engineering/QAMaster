@@ -221,14 +221,30 @@ Plan: [plans/0.7.0.md](plans/0.7.0.md). Built on `release/0.7.0` on 2026-11-10 f
 
 728 tests, typecheck and lint clean. Not run on a live app; the generated automation folder wasn't installed or listed by Playwright. D1, D2 and D4–D9 were built to their recommendations and accepted as Q55; D3 was accepted as Q56 and is built in 0.7.1. Open items are in the plan's [r2 row](plans/0.7.0.md) and [Moved to 0.7.1](plans/0.7.0.md#moved-to-071-or-a-decision).
 
+## 0.7.1: fixes after 0.6.0 and 0.7.0
+
+Plan: [plans/0.7.1.md](plans/0.7.1.md). Built on `release/0.7.1` on 2026-11-10 from four parallel groups (`publish`, `dsm`, `gen`, `small`), each reviewed independently, on top of 0.7.0, and released with your yes before the live runs. No new command, flag, config key or file format, so a patch release (Q46). 0.6.1 was not built separately: 0.7.0 contains 0.6.0, and 0.6.0's fixes are items 10–13.
+
+| Change | Where | Source |
+|---|---|---|
+| A republish removes the `path:` tags (and other owned tags) no longer derived; the preview lists `removes tag <tag>` per case | `publish/publish.mts`, `cli/publish.mts`, `skills/Publish` | Q56 (0.7.0 D3) |
+| Every sidebar item is an element of each page it is on; clickable elements found by `onclick`, `role=link` or `tabindex` as well as `cursor: pointer` | `adapters/crawler-playwright.mts` | 0.7.0 moved |
+| `src/pages/` is Next.js pages only with `next` in `package.json` or a `next.config.*` | `dsm/scan.mts` | Before 0.7.0 |
+| A case's session is a `@signed-in` or `@signed-out` tag in the `.feature`; a step to a route keeps its own expected text | `testgen/render.mts` | 0.7.0 moved |
+| `dsm:api:` evidence on a non-API channel is a validate finding; `check-scripts` sees a renamed `request` fixture | `testgen/validate.mts`, `automation/quality.mts` | 0.7.0 moved |
+| `Selection:` names the groups model only outside CI | `gate/presets.mts` | 0.7.0 moved |
+| `gate.allowErrors` in the settings template; a test for setup's `tty.isatty(0)`; `qam doctor` lists an older QA project in `~/.qamaster/installs.json`; tests ignore `QAMASTER_ADO_*` and `QAMASTER_STORE` | `templates/project/config/qamaster.json`, `gate/state.mts`, `tests/` | 0.6.0 r5 |
+
+754 tests, typecheck and lint clean. Not run on a live app. The live-run findings (0.6.0's and 0.7.0's, a walkthrough on a new app, the Restful Booker rehearsal) go to 0.7.2. Follow-ups with no release yet are in the plan's [Built (r2)](plans/0.7.1.md#built-r2).
+
 ## Planned
 
 Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 
 | Release | Kind | What | Plan |
 |---|---|---|---|
-| 0.6.1 | Fixes | What 0.6.0's live run finds, and the open items in [0.6.0 r5](plans/0.6.0.md) | |
-| 0.7.1 | Fixes | What the Restful Booker rehearsal and 0.7.0's live run find, and [0.7.0's open items](plans/0.7.0.md#moved-to-071-or-a-decision) | |
+| 0.6.1 | Fixes | Folded: not built separately. 0.6.0's fixes shipped in 0.7.1; its live-run fixes go to 0.7.2 | [0.7.1 r3](plans/0.7.1.md) |
+| 0.7.2 | Fixes | What the live runs find (0.6.0's and 0.7.0's: fastapi-react-app signed out and signed in, a generated folder through `bddgen` and Playwright), a walkthrough on a new app, and the Restful Booker rehearsal | |
 | **1.0.0** | **Major** | Product v1 proven: a clean-room Docker run, a walkthrough on a second unknown app, the failure path and the store's life cycle seen live. No new feature | [backlog](plans/backlog.md#100-the-major-release) |
 | 1.1.0 | Features | Native Android and iOS scripts through Appium (Q54) | [backlog](plans/backlog.md#after-100) |
 | 1.2.0 | Features | Product v1.1: the git pre-push hook, each IDE and agent set up by ticking it (Q43), PR checks, ADO Test Run | [backlog](plans/backlog.md#after-100) |

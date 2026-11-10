@@ -36,7 +36,7 @@ code ───┤ scan ──┘                (AUT skills)   (TestGen)        
 
 The important idea: **the DSM connects the two halves**. It knows which screens exist (from the crawl) and which code files belong to which screen (from the scan). That lets QAMaster tag each test case with the files it covers (`path:src/checkout/**`), so when those files change, the gate knows which tests to run.
 
-**Try it:** open [v0.7.0-setup-guide.html](v0.7.0-setup-guide.html), the setup guide. It walks the setup step by step with the integration at each step, the roadmap and the latest decisions; options marked planned or proposed are not built yet.
+**Try it:** open [v0.7.1-setup-guide.html](v0.7.1-setup-guide.html), the setup guide. It walks the setup step by step with the integration at each step, the roadmap and the latest decisions; options marked planned or proposed are not built yet.
 
 **The current picture:** the setup guide also shows decisions Q26 to Q32:
 - the entry-point checklist;
@@ -804,6 +804,7 @@ On fastapi-react-app, QAMaster covered one module of six. The crawl signed in fi
 | 2026-11-02 | Gate and just-in-time automation (0.3.0) | Bind approval to what will run (HEAD, QA commit, script hash). The link's prefix picks the runner. A new script is labelled until it passes once. Real runs found five design bugs that unit tests didn't |
 | 2026-11-10 | A gate and store you can trust (0.6.0) | One function decides where gate state lives, for the CLI and the hook alike. An app error fails a passing case. Naming a destination never moves the project's store. A test that writes its own fixture can test the wrong path |
 | 2026-11-10 | What QAMaster covers (0.7.0) | Merge two crawls in one pure function. Parallel tracks need the shared data shape written down first. An option that means an old one should call it, not rebuild it. Watch for listeners registered twice and assertions that always pass |
+| 2026-11-10 | Fixes after 0.6.0 and 0.7.0 (0.7.1) | Check a plan item against the decisions before building it (r1's "never removed" contradicted Q8). Tests must not read the developer's shell or home folder: clear `QAMASTER_ADO_*` and `QAMASTER_STORE`, use a temp `QAMASTER_HOME`. A pattern check needs the variants with extra arguments too (`({ request: ctx }, id)`) |
 
 ## Lesson: building a release with parallel sessions (2026-11-04)
 

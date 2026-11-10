@@ -1,34 +1,30 @@
 # Handoff: where the work stands (2026-11-10)
 
-Read this first in a new session, then [0.7.1.md](0.7.1.md) (r2), [0.7.0.md](0.7.0.md) (r2) and [0.6.0.md](0.6.0.md) (r5). It's the state, the rules the session learned, and the next steps.
+Read this first in a new session, then [0.7.1.md](0.7.1.md) (r3), [0.7.0.md](0.7.0.md) (r2) and [0.6.0.md](0.6.0.md) (r5). It's the state, the rules the session learned, and the next steps.
 
 ## Where things are
-- `main` (pushed): 0.5.0 released, Q49 decided, the 0.6.0 plan.
-- `release/0.6.0` (local, not pushed): **0.6.0 built**, items 1–14, version 0.6.0. Not merged to `main`, not tagged. Plan r5 has what shipped and what is open.
-- `release/0.7.0` (local, not pushed): **0.7.0 built** on top of `release/0.6.0`, items 1–17, version 0.7.0 with the user's yes. Not merged, not tagged. Plan r2 has what shipped, the decisions built to their recommendations, and what moves to 0.7.1. Zips from `scripts/package.sh` are in `dist/` (not committed).
-- `release/0.7.1` (local, not pushed): **0.7.1's fixes built** on top of `release/0.7.0`, items 1–13 ([plan r2](0.7.1.md)): Q56, the crawl and scan fixes, the `.feature` and check-scripts fixes, and 0.6.0's small gaps. 754 tests, typecheck and lint clean. **Not released:** the version stays 0.7.0 until the live runs' findings are in and the user says yes; then bump, releases.md, plans/README.md, the setup guide rename and the zips.
-- All three releases were built with parallel worktrees; the worktrees and `wt/*` branches were removed once their commits were in the release branches.
-- **Nothing is pushed.** Merging `release/0.7.0` to `main` (it contains 0.6.0) and pushing wait for the user.
+- `main` (pushed): **0.5.0** released, Q49 decided, the 0.6.0 plan.
+- `release/0.6.0` (pushed): 0.6.0, items 1–14. Not merged to `main`, not tagged.
+- `release/0.7.0` (pushed): 0.7.0 on top of 0.6.0, items 1–17. Not merged, not tagged.
+- `release/0.7.1` (local, not pushed): **released as 0.7.1** with the user's yes, before the live runs. Items 1–13 on top of 0.7.0 ([plan r3](0.7.1.md)): Q56, crawl and scan fixes, the `.feature` session tag and route text, `check-scripts` and `Selection:` fixes, 0.6.0's small gaps. 754 tests, typecheck and lint clean. Not merged to `main`, not tagged. Zips: run `scripts/package.sh` on the release commit; they land in `dist/` (not committed).
+- **0.6.1 was never built:** 0.7.0 contains 0.6.0, so 0.6.0's fixes shipped in 0.7.1 and its live-run fixes go to 0.7.2 with 0.7.0's. This changes Q54's road only in the release names.
+- Merging `release/0.7.1` to `main` (it contains 0.6.0 and 0.7.0) and pushing it wait for the user.
 - `docs/demos/demo_guideme/` is untracked and belongs to someone else: leave it.
 
-## The road (Q54, accepted 2026-11-10)
-0.6.0 gate and store (built) → 0.6.1 fixes → 0.7.0 coverage (built: sign-in apps, faster DSM, presets, API and Mobile Web scripts) → 0.7.1 fixes → 1.0.0 proof, no new feature → 1.1.0 native Android and iOS → 1.2.0 product v1.1 (git hook, IDEs, PR checks). Detail: [backlog.md](backlog.md#the-road-to-100-replanned-2026-11-10-q54).
+## The road (Q54, accepted 2026-11-10; release names as of 0.7.1)
+0.6.0 gate and store → 0.7.0 coverage (sign-in apps, faster DSM, presets, API and Mobile Web scripts) → 0.7.1 fixes (released; 0.6.1 folded in) → **0.7.2 fixes from the live runs and the walkthrough** → 1.0.0 proof, no new feature → 1.1.0 native Android and iOS → 1.2.0 product v1.1 (git hook, IDEs, PR checks). Detail: [backlog.md](backlog.md#the-road-to-100-replanned-2026-11-10-q54).
 
-## 0.6.0 status
-All 14 items built and reviewed; 639 tests, typecheck and lint clean. Where the code is: gate state `gate/state.mts`; hook `hooks/pre-push.mts`; app errors `framework/playwright-bdd/src/app-errors.ts`; app tests `gate/apptests.mts`; destinations and `qam store` in `cli/publish.mts`, `cli/project.mts`, `publish/ledger.mts`; az credentials `shared/env.mts`.
+## Next: a walkthrough on a new well-known app (fresh session)
+Run the whole product on an app QAMaster has never seen, through the slash commands and skills, and record findings in [demos/](../demos/README.md) for 0.7.2:
+- **Flow 1, onboarding to a gate run:** the app's repo → `qam setup` → the AUT knowledge skills → the DSM → TestGen → publish → automation → a gate run (`/qamaster:check`) → reports.
+- **Flow 2, requirements and the push:** stories from Azure Boards (`qam requirements fetch`, or import a file), TestGen citing them, then a change pushed from the app clone so the push hook runs.
+- **What the gate selects:** by path, smoke, group, added, DSM and all (`--preset fast|standard|full`). It does **not** select by requirement or story: picking the tests of a story linked to the change is not built. Say so if the walkthrough expects it; it would be a feature (a minor release), not a 0.7.2 fix.
 
-**Open, for 0.6.1 or a decision** (detail in [0.6.0.md](0.6.0.md) r5):
-- Not seen live: the hook under Claude Code from an app clone; item 3 through the real playwright-bdd tools after a store switch; item 4's fixture inside a real playwright-bdd project.
-- Undecided: `--take-store`, ADO credentials from a file (W8); publish without `--to` always writing the file store too; exempting a push from the QA project itself; `qam review` with no terminal requiring `--yes`; watching a backend origin other than `baseURL`.
-- Small: ~~`allowErrors` missing from the settings template; `qam setup`'s `tty.isatty(0)` change has no test; a QA project set up before `~/.qamaster/installs.json` isn't found from its clone; the doctor test that fails when the shell sets `QAMASTER_ADO_*`~~ all built in 0.7.1 (items 10–13).
-
-## 0.7.0 status
-All 17 items built and reviewed; 728 tests, typecheck and lint clean. Where the code is: the signed-out pass and merge `dsm/crawl-rules.mts` (`mergePasses`) and `adapters/crawler-playwright.mts`; compare and estimate `dsm/update.mts`, `cli/dsm.mts`; source ownership `dsm/scan.mts`; presets `gate/presets.mts` (types in `shared/models.mts`); TestGen access, dialogs and API evidence `testgen/facts.mts`, `testgen/validate.mts`; step wording `testgen/render.mts`; API and Mobile Web template `plugin/framework/playwright-bdd/`, checks `automation/quality.mts`.
-
-**Open, for 0.7.1 or a decision** (detail in [0.7.0.md](0.7.0.md#moved-to-071-or-a-decision)):
-- Decisions: D1, D2 and D4–D9 accepted as built (Q55, D6 includes `fable`); D3 accepted as Q56 (a republish replaces `path:` tags, preview lists removals): **built in 0.7.1** (item 1). The code fixes in 0.7.0's "Moved to 0.7.1" are all built in 0.7.1 (items 2–9).
-- Follow-ups from 0.7.1, no release yet: acting on the `@signed-in` tag; an ADO recorded test of `path:` removal. Three stale `qam-doctor-060-*` entries in the developer's own `~/.qamaster/installs.json` (from a test run before tests used a temp `QAMASTER_HOME`) are harmless; removing them is the user's call.
-- Not seen live: a signed-in crawl of fastapi-react-app; a generated folder through `npm install`, `bddgen` and `playwright test --list`; the changed skills under `--plugin-dir`.
+## Open after 0.7.1
+- **Live runs (the user's), findings to 0.7.2:** fastapi-react-app crawled signed out and signed in, with imported stories; a generated automation folder through `npm install`, `bddgen` and `playwright test --list` (API and Mobile Web projects); the 0.6.0 checks (the push hook under Claude Code from an app clone, a recorded script bound through real playwright-bdd after a store switch, the app-error fixture in a real project); the changed skills under `--plugin-dir`; the Restful Booker rehearsal.
+- **Follow-ups with no release yet:** acting on the `@signed-in` tag (a framework step or fixture that signs in); an ADO recorded test of `path:` removal. Three stale `qam-doctor-060-*` entries in the developer's own `~/.qamaster/installs.json` are harmless; removing them is the user's call.
+- **Undecided:** `--take-store`, ADO credentials from a file (W8); publish without `--to` always writing the file store too; exempting a push from the QA project itself; `qam review` with no terminal requiring `--yes`; watching a backend origin other than `baseURL`.
+- Where the code is: 0.6.0 gate state `gate/state.mts`, hook `hooks/pre-push.mts`, app errors `framework/playwright-bdd/src/app-errors.ts`, destinations and `qam store` in `cli/publish.mts`, `cli/project.mts`; 0.7.0 crawl merge `dsm/crawl-rules.mts` and `adapters/crawler-playwright.mts`, compare `dsm/update.mts`, source ownership `dsm/scan.mts`, presets `gate/presets.mts`, TestGen `testgen/facts.mts`, `testgen/validate.mts`, `testgen/render.mts`, API and Mobile Web template `plugin/framework/playwright-bdd/`, checks `automation/quality.mts`.
 
 ## What this session learned
 - **Build order and checks.** One release branch per release, items test-first, `npm run check` before a release. Run the suite with `env -u QAMASTER_ADO_ORG -u QAMASTER_ADO_PROJECT -u QAMASTER_STORE`: the user's shell sets them and before 0.7.1 one doctor test failed with them. Since 0.7.1 `tests/tmp.mts` deletes them, and tests use a temp `QAMASTER_HOME`, so `env -u` is belt and braces.
@@ -44,4 +40,4 @@ All 17 items built and reviewed; 728 tests, typecheck and lint clean. Where the 
 - **Working style the user wants:** short status updates when a step is slow; decisions asked with a recommendation first; docs updated with every release; answers kept plain.
 
 ## Still owed (the user's own runs)
-Load the 0.7.0 zip from `dist/` in Claude desktop (8 skills); run 0.6.0 and 0.7.0 live (fastapi-react-app signed out and signed in, with imported stories; a generated folder with API and Mobile Web features); re-run dummy-static-website's DSM and AgentMesh's TestGen; the Docker check; `/qamaster:status`, `/qamaster:report` and the push hook from the installed plugin.
+Build and load the 0.7.1 zip from `dist/` in Claude desktop (8 skills); the walkthrough on a new app; run 0.7.1 live (fastapi-react-app signed out and signed in, with imported stories; a generated folder with API and Mobile Web features); re-run dummy-static-website's DSM and AgentMesh's TestGen; the Docker check; `/qamaster:status`, `/qamaster:report` and the push hook from the installed plugin.
