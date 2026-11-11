@@ -85,3 +85,24 @@ test('a folder that is not a git repository, or has no commit, blocks with the n
     return true;
   });
 });
+
+test('0.8.0 item 5: the change names the AB# stories of its commit messages and its branch', async () => {
+  const dir = repo(); // its one commit says "coupons"
+  write(dir, 'shop/checkout/coupon.py', 'x = 3\n');
+  git(dir, 'commit', '-qam', 'Apply coupon to the total\n\nFixes AB#123 and, partly, ab#45.');
+  write(dir, 'shop/checkout/coupon.py', 'x = 4\n');
+  git(dir, 'commit', '-qam', 'Again AB#123');
+  git(dir, 'switch', '-q', '-c', 'feature/AB#77-more');
+  const c = await new GitRepoReader(dir).diff('main', 'HEAD');
+  assert.deepEqual(c.stories, ['123', '45', '77']);
+  // a commit on main, after the branch left it, is not part of the change
+  git(dir, 'switch', '-q', 'main');
+  git(dir, 'commit', '-q', '--allow-empty', '-m', 'main work AB#999');
+  git(dir, 'switch', '-q', 'feature/coupons');
+  assert.deepEqual((await new GitRepoReader(dir).diff('main', 'HEAD')).stories, ['123', '45'], "not main's AB#999");
+  git(dir, 'switch', '-q', '-c', 'plain', 'main');
+  write(dir, 'shop/plain.py', 'p\n');
+  git(dir, 'add', '-A');
+  git(dir, 'commit', '-qm', 'no story');
+  assert.equal((await new GitRepoReader(dir).diff('main', 'HEAD')).stories, undefined);
+});

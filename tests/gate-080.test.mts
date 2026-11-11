@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import type { Runner } from '../plugin/src/adapters/base.mts';
 import { evidenceName, renderPlan, renderVerdict } from '../plugin/src/cli/gate.mts';
 import { approve, type Gate, makePlan } from '../plugin/src/gate/gate.mts';
+import { planWith } from '../plugin/src/gate/presets.mts';
 import { renderTrial, trial } from '../plugin/src/gate/trial.mts';
 import { decide } from '../plugin/src/gate/verdict.mts';
 import { BlockedError } from '../plugin/src/shared/errors.mts';
@@ -198,4 +199,81 @@ test('item 4: renderTrial names each result, its kind, and that a trial pass is 
   assert.match(text, /step couldn't act on the page/);
   assert.match(text, /doesn't make a script proven/);
   assert.match(text, /\/tmp\/ev/);
+});
+
+// item 5: story-aware selection
+const storyChange = (...stories: string[]) => ({
+  base: 'a'.repeat(40),
+  head: 'b'.repeat(40),
+  branch: 'feature/x',
+  files: [{ path: 'docs/readme.md', status: 'M' }],
+  stories,
+});
+const withReq = (): FakeStore => {
+  const s = new FakeStore();
+  const add = (id: number, tag: string) => {
+    const i = s.items.get(id);
+    if (i) i.tags = [...i.tags, tag];
+  };
+  add(503, 'req:42'); // a manual case
+  add(701, 'req:42');
+  add(502, 'req:7');
+  return s;
+};
+
+test('item 5: a case tagged req:<id> is selected for the AB#<id> in the change, reason kind story', async () => {
+  const g = gate({ store: withReq(), repo: new FakeRepoReader(storyChange('42')) });
+  const plan = await makePlan(g, 'main', {});
+  const story = plan.items.find((i) => i.testCase.id === 701);
+  assert.deepEqual(story?.reasons, [{ kind: 'story', detail: 'AB#42' }]);
+  assert.ok(!plan.items.some((i) => i.testCase.id === 502), 'req:7 is another story');
+  assert.deepEqual(
+    plan.notRun.map((n) => [n.testCase.id, n.reasons?.map((r) => r.kind)]),
+    [[503, ['story']]],
+  );
+  assert.deepEqual(plan.stories, [{ id: '42', cases: [503, 701] }]);
+});
+
+test('item 5: a story no case covers is a listed gap and selects nothing', async () => {
+  const g = gate({ store: withReq(), repo: new FakeRepoReader(storyChange('99')) });
+  const plan = await makePlan(g, 'main', {});
+  assert.deepEqual(plan.stories, [{ id: '99', cases: [] }]);
+  assert.ok(!plan.items.some((i) => i.reasons.some((r) => r.kind === 'story')));
+  const text = renderPlan(plan);
+  assert.match(text, /AB#99\s+no test case is tagged req:99/);
+  const v = decide(plan, []);
+  assert.equal(v.result, 'pass', 'the verdict is unchanged');
+});
+
+test('item 5: req: tags are not groups, so they are not offered as other groups', async () => {
+  const plan = await makePlan(gate({ store: withReq() }), 'main', {});
+  assert.ok(!Object.keys(plan.otherGroups).some((t) => t.startsWith('req:')));
+});
+
+test('item 5: renderPlan says why a case is there', async () => {
+  const g = gate({ store: withReq(), repo: new FakeRepoReader(storyChange('42')) });
+  const text = renderPlan(await makePlan(g, 'main', {}));
+  assert.match(text, /TC701\s+Add to cart\s+story AB#42/);
+  assert.match(text, /AB#42\s+TC503, TC701/);
+});
+
+test('item 5: story selection runs under standard and full, not fast', async () => {
+  const mk = () => gate({ store: withReq(), repo: new FakeRepoReader(storyChange('42')) });
+  const o = { ai: 'off', groupsModel: null } as const;
+  const fast = await planWith(mk(), 'main', {}, { preset: 'fast', ...o });
+  assert.ok(!fast.items.some((i) => i.testCase.id === 701));
+  assert.equal(fast.stories, undefined);
+  assert.deepEqual(fast.selection?.selectors, ['path', 'smoke']);
+  const std = await planWith(mk(), 'main', {}, { preset: 'standard', ...o });
+  assert.ok(std.items.some((i) => i.testCase.id === 701));
+  assert.deepEqual(std.selection?.selectors, ['path', 'smoke', 'story']);
+  const full = await planWith(mk(), 'main', {}, { preset: 'full', ...o });
+  assert.deepEqual(full.stories, [{ id: '42', cases: [503, 701] }]);
+  assert.ok(full.items.find((i) => i.testCase.id === 701)?.reasons.some((r) => r.kind === 'story'));
+});
+
+test('item 5: a story-selected case counts as covering the change', async () => {
+  const g = gate({ store: withReq(), repo: new FakeRepoReader(storyChange('42')) });
+  const plan = await makePlan(g, 'main', {});
+  assert.doesNotMatch(renderPlan(plan), /warning: no selected test case covers/i);
 });

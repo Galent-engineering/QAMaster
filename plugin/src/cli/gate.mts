@@ -223,6 +223,7 @@ const why = (kind: string, detail: string) =>
     group: `group ${detail}`,
     added: `added by ${detail}`,
     all: 'every case with a script (--all)',
+    story: `story ${detail}`,
   })[kind] ?? detail;
 
 export function renderPlan(plan: Plan): string {
@@ -267,6 +268,16 @@ export function renderPlan(plan: Plan): string {
       'Coverage gaps (from the DSM)',
       ...plan.gaps.map(
         (g) => `  ${g.screen}  ${g.files.join(', ')} changed; ${g.why}\n    → propose: a TestGen run for this screen`,
+      ),
+    );
+  if (plan.stories?.length)
+    lines.push(
+      '',
+      'Stories in this change (AB# in a commit message or the branch name)',
+      ...plan.stories.map((s) =>
+        s.cases.length
+          ? `  AB#${s.id}  ${s.cases.map((id) => `TC${id}`).join(', ')}`
+          : `  AB#${s.id}  no test case is tagged req:${s.id} (coverage gap; the verdict is unchanged)`,
       ),
     );
   if (Object.keys(plan.otherGroups).length)

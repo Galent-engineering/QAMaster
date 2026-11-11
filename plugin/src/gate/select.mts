@@ -1,6 +1,6 @@
 /**
  * Which test cases a change selects, and why (Q11, Q31): `path:<glob>` tags matching the diff, the `smoke` tag, the
- * cases that visit screens the DSM says the diff touches, then the groups asked for (Claude's picks or by hand).
+ * cases that visit screens the DSM says the diff touches, the cases tagged for the stories the change names, then the groups asked for (Claude's picks or by hand).
  * Ported from CheckMaster's selection.py. Changes: links carry their runner's prefix (Q9, Q38), so a link with none
  * blocks; and a file whose path tags cover more than `sharedShare` of the plan is shared: it selects nothing by path,
  * and smoke and the DSM cover it instead (Q37).
@@ -35,7 +35,13 @@ function glob(pattern: string): RegExp {
 
 export const matches = (pattern: string, path: string) => glob(pattern).test(path);
 
-const isGroup = (tag: string) => tag !== SMOKE && !tag.startsWith(PATH);
+const REQ = 'req:';
+/** A `req:<id>` tag links a case to its story (0.8.0 item 5): a rule for selecting, not a group to pick. */
+const isGroup = (tag: string) => tag !== SMOKE && !tag.startsWith(PATH) && !tag.startsWith(REQ);
+
+/** The cases of the catalog tagged for a story, by ID. */
+export const storyCases = (catalog: Map<number, TestCase>, id: string): number[] =>
+  [...catalog.values()].filter((tc) => tc.tags.includes(`${REQ}${id}`)).map((tc) => tc.id);
 
 /** Group tag -> its test case IDs, sorted by tag. Groups are the tags that aren't rules. */
 export function groups(catalog: Map<number, TestCase>): Record<string, number[]> {
@@ -65,9 +71,11 @@ export type SelectInput = {
   all?: boolean;
   /** Q49: cases whose script QAMaster recorded (drafts.json), still manual in the store; --all plans them too. */
   recorded?: Set<number>;
+  /** 0.8.0 item 5: select the cases tagged for the stories the change names. Default on; `fast` turns it off. */
+  stories?: boolean;
 };
 
-/** Test case ID -> every reason to run it, in rule order: path, smoke, dsm, group (all, when asked, first). */
+/** Test case ID -> every reason to run it, in rule order: path, smoke, dsm, story, group (all, when asked, first). */
 export function candidates(i: SelectInput): Map<number, Reason[]> {
   const reasons = new Map<number, Reason[]>();
   const add = (id: number, r: Reason) => reasons.set(id, [...(reasons.get(id) ?? []), r]);
@@ -91,6 +99,10 @@ export function candidates(i: SelectInput): Map<number, Reason[]> {
   for (const tc of cases) if (tc.tags.includes(SMOKE)) add(tc.id, { kind: 'smoke', detail: '' });
   for (const [id, screens] of i.dsm ?? []) if (i.catalog.has(id)) add(id, { kind: 'dsm', detail: screens.join(', ') });
 
+  if (i.stories !== false)
+    for (const story of i.change.stories ?? [])
+      for (const id of storyCases(i.catalog, story)) add(id, { kind: 'story', detail: `AB#${story}` });
+
   const known = groups(i.catalog);
   const unknown = Object.keys(i.wanted).filter((t) => !(t in known));
   if (unknown.length)
@@ -109,7 +121,11 @@ export function candidates(i: SelectInput): Map<number, Reason[]> {
 export function noTouchWarning(items: PlanItem[], files: number): string | null {
   const selected = items.filter((i) => i.selected);
   if (!files || !selected.length) return null;
-  if (selected.some((i) => i.reasons.some((r) => r.kind === 'path' || r.kind === 'dsm' || r.kind === 'all')))
+  if (
+    selected.some((i) =>
+      i.reasons.some((r) => r.kind === 'path' || r.kind === 'dsm' || r.kind === 'all' || r.kind === 'story'),
+    )
+  )
     return null;
   return 'No selected test case covers or visits the changed code (none was picked by path or by the DSM): a pass says little about this change.';
 }

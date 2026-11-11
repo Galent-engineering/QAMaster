@@ -3,7 +3,7 @@
  * and `gate.groupsModel`. The plan records what it used (`selection`). The names live in shared/models.mts.
  *
  *     fast      path tags and smoke only: the DSM adds nothing
- *     standard  today's plan: path, smoke and the DSM, and the groups the session picks (the default)
+ *     standard  today's plan: path, smoke, the DSM and the stories the change names (AB#<id>, 0.8.0 item 5), and the groups the session picks (the default)
  *     full      every case with a bound or recorded script (D5: the same as 0.6.0's `qam plan --all`)
  *
  * The groups model is the Claude Code model the /qamaster:check command gives the subagent that picks groups. The CLI
@@ -41,7 +41,11 @@ export async function planWith(
   o: { preset: Preset; ai: 'on' | 'off'; groupsModel: string | null; ci?: boolean; recorded?: Set<number> },
 ): Promise<Plan> {
   const gate = o.preset === 'fast' ? { ...g, dsm: undefined } : g;
-  const plan = await makePlan(gate, base, wanted, { all: o.preset === 'full', recorded: o.recorded });
+  const plan = await makePlan(gate, base, wanted, {
+    all: o.preset === 'full',
+    recorded: o.recorded,
+    stories: o.preset !== 'fast',
+  });
   const groups = Object.keys(wanted).length ? ['group'] : [];
   plan.selection = {
     preset: o.preset,
@@ -50,6 +54,7 @@ export async function planWith(
       'path',
       'smoke',
       ...(o.preset !== 'fast' && g.dsm ? ['dsm'] : []),
+      ...(plan.stories?.length ? ['story'] : []),
       ...groups,
     ],
     model: o.preset === 'standard' && o.ai === 'on' && !o.ci ? (o.groupsModel ?? 'inherit') : null,

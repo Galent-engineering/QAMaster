@@ -11,7 +11,7 @@ import { randomBytes } from 'node:crypto';
 import type { RepoReader, Runner, TestCaseStore } from '../adapters/base.mts';
 import { BlockedError } from '../shared/errors.mts';
 import type { Gap, Plan, PlanItem, TestCase, TestResult, Verdict } from '../shared/models.mts';
-import { candidates, groups, linkRunner, resolve, split } from './select.mts';
+import { candidates, groups, linkRunner, resolve, split, storyCases } from './select.mts';
 import { decide } from './verdict.mts';
 
 export type Gate = {
@@ -63,7 +63,7 @@ export async function makePlan(
   g: Gate,
   base: string,
   wanted: Record<string, string>,
-  o: { all?: boolean; recorded?: Set<number> } = {},
+  o: { all?: boolean; recorded?: Set<number>; stories?: boolean } = {},
 ): Promise<Plan> {
   const change = await g.repo.diff(base, await g.repo.head());
   const catalog = await g.store.inPlan();
@@ -78,6 +78,7 @@ export async function makePlan(
     dsm: dsm?.cases,
     all: o.all,
     recorded: o.recorded,
+    stories: o.stories,
   });
   const picked = [...reasons.keys()].map((id) => catalog.get(id)).filter((c): c is TestCase => !!c);
   const runners = runnersFor(g, picked);
@@ -89,6 +90,8 @@ export async function makePlan(
   );
   const testsHead = g.testsHead?.();
   const appTests = g.appTests?.() ?? [];
+  const stories =
+    o.stories === false ? [] : (change.stories ?? []).map((id) => ({ id, cases: storyCases(catalog, id) }));
   return {
     id: randomBytes(4).toString('hex'),
     createdAt: new Date().toISOString(),
@@ -97,6 +100,7 @@ export async function makePlan(
     items,
     notRun,
     gaps: dsm?.gaps ?? [],
+    ...(stories.length ? { stories } : {}),
     ...(shared.length ? { shared } : {}),
     catalogSize: catalog.size,
     otherGroups,

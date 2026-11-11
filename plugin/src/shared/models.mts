@@ -87,10 +87,17 @@ export type PublishChange = {
 // Gate side (from CheckMaster)
 
 export type ChangedFile = { path: string; status: string };
-export type Change = { base: string; head: string; branch: string; files: ChangedFile[] };
+export type Change = {
+  base: string;
+  head: string;
+  branch: string;
+  files: ChangedFile[];
+  /** 0.8.0 item 5: the ids of the `AB#<id>` stories named in the commit messages since the merge base and in the branch name. */
+  stories?: string[];
+};
 /** A test case as the gate sees it. `automatedTest` is `bdd:@TC-…` or `pytest:<nodeid>` (Q9), null when manual. */
 export type TestCase = { id: number; title: string; url: string; tags: string[]; automatedTest: string | null };
-export type Reason = { kind: 'path' | 'smoke' | 'group' | 'added' | 'dsm' | 'all'; detail: string };
+export type Reason = { kind: 'path' | 'smoke' | 'group' | 'added' | 'dsm' | 'all' | 'story'; detail: string };
 export type PlanItem = { testCase: TestCase; reasons: Reason[]; selected: boolean };
 /** `broken`: the automated test named in the store isn't in the test root, so the check fails until it's fixed. */
 export type NotRun = { testCase: TestCase; why: string; broken: boolean; reasons?: Reason[] }; // reasons: why it was selected
@@ -123,6 +130,8 @@ export type Plan = {
   approvedBy?: string;
   approvedAt?: string;
   selection?: Selection; // 0.7.0 item 14: the preset, selectors and groups model this plan used
+  /** 0.8.0 item 5: each story the change names and the cases tagged `req:<id>` for it (none: a coverage gap). */
+  stories?: { id: string; cases: number[] }[];
   allowEmpty?: boolean; // 0.8.0 item 1: approved with no case selected, on the person's --allow-empty
 };
 

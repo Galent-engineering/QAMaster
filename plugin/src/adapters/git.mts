@@ -161,6 +161,12 @@ export function defaultBase(dir: string): string {
   throw new BlockedError(`Couldn't find a base branch (origin/HEAD, main or master) in ${dir}. Pass --base <branch>.`);
 }
 
+/** The ids of the `AB#<id>` stories a text names (Azure Boards' link syntax), in order, once each. */
+export function storiesOf(...texts: string[]): string[] {
+  const ids = texts.flatMap((t) => [...t.matchAll(/\bAB#(\d+)/gi)].map((m) => m[1]));
+  return [...new Set(ids)];
+}
+
 /** The gate's view of the app repo (ported from CheckMaster's git.py). Only reads. */
 export class GitRepoReader implements RepoReader {
   private readonly dir: string;
@@ -179,11 +185,15 @@ export class GitRepoReader implements RepoReader {
         const [status, ...paths] = line.split('\t');
         return { path: paths[paths.length - 1], status: status[0] };
       });
+    const branch = gitText(this.dir, ['rev-parse', '--abbrev-ref', 'HEAD']).trim();
+    const messages = gitText(this.dir, ['log', '--format=%B%x00', `${from}..${head}`]).split('\0');
+    const stories = storiesOf(...messages, branch);
     return {
       base,
       head: gitText(this.dir, ['rev-parse', head]).trim(),
-      branch: gitText(this.dir, ['rev-parse', '--abbrev-ref', 'HEAD']).trim(),
+      branch,
       files,
+      ...(stories.length ? { stories } : {}),
     };
   }
 
