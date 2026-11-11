@@ -11,6 +11,7 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import tty from 'node:tty';
 import { parseArgs } from 'node:util';
@@ -35,6 +36,7 @@ import { approve, type Gate, runPlan, wouldRunNothing } from '../gate/gate.mts';
 import { choosePreset, inCI, planWith, renderSelection } from '../gate/presets.mts';
 import { linkRunner, noTouchWarning } from '../gate/select.mts';
 import { stateDirs } from '../gate/state.mts';
+import { renderTrial, trial } from '../gate/trial.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
 import { readLedger } from '../publish/ledger.mts';
 import type { Config } from '../shared/config.mts';
@@ -333,6 +335,7 @@ function parse(argv: string[], command: string) {
         yes: { type: 'boolean' },
         all: { type: 'boolean' },
         done: { type: 'boolean' },
+        try: { type: 'boolean' },
         'allow-empty': { type: 'boolean' },
       },
     });
@@ -411,6 +414,12 @@ export async function gate(
   const { values: v, positionals } = parse(argv, command);
   if (v.all && command !== 'plan' && command !== 'check')
     throw new BlockedError(`qam ${command}: Unknown option '--all'. Only qam plan and qam check take it.`);
+  if (v.try && command !== 'automate')
+    throw new BlockedError(`qam ${command}: Unknown option '--try'. Only qam automate takes it.`);
+  if (v.try && v.done)
+    throw new BlockedError(
+      'qam automate: --try and --done together: try the scripts first, then record them with --done.',
+    );
   if (v['allow-empty'] && command !== 'approve' && command !== 'check')
     throw new BlockedError(`qam ${command}: Unknown option '--allow-empty'. Only qam approve and qam check take it.`);
   if (command === 'approve' && !io.tty && !v.yes)
@@ -445,7 +454,7 @@ export async function gate(
     return AWAITING;
   }
   const plan = loadPlan(cfg, positionals[0]);
-  if (command === 'automate') return automateCommand(cfg, plan, !!v.done, json);
+  if (command === 'automate') return automateCommand(cfg, g, plan, { done: !!v.done, try: !!v.try }, json);
   if (command === 'approve') {
     const approved = await approve(g, plan, whoAmI(cfg), list(v.add), list(v.remove), {
       allowEmpty: !!v['allow-empty'],
@@ -482,7 +491,41 @@ function recorded(cfg: Config): Set<number> {
   return new Set(ledger.filter((e) => drafts?.cases[e.localId]).map((e) => e.trackerId));
 }
 
-function automateCommand(cfg: Config, plan: Plan, done: boolean, json: boolean): number {
+/**
+ * qam automate <plan-id> --try (0.8.0 item 4): runs each script to draft or update once and prints the results. Nothing is
+ * recorded; the evidence goes to a temporary folder that is kept only when something failed. Exit 0 all passed, 1 not.
+ */
+async function tryScripts(g: Gate, plan: Plan, work: Work[], json: boolean): Promise<number> {
+  const evidence = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-try-'));
+  // a script already bound to the plan as new (after --done) is still new until an approved run passes it
+  const fresh = new Set(plan.newScripts);
+  const results = await trial(
+    g,
+    work.map((w) => (w.action === 'keep' && fresh.has(w.testCaseId) ? { ...w, action: 'update' as const } : w)),
+    playwrightBdd.link,
+    evidence,
+  );
+  const ok = results.every((r) => r.status === 'passed');
+  if (ok) fs.rmSync(evidence, { recursive: true, force: true });
+  const titles = new Map([...plan.items, ...plan.notRun].map((i) => [i.testCase.id, i.testCase.title]));
+  out(
+    json,
+    { plan: plan.id, results, ...(ok ? {} : { evidence }) },
+    results.length
+      ? renderTrial(results, titles, evidence)
+      : `Nothing to try in plan ${plan.id}: no script is waiting to be drafted or updated.`,
+  );
+  return ok ? PASS : FAIL;
+}
+
+async function automateCommand(
+  cfg: Config,
+  g: Gate,
+  plan: Plan,
+  o: { done: boolean; try: boolean },
+  json: boolean,
+): Promise<number> {
+  const done = o.done;
   const project = cfg.qaProject ?? cfg.root;
   const dir = automationFolder(cfg);
   if (!dir)
@@ -505,6 +548,7 @@ function automateCommand(cfg: Config, plan: Plan, done: boolean, json: boolean):
   for (const run of fs.existsSync(outDir) ? fs.readdirSync(outDir).sort() : [])
     for (const c of readJson<{ id?: string }[]>(path.join(outDir, run, 'testcases.json')) ?? [])
       if (c.id) runOf.set(c.id, run);
+  if (o.try) return tryScripts(g, plan, work, json);
   if (!done) {
     const n = (a: Work['action']) => work.filter((w) => w.action === a).length;
     const lines = [

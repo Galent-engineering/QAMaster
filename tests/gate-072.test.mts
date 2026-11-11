@@ -52,8 +52,13 @@ test('item 10: the verdict reason names the first error line of each failed case
     res(1, 'failed', 'Add a todo\n  Error: locator.check: Element is outside of the viewport\n  at x'),
     res(2, 'failed', 'tests/t.py::test_a\nE   assert 3 == 4\nE   more'),
   ]);
-  assert.ok(v.reasons.some((r) => r === 'TC1 failed: Error: locator.check: Element is outside of the viewport'));
-  assert.ok(v.reasons.some((r) => r === 'TC2 failed: E   assert 3 == 4'));
+  assert.ok(
+    v.reasons.some(
+      (r) =>
+        r === "TC1 failed: step couldn't act on the page: Error: locator.check: Element is outside of the viewport",
+    ),
+  );
+  assert.ok(v.reasons.some((r) => r === 'TC2 failed: assertion failed: E   assert 3 == 4'));
   const n = decide(plan([item(1, 'path')]), [res(1, 'failed', 'Boom')], { newScripts: new Set([1]) });
   assert.match(n.reasons[0], /^TC1 failed: new script failed: check the script or the app\. First error: Boom/);
   assert.deepEqual(decide(plan([item(1, 'path')]), [res(1, 'failed')]).reasons, ['TC1 failed.']);

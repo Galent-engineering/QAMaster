@@ -106,7 +106,7 @@ test('check --yes plans, approves and runs; a failing test fails it with the err
   git(dir, 'commit', '-qam', 'break the cart test');
   const r = qam(dir, 'check', '--yes');
   assert.equal(r.status, 1, r.err);
-  assert.match(r.out, /Verdict: FAIL \(TC\d+ failed: E .*cart total is wrong/);
+  assert.match(r.out, /Verdict: FAIL \(TC\d+ failed: assertion failed: E .*cart total is wrong/);
   assert.match(r.out, /cart total is wrong/);
   assert.equal(qam(dir, 'check').status, 3, 'without --yes check stops at the plan');
 });
@@ -189,4 +189,15 @@ test('0.8.0 item 1: --allow-empty is for approve and check only', async (t) => {
   const r = qam(dir, 'plan', '--allow-empty');
   assert.equal(r.status, 2, r.out + r.err);
   assert.match(r.err, /Unknown option '--allow-empty'/);
+});
+
+test('0.8.0 item 4: --try belongs to qam automate, and not with --done', async (t) => {
+  const dir = await shop();
+  if (!dir) return t.skip('uv cannot lock pytest offline here');
+  const plan = qam(dir, 'plan', '--try');
+  assert.equal(plan.status, 2, plan.out + plan.err);
+  assert.match(plan.err, /Unknown option '--try'/);
+  const both = qam(dir, 'automate', 'ab12', '--try', '--done');
+  assert.equal(both.status, 2, both.out + both.err);
+  assert.match(both.err, /--try and --done/);
 });

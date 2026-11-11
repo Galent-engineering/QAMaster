@@ -50,7 +50,8 @@ export const COMMANDS: Record<string, string> = {
   app: 'Create the automation folder: create --app NAME --web-url URL [--api-url URL]',
   'check-scripts': 'Quality gate for automation scripts',
   plan: 'Propose test cases for the change (--preset fast|standard|full, --all); runs nothing',
-  automate: 'List the scripts a plan needs drafted or updated; --done records them and binds the plan (Q39)',
+  automate:
+    'List the scripts a plan needs drafted or updated; --try runs the new ones once and records nothing; --done records them and binds the plan (Q39)',
   approve:
     'Approve a plan, optionally adding or removing test cases (--allow-empty to run none); with no terminal it needs --yes',
   run: 'Run an approved plan and record the verdict',

@@ -14,6 +14,30 @@ const firstError = (e: string | undefined): string => {
   return line.length > 160 ? `${line.slice(0, 159)}…` : line;
 };
 
+/**
+ * What kind of failure an error is (0.8.0 item 4, D18), judged from its text: the app showed something other than
+ * the case expected (assertion), a step couldn't do its action on the page (Playwright's action errors, a missing
+ * element, the app not answering), or the script itself is wrong (a JavaScript or Python error, a missing step).
+ * Null when the text says none of these: no kind is better than a guessed one.
+ */
+export function failureKind(error: string | undefined): string | null {
+  const e = error ?? '';
+  if (/\bexpect\(|AssertionError|^E\s+assert\b/m.test(e)) return 'assertion failed';
+  if (
+    /\b(?:locator|page|frame|elementHandle|keyboard|mouse|request|apiRequestContext)\.\w+: |waiting for (?:locator|getBy)|strict mode violation|net::ERR_|Target (?:page|closed)/.test(
+      e,
+    )
+  )
+    return "step couldn't act on the page";
+  if (
+    /\b(?:TypeError|ReferenceError|SyntaxError|RangeError|NameError|AttributeError|ImportError|ModuleNotFoundError)\b|Cannot find module|is not defined|is not a function|Missing step definition/.test(
+      e,
+    )
+  )
+    return 'script error';
+  return null;
+}
+
 const PROBLEM: Partial<Record<TestResult['status'], string>> = {
   failed: 'failed',
   not_run: "didn't run",
@@ -32,11 +56,12 @@ export function decide(plan: Plan, results: TestResult[], o: { newScripts?: Set<
   for (const r of results) {
     const problem = PROBLEM[r.status];
     const first = r.status === 'failed' ? firstError(r.error) : '';
+    const kind = r.status === 'failed' ? failureKind(r.error) : null;
     if (problem && r.status === 'failed' && o.newScripts?.has(r.testCaseId))
       reasons.push(
-        `TC${r.testCaseId} failed: new script failed: check the script or the app.${first ? ` First error: ${first}` : ''}`,
+        `TC${r.testCaseId} failed: new script failed${kind ? ` (${kind})` : ''}: check the script or the app.${first ? ` First error: ${first}` : ''}`,
       );
-    else if (first) reasons.push(`TC${r.testCaseId} failed: ${first}`);
+    else if (first) reasons.push(`TC${r.testCaseId} failed: ${kind ? `${kind}: ` : ''}${first}`);
     else if (problem) reasons.push(`TC${r.testCaseId} ${problem}.`);
     else if (r.status === 'flaky') warnings.push(`TC${r.testCaseId} is flaky: failed, then passed on retry.`);
   }

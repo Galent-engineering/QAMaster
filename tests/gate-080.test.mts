@@ -4,6 +4,7 @@ import { test } from 'node:test';
 import type { Runner } from '../plugin/src/adapters/base.mts';
 import { evidenceName, renderPlan, renderVerdict } from '../plugin/src/cli/gate.mts';
 import { approve, type Gate, makePlan } from '../plugin/src/gate/gate.mts';
+import { renderTrial, trial } from '../plugin/src/gate/trial.mts';
 import { decide } from '../plugin/src/gate/verdict.mts';
 import { BlockedError } from '../plugin/src/shared/errors.mts';
 import type { NotRun, Plan, TestCase } from '../plugin/src/shared/models.mts';
@@ -79,4 +80,122 @@ test('item 3: each run keeps its evidence in a folder named like its verdict fil
   const b = await makePlan(g, 'main', {});
   assert.equal(evidenceName(a), `${a.change.head}-${a.id}`);
   assert.notEqual(evidenceName(a), evidenceName(b), 'two plans on one HEAD do not share a folder');
+});
+
+const planOf = (id: number): Plan =>
+  ({
+    id: 'p1',
+    createdAt: '2026-11-11T00:00:00Z',
+    change: { base: 'main', head: 'sha1', branch: 'b', files: [{ path: 'a.ts', status: 'M' }] },
+    items: [
+      {
+        testCase: { id, title: 't', url: 'u', tags: [], automatedTest: 'bdd:@x' },
+        reasons: [{ kind: 'path', detail: 'a' }],
+        selected: true,
+      },
+    ],
+    notRun: [],
+    gaps: [],
+    catalogSize: 1,
+    otherGroups: {},
+  }) as unknown as Plan;
+const failed = (error: string) => ({
+  testCaseId: 1,
+  status: 'failed' as const,
+  durationS: 1,
+  testIds: [],
+  evidence: [],
+  error,
+});
+
+test('item 4: a failed case names its kind before the first error line', () => {
+  const kind = (error: string) => decide(planOf(1), [failed(error)]).reasons[0];
+  assert.match(
+    kind('Add a todo\nError: expect(locator).toHaveText(expected) failed\nExpected: "2"\nReceived: "1"'),
+    /^TC1 failed: assertion failed: Error: expect\(locator\)/,
+  );
+  assert.match(kind('Add\nE   assert 3 == 4'), /^TC1 failed: assertion failed: E {3}assert 3 == 4/);
+  assert.match(
+    kind('Add a todo\nError: locator.click: Timeout 30000ms exceeded.\nCall log:\n  - waiting for getByRole'),
+    /^TC1 failed: step couldn't act on the page: Error: locator\.click: Timeout/,
+  );
+  assert.match(
+    kind('Add\nError: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000'),
+    /^TC1 failed: step couldn't act on the page:/,
+  );
+  assert.match(
+    kind('Add\nTypeError: Cannot read properties of undefined (reading "click")\n  at steps.ts:4'),
+    /^TC1 failed: script error: TypeError/,
+  );
+  assert.match(kind('Add\nError: Missing step definition for "I open the page"'), /^TC1 failed: script error:/);
+  assert.equal(kind('Add\nsomething odd'), 'TC1 failed: something odd', 'an unrecognised error gets no guessed kind');
+});
+
+test('item 4: a new script that fails keeps its label and gains the kind', () => {
+  const v = decide(planOf(1), [failed('Add\nError: locator.fill: Timeout 30000ms exceeded.')], {
+    newScripts: new Set([1]),
+  });
+  assert.match(
+    v.reasons[0],
+    /^TC1 failed: new script failed \(step couldn't act on the page\): check the script or the app\. First error: Error: locator\.fill/,
+  );
+});
+
+test('item 4: a trial runs only the new scripts once and returns their results', async () => {
+  const runner = new FakeRunner(['bdd:@TC-NEW-1', 'bdd:@TC-NEW-2', 'bdd:@TC-OLD'], new Set([502]));
+  const g = gate({ runner: () => runner });
+  const work = [
+    { testCaseId: 501, localId: 'TC-NEW-1', action: 'draft' as const, files: ['a.feature'] },
+    { testCaseId: 502, localId: 'TC-NEW-2', action: 'update' as const, files: ['b.feature'] },
+    { testCaseId: 601, localId: 'TC-OLD', action: 'keep' as const, files: ['c.feature'] },
+    { testCaseId: 503, localId: 'TC-NONE', action: 'draft' as const, files: [] },
+  ];
+  const t = await trial(g, work, (id) => `bdd:@${id}`, '/ev');
+  assert.deepEqual(
+    t.map((r) => [r.testCaseId, r.status]),
+    [
+      [501, 'passed'],
+      [502, 'failed'],
+    ],
+  );
+  assert.equal(runner.ran.length, 1, 'once');
+  assert.deepEqual(
+    [...runner.ran[0].selection],
+    [
+      [501, ['bdd:@TC-NEW-1']],
+      [502, ['bdd:@TC-NEW-2']],
+    ],
+  );
+  assert.equal(runner.ran[0].evidence, '/ev');
+});
+
+test('item 4: a trial of a script the runner cannot find says so instead of passing', async () => {
+  const g = gate({ runner: () => new FakeRunner([]) });
+  const work = [{ testCaseId: 501, localId: 'TC-NEW-1', action: 'draft' as const, files: ['a.feature'] }];
+  const [r] = await trial(g, work, (id) => `bdd:@${id}`, '/ev');
+  assert.equal(r.status, 'not_run');
+  assert.match(r.error ?? '', /no scenario/i);
+});
+
+test('item 4: renderTrial names each result, its kind, and that a trial pass is not proof', () => {
+  const text = renderTrial(
+    [
+      { testCaseId: 501, status: 'passed', durationS: 1.2, testIds: [], evidence: [] },
+      {
+        testCaseId: 502,
+        status: 'failed',
+        durationS: 3,
+        testIds: [],
+        evidence: [],
+        error: 'T\nError: locator.click: Timeout 30000ms exceeded.',
+      },
+    ],
+    new Map([[501, 'Add a todo']]),
+    '/tmp/ev',
+  );
+  assert.match(text, /passed\s+TC501\s+Add a todo/);
+  assert.match(text, /failed\s+TC502/);
+  assert.match(text, /step couldn't act on the page/);
+  assert.match(text, /doesn't make a script proven/);
+  assert.match(text, /\/tmp\/ev/);
 });
