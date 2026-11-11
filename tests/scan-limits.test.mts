@@ -223,7 +223,7 @@ test('TestGen and the knowledge skills see the code limits, with their file:line
   const md = [...buildSkills(dsm, {}, 'Shop', () => null, [], '2026-11-11T00:00:00Z').files.values()].join('\n');
   assert.match(
     md,
-    /Limit in code for "note" \(zod, the crawl did not record the field\): max 200 chars \(`shop:src\/Cart.tsx:14`\)/,
+    /Limit in code for `note` \(zod, the crawl did not record the field\): max 200 chars \(`shop:src\/Cart.tsx:14`\)/,
   );
   assert.match(md, /\[limits from code: shop:src\/Cart.tsx:9\]/);
 });
