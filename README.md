@@ -2,7 +2,7 @@
 
 A Claude Code plugin that builds a team's test cases and automation from the application and its code, publishes them to Azure DevOps Test Plans (or a local file), and checks every code change against them before it's pushed.
 
-**Status: 0.7.2 built, 0.7.1 released** (2026-11-11). `release/0.7.2` holds the fixes from the TodoApp walkthrough (items 1–19, 787 tests, not yet released). 0.7.1 (2026-11-10) is on `release/0.7.1` (built on `release/0.7.0`, which contains `release/0.6.0`). `release/0.6.0` and `release/0.7.0` are pushed; `release/0.7.1` is local until pushed; none is merged to `main` (0.5.0). Built and tested on fixtures and on four live apps; 0.4.4 to 0.7.1 not yet run on a live application. 0.7.0 adds apps with a sign-in, a faster DSM, selection presets, and API and Mobile Web scripts; 0.7.1 is fixes after 0.6.0 and 0.7.0. Product v1 isn't proven: the live runs and the decisions listed in [the 0.7.2 plan](docs/plans/0.7.2.md) (most for 0.8.0) are still to come; then 1.0.0 proves v1, and native Android and iOS come in 1.1.0 (Q54). What each release holds is in [docs/releases.md](docs/releases.md); the walk-through of setup and the roadmap is [docs/v0.7.2-setup-guide.html](docs/v0.7.2-setup-guide.html).
+**Status: 0.8.0 built, 0.7.1 released** (2026-11-11). `release/0.8.0` (on `release/0.7.2`, the walkthrough fixes) holds the gate-trust release: empty plans refused, consent through permission prompts, the API origin watched, story-aware selection, trial runs, test-data cleanup, a `@signed-in` hook, the ADO preview, `--take-store`, and the crawl's hover cards, form-code limits and passes (items 1–20, 892 tests, not yet walked through or released). 0.7.1 (2026-11-10) is on `release/0.7.1` (built on `release/0.7.0`, which contains `release/0.6.0`). `release/0.6.0` and `release/0.7.0` are pushed; `release/0.7.1` is local until pushed; none is merged to `main` (0.5.0). Built and tested on fixtures and on four live apps; 0.4.4 to 0.7.1 not yet run on a live application. 0.7.0 adds apps with a sign-in, a faster DSM, selection presets, and API and Mobile Web scripts; 0.7.1 is fixes after 0.6.0 and 0.7.0. Product v1 isn't proven: the live runs and the decisions listed in [the 0.7.2 plan](docs/plans/0.7.2.md) (most for 0.8.0) are still to come; then 1.0.0 proves v1, and native Android and iOS come in 1.1.0 (Q54). What each release holds is in [docs/releases.md](docs/releases.md); the walk-through of setup and the roadmap is [docs/v0.8.0-setup-guide.html](docs/v0.8.0-setup-guide.html).
 
 ## Install
 
@@ -64,7 +64,7 @@ scripts/package.sh                # dist/: the plugin zip and the marketplace zi
 | [docs/install.md](docs/install.md) | Load a release as a zip, and what the machine needs |
 | [docs/learning.md](docs/learning.md) | The concepts and design, one lesson per feature |
 | [docs/porting-step3.md](docs/porting-step3.md) | How the Autonomous-QE features were ported, and the intended differences |
-| [docs/v0.7.2-setup-guide.html](docs/v0.7.2-setup-guide.html) | Setup step by step, the roadmap, the latest decisions |
+| [docs/v0.8.0-setup-guide.html](docs/v0.8.0-setup-guide.html) | Setup step by step, the roadmap, the latest decisions |
 
 ## Key decisions
 

@@ -1,6 +1,6 @@
 # QAMaster: Technical design
 
-> Status: current at 0.7.0 (2026-11-10). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.7.2-setup-guide.html). The diagrams are in [architecture.md](architecture.md); the reasons are in [decisions.md](decisions.md).
+> Status: current at 0.7.0 (2026-11-10). Written as designed; what's built is in [releases.md](releases.md) and the [setup guide](v0.8.0-setup-guide.html). The diagrams are in [architecture.md](architecture.md); the reasons are in [decisions.md](decisions.md).
 
 ## Tech stack
 
