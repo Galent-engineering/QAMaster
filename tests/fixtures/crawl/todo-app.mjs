@@ -8,6 +8,7 @@
 // Public either way: /wrapped (a body with an onclick, a pointer card, a pointer sidebar), /plain and /reports (a nav of
 // <a> with no href that navigate by click handler, and a "Sign out" in it).
 // Every POST and DELETE is recorded; GET /__writes lists them, so a test can prove a crawl changed nothing.
+// /hover: cards whose pointer cursor comes only from a :hover rule (0.8.0 item 17).
 // /slow shows its content in steps 80 ms apart; /busy changes its DOM until the page is left; /poll starts a request
 // that is never answered (a long poll).
 // Test account (fixture only): qa@example.test / qa-password.
@@ -123,6 +124,20 @@ document.getElementById('s1').addEventListener('click', () => { location.href = 
 document.getElementById('tile').addEventListener('click', () => { location.href = '/todo'; });
 document.getElementById('code').addEventListener('click', () => { location.href = '/todo/1'; });
 </script>`, true));
+  }
+  if (url.pathname === '/hover.css') return res.writeHead(200, { 'content-type': 'text/css' }).end('.far:hover { cursor: pointer; }');
+  if (url.pathname === '/hover') {
+    // cards that show a pointer only on hover (a :hover rule), with a click handler added by script: no onclick, no tabindex
+    const other = `http://127.0.0.1:${(req.headers.host || '').split(':')[1]}/hover.css`; // another origin: its rules cannot be read
+    return send(200, page('Hover', `<link rel="stylesheet" href="${other}">
+<style>.tile { border: 1px solid #888; padding: 12px; margin: 8px; width: 220px; } .tile:hover { cursor: pointer; background: #eee; }
+@media (min-width: 1px) { .row:hover { cursor: pointer; } } .far { padding: 12px; width: 220px; }</style>
+<div class="tile" id="t1">Open todos</div><div class="row" id="r1" style="padding:12px;width:220px">Open profile</div><div class="far" id="f1">Far card</div>
+<script>
+document.getElementById('t1').addEventListener('click', () => { location.href = '/todo'; });
+document.getElementById('r1').addEventListener('click', () => { location.href = '/profile'; });
+document.getElementById('f1').addEventListener('click', () => { location.href = '/about'; });
+</script>`, false)); // no sidebar: its items would also lead to /todo and /profile
   }
   if (url.pathname === '/profile') return send(200, page('Profile', '<p>qa@example.test</p>', true));
   return send(404, page('Not found', '', user));

@@ -686,13 +686,8 @@ export function compareDsm(older: Dsm, newer: Dsm): DsmCompare {
   };
 }
 
-/**
- * 0.7.2 item 15: a list screen the crawl reached with no rows. The code has a detail screen under it (/todo/:id), but
- * the crawl has no edge from the list into that prefix: the rows are how the crawl reaches the detail, so its detail
- * screens were never reached. A list the crawl never visited is not reported here.
- */
-export function emptyListHints(ui: UiModel | null, routes: string[]): string[] {
-  if (!ui) return [];
+/** Detail screens (/todo/:id) under a list the crawl reached, which the crawl never reached itself, keyed by the list. */
+function detailsOfCrawledLists(ui: UiModel, routes: string[]): Map<string, string[]> {
   // a page that redirected or failed to load was not crawled: it has no rows to report on
   const crawled = new Set(ui.pages.filter((p) => !p.redirect_to && !p.error).map((p) => p.route));
   const reached = new Set(ui.pages.map((p) => p.route));
@@ -701,10 +696,42 @@ export function emptyListHints(ui: UiModel | null, routes: string[]): string[] {
     const m = /^(.+)\/:[^/]+$/.exec(r);
     if (m && crawled.has(m[1]) && !reached.has(r)) details.set(m[1], [...(details.get(m[1]) ?? []), r]);
   }
+  return details;
+}
+
+/**
+ * 0.7.2 item 15: a list screen the crawl reached with no rows. The code has a detail screen under it (/todo/:id), but
+ * the crawl has no edge from the list into that prefix: the rows are how the crawl reaches the detail, so its detail
+ * screens were never reached. A list the crawl never visited is not reported here. 0.8.0 item 17 words it as what
+ * happened: no row led anywhere (an empty list, or rows the crawl could not see as clickable).
+ */
+export function emptyListHints(ui: UiModel | null, routes: string[]): string[] {
+  if (!ui) return [];
+  const details = detailsOfCrawledLists(ui, routes);
   return sortStrings([...details.keys()])
     .filter((list) => !ui.edges.some((e) => e.from === list && e.to.startsWith(`${list}/`)))
     .map(
       (list) =>
-        `no rows on ${list}, so its detail screens (${(details.get(list) ?? []).join(', ')}) are unreachable: seed the crawl's account with data, or check the rows are links`,
+        `no row on ${list} led to its detail screens (${(details.get(list) ?? []).join(', ')}): seed the crawl's account with data, or check the rows are links`,
     );
+}
+
+/**
+ * 0.8.0 item 17: one line for the screens the code has and the crawl never reached, so the list is not dozens of
+ * warnings. The detail screens under an empty list are already named by emptyListHints and left out here.
+ */
+export function uncrawledHint(ui: UiModel | null, routes: string[]): string[] {
+  if (!ui) return [];
+  const reached = new Set(ui.pages.map((p) => p.route));
+  const named = new Set(
+    [...detailsOfCrawledLists(ui, routes)]
+      .filter(([list]) => !ui.edges.some((e) => e.from === list && e.to.startsWith(`${list}/`)))
+      .flatMap(([, d]) => d),
+  );
+  const missing = sortStrings([...new Set(routes)].filter((r) => !reached.has(r) && !named.has(r)));
+  if (!missing.length) return [];
+  const shown = missing.slice(0, 10).join(', ') + (missing.length > 10 ? ', ...' : '');
+  return [
+    `${missing.length} screen${missing.length === 1 ? '' : 's'} in the code ${missing.length === 1 ? 'was' : 'were'} not crawled (no link or click reached them): ${shown}`,
+  ];
 }

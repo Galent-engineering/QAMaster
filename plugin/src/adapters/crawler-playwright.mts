@@ -201,6 +201,17 @@ const CLICK_CANDIDATES = (selectors: string[]) => `(() => {
  */
 const CARD_CANDIDATES = `(() => {
   ${HELPERS}
+  // 0.8.0 item 17: a pointer that shows only on hover is not in the computed style at rest. Read the page's own :hover rules
+  // with cursor: pointer (also inside @media and @supports), minus the :hover, as selectors for elements that count as cards.
+  // A stylesheet from another origin throws when read and is skipped.
+  const hoverSelectors = [];
+  const readRules = (rules) => { for (const rule of rules) {
+    if (rule.cssRules && !rule.selectorText) { readRules(rule.cssRules); continue; }
+    if (!rule.selectorText || !rule.selectorText.includes(':hover') || !rule.style || rule.style.cursor !== 'pointer') continue;
+    for (const part of rule.selectorText.split(',')) { const base = part.replace(/:hover/g, '').trim();
+      if (base && !/^(\\*|html|body)$/.test(base) && !hoverSelectors.includes(base)) hoverSelectors.push(base); } } };
+  for (const sheet of document.styleSheets) { try { readRules(sheet.cssRules); } catch (e) {} }
+  const hovers = (n) => hoverSelectors.some((q) => { try { return n.matches(q); } catch (e) { return false; } });
   const area = innerWidth * innerHeight; const groups = new Set(); const out = [];
   const sized = (n) => { const r = n.getBoundingClientRect(); return r.width >= 24 && r.height >= 16 && r.width * r.height <= area * 0.8; };
   for (const el of document.body ? document.body.querySelectorAll('*') : []) {
@@ -212,9 +223,9 @@ const CARD_CANDIDATES = `(() => {
     const pointer = (n) => getComputedStyle(n).cursor === 'pointer';
     const words = (el.textContent || '').trim().length;
     const focusable = el.hasAttribute('tabindex') && el.tabIndex >= 0 && words > 0 && words <= 100 && !el.matches('pre, code');
-    const signal = pointer(el) ? 'pointer' : el.hasAttribute('onclick') ? 'onclick' : el.matches('[role=link]') ? 'link' : focusable ? 'tabindex' : '';
+    const signal = pointer(el) ? 'pointer' : hovers(el) ? 'hover' : el.hasAttribute('onclick') ? 'onclick' : el.matches('[role=link]') ? 'link' : focusable ? 'tabindex' : '';
     if (!signal) continue;
-    if (parent && pointer(parent) && pointer(el)) continue;
+    if (parent && (pointer(parent) || hovers(parent)) && (pointer(el) || hovers(el))) continue;
     if (!visible(el) || !sized(el)) continue;
     const inNav = !!el.closest(${SIDEBAR});
     if (!inNav) { const g = cssPath(parent) + '>' + el.tagName + '.' + el.className + '.' + signal; if (groups.has(g)) continue; groups.add(g); }

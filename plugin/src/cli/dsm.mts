@@ -19,7 +19,7 @@ import { parseArgs } from 'node:util';
 import type { Crawler } from '../adapters/base.mts';
 import { PlaywrightCrawler } from '../adapters/crawler-playwright.mts';
 import { changesSince, readRepo } from '../adapters/git.mts';
-import { build, compareDsm, type Dsm, type DsmConfig, emptyListHints } from '../dsm/build.mts';
+import { build, compareDsm, type Dsm, type DsmConfig, emptyListHints, uncrawledHint } from '../dsm/build.mts';
 import { render } from '../dsm/render.mts';
 import { MAX_FILE_BYTES, type ScanConfig, scan, wanted } from '../dsm/scan.mts';
 import { compareText, estimate, impact, type State, type UpdateConfig, update } from '../dsm/update.mts';
@@ -281,12 +281,8 @@ export async function dsm(cfg: Config, argv: string[], json: boolean): Promise<n
     if (r.status === 'updated' && !values['no-crawl']) {
       const ui = readJson<UiModel>(path.join(dir, 'ui-model.json'));
       const code = readJson<CodeModel>(path.join(dir, 'code-model.json'));
-      r.warnings.push(
-        ...emptyListHints(
-          ui,
-          (code?.routes ?? []).filter((x) => x.kind !== 'api').map((x) => x.route),
-        ),
-      );
+      const screens = (code?.routes ?? []).filter((x) => x.kind !== 'api').map((x) => x.route);
+      r.warnings.push(...emptyListHints(ui, screens), ...uncrawledHint(ui, screens));
     }
     if (json) console.log(JSON.stringify({ result: 'pass', ...r, html: path.join(dir, 'index.html') }));
     else if (r.status === 'no-change') {

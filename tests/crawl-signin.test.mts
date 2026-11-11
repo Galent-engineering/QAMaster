@@ -326,6 +326,16 @@ test('0.7.1 item 3: role=link, onclick and focusable elements without a pointer 
   assert.equal((await writes()).length, before, 'nothing was written');
 });
 
+test('0.8.0 item 17: a card whose pointer shows only on :hover is found from the stylesheet rules', {
+  timeout: 180_000,
+}, async () => {
+  const model = await crawler({ start_paths: ['/hover'], max_pages: 6 }).crawl({ baseUrl: ui });
+  const to = (t: string) => model.edges.some((e) => e.from === '/hover' && e.to === t && e.type === 'click');
+  assert.ok(to('/todo'), 'a .tile:hover rule');
+  assert.ok(to('/profile'), 'a :hover rule inside @media');
+  assert.ok(!to('/about'), 'a rule in a sheet from another origin cannot be read, and does not stop the crawl');
+});
+
 test('0.7.1 item 3: an onclick on the body or an app wrapper does not hide the cards and sidebar items inside it', {
   timeout: 180_000,
 }, async () => {
