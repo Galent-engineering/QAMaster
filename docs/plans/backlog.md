@@ -50,6 +50,7 @@ Ordered with you on 2026-11-06 and regrouped on 2026-11-10 (Q54): the four featu
 | 0.7.0 | Features | **Built 2026-11-10** on `release/0.7.0`, items 1–17: a signed-out pass merged with the signed-in one (`access`), dialog fields and limits, cards and sidebar links, `qam dsm compare`, each screen's own source files, heading labels; DOM-quiet settling, `crawl.concurrency`, `--routes`, `--estimate`; TestGen on sign-in and dialog forms; generic step wording; `qam plan --preset` (Q31); API cases and scripts; Mobile Web scripts. D1, D2, D4–D9 built to their recommendations and still to confirm; D3 not built. Not yet run live. See [0.7.0.md](0.7.0.md) | R5–R10, R12, R16, R30, S1–S4, S7, W11, Q31, K5 | L+ (two L halves) |
 | 0.7.1 | Fixes | **Released 2026-11-10** on `release/0.7.1` ([plan r3](0.7.1.md)), before the live runs: Q56 (a republish replaces `path:` tags, 0.7.0's D3), the crawl and scan fixes, the `.feature` session tag and route text, `check-scripts` and `Selection:` fixes, and 0.6.0's small gaps; items 1–13. Follow-ups: acting on the `@signed-in` tag, an ADO recorded test of `path:` removal | 0.7.0 moved, 0.6.0 r5, Q56 | S–M |
 | 0.7.2 | Fixes | **Built 2026-11-11** on `release/0.7.2` ([plan r2](0.7.2.md)), items 1–19, from the 0.7.1 walkthrough ([D1–D21](../demos/2026-11-10-0.7.1-todoapp.md)) and the observer's F1–F23: messages and states that hid the truth, `--help` and `--tag` parsing, the Q57 account check. The behaviour changes the walkthrough found (refuse an empty plan, shared path tags, API-error watcher, story-aware selection, flaky `--strict`, and the rest) are the plan's decision table, targeted at 0.8.0. Still owed: the live runs (0.6.0 and 0.7.0 checks, the Restful Booker rehearsal) | D1–D21, F1–F23, the runs |
+| 0.8.0 | Features | **Planned 2026-11-11** ([plan r1](0.8.0.md), [Q58](../decisions.md), amends Q54): the walkthrough's behaviour findings, D3, D4, D5, D8, D10, D16–D21, F4, F21, `@signed-in`, `--take-store`, W8 closed; then a walkthrough before release | 0.7.2's decision table | L+ |
 | **1.0.0** | **Major** | **Product v1 proven, no new feature:** the criteria below | below | M |
 | 1.0.x | Fixes | Bugs found after 1.0.0, as they come | | |
 
@@ -86,6 +87,8 @@ Product v1 as [product.md](../product.md#v1) describes it, all of it (native And
 | 3.0.0 | Generate into a team's existing framework; impact and traceability matrices; root-cause evidence; value metrics; a secrets vault and security scan; a Visio MCP server | product v3 |
 
 ## Later (not scheduled)
+
+- From 0.8.0's scoping: `{len:N}` in case steps (D15); a gate-level reset command (`gate.beforeRun`); `required` from form code; Python imports in the scan (D8's backend half); ADO Tested By links for stories; per-field merge after `--take-store`; the reviewer as ADO account plus git email (Q12). Undecided: publish without `--to` always writing the file store; exempting a push from the QA project itself.
 
 - Field-level merge when the run and the store changed different fields (L).
 - The xlsx `file` store (M); then Jira through Xray or Zephyr.

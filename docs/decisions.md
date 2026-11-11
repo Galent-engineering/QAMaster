@@ -9,7 +9,7 @@ Each entry says where the choice came from:
 
 Format: **Q<n>. Title** (date, status, source): decision, why, what we gave up.
 
-Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 was accepted on 2026-11-10; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06, Q49, Q54, Q55, Q56 and Q57 on 2026-11-10. To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
+Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 was accepted on 2026-11-10; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06, Q49, Q54, Q55, Q56 and Q57 on 2026-11-10, Q58 on 2026-11-11. To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
 
 ---
 
@@ -821,6 +821,28 @@ Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in ea
 - **Why:** in the walkthrough the crawl signed in from `.env.dsm` while the 13 gate scripts read `TODOAPP_USER` / `TODOAPP_PASSWORD` from `.env`, which nothing created, so every gate run failed at sign-in (D2). The human had to copy the account by hand and asked for one place, used everywhere.
 - **Gave up:** Q16's "or kept in git-ignored `.env.dsm`" for new projects, and a separate crawl account with fewer rights than the gate's. Projects set up earlier with `.env.dsm` need a move; how (a fallback read with a warning, or a one-time move after a yes) is decided when this is planned.
 - **Release:** not decided. Pointing every reader at one file is a behaviour a user must learn, so under Q46 it needs a minor release unless the plan shows it can ship as a fix; 0.7.2 carries D2's check and message either way.
+
+---
+
+**Q58. 0.8.0: the gate you can trust, after the TodoApp walkthrough** (2026-11-11; four choices accepted 2026-11-11, the rest proposed to the plan's recommendation and confirmed after the build, as Q55 was; New; amends Q54, Q6, Q12, Q13, Q53, Q55 D9, Q57; from [0.7.2's decision table](plans/0.7.2.md#decisions-not-built-here-q46) and the [0.7.1 walkthrough](demos/2026-11-10-0.7.1-todoapp.md))
+- **Decision (accepted 2026-11-11, your answers):**
+  - **A 0.8.0 minor release goes on the road before 1.0.0 (amends Q54)**, with every behaviour finding of the walkthrough in it: [0.8.0.md](plans/0.8.0.md). Q54's road becomes 0.7.2 → 0.8.0 → its patch → 1.0.0.
+  - **Consent is enforced outside the model (D10, amends Q12).** `qam setup` writes a Claude Code `ask` permission rule for `qam review` and `qam approve` into the QA project's `.claude/settings.json`, so the person clicks Allow each time. With no terminal, `qam review` and `qam approve` need `--yes`, and the plugin's skills pass it only after the person's yes to the run or plan shown.
+  - **The test account lives only in the QA `.env` (amends Q57).** The check stops accepting `.env.dsm`; it names the two lines to move, and `qam setup` offers to move them after a yes. The scripts read the names `login.username_env` / `login.password_env` hold, so there is one source of names.
+  - **A script that can't undo its own test data fails its case (D20)**, "left data on the test account: …", the same pattern as Q53.
+- **Decision (proposed; built to these unless changed):**
+  - **An approval that would run 0 cases is refused (D3, amends Q13)** when the change matched cases that can't run (path, dsm, group, added or all, all manual). A plan that matched nothing, or only manual smoke cases, stays a pass with a warning. `qam approve` and `qam check` take `--allow-empty`, recorded on the plan and named in the verdict; Claude passes it only on the person's explicit words.
+  - **The app-error watcher also watches `apiUrl`'s origin and requests that get no answer (D16, amends Q53 and Q55 D9).** Every `requestfailed` on `baseURL`'s or `apiUrl`'s origin counts, except `net::ERR_ABORTED`. `qam app create` replaces `src/app-errors.ts` when it differs from the template (the file is QAMaster's; the user's `fixtures.ts` is left alone). 0.7.2's "not watched" note goes.
+  - **Story-aware selection (D17, extends Q8, Q11, Q31).** Publish derives a `req:<id>` tag from TestGen evidence. The gate reads `AB#<id>` from the change's commit messages and branch name and selects the cases tagged `req:<id>` under `standard` and `full` (not `fast`). A story with no case is a listed gap; it doesn't change the verdict.
+  - **Drafted scripts get a trial run before approval (D18).** `qam automate <id> --try` runs the new scripts once, writes no state, and is offered by `/qamaster:check` after `check-scripts`. A failed case's reason names its kind: assertion failed, step couldn't act on the page, or script error. A trial pass doesn't make a script proven (Q39 unchanged).
+  - **Each run keeps its evidence (D21, refines Q52):** the evidence folder is `<sha>-<planId>`, like the verdict file. No automatic cleanup.
+  - **The ADO publish preview names the plan and suites with ids (F21)**, and warns on a first publish into a plan that already holds cases this QA project didn't publish. The plan and suite are cached with the store snapshot (Q34).
+  - **`--take-store <localId>` (amends Q6)** accepts the store's edit of a case and clears the conflict, previewed and applied only with `--apply`. Update rows show store-vs-run values. **W8 is closed without a build:** ADO credentials come from the QA `.env`, `AZURE_DEVOPS_EXT_PAT`, az defaults, and now `AZURE_DEVOPS_ORG_URL`; no pointer to a file outside the project.
+  - **A `@signed-in` scenario signs in through a framework hook** with the Q57 account; TestGen drops a sign-in precondition the `session` already states; `check-scripts` flags a folder that also signs in by hand.
+  - **The crawl (D4, D5, D8, F4):** cards whose pointer shows only on hover are found from the stylesheet's `:hover` rules; field limits in form code (react-hook-form, yup, zod, Angular Validators) are recorded in `code-model.json` and merged into the DSM's fields (the DOM value wins when both exist; a limit for a field the crawl didn't see is kept as `code_limits`); backend API routes no longer count as screens when the scan decides which files are shared; `dsm.json`'s `crawl.passes` records each pass, a skipped one with its reason, and a skipped signed-in pass is one warning line.
+  - **Flaky stays a pass (D19, Q13 unchanged):** `gate.retries: 0` is the strict setting, and the docs and the check summary say so.
+- **Why:** the walkthrough showed four ways a PASS could say less than it seemed (an empty plan, an unwatched API, a story no case covered, a chat yes) and three ways the crawl missed what TestGen needed (hover cards, limits in code, shared files). Each fix changes what a user sees or is refused, so Q46 puts them in a minor release.
+- **Gave up:** an empty PASS on matched-but-manual cases without `--allow-empty`; `.env.dsm` as a second home for the account; silent retention of a store edit forever (`--take-store` protects it for one round, and the Update row shows the values); a `{len:N}` placeholder (D15) and a gate-level reset command (backlog).
 
 ## Open questions
 
