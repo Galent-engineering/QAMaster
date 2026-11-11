@@ -232,13 +232,16 @@ diff      against the ledger and the tracker:
                   hash changed, tracker rev unchanged → update (only QAMaster-owned fields and tags)
                                                         removes every stored path: tag no longer derived,
                                                         hand-added ones too (Q56), and owned tags no longer derived (Q8)
-                  tracker rev changed by someone else → conflict (reported, not written)
+                  tracker rev changed by someone else → conflict (reported, not written); with --take-store <localId>
+                                                        → unchanged, and --apply records the store's rev and this run's hash
                   in ledger, not in any current run   → retire (only with --retire)
 apply     only with --apply: create/update work items, add to the suite named after the module,
           set Microsoft.VSTS.TCM.AutomatedTestName / AutomatedTestStorage / AutomatedTestType, write the ledger
 ```
 
 **Destinations (Q50, 0.6.0).** `qam publish --to file,ado` runs load/derive/diff once per destination, the file store first. Every destination's access and smoke cap is checked before any preview is shown; `--apply` writes them in order after one yes. The ledger keeps the configured store active and each other store's IDs under `other`, so naming a destination never switches the store (that is `qam store use`, which writes `QAMASTER_STORE` in `.env` and swaps the ledger's IDs). A destination that fails part way puts the configured store back (`finally`) and names what was written. A conflict lists each differing field (store value beside run value); an edit made only in the store is reported when its revision changed.
+
+**0.8.0 additions.** `derive` adds a `req:<id>` tag per `req:` evidence entry (owned through the ledger, like group and path tags). A store may offer `planInfo()` (the plan and its static suites with ids): the ADO adapter does, `CachedStore` caches it in the snapshot (`planInfo`, dropped by any write, `ensurePlan` or `ensureSuite`), and the preview names them and warns when the first publish meets cases the ledger doesn't know. `diff` takes `takeStore`, and a taken case is an `unchanged` change carrying `take: { rev }`, which `ledger.record` stores as `trackerRev`. Update rows carry `differences` (store value, run value).
 
 Steps are written as ADO's `Microsoft.VSTS.TCM.Steps` XML (action plus expected result per step). The evidence list goes in the test case's description under a **Sources** heading, so reviewers in ADO can see why each step exists.
 
@@ -313,7 +316,7 @@ Auth: `QAMASTER_ADO_TOKEN` as Basic auth if set, else `AZURE_DEVOPS_EXT_PAT` (az
 | Create the project (Q35, `--apply` only) | `POST {org}/_apis/projects` (private, Git), answered with an operation | Project and Team (Read, write, & manage), and "Create new projects" in the organization |
 | Wait for the new project | `GET {org}/_apis/operations/{id}` until `succeeded`, `failed` or `cancelled` (at most 2 minutes) | The token that created it |
 
-An unset `QAMASTER_ADO_ORG` and `QAMASTER_ADO_PROJECT` are taken, as a pair, from `az devops configure --defaults`: `<AZURE_DEVOPS_EXT_CONFIG_DIR, else $AZURE_CONFIG_DIR/azuredevops, else ~/.azure/azuredevops>/config`, `[defaults]` (`shared/env.mts`).
+An unset `QAMASTER_ADO_ORG` and `QAMASTER_ADO_PROJECT` are taken, as a pair, from `az devops configure --defaults`: `<AZURE_DEVOPS_EXT_CONFIG_DIR, else $AZURE_CONFIG_DIR/azuredevops, else ~/.azure/azuredevops>/config`, `[defaults]` (`shared/env.mts`). An organization still unset after both comes from `AZURE_DEVOPS_ORG_URL` (`https://dev.azure.com/<org>` or the bare name, cut by `orgName`; `adoTarget`, 0.8.0).
 
 The gate needs only the read scopes. Publishing and `work-items` need read and write. The two WIQL notes (name the project, not `@project`) come from CheckMaster's Learnings.
 

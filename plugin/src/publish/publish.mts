@@ -180,9 +180,7 @@ export function derive(c: PublishCase, ctx: PublishContext): Derived {
   const paths = globs.filter((g) => !globs.some((o) => o !== g && o.endsWith('/**') && g.startsWith(o.slice(0, -2))));
   const evidence = [...new Set([...c.evidence, ...c.steps.flatMap((s) => s.evidence ?? [])])];
   // a story the case cites (TestGen's req:<id> evidence) is a tag the gate selects by (0.8.0, D17); the ID as cited
-  const requirements = [
-    ...new Set(evidence.filter((e) => e.startsWith('req:')).map((e) => e.slice(4).trim())),
-  ]
+  const requirements = [...new Set(evidence.filter((e) => e.startsWith('req:')).map((e) => e.slice(4).trim()))]
     .filter(Boolean)
     .sort();
   const tags = [...group, ...requirements.map((r) => `req:${r}`), ...paths];
@@ -412,7 +410,7 @@ export function diff(i: DiffInput): { changes: PlannedChange[]; declinedSmoke: s
         fields,
         ownedTags: had,
         differences: diffs,
-        reason: `Test case ${entry.trackerId} changed in the store since it was published (rev ${entry.trackerRev} → ${it.rev}), so ${d.id} wasn't written. Review it there, or re-run with the store's version.`,
+        reason: `Test case ${entry.trackerId} changed in the store since it was published (rev ${entry.trackerRev} → ${it.rev}), so ${d.id} wasn't written. Review it there, then keep the store's version with --take-store ${d.id} (only with --apply), or change the run.`,
       });
     } else {
       changes.push({

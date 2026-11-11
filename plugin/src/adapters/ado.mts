@@ -29,7 +29,7 @@ import {
   retag,
   type TestCase,
 } from '../shared/models.mts';
-import type { NewProject, RequirementSource, TestCaseStore, WriteCheck } from './base.mts';
+import type { NewProject, PlanInfo, RequirementSource, TestCaseStore, WriteCheck } from './base.mts';
 
 export const API_VERSION = '7.1';
 /** Microsoft Entra resource ID for Azure DevOps, for a token from `az login`. */
@@ -870,6 +870,18 @@ class AdoItems {
     const proc = await this.client.defaultProcess();
     if (!dryRun) await this.client.createProject(proc.id);
     return { name: this.client.project, process: proc.name, plan: this.settings.plan || this.settings.repoName };
+  }
+
+  /** The plan and its static suites with their ids, for the publish preview (F21). Reads only. */
+  async planInfo(): Promise<PlanInfo> {
+    const plan = await this.plan();
+    const suites = await this.client.pages(`testplan/Plans/${plan.id}/suites`);
+    return {
+      plan: { id: Number(plan.id), name: String(plan.name) },
+      suites: suites
+        .filter((s) => s.suiteType === 'staticTestSuite')
+        .map((s) => ({ id: Number(s.id), name: String(s.name) })),
+    };
   }
 
   /** A static suite of the plan by name (case ignored), created under the root suite when missing. Publish --apply only. */

@@ -151,3 +151,50 @@ test('cache: a wrapper passes checkWrite through only when the store has one', (
     ({ state: 'allowed', detail: 'ok', area: null, missing: [], testCaseType: 'present' }) as never;
   assert.equal(typeof withCache(withCheck, dir, false).store.checkWrite, 'function');
 });
+
+// ---- 0.8.0 item 13: the plan and suites are cached with the snapshot
+
+/** A store that knows its plan and suites, and counts how often it was asked. */
+class Planned extends FakeStore {
+  asked = 0;
+  listed = [{ id: 15, name: 'Cart' }];
+  async planInfo() {
+    this.asked++;
+    return { plan: { id: 12, name: 'Shop' }, suites: [...this.listed] };
+  }
+}
+
+test('0.8.0 item 13: the plan info is cached with the snapshot, read live on --refresh, and dated like the rest', async () => {
+  const inner = new Planned();
+  const f = file();
+  const first = new CachedStore(inner, f, { now: T1 });
+  assert.equal((await first.planInfo?.())?.plan.id, 12);
+  assert.equal(first.age(), null);
+  const second = new CachedStore(inner, f, { now: T2 });
+  assert.deepEqual((await second.planInfo?.())?.suites, [{ id: 15, name: 'Cart' }]);
+  assert.equal(inner.asked, 1, 'the second read came from the cache');
+  assert.equal(second.age(), '2026-10-30T10:00:00.000Z');
+  await new CachedStore(inner, f, { now: T2, refresh: true }).planInfo?.();
+  assert.equal(inner.asked, 2);
+});
+
+test('0.8.0 item 13: a write, a new plan or a new suite drops the cached plan info', async () => {
+  for (const act of [
+    (s: CachedStore) => s.create({ title: 'New' }),
+    (s: CachedStore) => s.ensurePlan(),
+    (s: CachedStore) => s.ensureSuite('Cart'),
+  ]) {
+    const inner = new Planned();
+    const f = file();
+    await new CachedStore(inner, f, { now: T1 }).planInfo?.();
+    const s = new CachedStore(inner, f, { now: T2 });
+    await act(s);
+    await s.planInfo?.();
+    assert.equal(inner.asked, 2, 'asked again after the write');
+  }
+});
+
+test('0.8.0 item 13: a wrapper offers planInfo only when the store has one', () => {
+  assert.equal(new CachedStore(new FakeStore(), file()).planInfo, undefined);
+  assert.equal(typeof new CachedStore(new Planned(), file()).planInfo, 'function');
+});

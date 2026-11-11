@@ -583,7 +583,10 @@ test('0.8.0 item 15: the preview lists each story a case cites, and publish writ
     kase('TC-CART-003'),
   ]);
   const dry = p.qam('publish', RUN);
-  assert.match(dry.out, /Stories \(2\), written as req: tags\n\s+req:77\s+TC-CART-002\n\s+req:AB-5\s+TC-CART-001, TC-CART-002/);
+  assert.match(
+    dry.out,
+    /Stories \(2\), written as req: tags\n\s+req:77\s+TC-CART-002\n\s+req:AB-5\s+TC-CART-001, TC-CART-002/,
+  );
   assert.match(dry.out, /TC-CART-001\s+Case TC-CART-001\s+suite Cart · tags cart, req:AB-5, path:/);
   const data = p.json('publish', RUN);
   assert.deepEqual(data.requirements, { '77': ['TC-CART-002'], 'AB-5': ['TC-CART-001', 'TC-CART-002'] });

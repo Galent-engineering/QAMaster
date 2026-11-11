@@ -1,6 +1,6 @@
 ---
 description: Show what a reviewed TestGen run would publish to the test case store, then publish it after your yes
-argument-hint: "[run] [--retire] [--refresh]"
+argument-hint: "[run] [--retire] [--refresh] [--take-store <id>]"
 allowed-tools: Bash(node:*), Read
 ---
 
@@ -12,6 +12,6 @@ Follow the `Publish` skill. If the run isn't reviewed, stop and say so; the revi
 node "${CLAUDE_PLUGIN_ROOT}/src/cli/main.mts" publish <run> $ARGUMENTS
 ```
 
-Show the preview, then stop and wait. If it says an Azure DevOps project will be created, point that out: `--apply` creates the project (private, the organization's default process) before the plan and the test cases. Run it again with `--apply` (and the smoke and leave-out choices the person gave) only after their explicit yes. Exit 2 is blocked: read the message to the person and do what it says.
+Show the preview, then stop and wait. For Azure DevOps it names the plan and suites with their ids, and warns when the plan already holds test cases this project didn't publish: read that out, and if it is the wrong plan the fix is `QAMASTER_ADO_PLAN` in the `.env`. A conflict (someone edited the case in the store) stays unwritten; to keep the store's edit the person says so, and the command gets `--take-store <the case's draft ID>` with `--apply`. If it says an Azure DevOps project will be created, point that out: `--apply` creates the project (private, the organization's default process) before the plan and the test cases. Run it again with `--apply` (and the smoke and leave-out choices the person gave) only after their explicit yes. Exit 2 is blocked: read the message to the person and do what it says.
 
 When you hand the person a command to run in their own terminal, give one they can paste: every value (run name, plan id, path) filled in, never a `<placeholder>`, and the launcher by its absolute path, `node <absolute path of the QA project>/.qamaster/bin/qam.mjs <command>` (the launcher exists only in the QA project, written by `qam setup`). If `qam doctor` shows `WARN launcher`, hand over the plugin path instead and suggest running setup again from the plugin.

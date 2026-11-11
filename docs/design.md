@@ -97,18 +97,26 @@ Where the gate keeps its files (Q52): run from an app clone that a QA project re
 QAMaster publish 20261028-1410-checkout → ADO plan "Shop Web" (dry run)
 Reviewed by j.doe (ADO) · j.doe@example.com (git) on 2026-10-28 14:22
 Warning: Checkout's owner is A. Rao (config/qamaster.json). Publishing anyway is allowed.
+Test plan: Shop Web (#12)
+Suites: Checkout (#15)
+Warning: test plan 'Shop Web' (#12) already holds 4 test cases this project didn't publish: TC501, TC504, TC512, TC513. If this isn't the plan for this app, set QAMASTER_ADO_PLAN=<exact plan name> in the repo's .env before --apply.
 
 Create (3)
-  TC-CHECKOUT-014  Apply a valid coupon at checkout        suite Checkout · tags checkout, checkout-coupon, path:src/coupon/**
+  TC-CHECKOUT-014  Apply a valid coupon at checkout        suite Checkout · tags checkout, checkout-coupon, req:4711, path:src/coupon/**
   TC-CHECKOUT-015  Expired coupon shows an error            suite Checkout · tags checkout, checkout-coupon, path:src/coupon/**
   TC-CHECKOUT-016  Card payment completes the order         suite Checkout · tags checkout, path:src/checkout/**
 
 Update (1)
   TC5101 ← TC-CHECKOUT-002  steps changed (3 → 4)          automation link added: bdd:@TC-CHECKOUT-002, script link added (Q40)
+    steps: store "3 steps: Open > …", run "4 steps: Open > …"   the store's value beside the run's (0.8.0)
     removes tag path:src/**                                 a path: tag the run no longer derives (Q56)
 
 Conflict (1), not written
-  TC5104 ← TC-CHECKOUT-007  changed in ADO by A. Rao on 2026-10-27; review it there or re-run with the ADO version
+  TC5104 ← TC-CHECKOUT-007  changed in the store since it was published; keep its version with --take-store TC-CHECKOUT-007
+    title: store "Coupon applies a discount", run "Apply a valid coupon"
+
+Stories (1), written as req: tags
+  req:4711  TC-CHECKOUT-014
 
 Unchanged (40)
 
@@ -121,6 +129,12 @@ Reply yes to apply, untick smoke suggestions you don't want, or name the cases t
 ```
 
 An update replaces the case's `path:` tags (Q56): every stored `path:` tag the run no longer derives is removed, including one added by hand in the store, and each removal is listed under the case as `removes tag …`. Other tags are removed only when QAMaster owned them and no longer derives them (Q8); tags people added stay. A case edited in the store since the last publish is a conflict, and nothing is removed from it.
+
+**Stories (0.8.0, D17).** A case that cites a story as `req:<id>` evidence (TestGen) gets a `req:<id>` tag, with the ID as cited. QAMaster owns it like the group and path tags (Q8): a republish adds the tag to every case that cites the story, and removes one the case no longer cites, and a tag someone added by hand stays. The preview's Stories section lists each story with its cases, and `--json` has them as `requirements`.
+
+**Plan and suites (0.8.0, F21).** For Azure DevOps the preview names the test plan and each suite the cases go to with their ids, or says a suite is new. They are cached with the store snapshot (Q34), so a dry run says how old they are and `--refresh` reads them again. A first publish (the ledger holds no case for this store) into a plan that already holds test cases this project didn't publish is a warning with their ids and the `QAMASTER_ADO_PLAN` hint: it is the sign of a wrong plan. It doesn't stop the publish.
+
+**`--take-store <localId>` (0.8.0, amends Q6).** For a case in conflict (or one listed as edited in the store only), the preview lists it under "Take the store's version" with the store's values beside the run's. Only with `--apply` does the ledger take the store's revision and this run's hash, so the conflict clears and the store's edit stays; nothing is written to the store. The edit is protected for one round: when the run changes the case again, the update overwrites the store's fields unless the person takes the store's version again. A per-field merge is on the backlog. A case with no store edit, or one the run doesn't have, is blocked.
 
 ## The plan
 
@@ -203,7 +217,8 @@ QAMASTER_ADO_PROJECT=Shop
 # QAMASTER_AI=off                       # turn off every AI step for this repo (Q24, data-handling.md)
 # QAMASTER_ADO_TOKEN=…                  # or use az login
 #   unset: AZURE_DEVOPS_EXT_PAT, then az login; an unset org and project come, as a pair, from
-#   `az devops configure --defaults` (~/.azure/azuredevops/config) (R24, 0.6.0)
+#   `az devops configure --defaults` (~/.azure/azuredevops/config) (R24, 0.6.0); an organization still unset
+#   comes from AZURE_DEVOPS_ORG_URL (https://dev.azure.com/<org> or the name) (0.8.0)
 ```
 
 **QA project** `config/qamaster.json`:

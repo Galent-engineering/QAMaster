@@ -240,3 +240,73 @@ test('ado publish: a case no longer generated is closed and taken out of its sui
     ['TC-CART-001'],
   );
 });
+
+// ---- 0.8.0 item 13: the preview names the plan and suites with ids
+
+test('0.8.0 item 13: the ADO preview names the plan with its id and each suite with its id, or says it is new', async () => {
+  const ado = new FakeAdo();
+  const p = project(ado);
+  p.writeRun([kase('TC-CART-001')]);
+  const dry = await p.run();
+  assert.match(dry.out, /Test plan: Shop Web \(#1\)\nSuites: Cart \(new, --apply creates it\)/);
+  await p.run('--apply');
+  const suite = ado.plans[0].suites.find((s) => s.name === 'Cart');
+  const again = await p.run('--refresh');
+  assert.match(again.out, new RegExp(`Test plan: Shop Web \\(#1\\)\\nSuites: Cart \\(#${suite?.id}\\)`));
+});
+
+test('0.8.0 item 13: the plan and suites come from the cache on the next dry run, and --refresh reads them live', async () => {
+  const ado = new FakeAdo();
+  const p = project(ado);
+  p.writeRun([kase('TC-CART-001')]);
+  await p.run();
+  const plans = () => ado.log.filter((l) => /testplan\/plans|testplan\/Plans\/\d+\/suites$/i.test(l)).length;
+  const after = plans();
+  const cached = await p.run();
+  assert.match(cached.out, /Test plan: Shop Web \(#1\)/);
+  assert.equal(plans(), after, 'no plan or suite was read from ADO');
+  await p.run('--refresh');
+  assert.ok(plans() > after);
+});
+
+test("0.8.0 item 13: a first publish into a plan that holds cases this project didn't publish warns, with their ids and the hint", async () => {
+  const ado = new FakeAdo(); // plan 'Shop Web' already holds test case 501
+  const p = project(ado);
+  p.writeRun([kase('TC-CART-001')]);
+  const dry = await p.run();
+  assert.match(
+    dry.out,
+    /Warning: test plan 'Shop Web' \(#1\) already holds 1 test case this project didn't publish: TC501\./,
+  );
+  assert.match(dry.out, /QAMASTER_ADO_PLAN=<exact plan name>/);
+  const data = await (async () => {
+    const lines: string[] = [];
+    const log = console.log;
+    console.log = (...a: unknown[]) => void lines.push(a.join(' '));
+    try {
+      const cfg = loadConfig(p.dir, { QAMASTER_STORE: 'ado', QAMASTER_ADO_ORG: 'org', QAMASTER_ADO_PROJECT: 'Shop' });
+      await publish(cfg, [RUN], true);
+    } finally {
+      console.log = log;
+    }
+    return JSON.parse(lines.join('\n'));
+  })();
+  assert.deepEqual(data.plan, { id: 1, name: 'Shop Web' });
+  assert.deepEqual(data.suites, [{ name: 'Cart', id: null }]);
+  assert.deepEqual(data.foreignCases, [501]);
+  await p.run('--apply');
+  assert.doesNotMatch(
+    (await p.run('--refresh')).out,
+    /Warning: test plan/,
+    "once published, the plan is this project's",
+  );
+});
+
+test('0.8.0 item 13: a plan the publish creates, or one the project already published into, gets no such warning', async () => {
+  const fresh = new FakeAdo(false);
+  const p = project(fresh);
+  p.writeRun([kase('TC-CART-001')]);
+  const dry = await p.run();
+  assert.doesNotMatch(dry.out, /Warning: test plan|Test plan: /);
+  assert.match(dry.out, /doesn't exist yet; --apply will create it/);
+});

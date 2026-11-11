@@ -14,7 +14,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import type { NewProject } from '../adapters/base.mts';
+import type { NewProject, PlanInfo } from '../adapters/base.mts';
 import { cacheFile, withCache } from '../adapters/cache.mts';
 import { playwrightBdd } from '../adapters/framework-bdd.mts';
 import { buildStore, STORES } from '../adapters/registry.mts';
@@ -224,6 +224,7 @@ type Reached = {
   where: string;
   planToCreate: string | null;
   projectToCreate: NewProject | null;
+  inPlan: number[]; // the IDs the plan held when reached; empty for a plan still to be created
 };
 type Outcome = { code: number; text: string; data: Record<string, unknown> };
 /** One destination read and diffed: `stop` when apply must not go on (smoke changed), else `finish` writes it. */
@@ -266,8 +267,9 @@ async function reach(cfg: Config, dest: string, dir: string, live: boolean, chos
   // project is created on --apply too, and then its plan (Q35).
   let planToCreate: string | null = null;
   let projectToCreate: NewProject | null = null;
+  let inPlan: number[] = [];
   try {
-    await store.inPlan();
+    inPlan = [...(await store.inPlan()).keys()];
   } catch (e) {
     if (e instanceof NoProjectError && store.ensureProject) {
       try {
@@ -286,13 +288,13 @@ async function reach(cfg: Config, dest: string, dir: string, live: boolean, chos
     } else if (e instanceof NoPlanError && e.plans.length === 0) planToCreate = e.createName;
     else throw e;
   }
-  return { dest, cached, where, planToCreate, projectToCreate };
+  return { dest, cached, where, planToCreate, projectToCreate, inPlan };
 }
 
 /** What one destination would write: read and checked now, written (with --apply) only by `finish`. */
 async function prepare(o: Shared, r: Reached): Promise<Prepared> {
   const { cfg, v, dir, run, derived, leftOut, skipSmoke, takeStore, scripts } = o;
-  const { cached, where, planToCreate, projectToCreate } = r;
+  const { cached, where, planToCreate, projectToCreate, inPlan } = r;
   const store = cached.store;
   const before = readLedger(dir);
   const ledger = adopt(before, where, !!v.to);
@@ -311,6 +313,21 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
   const smokeInStore = projectToCreate
     ? 0
     : (await store.find({ kind: 'test_case', tag: 'smoke', limit: 1000 })).length;
+  // the plan and suites by their ids (F21); a plan or project still to be created has none yet. Cases the plan holds
+  // that this project never published matter at the first publish into it (D11): the wrong plan is easy to pick
+  let info: PlanInfo | null = null;
+  let foreign: number[] = [];
+  if (!planToCreate && !projectToCreate && store.planInfo) {
+    info = await store.planInfo();
+    const mine = new Set((ledger?.entries ?? []).map((e) => e.trackerId));
+    if (!mine.size) foreign = [...inPlan].sort((a, b) => a - b);
+  }
+  const suites = info
+    ? [...new Set(derived.map((d) => d.suite))].map((name) => ({
+        name,
+        id: info?.suites.find((x) => x.name.toLowerCase() === name.toLowerCase())?.id ?? null,
+      }))
+    : [];
   const suggestion = suggestSmoke(derived, entries, smokeInStore, cfg.project);
   const confirmed = new Set(suggestion.ids.filter((id) => !skipSmoke.has(id)));
   // the dry run records the smoke it offered; apply reads the store live, and a cap filled in between (another run
@@ -318,7 +335,14 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
   const previewFile = path.join(path.dirname(cacheFile(dir)), `preview-${run.name}${o.multi ? `-${r.dest}` : ''}.json`);
   const offered = v.apply ? readPreview(previewFile) : null;
   const lost = (offered ?? []).filter((id) => !skipSmoke.has(id) && !confirmed.has(id));
-  const result = diff({ derived, ledger: entries, items, module: run.scope.module, confirmedSmoke: confirmed, takeStore });
+  const result = diff({
+    derived,
+    ledger: entries,
+    items,
+    module: run.scope.module,
+    confirmedSmoke: confirmed,
+    takeStore,
+  });
   const taken = result.changes.filter((c) => c.take).map((c) => c.localId);
 
   const by = (kind: PlannedChange['kind']) => result.changes.filter((c) => c.kind === kind);
@@ -341,6 +365,17 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
       : []),
     ...(fresh ? [`Nothing recorded yet for ${where}: every case is created there.`] : []),
     ...(planToCreate ? [`The test plan '${planToCreate}' doesn't exist yet; --apply will create it.`] : []),
+    ...(info
+      ? [
+          `Test plan: ${info.plan.name} (#${info.plan.id})`,
+          `Suites: ${suites.map((x) => (x.id === null ? `${x.name} (new, --apply creates it)` : `${x.name} (#${x.id})`)).join(', ')}`,
+        ]
+      : []),
+    ...(info && foreign.length
+      ? [
+          `Warning: test plan '${info.plan.name}' (#${info.plan.id}) already holds ${foreign.length} test case${foreign.length > 1 ? 's' : ''} this project didn't publish: ${foreign.slice(0, 10).map(tc).join(', ')}${foreign.length > 10 ? ` and ${foreign.length - 10} more` : ''}. If this isn't the plan for this app, set QAMASTER_ADO_PLAN=<exact plan name> in the repo's .env before --apply.`,
+        ]
+      : []),
     ...(cached.age() ? [`Store as of ${cached.age()} (from the cache). Run with --refresh to read it again.`] : []),
   ];
   const section = (head: string, rows: string[]) => rows.length && lines.push('', head, ...rows.map((r) => `  ${r}`));
@@ -367,8 +402,7 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
   section(
     `Take the store's version (${takes.length}), only with --apply`,
     takes.map(
-      (c) =>
-        `${tc(c.trackerId ?? 0)} ← ${c.localId}  ${c.reason}${c.differences?.length ? `\n${fieldRows(c)}` : ''}`,
+      (c) => `${tc(c.trackerId ?? 0)} ← ${c.localId}  ${c.reason}${c.differences?.length ? `\n${fieldRows(c)}` : ''}`,
     ),
   );
   // an edit made only in the store: nothing of ours to write, so it stays as it is, and the person is told (K7)
@@ -439,7 +473,8 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
     dest: r.dest,
     stop: null,
     taken,
-    finish: () => finish(o, r, { items, lines, result, suggestion, confirmed, smokeInStore, previewFile }),
+    finish: () =>
+      finish(o, r, { items, lines, result, suggestion, confirmed, smokeInStore, previewFile, info, suites, foreign }),
   };
 }
 
@@ -451,13 +486,16 @@ type Read = {
   confirmed: Set<string>;
   smokeInStore: number;
   previewFile: string;
+  info: PlanInfo | null;
+  suites: { name: string; id: number | null }[];
+  foreign: number[];
 };
 
 /** One prepared destination finished: its preview recorded, or with --apply, written. */
 async function finish(o: Shared, r: Reached, read: Read): Promise<Outcome> {
   const { cfg, v, dir, run, derived, skipSmoke } = o;
   const { cached, where, projectToCreate } = r;
-  const { items, lines, result, suggestion, confirmed, smokeInStore, previewFile } = read;
+  const { items, lines, result, suggestion, confirmed, smokeInStore, previewFile, info, suites, foreign } = read;
   const store = cached.store;
   // read afresh: an earlier destination may have written the ledger since this one was prepared
   let ledger: Ledger | null = adopt(readLedger(dir), where, !!v.to);
@@ -575,6 +613,7 @@ async function finish(o: Shared, r: Reached, read: Read): Promise<Outcome> {
       changes: result.changes.map(({ change: _write, ...c }) => c),
       notLinked,
       requirements: storyMap(derived),
+      ...(info ? { plan: info.plan, suites, foreignCases: foreign } : {}),
       smoke: {
         suggested: suggestion.ids,
         skipped: [...skipSmoke],
@@ -607,7 +646,12 @@ function parse(argv: string[]) {
 /** Each story the cases cite (req:<id>) with the cases that cite it, in ID order. */
 function storyMap(derived: Derived[]): Record<string, string[]> {
   const out: Record<string, string[]> = {};
-  for (const d of derived) for (const r of d.requirements) (out[r] ??= []).push(d.id);
+  for (const d of derived) {
+    for (const r of d.requirements) {
+      out[r] ??= [];
+      out[r].push(d.id);
+    }
+  }
   return Object.fromEntries(Object.entries(out).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 

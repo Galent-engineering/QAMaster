@@ -8,16 +8,22 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
 import type { Filter, Item, ItemChange, TestCase } from '../shared/models.mts';
-import type { TestCaseStore, WriteCheck } from './base.mts';
+import type { PlanInfo, TestCaseStore, WriteCheck } from './base.mts';
 
 export const cacheFile = (project: string) => path.join(project, QAMASTER_DIR, 'cache', 'store.json');
 
 type Stamped<T> = { at: string; value: T };
-type Snapshot = { where: string; plan?: Stamped<[number, TestCase][]>; items: Record<string, Stamped<Item>> };
+type Snapshot = {
+  where: string;
+  plan?: Stamped<[number, TestCase][]>;
+  planInfo?: Stamped<PlanInfo>; // the plan and its suites with ids (0.8.0, F21)
+  items: Record<string, Stamped<Item>>;
+};
 
 export class CachedStore implements TestCaseStore {
   checkWrite?: () => Promise<WriteCheck>;
   ensureProject?: TestCaseStore['ensureProject'];
+  planInfo?: () => Promise<PlanInfo>;
   private inner: TestCaseStore;
   private file: string;
   private refresh: boolean;
@@ -32,6 +38,8 @@ export class CachedStore implements TestCaseStore {
     this.now = o.now ?? (() => new Date());
     if (inner.checkWrite) this.checkWrite = () => (inner.checkWrite as () => Promise<WriteCheck>)();
     if (inner.ensureProject) this.ensureProject = inner.ensureProject.bind(inner);
+    if (inner.planInfo)
+      this.planInfo = () => this.cachedPlanInfo(() => (inner.planInfo as () => Promise<PlanInfo>).call(inner));
   }
 
   /** When the oldest cached answer this store gave was read from the live store, or null if every read was live. */
@@ -45,11 +53,15 @@ export class CachedStore implements TestCaseStore {
   url(id: number): string {
     return this.inner.url(id);
   }
-  ensurePlan() {
-    return this.inner.ensurePlan();
+  async ensurePlan() {
+    const made = await this.inner.ensurePlan();
+    this.dropPlanInfo();
+    return made;
   }
-  ensureSuite(name: string) {
-    return this.inner.ensureSuite(name);
+  async ensureSuite(name: string) {
+    const made = await this.inner.ensureSuite(name);
+    this.dropPlanInfo();
+    return made;
   }
   find(filter: Filter): Promise<Item[]> {
     return this.inner.find(filter); // searches aren't cached: a cached answer would miss new cases
@@ -65,6 +77,24 @@ export class CachedStore implements TestCaseStore {
     snap.plan = { at: this.stamp(), value: [...live] };
     this.save(snap);
     return live;
+  }
+
+  private async cachedPlanInfo(live: () => Promise<PlanInfo>): Promise<PlanInfo> {
+    const snap = this.load();
+    if (!this.refresh && snap.planInfo) {
+      this.note(snap.planInfo.at);
+      return structuredClone(snap.planInfo.value);
+    }
+    const info = await live();
+    snap.planInfo = { at: this.stamp(), value: info };
+    this.save(snap);
+    return structuredClone(info);
+  }
+
+  private dropPlanInfo() {
+    const snap = this.load();
+    snap.planInfo = undefined;
+    this.save(snap);
   }
 
   async show(id: number): Promise<Item> {
@@ -109,6 +139,7 @@ export class CachedStore implements TestCaseStore {
     const snap = this.load();
     snap.items[item.id] = { at: this.stamp(), value: item };
     snap.plan = undefined;
+    snap.planInfo = undefined;
     this.save(snap);
     return item;
   }
@@ -117,6 +148,7 @@ export class CachedStore implements TestCaseStore {
     const snap = this.load();
     delete snap.items[id];
     snap.plan = undefined;
+    snap.planInfo = undefined;
     this.save(snap);
   }
 

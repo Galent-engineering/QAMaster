@@ -14,9 +14,11 @@ const tmp = (p = 'qam-project-') => tmpDir(p);
 const HOME = tmp('qam-home-');
 
 function qam(dir: string, ...args: string[]) {
+  // a developer's own AZURE_DEVOPS_ORG_URL (0.8.0) would name an organization these tests mean to leave unset
+  const { AZURE_DEVOPS_ORG_URL: _org, ...env } = process.env;
   const r = spawnSync(QAM, ['--repo', dir, ...args], {
     encoding: 'utf8',
-    env: { ...process.env, QAMASTER_HOME: HOME },
+    env: { ...env, QAMASTER_HOME: HOME },
   });
   return { status: r.status, out: r.stdout, err: r.stderr };
 }

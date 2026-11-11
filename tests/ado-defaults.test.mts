@@ -92,8 +92,9 @@ test('0.8.0 item 16 (W8): AZURE_DEVOPS_ORG_URL is the organization when nothing 
   assert.deepEqual([s.organization, s.project], ['galent', 'Shop']);
   // the bare name works too
   assert.equal(
-    adoSettings(loadConfig(dir, { AZURE_CONFIG_DIR: empty, AZURE_DEVOPS_ORG_URL: 'galent', QAMASTER_ADO_PROJECT: 'Shop' }))
-      .organization,
+    adoSettings(
+      loadConfig(dir, { AZURE_CONFIG_DIR: empty, AZURE_DEVOPS_ORG_URL: 'galent', QAMASTER_ADO_PROJECT: 'Shop' }),
+    ).organization,
     'galent',
   );
   // without a project it still blocks, naming the project line

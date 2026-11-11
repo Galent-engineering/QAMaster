@@ -31,6 +31,9 @@ export type WriteCheck = {
 /** A project a store would create, or did (Q35), and the plan publish then creates in it. */
 export type NewProject = { name: string; process: string; plan: string };
 
+/** The plan a store publishes into and its static suites, by name, with the store's ids: what a preview names (F21). */
+export type PlanInfo = { plan: { id: number; name: string }; suites: { id: number; name: string }[] };
+
 /** Where test cases live: QAMASTER_STORE, else the store the ledger names, else file (Q23, Q34, Q44). */
 export interface TestCaseStore {
   /** Where the test cases come from, for `qam doctor`: "Azure DevOps galent/Shop, plan Shop Web". */
@@ -55,6 +58,11 @@ export interface TestCaseStore {
    * written: the answer is what would be created, and the plan it then gets. Publish creates only with --apply.
    */
   ensureProject?(dryRun?: boolean): Promise<NewProject | null>;
+  /**
+   * Optional: the plan and its static suites with ids, read with no write; throws as inPlan does when there is no plan.
+   * Optional so a store with no such ids (the file store) needn't answer.
+   */
+  planInfo?(): Promise<PlanInfo>;
   /**
    * Optional: whether the credential's user may create plans, suites and test cases, asked of the store with reads
    * only (no write is sent). Optional so a store that can't answer needn't, and doctor says so.
