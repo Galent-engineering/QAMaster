@@ -1,12 +1,18 @@
 /**
- * Q53: what the app itself reports during a case. A 5xx answer from the app's origins and an uncaught page error fail
- * the case, even when every step passed, unless the gate's allowErrors list names it: a string found in a 5xx request's
- * URL (not its status or body) or in a page error's message. QAMaster's runner hands the list over in
- * QAMASTER_ALLOW_ERRORS as JSON. No Playwright import: it takes anything shaped like a page, so the engine's tests can
- * drive it.
+ * Q53, Q58: what the app itself reports during a case. A 5xx answer from the app's origins, a request to them that got
+ * no answer (a refused connection, a reset: anything but net::ERR_ABORTED, which is the page leaving) and an uncaught
+ * page error fail the case, even when every step passed, unless the gate's allowErrors list names it: a string found
+ * in the request's URL (not its status or body) or in a page error's message. QAMaster's runner hands the list over in
+ * QAMASTER_ALLOW_ERRORS as JSON. The app's origins are baseURL (the caller's) and the API's: API_BASE_URL, else
+ * apiUrl in app.json, read here so a fixtures.ts from before 0.8.0 watches the API too. No Playwright import: it
+ * takes anything shaped like a page, so the engine's tests can drive it.
  */
+import fs from 'node:fs';
+import path from 'node:path';
+
 export type AppError =
   | { kind: 'request'; method: string; url: string; status: number; body: string }
+  | { kind: 'failed'; method: string; url: string; error: string }
   | { kind: 'page'; message: string };
 
 type Response = {
@@ -15,8 +21,10 @@ type Response = {
   request(): { method(): string };
   text(): Promise<string>;
 };
+type FailedRequest = { url(): string; method(): string; failure(): { errorText: string } | null };
 type WatchedPage = {
   on(event: 'response', fn: (r: Response) => void): unknown;
+  on(event: 'requestfailed', fn: (r: FailedRequest) => void): unknown;
   on(event: 'pageerror', fn: (e: Error) => void): unknown;
 };
 
@@ -32,17 +40,40 @@ export function parseAllow(raw: string | undefined): string[] {
   }
 }
 
-export function watchApp(page: WatchedPage, origins: string[], allow: string[]) {
+/** The API's base URL: API_BASE_URL, else apiUrl in the folder's app.json (the folder is src/'s parent). */
+export function configuredApiUrl(env: Record<string, string | undefined> = process.env, dir?: string): string | undefined {
+  if (env.API_BASE_URL) return env.API_BASE_URL;
+  try {
+    const root = dir ?? path.join(__dirname, '..');
+    const url = JSON.parse(fs.readFileSync(path.join(root, 'app.json'), 'utf8')).apiUrl;
+    return typeof url === 'string' && url ? url : undefined;
+  } catch {
+    return undefined; // no app.json here, or no apiUrl in it
+  }
+}
+
+const originOf = (url: string | undefined): string | undefined => {
+  try {
+    return url ? new URL(url).origin : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
+export function watchApp(page: WatchedPage, origins: string[], allow: string[], apiUrl = configuredApiUrl()) {
   const found: AppError[] = [];
   const pending: Promise<void>[] = [];
+  const watched = [...origins, originOf(apiUrl)].filter((o): o is string => !!o);
+  page.on('requestfailed', (r) => {
+    const error = r.failure()?.errorText ?? 'the request failed';
+    // the page leaving or the browser dropping a request it no longer needs is not the app's error
+    if (error === 'net::ERR_ABORTED' || !watched.includes(originOf(r.url()) ?? '')) return;
+    found.push({ kind: 'failed', method: r.method(), url: r.url(), error });
+  });
   page.on('response', (r) => {
-    let origin = '';
-    try {
-      origin = new URL(r.url()).origin;
-    } catch {
-      return;
-    }
-    if (r.status() < 500 || !origins.includes(origin)) return;
+    const origin = originOf(r.url());
+    if (!origin) return;
+    if (r.status() < 500 || !watched.includes(origin)) return;
     const at = found.length;
     found.push({ kind: 'request', method: r.request().method(), url: r.url(), status: r.status(), body: '' });
     // keep arrival order; the body is read after the answer, and may be gone
@@ -56,7 +87,7 @@ export function watchApp(page: WatchedPage, origins: string[], allow: string[]) 
     );
   });
   page.on('pageerror', (e) => found.push({ kind: 'page', message: e.message }));
-  const text = (e: AppError) => (e.kind === 'request' ? e.url : e.message);
+  const text = (e: AppError) => (e.kind === 'page' ? e.message : e.url);
   return {
     /** Everything the app reported that the allow-list doesn't name. */
     async finish(): Promise<AppError[]> {
@@ -68,7 +99,9 @@ export function watchApp(page: WatchedPage, origins: string[], allow: string[]) 
         .map((e) =>
           e.kind === 'request'
             ? `${e.method} ${e.url} answered ${e.status}${e.body ? `:\n${e.body}` : ''}`
-            : `Uncaught page error: ${e.message}`,
+            : e.kind === 'failed'
+              ? `${e.method} ${e.url} got no answer (${e.error})`
+              : `Uncaught page error: ${e.message}`,
         )
         .join('\n\n');
     },

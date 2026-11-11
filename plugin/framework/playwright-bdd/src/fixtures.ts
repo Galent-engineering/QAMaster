@@ -9,7 +9,9 @@ import { parseAllow, watchApp } from './app-errors';
  * appErrors runs in every case (Q53): a 5xx answer from the app or an uncaught page error fails the case even when
  * every step passed, with the request, status and body (or the error) in the failure and in app-errors.json. The gate's
  * allowErrors list (config/qamaster.json) names what to ignore: a string found in the request's URL or the error's
- * message. Only answers from the app's own origin (baseURL) are watched.
+ * message. The app's origins are baseURL and the API's (API_BASE_URL, else apiUrl in app.json); a request to them that
+ * got no answer counts too, except net::ERR_ABORTED. app-errors.ts is QAMaster's file: `qam app create` replaces it
+ * when it differs from the template, so keep your own helpers in other files.
  */
 export const test = base.extend<{ appErrors: void }>({
   appErrors: [

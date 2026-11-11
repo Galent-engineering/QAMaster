@@ -55,15 +55,15 @@ export function app(cfg: Config, argv: string[], json: boolean): number {
     );
   requireAccountVars(cfg.qaProject ?? cfg.root, cfg.env);
   const dir = path.join(cfg.qaProject ?? cfg.root, pascal(name));
-  const { created, added } = playwrightBdd.create(dir, name, url, { apiUrl });
+  const { created, added, replaced } = playwrightBdd.create(dir, name, url, { apiUrl });
   const rel = path.relative(cfg.qaProject ?? cfg.root, dir) || '.';
   console.log(
     json
-      ? JSON.stringify({ folder: dir, created, added })
+      ? JSON.stringify({ folder: dir, created, added, replaced })
       : created
         ? `Created ${rel}/ from the playwright-bdd template for ${url}${apiUrl ? ` (API ${apiUrl})` : ''}. Next: npm install in ${rel}/ (it downloads @playwright/test and playwright-bdd).`
-        : added.length
-          ? `${rel}/ already exists. Added to ${rel}/: ${added.join(', ')}. Nothing that was there changed.${stale(dir)}`
+        : added.length || replaced.length
+          ? `${rel}/ already exists.${added.length ? ` Added to ${rel}/: ${added.join(', ')}.` : ''}${replaced.length ? ` Replaced ${replaced.join(', ')} with QAMaster's current version (it is QAMaster's file: a change of yours there is gone; the app-error watcher now also watches the API and requests that got no answer).` : ''} Nothing else that was there changed.${stale(dir)}`
           : `${rel}/ already exists; left as it is.`,
   );
   return 0;

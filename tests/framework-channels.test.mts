@@ -272,3 +272,24 @@ test('a service imported with double quotes or a .ts extension counts as used', 
   assert.doesNotMatch(out, /notes\.api\.steps\.ts: does not use a service/);
   assert.doesNotMatch(out, /NoteService\.ts: no step uses it/);
 });
+
+// 0.8.0 item 9 (Q58): an existing folder gets QAMaster's current app-errors.ts, and only that file is replaced
+test("app create replaces src/app-errors.ts when it differs from the template, says so, and leaves the person's files", () => {
+  const qa = tmpDir('qam-ch-replace-');
+  write(qa, { 'config/qamaster.json': JSON.stringify({ app: { name: 'Shop', url: 'http://localhost:3000' } }) });
+  assert.equal(qam(qa, 'app', 'create').status, 0);
+  const dir = path.join(qa, 'Shop');
+  fs.writeFileSync(path.join(dir, 'src/app-errors.ts'), '// from 0.7.1\n');
+  fs.writeFileSync(path.join(dir, 'src/fixtures.ts'), "// the person's own fixtures\n");
+  const r = qam(qa, '--json', 'app', 'create');
+  assert.deepEqual(JSON.parse(r.out).replaced, ['src/app-errors.ts']);
+  assert.equal(
+    fs.readFileSync(path.join(dir, 'src/app-errors.ts'), 'utf8'),
+    fs.readFileSync(path.join(TEMPLATE, 'src/app-errors.ts'), 'utf8'),
+  );
+  assert.equal(fs.readFileSync(path.join(dir, 'src/fixtures.ts'), 'utf8'), "// the person's own fixtures\n");
+  fs.writeFileSync(path.join(dir, 'src/app-errors.ts'), '// from 0.7.1\n');
+  assert.match(qam(qa, 'app', 'create').out, /Replaced src\/app-errors\.ts with QAMaster's current version/);
+  // identical now: nothing to say
+  assert.match(qam(qa, 'app', 'create').out, /already exists; left as it is/);
+});

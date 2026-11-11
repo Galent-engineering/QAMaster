@@ -44,6 +44,20 @@ function addMissing(from: string, to: string, rel = ''): string[] {
   return added;
 }
 
+/**
+ * QAMaster's own files in the folder (Q58: the app-error watcher): replaced when they differ from the template, since
+ * the person's own code lives elsewhere (fixtures.ts, steps, pages). Returns the replaced paths, relative with /.
+ */
+const OWNED = ['src/app-errors.ts'];
+function replaceOwned(from: string, to: string): string[] {
+  return OWNED.filter((rel) => {
+    const [src, dst] = [path.join(from, rel), path.join(to, rel)];
+    if (!fs.existsSync(dst) || fs.readFileSync(src, 'utf8') === fs.readFileSync(dst, 'utf8')) return false;
+    fs.copyFileSync(src, dst);
+    return true;
+  });
+}
+
 /** Runs npx in the folder; [exit code, output]. A missing npx or package is the caller's blocked case. */
 function npx(dir: string, args: string[]): [number, string] {
   const r = spawnSync('npx', ['--no-install', ...args], { cwd: dir, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
@@ -52,24 +66,31 @@ function npx(dir: string, args: string[]): [number, string] {
 
 /** The framework, with a create that takes the API's base URL and reports what it added to an existing folder. */
 export const playwrightBdd: Framework & {
-  create(dir: string, app: string, webUrl: string, o?: { apiUrl?: string }): { created: boolean; added: string[] };
+  create(
+    dir: string,
+    app: string,
+    webUrl: string,
+    o?: { apiUrl?: string },
+  ): { created: boolean; added: string[]; replaced: string[] };
 } = {
   name: 'playwright-bdd',
   runners: ['playwright-bdd'],
 
   /**
-   * A new folder is the template plus app.json. In an existing folder only what the template has and the folder
-   * lacks is added (`added`), and `apiUrl` is recorded when app.json has none; nothing else changes.
+   * A new folder is the template plus app.json. In an existing folder what the template has and the folder lacks is
+   * added (`added`), QAMaster's own files are replaced when they differ (`replaced`), and `apiUrl` is recorded when
+   * app.json has none; nothing else changes.
    */
-  create(dir, app, webUrl, o: { apiUrl?: string } = {}): { created: boolean; added: string[] } {
+  create(dir, app, webUrl, o: { apiUrl?: string } = {}): { created: boolean; added: string[]; replaced: string[] } {
     const appJson = path.join(dir, 'app.json');
     if (!fs.existsSync(dir)) {
       copy(TEMPLATE, dir);
       const record = { name: app, webUrl, ...(o.apiUrl ? { apiUrl: o.apiUrl } : {}) };
       fs.writeFileSync(appJson, `${JSON.stringify(record, null, 1)}\n`);
-      return { created: true, added: [] };
+      return { created: true, added: [], replaced: [] };
     }
     const added = addMissing(TEMPLATE, dir);
+    const replaced = replaceOwned(TEMPLATE, dir);
     if (o.apiUrl && fs.existsSync(appJson)) {
       try {
         const record = JSON.parse(fs.readFileSync(appJson, 'utf8')) as Record<string, unknown>;
@@ -81,7 +102,7 @@ export const playwrightBdd: Framework & {
         /* an app.json that isn't JSON is the person's to fix; it is left as it is */
       }
     }
-    return { created: false, added };
+    return { created: false, added, replaced };
   },
 
   check(dir, o): ScriptCheck {

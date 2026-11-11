@@ -14,13 +14,15 @@ import { tmpDir } from './tmp.mts';
 
 type AppError =
   | { kind: 'request'; method: string; url: string; status: number; body: string }
+  | { kind: 'failed'; method: string; url: string; error: string }
   | { kind: 'page'; message: string };
 type Watch = { finish(): Promise<AppError[]>; describe(e: AppError[]): string };
 const copy = path.join(tmpDir('qam-app-errors-'), 'app-errors.mts');
 fs.copyFileSync(path.resolve(import.meta.dirname, '../plugin/framework/playwright-bdd/src/app-errors.ts'), copy);
-const { parseAllow, watchApp } = (await import(copy)) as {
+const { parseAllow, watchApp, configuredApiUrl } = (await import(copy)) as {
   parseAllow(raw: string | undefined): string[];
-  watchApp(page: unknown, origins: string[], allow: string[]): Watch;
+  watchApp(page: unknown, origins: string[], allow: string[], apiUrl?: string): Watch;
+  configuredApiUrl(env?: Record<string, string | undefined>, dir?: string): string | undefined;
 };
 
 type Fake = { url: string; status: number; method?: string; body?: string };
@@ -36,6 +38,12 @@ function page() {
   return Object.assign(p, {
     respond: (r: Fake) => p.emit('response', response(r)),
     throwError: (message: string) => p.emit('pageerror', new Error(message)),
+    fail: (url: string, errorText: string | null, method = 'GET') =>
+      p.emit('requestfailed', {
+        url: () => url,
+        method: () => method,
+        failure: () => (errorText ? { errorText } : null),
+      }),
   });
 }
 
@@ -85,7 +93,7 @@ test('allow-list strings match the url or the message; nothing is allowed by def
   p.throwError('real bug');
   const found = await w.finish();
   assert.deepEqual(
-    found.map((e) => (e.kind === 'request' ? e.url : e.message)),
+    found.map((e) => (e.kind === 'page' ? e.message : e.url)),
     ['http://localhost:3000/api/orders', 'real bug'],
   );
 });
@@ -101,6 +109,71 @@ test('a long body is cut, and an unreadable body does not hide the error', async
   const [a, b] = await w.finish();
   assert.ok(a.kind === 'request' && a.body.length < 1100);
   assert.ok(b.kind === 'request' && b.body === '');
+});
+
+// 0.8.0 item 9 (D16, Q58): the API's origin is watched, and a request that got no answer counts
+const API = 'http://localhost:8000';
+
+test('the API origin is watched with the app origin: a 500 from it fails the case', async () => {
+  const p = page();
+  const w = watchApp(p, APP, [], API);
+  p.respond({ url: `${API}/todos`, status: 500, body: 'db down' });
+  p.respond({ url: 'http://localhost:9999/todos', status: 500 });
+  const found = await w.finish();
+  assert.deepEqual(
+    found.map((e) => e.kind === 'request' && e.url),
+    [`${API}/todos`],
+  );
+});
+
+test('a request with no answer on either origin is recorded, net::ERR_ABORTED is not', async () => {
+  const p = page();
+  const w = watchApp(p, APP, [], API);
+  p.fail(`${API}/todos`, 'net::ERR_CONNECTION_REFUSED', 'POST');
+  p.fail('http://localhost:3000/main.js', 'net::ERR_ABORTED');
+  p.fail('http://localhost:3000/img.png', 'net::ERR_CONNECTION_RESET');
+  p.fail('https://fonts.example.com/f.woff', 'net::ERR_NAME_NOT_RESOLVED');
+  p.fail(`${API}/x`, null);
+  const found = await w.finish();
+  assert.deepEqual(found, [
+    { kind: 'failed', method: 'POST', url: `${API}/todos`, error: 'net::ERR_CONNECTION_REFUSED' },
+    { kind: 'failed', method: 'GET', url: 'http://localhost:3000/img.png', error: 'net::ERR_CONNECTION_RESET' },
+    { kind: 'failed', method: 'GET', url: `${API}/x`, error: 'the request failed' },
+  ]);
+  assert.match(
+    w.describe(found.slice(0, 1)),
+    /POST http:\/\/localhost:8000\/todos got no answer \(net::ERR_CONNECTION_REFUSED\)/,
+  );
+});
+
+test('allowErrors still applies to a request that got no answer', async () => {
+  const p = page();
+  const w = watchApp(p, APP, ['/api/telemetry'], API);
+  p.fail(`${API}/api/telemetry`, 'net::ERR_CONNECTION_REFUSED');
+  p.fail(`${API}/api/orders`, 'net::ERR_CONNECTION_REFUSED');
+  assert.deepEqual(
+    (await w.finish()).map((e) => e.kind === 'failed' && e.url),
+    [`${API}/api/orders`],
+  );
+});
+
+test('with no apiUrl only the app origin is watched', async () => {
+  const p = page();
+  const w = watchApp(p, APP, [], undefined);
+  p.respond({ url: `${API}/todos`, status: 500 });
+  assert.deepEqual(await w.finish(), []);
+});
+
+test("the API URL is API_BASE_URL, else apiUrl in the folder's app.json, else none", () => {
+  const dir = tmpDir('qam-app-json-');
+  assert.equal(configuredApiUrl({}, dir), undefined);
+  fs.writeFileSync(path.join(dir, 'app.json'), JSON.stringify({ webUrl: 'http://x', apiUrl: API }));
+  assert.equal(configuredApiUrl({}, dir), API);
+  assert.equal(configuredApiUrl({ API_BASE_URL: 'http://other:1' }, dir), 'http://other:1');
+  fs.writeFileSync(path.join(dir, 'app.json'), '{"webUrl":"http://x"}');
+  assert.equal(configuredApiUrl({}, dir), undefined);
+  fs.writeFileSync(path.join(dir, 'app.json'), 'not json');
+  assert.equal(configuredApiUrl({}, dir), undefined);
 });
 
 test('parseAllow reads a JSON list of strings; anything else is nothing allowed', () => {

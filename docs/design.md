@@ -172,7 +172,7 @@ Layout rules:
 | A runner's tools are missing and the person didn't approve the download, or a link names a runner QAMaster doesn't have | `blocked`, with what to install or change (Q38) |
 | An approved test didn't run or was skipped | `fail` |
 | A selected case is BROKEN | `fail` |
-| A UI case passed, but the app or its API (`apiUrl`) answered 5xx, a request got no answer, or the page threw an error that `gate.allowErrors` doesn't name | `fail`, with the request, status and body (or the error) in `app-errors.json` (Q53) |
+| A UI case passed, but the app or its API answered 5xx, a request to them got no answer (anything but `net::ERR_ABORTED`), or the page threw an error that `gate.allowErrors` doesn't name | `fail`, with the request, status and body (or the error) in `app-errors.json` (Q53, Q58) |
 | No test case matched the change | `pass`, with a coverage-gap warning |
 | Approval would run 0 cases although the change matched cases that can't run (manual cases picked by path, the DSM, a group, a story or `--all`, or every item removed) | `qam approve` and `qam check --yes` are refused (`blocked`, exit 2), and the plan says so. `--allow-empty` approves it anyway; the plan records `allowEmpty` and the verdict warns (0.8.0, D3, amends Q13). A plan that matched nothing, or only manual smoke cases, is still a `pass` with a warning |
 | The change names a story (`AB#<id>`) no case is tagged `req:<id>` for | the verdict is unchanged; the plan lists the story as a coverage gap (0.8.0) |
@@ -219,7 +219,7 @@ QAMASTER_ADO_PROJECT=Shop
 
 `gate.retries` (default 1) is how many times a failed case runs again: failed, then passed is *flaky*, a pass with a warning. Set it to `0` for no retry, so a flaky case is a failure. `gate.sharedShare` (Q37) and `runners` (Q38) are built in [0.3.0](plans/0.3.0.md). A runner without a `runners` entry uses `QAMASTER_TEST_ROOT`.
 
-`gate.allowErrors` (Q53, 0.6.0) lists strings matched against an app error's URL or message; a match is ignored. Empty by default: every 5xx from the app's or the API's origin, every request that got no answer, and every uncaught page error fails the case. An empty string is refused, since it would allow everything.
+`gate.allowErrors` (Q53, 0.6.0) lists strings matched against an app error's URL or message; a match is ignored. Empty by default: every 5xx from the app's origin or the API's (`apiUrl` in `app.json`, or `API_BASE_URL`), every request to them that got no answer, and every uncaught page error fails the case. An empty string is refused, since it would allow everything.
 
 `gate.preset` (Q31, 0.7.0) is `fast`, `standard` (default) or `full`; `qam plan --preset` overrides it. `gate.groupsModel` names the Claude Code model `/qamaster:check` gives the subagent that picks groups: `sonnet`, `opus`, `haiku`, `fable` or `inherit`; unset (`null`), the session's own. The CLI only records it; CI, the push hook and `QAMASTER_AI=off` never pick groups. The plan's `Selection:` line names the model only when one can pick groups: not in CI (`CI` set, or Azure Pipelines' `TF_BUILD=True`) and not with AI off (0.7.1).
 
