@@ -13,6 +13,7 @@ import { BlockedError } from '../shared/errors.mts';
 import type { TestResult, TestStatus } from '../shared/models.mts';
 import type { Runner } from './base.mts';
 import { setupProblem } from './runner-setup.mts';
+import { scrubEvidence } from './scrub-evidence.mts';
 
 const PREFIX = 'bdd:@';
 const OK_EXIT = new Set([0, 1]);
@@ -132,13 +133,19 @@ export class PlaywrightBddRunner implements Runner {
 
   async run(selection: Map<number, string[]>, root: string, evidence: string): Promise<TestResult[]> {
     const tags = [...new Set([...selection.values()].flat().map((id) => id.slice(PREFIX.length)))];
-    const all = tags.length
-      ? this.report(root, [
-          `--grep=(${tags.map((t) => `@${t}`).join('|')})(?![\\w-])`,
-          `--output=${evidence}`,
-          '--retries=0',
-        ]).flatMap(specs)
-      : [];
+    let all: Spec[] = [];
+    try {
+      all = tags.length
+        ? this.report(root, [
+            `--grep=(${tags.map((t) => `@${t}`).join('|')})(?![\\w-])`,
+            `--output=${evidence}`,
+            '--retries=0',
+          ]).flatMap(specs)
+        : [];
+    } finally {
+      // Playwright's trace keeps what a script fills, so the kept evidence would hold the test account's password
+      scrubEvidence(evidence, [this.account[this.account.QAMASTER_LOGIN_PASSWORD_VAR ?? '']]);
+    }
     // a browser that isn't there, can't start, or finds no app is the machine's problem, not a script's (Q41)
     const errors = all.flatMap((sp) => sp.tests.map((t) => plain(t.results.at(-1)?.error?.message ?? ''))).join('\n');
     const problem = setupProblem(errors, 'node', root);

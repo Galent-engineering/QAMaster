@@ -169,8 +169,9 @@ function apiFindings(root: string, add: (k: string, msg: string) => void) {
 }
 
 const STEP_DEF_AT = /\b(?:Given|When|Then|Step)\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/g;
-/** A step's words that say it makes something: create, add, new, register, save, post, upload, import, invite... */
-const CREATES = /\b(?:creat|add|new\b|regist|sav(?:e|es|ed)\b|post|upload|import|insert|duplicat|clon|invit)\w*/i;
+/** A Given or When's words that say it makes something: create, add, register, save, upload, import, invite... (whole verbs). */
+const CREATES =
+  /\b(?:creat(?:e|es|ed|ing)|add(?:s|ed|ing)?|register(?:s|ing)?|sav(?:e|es|ed|ing)|upload(?:s|ed|ing)?|import(?:s|ed|ing)?|insert(?:s|ed|ing)?|duplicat(?:e|es|ed|ing)|clon(?:e|es|ed|ing)|invit(?:e|es|ed|ing))\b/i;
 /** An API step's body calling a service method that creates. */
 const CREATE_CALL = /\.(?:create|add|register|insert|post)\w*\(/;
 const HAS_CLEANUP = /\bcreateCleanup\b|^\s*cleanup\s*:/m;
@@ -187,6 +188,7 @@ function cleanupFindings(root: string, add: (k: string, msg: string) => void) {
     const text = read(root, f);
     const defs = [...text.matchAll(STEP_DEF_AT)];
     defs.forEach((m, i) => {
+      if (m[0].startsWith('Then(')) return; // a Then asserts
       const body = text.slice((m.index ?? 0) + m[0].length, defs[i + 1]?.index ?? text.length);
       if (!CREATES.test(m[2]) && !(f.startsWith('steps/api/') && CREATE_CALL.test(body))) return;
       add(
@@ -197,24 +199,37 @@ function cleanupFindings(root: string, add: (k: string, msg: string) => void) {
   }
 }
 
-/** A Background step that signs in by hand, in a feature with @signed-in scenarios the framework already signs in (Q58). */
+/** A step that signs in by hand, in a Background or a scenario the framework already signs in (@signed-in, Q58). */
 const SIGN_IN = /\b(?:sign(?:ed|s)?[- ]?in|log(?:ged|s)?[- ]?in|login|authenticat\w*)\b/i;
+const SIGNED_IN_TAG = /(?:^|\s)@signed-in(?![\w-])/;
 function sessionFindings(root: string, add: (k: string, msg: string) => void) {
   if (!fs.existsSync(path.join(root, 'steps', 'shared', 'session.steps.ts'))) return;
   for (const f of files(root, 'features', /\.feature$/)) {
     const lines = read(root, f).split('\n');
     if (!lines.some((l) => /^\s*@.*@signed-in\b|^\s*@signed-in\b/.test(l))) continue;
     let inBackground = false;
+    let featureSigned = false;
+    let scenarioSigned = false;
+    let tags = '';
     lines.forEach((raw, i) => {
       const l = raw.trim();
-      if (/^Background:/.test(l)) inBackground = true;
-      else if (/^(Scenario|Scenario Outline|Scenario Template|Example|Feature|Rule):/.test(l) || l.startsWith('@'))
+      if (l.startsWith('@')) {
+        tags += ` ${l}`;
         inBackground = false;
+        return;
+      }
+      if (/^Feature:/.test(l)) featureSigned = SIGNED_IN_TAG.test(tags);
+      if (/^(Scenario|Scenario Outline|Scenario Template|Example|Feature|Rule):/.test(l)) {
+        scenarioSigned = featureSigned || SIGNED_IN_TAG.test(tags);
+        inBackground = false;
+        tags = '';
+      }
+      if (/^Background:/.test(l)) inBackground = true;
       const step = /^(?:Given|When|Then|And|But|\*)\s+(.*)$/.exec(l);
-      if (inBackground && step && SIGN_IN.test(step[1]) && !/\b(?:not|no|never)\b/i.test(step[1]))
+      if ((inBackground || scenarioSigned) && step && SIGN_IN.test(step[1]) && !/\b(?:not|no|never)\b/i.test(step[1]))
         add(
           'session',
-          `${f}:${i + 1}: the Background signs in ("${step[1]}"), and the @signed-in scenarios are already signed in by the framework (steps/shared/session.steps.ts): remove that step, or the sign-in runs twice`,
+          `${f}:${i + 1}: the ${inBackground ? 'Background' : 'scenario'} signs in ("${step[1]}"), and the @signed-in scenarios are already signed in by the framework (steps/shared/session.steps.ts): remove that step, or the sign-in runs twice`,
         );
     });
   }

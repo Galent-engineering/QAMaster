@@ -131,3 +131,79 @@ Feature: Todo
     'the hook is not there: the hand sign-in is all there is',
   );
 });
+
+test('review item 3: a step that only asserts, or names a place or a state, is not a create', () => {
+  const dir = folder({
+    'src/fixtures.ts': OLD_FIXTURES,
+    'steps/pages/words.steps.ts': `import { Given, Then, When } from '../../src/fixtures';
+Given('the registered user has a profile', async ({ page }) => {});
+When('I see my address', async ({ page }) => {});
+When('I enter the postcode {string}', async ({ page }, code: string) => {});
+When('I read the important notice', async ({ page }) => {});
+Then('the saved message is shown', async ({ page }) => {});
+Then('I see the new todo {string}', async ({ page }, t: string) => {});
+Then('the todo was created', async ({ page }) => {});
+`,
+  });
+  assert.equal(staticFindings(dir, KNOWN).cleanup, undefined, JSON.stringify(staticFindings(dir, KNOWN)));
+});
+
+test('review item 3: whole create verbs in a Given or When are still flagged', () => {
+  const steps = ['I save the form', 'the user adds a todo', 'I upload a file', 'I create a list', 'I click Add'];
+  const dir = folder({
+    'src/fixtures.ts': OLD_FIXTURES,
+    'steps/pages/verbs.steps.ts': `import { When } from '../../src/fixtures';\n${steps.map((s) => `When('${s}', async ({ page }) => {});`).join('\n')}\n`,
+  });
+  assert.equal(staticFindings(dir, KNOWN).cleanup?.length, steps.length);
+});
+
+test('review item 2b: a sign-in step inside a @signed-in scenario is flagged, like one in the Background', () => {
+  const feature = (tag: string, step: string) => `@web
+Feature: Todo
+
+  ${tag}
+  Scenario: Lists todos
+    ${step}
+    Given I open the path "/todo"
+`;
+  const dir = folder({
+    'features/web/todo.feature': feature('@TC-TODO-001 @signed-in', 'Given the registered user is signed in'),
+  });
+  const f = staticFindings(dir, KNOWN);
+  assert.equal(f.session?.length, 1, JSON.stringify(f));
+  assert.match(f.session[0], /features\/web\/todo\.feature:6: .*"the registered user is signed in".*runs twice/);
+  const tagLine = folder({
+    'features/web/todo.feature': `@web
+Feature: Todo
+
+  @TC-TODO-001
+  @signed-in
+  Scenario Outline: Lists
+    When I log in as "<user>"
+    Examples:
+      | user |
+      | a    |
+`,
+  });
+  assert.equal(staticFindings(tagLine, KNOWN).session?.length, 1);
+  for (const [tag, step] of [
+    ['@TC-TODO-001 @signed-out', 'Given the registered user is signed in'],
+    ['@TC-TODO-001 @signed-in', 'Given I am not signed in'],
+  ])
+    assert.equal(
+      staticFindings(folder({ 'features/web/todo.feature': feature(tag, step) }), KNOWN).session,
+      undefined,
+      `${tag} ${step}`,
+    );
+  // a feature tagged @signed-in as a whole covers its scenarios
+  const whole = folder({
+    'features/web/todo.feature': `@web @signed-in
+Feature: Todo
+
+  @TC-TODO-001
+  Scenario: Lists todos
+    Given I am signed in as the registered user
+`,
+  });
+  assert.equal(staticFindings(whole, KNOWN).session?.length, 1);
+});

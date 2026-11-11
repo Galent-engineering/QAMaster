@@ -4,7 +4,7 @@
  * small app with a sign-in form (skipped when the packages or Chromium aren't there).
  */
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { once } from 'node:events';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -71,6 +71,36 @@ test('accountEnvForScripts passes the two named variables and their names, from 
   assert.deepEqual(accountEnvForScripts(dir, {}), {});
 });
 
+test('accountEnvForScripts passes login.*_selector as QAMASTER_LOGIN_*_SELECTOR, and accountFrom reads them', () => {
+  const dir = tmpDir('qam-acct-sel-');
+  fs.mkdirSync(path.join(dir, 'config'), { recursive: true });
+  fs.writeFileSync(
+    path.join(dir, 'config/dsm-config.json'),
+    JSON.stringify({
+      application: {
+        login: {
+          mode: 'auto',
+          username_env: 'TODO_USER',
+          password_env: 'TODO_PASSWORD',
+          username_selector: '#who',
+          password_selector: '#secret',
+          submit_selector: '#go',
+        },
+      },
+    }),
+  );
+  const env = accountEnvForScripts(dir, { TODO_USER: 'u', TODO_PASSWORD: 'p' });
+  assert.equal(env.QAMASTER_LOGIN_USERNAME_SELECTOR, '#who');
+  assert.equal(env.QAMASTER_LOGIN_PASSWORD_SELECTOR, '#secret');
+  assert.equal(env.QAMASTER_LOGIN_SUBMIT_SELECTOR, '#go');
+  const account = accountFrom(env) as Record<string, string>;
+  assert.equal(account.usernameSelector, '#who');
+  assert.equal(account.passwordSelector, '#secret');
+  assert.equal(account.submitSelector, '#go');
+  const none = accountFrom({ ...env, QAMASTER_LOGIN_USERNAME_SELECTOR: '' }) as Record<string, string>;
+  assert.equal('usernameSelector' in none, false);
+});
+
 const APP_SERVER = `
 const http = require('node:http');
 const [USER, PASS] = [process.argv[1], process.argv[2]];
@@ -86,6 +116,7 @@ const server = http.createServer((req, res) => {
     return;
   }
   res.setHeader('content-type', 'text/html');
+  if (req.url === '/gate') return res.end(signedIn ? '<h1>Gate passed</h1>' : '<h1>Please sign in</h1><form method="post" action="/login"><input name="q" type="text" placeholder="Search"><input name="email" id="who" type="text"><input name="password" type="password"><button type="button">Help</button><button type="submit" id="go">Go</button></form>');
   if (req.url === '/todo') return res.end(signedIn ? '<h1>Your todos</h1>' : form(''));
   res.end(signedIn ? '<h1>Home</h1>' : form(''));
 });
@@ -102,6 +133,14 @@ test('end to end: @signed-in signs in before the scenario, @signed-out does not,
   const [port] = (await once(server.stdout, 'data')).map((d: Buffer) => d.toString().trim());
   write(dir, {
     'app.json': JSON.stringify({ name: 'Shop', webUrl: `http://127.0.0.1:${port}` }),
+    'features/web/gate.feature': `@web
+Feature: Gate
+
+  @TC-3 @signed-in
+  Scenario: Custom selectors
+    Given I open the path "/gate"
+    Then I should see the text "Gate passed"
+`,
     'features/web/session.feature': `@web
 Feature: Session
 
@@ -121,6 +160,7 @@ Feature: Session
     [1, ['bdd:@TC-1']],
     [2, ['bdd:@TC-2']],
   ]);
+  const gate = new Map([[3, ['bdd:@TC-3']]]);
   const account = (password: string) => ({
     QAMASTER_LOGIN_USER_VAR: 'SHOP_USER',
     QAMASTER_LOGIN_PASSWORD_VAR: 'SHOP_PASSWORD',
@@ -133,6 +173,16 @@ Feature: Session
     ['passed', 'passed'],
     good.map((r) => r.error).join('\n'),
   );
+  // item 2c: the sign-in page's first text field is a search box, so only login.username_selector finds the right one
+  const gateEnv = { ...account(SECRET), QAMASTER_LOGIN_URL: '/gate' };
+  const generic = await new PlaywrightBddRunner('npx', [], gateEnv).run(gate, dir, path.join(dir, 'ev3'));
+  assert.equal(generic[0].status, 'failed', 'the generic guess fills the search box');
+  const custom = await new PlaywrightBddRunner('npx', [], {
+    ...gateEnv,
+    QAMASTER_LOGIN_USERNAME_SELECTOR: '#who',
+    QAMASTER_LOGIN_SUBMIT_SELECTOR: '#go',
+  }).run(gate, dir, path.join(dir, 'ev4'));
+  assert.equal(custom[0].status, 'passed', custom[0].error);
   const bad = await new PlaywrightBddRunner('npx', [], account('not-the-password')).run(
     selection,
     dir,
@@ -142,4 +192,16 @@ Feature: Session
   assert.match(bad[0].error ?? '', /Still on the sign-in form after signing in with SHOP_USER and SHOP_PASSWORD/);
   assert.doesNotMatch(bad[0].error ?? '', /not-the-password|tester/);
   assert.equal(bad[1].status, 'passed', 'a signed-out scenario never signs in');
+  // item 1 (review): the kept trace of the failed sign-in must not hold the password (not in an action, not in a snapshot)
+  const traces = fs
+    .readdirSync(path.join(dir, 'ev2'), { recursive: true })
+    .map((f) => path.join(dir, 'ev2', String(f)))
+    .filter((f) => f.endsWith('trace.zip'));
+  assert.ok(traces.length > 0, 'a failed scenario keeps its trace');
+  for (const zip of traces) {
+    const content = spawnSync('unzip', ['-p', zip], { encoding: 'latin1', maxBuffer: 256 * 1024 * 1024 });
+    assert.equal(content.status, 0, 'unzip reads the trace');
+    assert.ok(content.stdout.length > 0);
+    assert.ok(!content.stdout.includes('not-the-password'), `the password is in ${zip}`);
+  }
 });
