@@ -490,3 +490,123 @@ test('webUrl: GitHub, Bitbucket and Azure Repos addresses; none for an unknown h
   );
   assert.equal(webUrl('/srv/git/shop-qa.git', f, 'abc'), null);
 });
+
+// ---- 0.8.0 item 15 (D17): req:<id> tags from TestGen evidence
+
+test('0.8.0 item 15: a story cited as req:<id> on the case or a step becomes a req:<id> tag, once, after the group tags', () => {
+  const d = derive(
+    kase('TC-1', {
+      evidence: ['aut:AUT_Shop#Screens', 'req:AB-12', 'req:1234'],
+      steps: [
+        {
+          screen: '/cart',
+          action: 'Click Checkout',
+          leads_to: '/checkout',
+          expected: 'It opens',
+          evidence: ['req:1234', 'req:77'],
+        },
+      ],
+    }),
+    ctx(),
+  );
+  assert.deepEqual(d.requirements, ['1234', '77', 'AB-12']);
+  assert.deepEqual(
+    d.tags.filter((t) => !t.startsWith('path:')),
+    ['checkout', 'checkout-coupon', 'req:1234', 'req:77', 'req:AB-12'],
+  );
+  assert.deepEqual(derive(kase('TC-2'), ctx()).requirements, []);
+  assert.ok(!derive(kase('TC-2'), ctx()).tags.some((t) => t.startsWith('req:')));
+});
+
+test('0.8.0 item 15: the req: tags are created with the case, and the hash moves when the story set does', () => {
+  const none = derive(kase('TC-1'), ctx());
+  const some = derive(kase('TC-1', { evidence: ['req:5'] }), ctx());
+  assert.notEqual(none.hash, some.hash);
+  const c = diff(input([some], [], [])).changes[0];
+  assert.ok(c.change?.addTags?.includes('req:5'));
+  assert.ok(c.ownedTags.includes('req:5'));
+});
+
+test('0.8.0 item 15: a republish adds a newly cited req: tag, removes an owned one no longer cited, and keeps a hand-added one', () => {
+  const was = derive(kase('TC-1', { evidence: ['req:1', 'req:2'] }), ctx());
+  const now = derive(kase('TC-1', { evidence: ['req:2', 'req:3'] }), ctx());
+  const old = entry('TC-1', 7, was.hash, { ownedTags: was.tags });
+  const have = stored(was, 7, { tags: [...was.tags, 'req:by-hand'] });
+  const c = diff(input([now], [old], [have])).changes[0];
+  assert.equal(c.kind, 'update');
+  assert.deepEqual(c.change?.addTags, ['req:3']);
+  assert.deepEqual(c.change?.removeTags, ['req:1']);
+  assert.ok(c.ownedTags.includes('req:3') && !c.ownedTags.includes('req:1'));
+});
+
+test('0.8.0 item 15: every case that cites a story is updated when the tags first arrive', () => {
+  // cases published before 0.8.0 carry no req: tag: the first republish writes it on each one that cites a story
+  const plain = (id: string) => derive(kase(id), ctx());
+  const cites = (id: string) => derive(kase(id, { evidence: ['req:9'] }), ctx());
+  const was = [plain('TC-1'), plain('TC-2'), plain('TC-3')];
+  const now = [cites('TC-1'), cites('TC-2'), plain('TC-3')];
+  const r = diff(
+    input(
+      now,
+      was.map((w, i) => entry(w.id, 10 + i, w.hash, { ownedTags: w.tags })),
+      was.map((w, i) => stored(w, 10 + i)),
+    ),
+  );
+  assert.deepEqual(kinds(r), ['update TC-1', 'update TC-2', 'unchanged TC-3']);
+  assert.ok(r.changes.slice(0, 2).every((c) => c.change?.addTags?.includes('req:9')));
+});
+
+// ---- 0.8.0 item 14: --take-store
+
+/** A case published, then edited in the store (rev 1 → 2), then changed in the run: the conflict. */
+function edited() {
+  const was = derive(kase('TC-1'), ctx());
+  const now = derive(kase('TC-1', { title: 'Mine' }), ctx());
+  const old = entry('TC-1', 7, was.hash, { ownedTags: was.tags, trackerRev: 1 });
+  const have = stored(was, 7, { title: 'Edited by hand', rev: 2 });
+  return { was, now, old, have };
+}
+
+test('0.8.0 item 14: without --take-store the store edit is a conflict; with it the case is unchanged and takes the revision', () => {
+  const { now, old, have } = edited();
+  assert.deepEqual(kinds(diff(input([now], [old], [have]))), ['conflict TC-1']);
+  const r = diff(input([now], [old], [have], { takeStore: new Set(['TC-1']) }));
+  assert.deepEqual(kinds(r), ['unchanged TC-1']);
+  const c = r.changes[0];
+  assert.deepEqual(c.take, { rev: 2 });
+  assert.equal(c.hash, now.hash);
+  assert.equal(c.change, undefined, 'nothing is written to the store');
+  assert.deepEqual(c.differences, [{ field: 'title', store: 'Edited by hand', run: 'Mine' }]);
+  assert.deepEqual(c.ownedTags, old.ownedTags);
+});
+
+test("0.8.0 item 14: taking only clears the case named, and a case the store didn't edit is left alone", () => {
+  const { now, old, have } = edited();
+  const other = derive(kase('TC-2', { title: 'Also mine' }), ctx());
+  const otherWas = derive(kase('TC-2'), ctx());
+  const r = diff(
+    input(
+      [now, other],
+      [old, entry('TC-2', 8, otherWas.hash, { ownedTags: otherWas.tags })],
+      [have, stored(otherWas, 8)],
+      { takeStore: new Set(['TC-1', 'TC-2']) },
+    ),
+  );
+  assert.deepEqual(kinds(r), ['unchanged TC-1', 'update TC-2']);
+  assert.equal(r.changes[1].take, undefined);
+});
+
+test("0.8.0 item 14: after the ledger takes the store's revision and the run's hash, the next diff is clean", () => {
+  const { now, have } = edited();
+  const taken = entry('TC-1', 7, now.hash, { ownedTags: have.tags, trackerRev: 2 });
+  assert.deepEqual(kinds(diff(input([now], [taken], [have]))), ['unchanged TC-1']);
+  assert.equal(diff(input([now], [taken], [have])).changes[0].differences, undefined);
+});
+
+test('0.8.0 item 14: an update row carries the store value beside the run value for each field it writes', () => {
+  const was = derive(kase('TC-1'), ctx());
+  const now = derive(kase('TC-1', { title: 'New title' }), ctx());
+  const r = diff(input([now], [entry('TC-1', 7, was.hash, { ownedTags: was.tags })], [stored(was, 7)]));
+  assert.equal(r.changes[0].kind, 'update');
+  assert.deepEqual(r.changes[0].differences, [{ field: 'title', store: 'Case TC-1', run: 'New title' }]);
+});

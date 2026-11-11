@@ -123,7 +123,13 @@ export function record(
         trackerRev: item.rev,
       });
     } else if (c.kind === 'unchanged' && old) {
-      entries.set(c.localId, { ...old, hash: c.hash, ownedTags: [...c.ownedTags] });
+      // --take-store: the store's revision is now the one the ledger knows, so its edit stops being a conflict
+      entries.set(c.localId, {
+        ...old,
+        hash: c.hash,
+        ownedTags: [...c.ownedTags],
+        ...(c.take ? { trackerRev: c.take.rev } : {}),
+      });
     } else if (c.kind === 'retire' && done) {
       entries.delete(c.localId);
     }

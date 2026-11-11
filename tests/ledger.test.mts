@@ -154,6 +154,16 @@ test('record: unchanged only refreshes the hash and tags, and keeps the revision
   );
 });
 
+test("0.8.0 item 14: record: taking the store's edit records its revision and the run's hash, and the ledger's tags", () => {
+  const prev: Ledger = { store: STORE, entries: [entry('TC-A', 1000, { trackerRev: 1, ownedTags: ['checkout'] })] };
+  const change = planned('unchanged', 'TC-A', { trackerId: 1000, ownedTags: ['checkout'], take: { rev: 4 } });
+  const out = record(prev, STORE, [{ change }], [], NOW);
+  assert.deepEqual(
+    [out.entries[0].hash, out.entries[0].trackerRev, out.entries[0].publishedAt, out.entries[0].ownedTags],
+    ['new-TC-A', 4, 'before', ['checkout']],
+  );
+});
+
 test('record: a conflict leaves its entry exactly as it was', () => {
   const prev: Ledger = { store: STORE, entries: [entry('TC-A', 1000)] };
   assert.deepEqual(

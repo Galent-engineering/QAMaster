@@ -125,7 +125,8 @@ export type Derived = {
   title: string;
   description: string;
   steps: ItemStep[];
-  tags: string[]; // QAMaster's own tags except smoke: group, then path
+  tags: string[]; // QAMaster's own tags except smoke: group, then req (0.8.0), then path
+  requirements: string[]; // the IDs of the stories the case cites as req:<id>; each is also a req:<id> tag
   automatedTest: string | null;
   suite: string;
   hash: string; // of everything above but smoke, which is confirmed apart (Q8)
@@ -177,9 +178,15 @@ export function derive(c: PublishCase, ctx: PublishContext): Derived {
   const globs = [...new Set(files.map((f) => pathTag(f, ctx.settings.publish.pathDepth)))].sort();
   // a folder inside another selected folder says nothing more
   const paths = globs.filter((g) => !globs.some((o) => o !== g && o.endsWith('/**') && g.startsWith(o.slice(0, -2))));
-  const tags = [...group, ...paths];
-
   const evidence = [...new Set([...c.evidence, ...c.steps.flatMap((s) => s.evidence ?? [])])];
+  // a story the case cites (TestGen's req:<id> evidence) is a tag the gate selects by (0.8.0, D17); the ID as cited
+  const requirements = [
+    ...new Set(evidence.filter((e) => e.startsWith('req:')).map((e) => e.slice(4).trim())),
+  ]
+    .filter(Boolean)
+    .sort();
+  const tags = [...group, ...requirements.map((r) => `req:${r}`), ...paths];
+
   // the store is read by more people than the QA project: a credential stays in the run's test data only
   const data = Object.entries(c.test_data ?? {}).map(([k, v]) =>
     isSecretData(k, v)
@@ -204,6 +211,7 @@ export function derive(c: PublishCase, ctx: PublishContext): Derived {
     description,
     steps,
     tags,
+    requirements,
     automatedTest,
     suite,
     hash: sha([c.title, description, steps, tags, automatedTest, suite]),
@@ -242,11 +250,17 @@ export type PlannedChange = PublishChange & {
   ownedTags: string[];
   suite: string;
   /**
-   * What differs between the store and the run: on a conflict, the fields the run wants to write (K6); on an
-   * `unchanged` case, an edit made only in the store, which stays as it is (K7). Absent when nothing differs.
+   * What differs between the store and the run: on an update, the fields it writes (0.8.0); on a conflict, the fields
+   * the run wants to write (K6); on an `unchanged` case, an edit made only in the store, which stays as it is (K7).
+   * Absent when nothing differs.
    */
   differences?: FieldDifference[];
   change?: ItemChange; // what --apply would write; absent for unchanged, conflict and retire
+  /**
+   * `--take-store` (0.8.0, amends Q6): the store's edit is accepted. Nothing is written to the store; --apply records
+   * the store's revision and this run's hash in the ledger, so the conflict clears and the edit stays.
+   */
+  take?: { rev: number };
 };
 
 export type DiffInput = {
@@ -255,6 +269,7 @@ export type DiffInput = {
   items: Map<number, Item>; // the store's test cases for the ledger's IDs; an ID that's missing is gone
   module: string;
   confirmedSmoke: Set<string>;
+  takeStore?: Set<string>; // the local IDs whose store edit the person accepts (`--take-store`)
 };
 
 const sameSteps = (a: ItemStep[], b: ItemStep[]) => JSON.stringify(a) === JSON.stringify(b);
@@ -368,7 +383,19 @@ export function diff(i: DiffInput): { changes: PlannedChange[]; declinedSmoke: s
     // Only at a new revision: a store that formats what it was given reads back differently with nobody editing it.
     const edited = it.rev !== entry.trackerRev;
     const diffs = edited && fields.length ? differences(fields, it, d, owned) : [];
-    if (!wants) {
+    if (edited && i.takeStore?.has(d.id)) {
+      // the ledger keeps the owned tags it had: what the run derives now isn't written, so it isn't owned yet
+      changes.push({
+        ...base,
+        kind: 'unchanged',
+        trackerId: entry.trackerId,
+        fields: [],
+        ownedTags: had,
+        reason: `takes the store's version of test case ${entry.trackerId} (rev ${entry.trackerRev} → ${it.rev})`,
+        take: { rev: it.rev },
+        ...(diffs.length ? { differences: diffs } : {}),
+      });
+    } else if (!wants) {
       changes.push({
         ...common,
         kind: 'unchanged',
@@ -388,7 +415,14 @@ export function diff(i: DiffInput): { changes: PlannedChange[]; declinedSmoke: s
         reason: `Test case ${entry.trackerId} changed in the store since it was published (rev ${entry.trackerRev} → ${it.rev}), so ${d.id} wasn't written. Review it there, or re-run with the store's version.`,
       });
     } else {
-      changes.push({ ...common, kind: 'update', fields, reason: `${fields.join(', ')} changed`, change });
+      changes.push({
+        ...common,
+        kind: 'update',
+        fields,
+        reason: `${fields.join(', ')} changed`,
+        change,
+        differences: differences(fields, it, d, owned),
+      });
     }
   }
 

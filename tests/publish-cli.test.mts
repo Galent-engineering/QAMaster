@@ -512,3 +512,86 @@ test('R23: qam store use blocks on a store that is not known, and warns when the
   assert.equal(r.status, 0, r.stderr);
   assert.match(r.stdout, /QAMASTER_STORE=ado is set in the shell and wins/);
 });
+
+// ---- 0.8.0 items 14 and 15
+
+/** A case published, edited by hand in the store, then changed in the run: a conflict. */
+function conflicted() {
+  const p = project();
+  p.writeRun([kase('TC-CART-001')]);
+  p.qam('publish', RUN, '--apply');
+  fs.writeFileSync(path.join(p.dir, CSV), p.read(CSV).replace('Case TC-CART-001', 'Edited by hand'));
+  p.writeRun([kase('TC-CART-001', { title: 'Mine' })]);
+  return p;
+}
+
+test("0.8.0 item 14: --take-store previews the store's version and writes nothing without --apply", () => {
+  const p = conflicted();
+  const ledger = p.read(LEDGER);
+  const csv = p.read(CSV);
+  const r = p.qam('publish', RUN, '--take-store', 'TC-CART-001');
+  assert.equal(r.status, 3, r.err);
+  assert.match(
+    r.out,
+    /Take the store's version \(1\), only with --apply\n\s+TC1000 ← TC-CART-001[\s\S]*title: store "Edited by hand", run "Mine"/,
+  );
+  assert.doesNotMatch(r.out, /Conflict \(/);
+  assert.equal(p.read(LEDGER), ledger);
+  assert.equal(p.read(CSV), csv);
+});
+
+test("0.8.0 item 14: --take-store with --apply keeps the store's edit, records its revision, and the conflict is gone", () => {
+  const p = conflicted();
+  const applied = p.qam('publish', RUN, '--take-store', 'TC-CART-001', '--apply');
+  assert.equal(applied.status, 0, applied.out + applied.err);
+  assert.match(p.read(CSV), /Edited by hand/);
+  assert.doesNotMatch(p.read(CSV), /Mine/);
+  assert.equal(JSON.parse(p.read(LEDGER)).entries[0].trackerRev, 2);
+  const again = p.qam('publish', RUN);
+  assert.equal(again.status, 0, again.out);
+  assert.match(again.out, /Nothing to publish/);
+  assert.doesNotMatch(again.out, /Conflict|Edited in the store only/);
+});
+
+test('0.8.0 item 14: --take-store names the case the store has not changed, and an ID the run does not have', () => {
+  const p = project();
+  p.writeRun([kase('TC-CART-001')]);
+  p.qam('publish', RUN, '--apply');
+  const none = p.qam('publish', RUN, '--take-store', 'TC-CART-001');
+  assert.equal(none.status, 2);
+  assert.match(none.err, /TC-CART-001.*hasn't been changed in the store|nothing to take/);
+  const unknown = p.qam('publish', RUN, '--take-store', 'TC-NOPE-9');
+  assert.equal(unknown.status, 2);
+  assert.match(unknown.err, /TC-NOPE-9 isn't in/);
+});
+
+test('0.8.0 item 14: an update row shows the store value beside the run value', () => {
+  const p = project();
+  p.writeRun([kase('TC-CART-001')]);
+  p.qam('publish', RUN, '--apply');
+  p.writeRun([kase('TC-CART-001', { title: 'Mine' })]);
+  const dry = p.qam('publish', RUN);
+  assert.equal(dry.status, 3);
+  assert.match(dry.out, /Update \(1\)\n\s+TC1000 ← TC-CART-001[^\n]*\n\s+title: store "Case TC-CART-001", run "Mine"/);
+});
+
+test('0.8.0 item 15: the preview lists each story a case cites, and publish writes it as a req: tag', () => {
+  const p = project();
+  p.writeRun([
+    kase('TC-CART-001', { evidence: ['req:AB-5'] }),
+    kase('TC-CART-002', { evidence: ['req:AB-5', 'req:77'] }),
+    kase('TC-CART-003'),
+  ]);
+  const dry = p.qam('publish', RUN);
+  assert.match(dry.out, /Stories \(2\), written as req: tags\n\s+req:77\s+TC-CART-002\n\s+req:AB-5\s+TC-CART-001, TC-CART-002/);
+  assert.match(dry.out, /TC-CART-001\s+Case TC-CART-001\s+suite Cart · tags cart, req:AB-5, path:/);
+  const data = p.json('publish', RUN);
+  assert.deepEqual(data.requirements, { '77': ['TC-CART-002'], 'AB-5': ['TC-CART-001', 'TC-CART-002'] });
+  p.qam('publish', RUN, '--apply');
+  assert.match(row(p.read(CSV), '1000'), /req:AB-5/);
+  assert.doesNotMatch(row(p.read(CSV), '1002'), /req:/);
+  // a story cited later reaches the case already published
+  p.writeRun([kase('TC-CART-001', { evidence: ['req:AB-5', 'req:99'] }), kase('TC-CART-002'), kase('TC-CART-003')]);
+  const next = p.qam('publish', RUN);
+  assert.match(next.out, /Update \(2\)[\s\S]*TC1000 ← TC-CART-001[\s\S]*TC1001 ← TC-CART-002[\s\S]*removes tag req:77/);
+});

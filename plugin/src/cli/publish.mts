@@ -2,12 +2,14 @@
  * qam publish (Q7, Q8, Q34): what a reviewed run would write to the test case store, and with --apply, writing it.
  *
  *     qam publish <run> [--to file,ado] [--apply] [--retire]  [--refresh] [--leave-out ID,…] [--skip-smoke ID,…]
+ *                       [--take-store ID,…]
  *
  * <run> is a folder, or a name under testgen/output/. `--to` names the destinations (Q50; default: the store the project
  * is set up for): each is reached first, each gets a preview, and one --apply writes them all, the local file first. Without --apply nothing is written. A store that isn't a local
  * file is read through the cache (Q34) in a dry run, and --refresh, like --apply, reads it live. Exit codes: 0 nothing to
  * write, 3 something awaits the person's yes, 1 a conflict is left (the store was changed by someone since the last
- * publish), 2 blocked. The ledger is saved after every write, so a failure half way can't lose a created test case.
+ * publish), 2 blocked. `--take-store <localId>` accepts a store edit: the ledger takes the store's revision (only with
+ * --apply), and nothing is written to the store. The ledger is saved after every write, so a failure half way can't lose a created test case.
  */
 import fs from 'node:fs';
 import path from 'node:path';
@@ -89,7 +91,8 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
   const known = new Set(run.cases.map((c) => c.id));
   const leftOut = new Set(ids(v['leave-out']));
   const skipSmoke = new Set(ids(v['skip-smoke']));
-  for (const id of [...leftOut, ...skipSmoke]) {
+  const takeStore = new Set(ids(v['take-store']));
+  for (const id of [...leftOut, ...skipSmoke, ...takeStore]) {
     if (!known.has(id)) throw new BlockedError(`${id} isn't in ${run.name}. Its cases: ${[...known].join(', ')}.`);
   }
   // a script is linked only once it's committed and pushed to the QA repo's remote (Q39), with where it is (Q40)
@@ -128,10 +131,28 @@ export async function publish(cfg: Config, argv: string[], json: boolean): Promi
       ].join('\n'),
     );
   }
-  const shared: Shared = { cfg, v, dir, run, derived, leftOut, skipSmoke, scripts, multi: destinations.length > 1 };
+  const shared: Shared = {
+    cfg,
+    v,
+    dir,
+    run,
+    derived,
+    leftOut,
+    skipSmoke,
+    takeStore,
+    scripts,
+    multi: destinations.length > 1,
+  };
   // every destination is read and its smoke checked before any is written: one yes applies to all, or to none (Q50)
   const prepared: Prepared[] = [];
   for (const r of reached) prepared.push(await prepare(shared, r));
+  // a case named for --take-store that no destination holds a store edit of has nothing to take
+  for (const id of takeStore) {
+    if (!prepared.some((p) => p.taken.includes(id)))
+      throw new BlockedError(
+        `--take-store ${id}: the store hasn't been changed since ${id} was published, so there is nothing to take. It applies to a case in conflict, or one listed under 'Edited in the store only'.`,
+      );
+  }
   const stopped = prepared.flatMap((p) => (p.stop ? [p.stop] : []));
   const outcomes: Outcome[] = stopped.length ? stopped : [];
   try {
@@ -193,6 +214,7 @@ type Shared = {
   derived: Derived[];
   leftOut: Set<string>;
   skipSmoke: Set<string>;
+  takeStore: Set<string>;
   scripts: ReturnType<typeof publishable> | null;
   multi: boolean;
 };
@@ -205,7 +227,7 @@ type Reached = {
 };
 type Outcome = { code: number; text: string; data: Record<string, unknown> };
 /** One destination read and diffed: `stop` when apply must not go on (smoke changed), else `finish` writes it. */
-type Prepared = { dest: string; stop: Outcome | null; finish: () => Promise<Outcome> };
+type Prepared = { dest: string; stop: Outcome | null; taken: string[]; finish: () => Promise<Outcome> };
 
 /** The stores to publish to: `--to`, local file first (Q50), else the one the project is set up for. */
 function chooseDestinations(cfg: Config, to: string[] | undefined): string[] {
@@ -269,7 +291,7 @@ async function reach(cfg: Config, dest: string, dir: string, live: boolean, chos
 
 /** What one destination would write: read and checked now, written (with --apply) only by `finish`. */
 async function prepare(o: Shared, r: Reached): Promise<Prepared> {
-  const { cfg, v, dir, run, derived, leftOut, skipSmoke, scripts } = o;
+  const { cfg, v, dir, run, derived, leftOut, skipSmoke, takeStore, scripts } = o;
   const { cached, where, planToCreate, projectToCreate } = r;
   const store = cached.store;
   const before = readLedger(dir);
@@ -296,7 +318,8 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
   const previewFile = path.join(path.dirname(cacheFile(dir)), `preview-${run.name}${o.multi ? `-${r.dest}` : ''}.json`);
   const offered = v.apply ? readPreview(previewFile) : null;
   const lost = (offered ?? []).filter((id) => !skipSmoke.has(id) && !confirmed.has(id));
-  const result = diff({ derived, ledger: entries, items, module: run.scope.module, confirmedSmoke: confirmed });
+  const result = diff({ derived, ledger: entries, items, module: run.scope.module, confirmedSmoke: confirmed, takeStore });
+  const taken = result.changes.filter((c) => c.take).map((c) => c.localId);
 
   const by = (kind: PlannedChange['kind']) => result.changes.filter((c) => c.kind === kind);
   const [creates, updates, conflicts, retires, unchanged] = (
@@ -304,6 +327,8 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
   ).map(by);
   const notLinked = derived.filter((d) => d.notLinked).map((d) => d.id);
   const title = new Map(derived.map((d) => [d.id, d.title]));
+  const fieldRows = (c: PlannedChange) =>
+    (c.differences ?? []).map((d) => `    ${d.field}: store "${d.store}", run "${d.run}"`).join('\n');
 
   const lines: string[] = [
     `QAMaster publish ${run.name} → ${where} (${v.apply ? 'applying' : 'dry run'})`,
@@ -327,11 +352,9 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
     `Update (${updates.length})`,
     updates.map(
       (c) =>
-        `${tc(c.trackerId ?? 0)} ← ${c.localId}  ${c.fields.join(', ')} changed${(c.change?.removeTags ?? []).map((t) => `\n    removes tag ${t}`).join('')}`,
+        `${tc(c.trackerId ?? 0)} ← ${c.localId}  ${c.fields.join(', ')} changed${c.differences?.length ? `\n${fieldRows(c)}` : ''}${(c.change?.removeTags ?? []).map((t) => `\n    removes tag ${t}`).join('')}`,
     ),
   );
-  const fieldRows = (c: PlannedChange) =>
-    (c.differences ?? []).map((d) => `    ${d.field}: store "${d.store}", run "${d.run}"`).join('\n');
   section(
     `Conflict (${conflicts.length}), not written`,
     conflicts.map(
@@ -339,8 +362,17 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
         `${c.trackerId ? `${tc(c.trackerId)} ← ` : ''}${c.localId}  ${c.reason}${c.differences?.length ? `\n${fieldRows(c)}` : ''}`,
     ),
   );
+  // --take-store: the store's edit is accepted. The ledger takes its revision with --apply; the store isn't written (Q6)
+  const takes = unchanged.filter((c) => c.take);
+  section(
+    `Take the store's version (${takes.length}), only with --apply`,
+    takes.map(
+      (c) =>
+        `${tc(c.trackerId ?? 0)} ← ${c.localId}  ${c.reason}${c.differences?.length ? `\n${fieldRows(c)}` : ''}`,
+    ),
+  );
   // an edit made only in the store: nothing of ours to write, so it stays as it is, and the person is told (K7)
-  const storeOnly = unchanged.filter((c) => c.differences?.length);
+  const storeOnly = unchanged.filter((c) => c.differences?.length && !c.take);
   section(
     `Edited in the store only (${storeOnly.length}), kept as it is`,
     storeOnly.map(
@@ -353,6 +385,12 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
     retires.map((c) => `${tc(c.trackerId ?? 0)} ← ${c.localId}  ${c.reason}`),
   );
   if (unchanged.length) lines.push('', `Unchanged (${unchanged.length})`);
+  // the stories the cases cite, each a req: tag the gate selects by (0.8.0, D17)
+  const stories = storyMap(derived);
+  section(
+    `Stories (${Object.keys(stories).length}), written as req: tags`,
+    Object.entries(stories).map(([id, cases]) => `req:${id}  ${cases.join(', ')}`),
+  );
   if (notLinked.length) lines.push('', `Not linked to code (no path: tag): ${notLinked.join(', ')}`);
   const unpushed = (scripts?.unpushed ?? []).filter((id) => title.has(id));
   if (unpushed.length)
@@ -395,11 +433,12 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
       text: lines.join('\n'),
       data: { result: 'awaiting approval', apply: true, run: run.name, store: where, smokeChanged: lost },
     };
-    return { dest: r.dest, stop, finish: async () => stop };
+    return { dest: r.dest, stop, taken, finish: async () => stop };
   }
   return {
     dest: r.dest,
     stop: null,
+    taken,
     finish: () => finish(o, r, { items, lines, result, suggestion, confirmed, smokeInStore, previewFile }),
   };
 }
@@ -426,7 +465,8 @@ async function finish(o: Shared, r: Reached, read: Read): Promise<Outcome> {
   const [creates, updates, conflicts, retires, unchanged] = (
     ['create', 'update', 'conflict', 'retire', 'unchanged'] as const
   ).map(by);
-  const pending = creates.length + updates.length + (v.retire ? retires.length : 0);
+  const takes = unchanged.filter((c) => c.take);
+  const pending = creates.length + updates.length + takes.length + (v.retire ? retires.length : 0);
   const notLinked = derived.filter((d) => d.notLinked).map((d) => d.id);
   const { max } = cfg.project.smoke;
   if (!v.apply) writePreview(previewFile, suggestion.ids);
@@ -534,6 +574,7 @@ async function finish(o: Shared, r: Reached, read: Read): Promise<Outcome> {
         : {}),
       changes: result.changes.map(({ change: _write, ...c }) => c),
       notLinked,
+      requirements: storyMap(derived),
       smoke: {
         suggested: suggestion.ids,
         skipped: [...skipSmoke],
@@ -556,10 +597,18 @@ function parse(argv: string[]) {
       retire: { type: 'boolean' },
       'leave-out': { type: 'string', multiple: true },
       'skip-smoke': { type: 'string', multiple: true },
+      'take-store': { type: 'string', multiple: true },
       to: { type: 'string', multiple: true },
     },
     allowPositionals: true,
   });
+}
+
+/** Each story the cases cite (req:<id>) with the cases that cite it, in ID order. */
+function storyMap(derived: Derived[]): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const d of derived) for (const r of d.requirements) (out[r] ??= []).push(d.id);
+  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
 function readPreview(file: string): string[] | null {
