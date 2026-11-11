@@ -20,6 +20,7 @@ Every hands-on walkthrough of a QAMaster build, with the tester's feedback, kept
 | 2026-11-04 | 0.3.2 | AgentMesh (FastAPI + Streamlit), ADO store | A1–A17 went to 0.4.1; A12 needs a re-run | [analysis](2026-11-04-0.3.2-agentmesh-feedback.md) |
 | 2026-11-04 | 0.4.1 | dummy-static-website, ADO store | PASS 36 of 36; W1–W20 went to 0.4.2 | [findings](2026-11-04-0.4.1-dummy-static-website.md) |
 | 2026-11-04 | 0.4.3 | fastapi-react-app (React SPA + FastAPI), local store then ADO | PASS 3 of 3 on Todo; Login and Register uncovered; push gate never blocks (R25), a PASS hid a 500 (R26); R1–R30 went to 0.4.4–0.7.0 | [findings](2026-11-04-0.4.3-fastapi-react-todo.md) |
+| 2026-11-10 | 0.7.1 | TodoApp (fastapi-react-app code, React SPA + FastAPI), local file store then ADO (new project `fastapi-react-v0.7.1`) | All quick-path and ADO steps ran: 13 Todo cases published to ADO with story 414; the gate passed good-change and the `AB#414` branch (pushed to `local`) and failed bad-change and server-error (push blocked); the 500 on `:8000` is still not watched (D16); D1–D21, R1–R30 re-checked (15 fixed, 9 still there, 5 not run); Q57 decided | [findings](2026-11-10-0.7.1-todoapp.md) |
 
 The walkthrough scripts and run logs of the older demos were removed on 2026-11-04. Their findings are in the table below and in each release's plan; the full text is in git history before that date.
 

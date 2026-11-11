@@ -9,7 +9,7 @@ Each entry says where the choice came from:
 
 Format: **Q<n>. Title** (date, status, source): decision, why, what we gave up.
 
-Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 was accepted on 2026-11-10; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06, Q49, Q54, Q55 and Q56 on 2026-11-10. To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
+Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in each entry. Q50 was accepted on 2026-11-10; Q51 was accepted on 2026-11-04, Q52 and Q53 on 2026-11-06, Q49, Q54, Q55, Q56 and Q57 on 2026-11-10. To change a decision, add a new entry that supersedes it. The [open questions](#open-questions) at the end were all resolved.
 
 ---
 
@@ -811,6 +811,16 @@ Q1–Q24 were **accepted** on 2026-10-28, and Q25–Q48 on the dates shown in ea
 - **Gave up:** Q37's "nothing is removed from the store" for `path:` tags. A `path:` tag added by hand in the store is removed on the next republish; the preview shows it first.
 
 ---
+
+**Q57. One test account per app, kept once in the QA project's `.env`** (2026-11-10, accepted 2026-11-10, New; amends Q16; from the 0.7.1 TodoApp walkthrough, [D2](demos/2026-11-10-0.7.1-todoapp.md))
+- **Decision:**
+  - The crawl's sign-in and the gate scripts' sign-in are the same credential: one test account per app.
+  - It is stored once, in the QA project's git-ignored `.env`, as `<APP>_USER` and `<APP>_PASSWORD` (the names the AutomationCode skill already uses, for example `TODOAPP_USER`).
+  - Every part that signs in reads those two names from there: the DSM crawl (`login.username_env` / `login.password_env` in `config/dsm-config.json` point to them), the gate scripts, and any check that the account is set. No second copy in `.env.dsm` or anywhere else.
+  - Only the names are ever shown or written by QAMaster; the values never appear in chat, logs, reports or `.qamaster/` (Q16 still holds).
+- **Why:** in the walkthrough the crawl signed in from `.env.dsm` while the 13 gate scripts read `TODOAPP_USER` / `TODOAPP_PASSWORD` from `.env`, which nothing created, so every gate run failed at sign-in (D2). The human had to copy the account by hand and asked for one place, used everywhere.
+- **Gave up:** Q16's "or kept in git-ignored `.env.dsm`" for new projects, and a separate crawl account with fewer rights than the gate's. Projects set up earlier with `.env.dsm` need a move; how (a fallback read with a warning, or a one-time move after a yes) is decided when this is planned.
+- **Release:** not decided. Pointing every reader at one file is a behaviour a user must learn, so under Q46 it needs a minor release unless the plan shows it can ship as a fix; 0.7.2 carries D2's check and message either way.
 
 ## Open questions
 
