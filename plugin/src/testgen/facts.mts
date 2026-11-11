@@ -130,7 +130,9 @@ export class Facts {
       // 0.8.0 item 19: a field form code limits that the crawl did not record is still a field to bound
       for (const c of n.code_limits ?? []) {
         names.add(norm(c.field));
-        this.limited.set(n.id, [...(this.limited.get(n.id) ?? []), c.field]);
+        // like a crawled field, it counts only with a limit a Boundary case can bound (not `required` alone)
+        if (LIMITS.some((k) => c[k] !== undefined && c[k] !== null))
+          this.limited.set(n.id, [...(this.limited.get(n.id) ?? []), c.field]);
       }
       for (const t of (n.tables ?? []) as { columns?: string[] }[]) for (const c of t.columns ?? []) names.add(norm(c));
       for (const c of n.code_elements?.controls ?? []) names.add(norm(c));

@@ -227,3 +227,118 @@ test('TestGen and the knowledge skills see the code limits, with their file:line
   );
   assert.match(md, /\[limits from code: shop:src\/Cart.tsx:9\]/);
 });
+
+// ---- 0.8.0 review fixes
+
+const sharedCode = () =>
+  scan({ repositories: [repo] }, () => ({
+    ref: null,
+    commit: null,
+    files: new Map([
+      [
+        'src/App.tsx',
+        `import { Routes } from 'react-router-dom';
+import Login from './Login';
+import Todos from './Todos';
+import A from './A';
+import B from './B';
+import C from './C';
+<Routes><Route path="/login" element={<Login />} /><Route path="/todos" element={<Todos />} />
+<Route path="/a" element={<A />} /><Route path="/b" element={<B />} /><Route path="/c" element={<C />} /></Routes>`,
+      ],
+      ...['A', 'B', 'C'].map((n): [string, string] => [
+        `src/${n}.tsx`,
+        `export default function ${n}() { return <form />; }`,
+      ]),
+      [
+        'src/Login.tsx',
+        `import { loginSchema } from './schemas';\nexport default function Login() { return <form />; }`,
+      ],
+      [
+        'src/Todos.tsx',
+        `import { todoSchema } from './schemas';\nexport default function Todos() { return <form />; }`,
+      ],
+      [
+        'src/schemas.ts',
+        `export const loginSchema = z.object({
+  email: z.string().max(80),
+  password: z.string().min(8),
+});
+export const todoSchema = z.object({ title: z.string().min(3).max(100) });`,
+      ],
+    ]),
+  }));
+
+test('a schema file shared by two screens adds no phantom field to either', () => {
+  const c = sharedCode();
+  assert.deepEqual(c.files?.['app:src/schemas.ts']?.owners?.slice().sort(), ['/login', '/todos']);
+  const page = (route: string, fields: object[]) => ({
+    route,
+    url: `http://a${route}`,
+    title: route,
+    status: 200,
+    forms: [{ key: `form:${route}`, id: route, method: 'post', fields }],
+  });
+  const model = {
+    generated_at: '',
+    base_url: '',
+    mode: 'full',
+    truncated: false,
+    edges: [],
+    api_calls: [],
+    pages: [
+      page('/login', [
+        { key: 'field:email', name: 'email', label: 'Email', type: 'text', required: false },
+        { key: 'field:password', name: 'password', label: 'Password', type: 'password', required: false },
+      ]),
+      page('/todos', [{ key: 'field:title', name: 'title', label: 'Title', type: 'text', required: false }]),
+    ],
+  } as unknown as UiModel;
+  const dsm = build(model, c, config, { now: new Date('2026-11-11T00:00:00Z') });
+  const login = dsm.page.nodes.find((n) => n.id === '/login');
+  const todos = dsm.page.nodes.find((n) => n.id === '/todos');
+  assert.deepEqual(login?.code_limits ?? [], []);
+  assert.deepEqual(todos?.code_limits ?? [], []);
+  assert.equal(login?.forms[0].fields[0].max_length, 80, 'a crawled field still takes its own limit');
+  assert.equal(todos?.forms[0].fields[0].min_length, 3);
+});
+
+test('Angular: the validators key of an options object is not a field', () => {
+  const found = scanFormLimits(`
+name: new FormControl('', { validators: [Validators.required, Validators.maxLength(40)], nonNullable: true }),
+title: ['', { validators: [Validators.required, Validators.minLength(3)], updateOn: 'blur' }],
+tags: [[], [Validators.required]],`);
+  assert.deepEqual(found.map((l) => l.field).sort(), ['name', 'tags', 'title']);
+});
+
+test('react-hook-form: an apostrophe in a Controller render prop does not drop its rules', () => {
+  assert.deepEqual(
+    scanFormLimits(
+      `<Controller name="email" control={control} render={({ field }) => <p>Don't {field.value}</p>} rules={{ required: true, maxLength: 20 }} />`,
+    ),
+    [{ field: 'email', source: 'react-hook-form', line: 1, required: true, max_length: 20 }],
+  );
+});
+
+test('TestGen: a code limit that only says required does not make the screen limited', () => {
+  const dsm = JSON.parse(
+    fs.readFileSync(path.join(import.meta.dirname, 'fixtures/dsm/shop/dsm.expected.json'), 'utf8'),
+  ) as Dsm;
+  const cart = dsm.page.nodes.find((n) => n.id === '/cart') as Dsm['page']['nodes'][number];
+  for (const f of cart.forms)
+    for (const fd of f.fields)
+      for (const k of ['min_length', 'max_length', 'min', 'max', 'pattern'] as const) delete fd[k];
+  cart.code_limits = [{ field: 'nickname', source: 'yup', file: 'shop:src/Cart.tsx', line: 3, required: true }];
+  const facts = new Facts({
+    dsm,
+    codeFiles: [],
+    settings: {},
+    app: 'Shop',
+    autSkills: [],
+    domainSkills: [],
+    skill: () => null,
+    lines: () => null,
+    requirements: () => null,
+  });
+  assert.equal(facts.limited.has('/cart'), false);
+});

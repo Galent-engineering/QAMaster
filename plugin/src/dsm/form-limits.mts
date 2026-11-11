@@ -145,6 +145,16 @@ function rhfRules(body: string): Limits {
   return out;
 }
 
+/** The "}" matching the "{" at `open`, counting braces only (JSX text is not JS, so quotes are not strings). */
+function braceClose(text: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === '{') depth++;
+    else if (text[i] === '}' && --depth === 0) return i;
+  }
+  return -1;
+}
+
 function scanReactHookForm(text: string): CodeLimit[] {
   const found: CodeLimit[] = [];
   for (const m of text.matchAll(/\bregister\(\s*(['"`])([^'"`]+)\1\s*,\s*\{/g)) {
@@ -156,7 +166,8 @@ function scanReactHookForm(text: string): CodeLimit[] {
     let end = m.index + m[0].length;
     while (end < text.length && text[end] !== '>' && text[end] !== '/') {
       if ('{"\''.includes(text[end])) {
-        const close = text[end] === '{' ? closeOf(text, end) : text.indexOf(text[end], end + 1);
+        let close = text[end] === '{' ? closeOf(text, end) : text.indexOf(text[end], end + 1);
+        if (close < 0 && text[end] === '{') close = braceClose(text, end); // JSX text may hold an apostrophe
         if (close < 0) break;
         end = close;
       }
@@ -226,6 +237,7 @@ function scanAngular(text: string): CodeLimit[] {
   const re =
     /(?:^|[\s,{(])['"]?([A-Za-z_$][\w$]*)['"]?\s*:\s*(\[|(?:new\s+)?(?:Form)?Control(?:<[^>]*>)?\s*\(|(?:this\.)?\w*[fF]ormBuilder\.control\s*\(|(?:this\.)?(?:fb|_fb|builder)\.control\s*\()/g;
   for (const m of text.matchAll(re)) {
+    if (m[1] === 'validators' || m[1] === 'asyncValidators') continue; // the options object, not a field
     const open = m.index + m[0].length - 1;
     const body = inside(text, open);
     const limits: Limits = {};

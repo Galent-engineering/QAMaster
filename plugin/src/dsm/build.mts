@@ -313,6 +313,8 @@ function mergeCodeLimits(nodes: PageNode[], code: CodeModel | null) {
         const { field: _f, source, line, ...limits } = l;
         const at = `${fkey}:${line}`;
         if (!field) {
+          // a file several screens share (a schemas file) does not say which screen the field belongs to
+          if ((code?.files?.[fkey]?.owners?.length ?? 0) > 1) continue;
           nd.code_limits = [...(nd.code_limits ?? []), { field: l.field, source, file: fkey, line, ...limits }];
           continue;
         }
