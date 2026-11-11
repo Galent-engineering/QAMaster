@@ -32,7 +32,7 @@
 |---|---|
 | `index.html` | The interactive matrix; works offline |
 | `dsm.json` | Both matrices, metrics, the diff against the last build |
-| `ui-model.json`, `code-model.json` | The crawl and the code scan |
+| `ui-model.json`, `code-model.json` | The crawl and the code scan. The scan also holds each file's `limits`: field limits read from form code |
 | `CHANGES.md` | The last update: trigger, impacted screens, shared files, matrix changes |
 | `history/` | Earlier `dsm.json` files (`change_detection.keep_history`, default 30); `qam dsm compare` reads them |
 | `state.json` | The last commit seen per repository |
@@ -63,6 +63,13 @@
 - **`change_detection`:**
   - `recrawl`: `impacted`, `full` or `none`;
   - `full_recrawl_every_runs`, `keep_history`.
+
+## What the crawl and the scan add (0.8.0)
+
+- **Hover-only cards.** A card whose pointer cursor shows only on hover is found from the page's own `:hover` rules (`cursor: pointer`, also inside `@media`); a stylesheet from another origin can't be read and is skipped. When a list was crawled but no row led to its detail screens, `dsm run` says so ("no row on /todo led to its detail screens ..."), and one more line lists the screens in the code the crawl never reached.
+- **Passes.** `dsm.json` `crawl.passes` lists each pass in run order: `{name, pages}`, or `{name, skipped}` with the reason. A signed-in pass skipped for want of an account is one warning line in `dsm run` and `CHANGES.md`, naming the two variables to set in the QA `.env`. `--login-mode none` and an app with no sign-in are recorded but not warned.
+- **Limits in form code.** The scan reads react-hook-form `register` and `Controller` rules, yup and zod schemas, and Angular `Validators` (literals only: `minLength(MIN)` is not guessed) into `code-model.json`. The DSM fills a field's limits the page left out (the page's value wins; its `required: false` only means the page doesn't mark it) and records `code_limit_at` (`<repo>:<file>:<line>`). A field the crawl never saw, such as one in a dialog it didn't open, is kept in the screen's `code_limits`. Cite the `file:line` when a Boundary case rests on one.
+- **Shared files.** Backend API routes don't count as screens when the scan decides which files most screens use, so the auth and HTTP files of a frontend with a large API are shared.
 
 ## Limits to state when reporting
 
