@@ -198,37 +198,91 @@ export function rebind(
   };
 }
 
-/**
- * Q57: the account the crawl and the gate scripts sign in with is login.username_env and login.password_env in
- * config/dsm-config.json, and both must be set in the QA project's .env. Returns the names that are not set (names
- * only: no value is read into the result). A config with no login block has nothing to check.
- */
-export function accountVarsMissing(project: string, env: Env): string[] {
-  let app:
-    | { secrets_file?: unknown; login?: { mode?: unknown; username_env?: unknown; password_env?: unknown } }
-    | undefined;
+/** The login block of config/dsm-config.json, and the secrets file an older project still names (Q57). */
+function loginOf(project: string): { login?: Record<string, unknown>; secretsFile: string } | null {
+  let app: { secrets_file?: unknown; login?: Record<string, unknown> } | undefined;
   try {
     app = JSON.parse(fs.readFileSync(path.join(project, 'config', 'dsm-config.json'), 'utf8'))?.application;
   } catch {
-    return []; // an unreadable config is reported by the command that reads it
+    return null; // an unreadable config is reported by the command that reads it
   }
-  const login = app?.login;
-  if (!login || typeof login !== 'object' || login.mode === 'none') return [];
-  // a project set up before Q57 keeps the account in the secrets file the crawl reads (.env.dsm): that still counts
-  const merged: Env = { ...env };
-  loadEnv(
-    path.join(project, typeof app?.secrets_file === 'string' && app.secrets_file ? app.secrets_file : '.env.dsm'),
-    merged,
-  );
-  const names = [login.username_env, login.password_env].filter((n): n is string => typeof n === 'string' && n !== '');
-  return names.filter((n) => !merged[n]);
+  const secretsFile = typeof app?.secrets_file === 'string' && app.secrets_file ? app.secrets_file : OLD_SECRETS_FILE;
+  return { login: app?.login && typeof app.login === 'object' ? app.login : undefined, secretsFile };
+}
+
+/** Where projects set up before Q58 kept the account: the crawl's secrets file. */
+export const OLD_SECRETS_FILE = '.env.dsm';
+
+/** The two variable names login.username_env / password_env hold (empty when there is no login, or mode is none). */
+function accountNames(project: string): string[] {
+  const l = loginOf(project)?.login;
+  if (!l || l.mode === 'none') return [];
+  return [l.username_env, l.password_env].filter((n): n is string => typeof n === 'string' && n !== '');
+}
+
+/**
+ * Q57, Q58 item 12: the account the crawl and the gate scripts sign in with is login.username_env and
+ * login.password_env in config/dsm-config.json, and both must be set in the QA project's .env (the shell counts, as
+ * for every setting). The old secrets file (.env.dsm) is no longer read. Returns the names that are not set (names
+ * only: no value is read into the result). A config with no login block has nothing to check.
+ */
+export function accountVarsMissing(project: string, env: Env): string[] {
+  return accountNames(project).filter((n) => !env[n]);
+}
+
+/** The missing names that the old secrets file still holds: they only need to move to the QA .env. */
+export function accountInOldFile(project: string, env: Env): string[] {
+  const file = loginOf(project)?.secretsFile;
+  if (!file) return [];
+  const old: Env = {};
+  loadEnv(path.join(project, file), old);
+  return accountVarsMissing(project, env).filter((n) => old[n]);
+}
+
+/**
+ * Moves the account's lines from the old secrets file to the QA project's .env: a name that .env doesn't have gets its
+ * line appended (the line is copied as it is, so the value is never read into a variable that gets shown), and the
+ * line leaves the old file. Returns the names moved; no value is printed or returned.
+ */
+export function moveAccount(project: string, env: Env): string[] {
+  const l = loginOf(project);
+  const names = accountInOldFile(project, env);
+  if (!l || !names.length) return [];
+  const from = path.join(project, l.secretsFile);
+  const lines = fs.readFileSync(from, 'utf8').split(/\r?\n/);
+  const keyOf = (line: string) =>
+    line
+      .trim()
+      .replace(/^export\s+/, '')
+      .split('=')[0]
+      .trim();
+  const moving = lines.filter((line) => names.includes(keyOf(line)) && line.includes('='));
+  const target = path.join(project, ENV_FILE);
+  const text = fs.existsSync(target) ? fs.readFileSync(target, 'utf8') : '';
+  fs.writeFileSync(target, `${text}${text && !text.endsWith('\n') ? '\n' : ''}${moving.join('\n')}\n`, { mode: 0o600 });
+  fs.writeFileSync(from, lines.filter((line) => !moving.includes(line)).join('\n'));
+  return names;
+}
+
+/** The crawl's environment: the shell, then the QA project's .env, then (a project that still names one) its secrets_file. */
+export function crawlEnv(project: string, secretsFile?: string): Env {
+  const env: Env = { ...process.env };
+  loadEnv(path.join(project, ENV_FILE), env);
+  if (secretsFile && secretsFile !== ENV_FILE) loadEnv(path.join(project, secretsFile), env);
+  return env;
 }
 
 /** Stops with one message that names the missing account variables (exit 2). */
 export function requireAccountVars(project: string, env: Env): void {
   const missing = accountVarsMissing(project, env);
-  if (missing.length)
+  if (!missing.length) return;
+  const old = accountInOldFile(project, env);
+  const where = loginOf(project)?.secretsFile ?? OLD_SECRETS_FILE;
+  if (old.length)
     throw new BlockedError(
-      `The test account isn't set: ${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} not in the QA project's ${ENV_FILE} (Q57). Add ${missing.length > 1 ? 'them' : 'it'} there, with the values for the account the app signs in with, then run again. The values stay in ${ENV_FILE}; nothing prints them.`,
+      `The test account is in ${where}, which QAMaster no longer reads (Q58). Move the ${old.join(' and ')} line${old.length > 1 ? 's' : ''} from ${where} to the QA project's ${ENV_FILE}, or run qam setup --move-account to have QAMaster copy ${old.length > 1 ? 'them' : 'it'} (names only; the values are copied, never printed), then run again.${missing.length > old.length ? ` Still not set: ${missing.filter((n) => !old.includes(n)).join(' and ')}.` : ''}`,
     );
+  throw new BlockedError(
+    `The test account isn't set: ${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} not in the QA project's ${ENV_FILE} (Q57). Add ${missing.length > 1 ? 'them' : 'it'} there, with the values for the account the app signs in with, then run again. The values stay in ${ENV_FILE}; nothing prints them.`,
+  );
 }

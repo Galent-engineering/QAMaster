@@ -9,7 +9,8 @@
  *   4. .gitignore lines for secrets, the saved session, locks and caches.
  *   5. package.json with Playwright, for the crawl.
  *   6. Deny rules in .claude/settings.json: Claude can't read .env* or the saved session (Q16).
- *   7. npm install and the browsers, unless skipped.
+ *   7. Ask rules in the same file: `qam review` and `qam approve` need the person's click on Allow (Q58 D10).
+ *   8. npm install and the browsers, unless skipped.
  * The app's URL and code sources (Q26) and the entry points (Q29) are added by the setup command around this.
  */
 import { spawnSync } from 'node:child_process';
@@ -38,6 +39,18 @@ export const GITIGNORE_LINES = [
 ];
 /** Claude Code permission rules: Claude can't read secret files or the saved session (Q16). */
 export const DENY_RULES = ['Read(./.env)', 'Read(./.env.*)', 'Read(./dsm/.auth/**)'];
+
+/**
+ * Claude Code permission rules (Q58 D10): the person clicks Allow before `qam review` or `qam approve` runs, whatever
+ * Claude thinks the person said. A Bash rule matches the command text, `*` stands for any text, and a trailing
+ * ` *` also matches the bare command, so each verb has a bare form and a form with arguments. Two shapes cover how
+ * the CLI is called: `node <plugin>/src/cli/main.mts [--repo X] <verb>` and the launchers and dev wrapper
+ * (`.qamaster/bin/qam`, `qam.mjs`, `bin/qam`). An ask rule beats an allow rule, so a broad `Bash(node *)` allow
+ * doesn't skip the prompt. Source: https://code.claude.com/docs/en/permissions (Wildcard patterns, Compound commands).
+ */
+export const ASK_RULES = ['review', 'approve'].flatMap((verb) =>
+  ['node *main.mts*', '*qam*'].flatMap((head) => [`Bash(${head} ${verb})`, `Bash(${head} ${verb} *)`]),
+);
 
 export type Step = {
   step: string;
@@ -151,7 +164,13 @@ function link(project: string, write: boolean): Step {
   };
 }
 
-function configs(project: string, write: boolean): Step[] {
+/** The variable prefix for an app's test account (Q57): TodoApp -> TODOAPP, so TODOAPP_USER and TODOAPP_PASSWORD. */
+export function accountPrefix(app: string): string {
+  const p = app.toUpperCase().replace(/[^A-Z0-9]+/g, '');
+  return !p ? 'APP' : /^\d/.test(p) ? `APP${p}` : p;
+}
+
+function configs(project: string, write: boolean, app: string): Step[] {
   return fs
     .readdirSync(TEMPLATES)
     .filter((f) => f.endsWith('.json'))
@@ -171,7 +190,15 @@ function configs(project: string, write: boolean): Step[] {
       fs.mkdirSync(path.dirname(target), { recursive: true });
       const text = fs.readFileSync(path.join(TEMPLATES, f), 'utf8');
       const data = JSON.parse(text);
-      if (f === 'dsm-config.json') data.project = path.basename(project);
+      if (f === 'dsm-config.json') {
+        data.project = path.basename(project);
+        // Q58: the crawl and the gate scripts share one account, named after the app, kept in the QA .env
+        const login = data.application?.login;
+        if (login) {
+          login.username_env = `${accountPrefix(app)}_USER`;
+          login.password_env = `${accountPrefix(app)}_PASSWORD`;
+        }
+      }
       fs.writeFileSync(target, `${JSON.stringify(data, null, 2)}\n`);
       return { step: `config/${f}`, status: 'created', detail: 'from the template; the app is never pre-set' };
     });
@@ -247,6 +274,38 @@ function denyRules(project: string, write: boolean): Step {
   return { step: '.claude/settings.json', status: 'updated', detail: `added deny rules ${missing.join(', ')} (Q16)` };
 }
 
+/** The ask rules for qam review and qam approve in the QA project's .claude/settings.json, merged with what's there. */
+export function askRulesMissing(project: string): string[] | null {
+  const file = path.join(project, '.claude', 'settings.json');
+  const settings = fs.existsSync(file) ? readJson<Record<string, unknown>>(file) : {};
+  if (!settings) return null; // not JSON: setup reports it
+  const ask = (settings.permissions as { ask?: unknown } | undefined)?.ask;
+  const have = new Set(Array.isArray(ask) ? ask : []);
+  return ASK_RULES.filter((r) => !have.has(r));
+}
+
+function askRules(project: string, write: boolean): Step {
+  const step = 'Consent rules';
+  const file = path.join(project, '.claude', 'settings.json');
+  const missing = askRulesMissing(project);
+  if (!missing)
+    return { step, status: 'failed', detail: ".claude/settings.json isn't valid JSON: fix it and run qam setup again" };
+  if (!missing.length)
+    return { step, status: 'ok', detail: 'qam review and qam approve ask you to click Allow in Claude Code' };
+  if (!write)
+    return { step, status: 'missing', detail: `ask rules for qam review and qam approve (${missing.length})` };
+  const settings = (fs.existsSync(file) ? readJson<Record<string, unknown>>(file) : {}) ?? {};
+  const perms = (settings.permissions as { ask?: unknown[] } | undefined) ?? {};
+  settings.permissions = { ...perms, ask: [...(Array.isArray(perms.ask) ? perms.ask : []), ...missing] };
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, `${JSON.stringify(settings, null, 2)}\n`);
+  return {
+    step,
+    status: 'updated',
+    detail: `added ask rules so qam review and qam approve need your click on Allow in Claude Code (${missing.length} rules in .claude/settings.json; Q58)`,
+  };
+}
+
 function install(
   project: string,
   write: boolean,
@@ -285,7 +344,13 @@ export function browserDepsHint(platform: string): string {
     : '';
 }
 
-export type SetupOptions = { check: boolean; install: boolean; browsers: 'chromium' | 'all' | 'none' };
+export type SetupOptions = {
+  check: boolean;
+  install: boolean;
+  browsers: 'chromium' | 'all' | 'none';
+  /** The app's name, for the names of its test account in a new dsm-config.json; else the folder's name. */
+  app?: string;
+};
 
 /** Runs (or, with `check`, inspects) every step for the QA project. */
 export function setupProject(project: string, opts: SetupOptions): Step[] {
@@ -294,10 +359,11 @@ export function setupProject(project: string, opts: SetupOptions): Step[] {
   return [
     ...prerequisites(),
     link(project, write),
-    ...configs(project, write),
+    ...configs(project, write, opts.app || path.basename(project)),
     gitignore(project, write),
     packageJson(project, write),
     denyRules(project, write),
+    askRules(project, write),
     ...install(project, write, opts),
   ];
 }

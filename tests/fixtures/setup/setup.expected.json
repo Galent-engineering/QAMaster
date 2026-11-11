@@ -57,6 +57,11 @@
       "detail": "added deny rules Read(./.env), Read(./.env.*), Read(./dsm/.auth/**) (Q16)"
     },
     {
+      "step": "Consent rules",
+      "status": "updated",
+      "detail": "added ask rules so qam review and qam approve need your click on Allow in Claude Code (8 rules in .claude/settings.json; Q58)"
+    },
+    {
       "step": "npm install",
       "status": "skipped",
       "detail": "run qam setup without --no-install"

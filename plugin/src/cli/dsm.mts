@@ -23,8 +23,8 @@ import { build, compareDsm, type Dsm, type DsmConfig, emptyListHints } from '../
 import { render } from '../dsm/render.mts';
 import { MAX_FILE_BYTES, type ScanConfig, scan, wanted } from '../dsm/scan.mts';
 import { compareText, estimate, impact, type State, type UpdateConfig, update } from '../dsm/update.mts';
-import type { Config } from '../shared/config.mts';
-import { loadEnv } from '../shared/env.mts';
+import { crawlEnv } from '../gate/automate.mts';
+import { type Config, ENV_FILE } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import type { CodeModel, UiModel } from '../shared/models.mts';
 
@@ -73,15 +73,14 @@ function ask(question: string, hidden: boolean): Promise<string> {
   );
 }
 
-/** The Playwright crawler, with sign-in details from the environment or the QA project's .env.dsm (Q16). */
+/** The Playwright crawler, with sign-in details from the environment or the QA project's .env (Q16, Q58). */
 function crawlerFor(project: string, dir: string, config: UpdateConfig, interactive: boolean): () => Crawler {
   return () => {
     const app = config.application ?? {};
-    const env = { ...process.env };
-    loadEnv(path.join(project, app.secrets_file || '.env.dsm'), env);
+    const env = crawlEnv(project, app.secrets_file);
     const login = app.login ?? {};
     return new PlaywrightCrawler({
-      app,
+      app: { ...app, secrets_file: app.secrets_file || ENV_FILE }, // the crawler's messages name the file the account is in
       projectDir: project,
       authDir: path.join(dir, '.auth'),
       credentials: {

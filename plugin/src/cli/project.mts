@@ -19,6 +19,7 @@ import type { TestCaseStore, WriteCheck } from '../adapters/base.mts';
 import { withCache } from '../adapters/cache.mts';
 import { buildStore, RUNNERS, STORES } from '../adapters/registry.mts';
 import { findAppTests } from '../gate/apptests.mts';
+import { accountInOldFile, moveAccount } from '../gate/automate.mts';
 import { linkRunner } from '../gate/select.mts';
 import { registerQaProject, stateDirs } from '../gate/state.mts';
 import {
@@ -32,7 +33,14 @@ import {
   verify,
 } from '../integrations/integrations.mts';
 import { mark, reset, start, status, table } from '../pipeline/pipeline.mts';
-import { PLUGIN_ROOT, pluginVersion, type SetupOptions, type Step, setupProject } from '../pipeline/setup.mts';
+import {
+  askRulesMissing,
+  PLUGIN_ROOT,
+  pluginVersion,
+  type SetupOptions,
+  type Step,
+  setupProject,
+} from '../pipeline/setup.mts';
 import {
   checkSource,
   DEFAULT_EXCLUDE,
@@ -124,6 +132,7 @@ Prepares the QA project: config, packages, browsers, launcher. Safe to re-run.
   --entry <ids>         entry points to install, comma separated (e.g. claude-code)
   --browsers <chromium|all|none>   browsers for the crawl (default chromium)
   --no-install          don't run npm install
+  --move-account        copy the test account's two lines from .env.dsm to .env (values are never printed)
   --check               report what is missing, change nothing
   --help                this text
 `;
@@ -137,6 +146,7 @@ export function setup(cfg: Config, argv: string[], json: boolean, io: SetupIo = 
   type V = {
     check?: boolean;
     'no-install'?: boolean;
+    'move-account'?: boolean;
     browsers?: string;
     app?: string;
     url?: string;
@@ -152,6 +162,7 @@ export function setup(cfg: Config, argv: string[], json: boolean, io: SetupIo = 
     {
       check: { type: 'boolean' },
       'no-install': { type: 'boolean' },
+      'move-account': { type: 'boolean' },
       browsers: { type: 'string' },
       app: { type: 'string' },
       url: { type: 'string' },
@@ -205,6 +216,7 @@ export function setup(cfg: Config, argv: string[], json: boolean, io: SetupIo = 
     check: !!v.check,
     install: !v['no-install'],
     browsers: browsers as SetupOptions['browsers'],
+    app: v.app ?? cfg.project.app?.name,
   };
   // a source to read is checked before anything is written, so a blocked setup leaves the folder as it was. A clone is
   // a write, so it waits until the setup steps have passed (otherwise a broken config leaves an unrecorded clone)
@@ -267,6 +279,21 @@ export function setup(cfg: Config, argv: string[], json: boolean, io: SetupIo = 
         });
       }
     }
+  }
+  // Q58 item 12: the account lives in the QA .env only. A project that kept it in .env.dsm is told, and moves it after a yes
+  if (!broken) {
+    const old = accountInOldFile(dir, cfg.env);
+    if (old.length && v['move-account'] && !opts.check) {
+      const moved = moveAccount(dir, cfg.env);
+      steps.push({
+        step: 'Test account',
+        status: 'updated',
+        detail: `${moved.join(' and ')} copied from the old secrets file to .env (values not shown)`,
+      });
+    } else if (old.length)
+      warnings.push(
+        `The test account (${old.join(' and ')}) is in the old secrets file, which QAMaster no longer reads. Move those lines to .env: qam setup --move-account copies them (names only; the values are never printed). Run it after the person agrees.`,
+      );
   }
   let entries: ReturnType<typeof add> | null = null;
   if (!broken && v.entry && !opts.check)
@@ -516,6 +543,16 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
         detail: `${found.join('; ')}. They are not part of the gate; to gate one, link a test case to it as pytest:<file>::<test> in the test case store.`,
       });
   }
+  // Q58 D10: without the ask rules a chat "yes" can start a review or an approval, with no click from the person
+  const noAsk = cfg.qaProject ? askRulesMissing(dir) : [];
+  if (noAsk?.length)
+    checks.push({
+      check: 'consent rules',
+      ok: true,
+      detail:
+        "qam review and qam approve have no ask rule in .claude/settings.json, so Claude Code doesn't stop for your click on Allow. Run qam setup (it adds them and keeps your other rules).",
+      state: 'unknown',
+    });
   // a config written by an older QAMaster keeps its values (setup never overwrites), so say which defaults moved on
   const qamFile = path.join(dir, 'config', 'qamaster.json');
   if (cfg.qaProject && dsm && fs.existsSync(qamFile)) {

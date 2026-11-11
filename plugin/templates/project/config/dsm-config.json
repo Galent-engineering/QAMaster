@@ -1,5 +1,5 @@
 {
-  "_comment": "Design Structure Matrix settings. The application URL and repositories are set by qam setup --url / --source (never pre-set). Sign-in details never go here: use the terminal prompt or the git-ignored .env.dsm.",
+  "_comment": "Design Structure Matrix settings. The application URL and repositories are set by qam setup --url / --source (never pre-set). Sign-in details never go here: use the terminal prompt or the QA project's git-ignored .env.",
   "project": "",
   "output_dir": "dsm",
   "repositories": [],
@@ -7,9 +7,8 @@
     "base_url": "",
     "start_paths": ["/"],
     "allowed_hosts": [],
-    "secrets_file": ".env.dsm",
     "login": {
-      "_comment": "mode: auto = sign in on a detected sign-in page (DSM_APP_USERNAME / DSM_APP_PASSWORD from the environment or .env.dsm, else asked in a terminal); manual = sign in yourself in a visible browser; none = no sign-in, only the signed-out pass. save_session keeps the session in dsm/.auth/state.json (owner-only, git-ignored); set it to false to sign in every time. signed_out_pass: crawl signed out first (writes blocked, nothing submitted) and merge it with the signed-in crawl, so the public screens (sign-in, sign-up) get their fields and every screen records who can see it (public, signed-in, both); false crawls only signed in.",
+      "_comment": "mode: auto = sign in on a detected sign-in page (the two variables named by username_env and password_env, from the environment or the QA project's .env; qam setup names them <APP>_USER and <APP>_PASSWORD; else asked in a terminal); manual = sign in yourself in a visible browser; none = no sign-in, only the signed-out pass. save_session keeps the session in dsm/.auth/state.json (owner-only, git-ignored); set it to false to sign in every time. signed_out_pass: crawl signed out first (writes blocked, nothing submitted) and merge it with the signed-in crawl, so the public screens (sign-in, sign-up) get their fields and every screen records who can see it (public, signed-in, both); false crawls only signed in.",
       "mode": "auto",
       "url": "",
       "username_selector": "",

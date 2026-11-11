@@ -102,7 +102,7 @@ test('emptyListHints ignores a list that redirected or failed, and a detail scre
   );
 });
 
-test('the account check: no sign-in (mode none) needs nothing, and a pre-Q57 project keeps its names in .env.dsm', () => {
+test('the account check: no sign-in (mode none) needs nothing, and .env.dsm no longer counts (0.8.0 item 12)', () => {
   const qa = (login: object, dsmEnv = '') => {
     const dir = tmpDir('qam-acct-');
     fs.mkdirSync(path.join(dir, 'config'), { recursive: true });
@@ -113,10 +113,10 @@ test('the account check: no sign-in (mode none) needs nothing, and a pre-Q57 pro
   const names = { username_env: 'DSM_APP_USERNAME', password_env: 'DSM_APP_PASSWORD' };
   assert.deepEqual(accountVarsMissing(qa({ mode: 'none', ...names }), {}), []);
   assert.deepEqual(accountVarsMissing(qa({ mode: 'auto', ...names }), {}), ['DSM_APP_USERNAME', 'DSM_APP_PASSWORD']);
-  assert.deepEqual(
-    accountVarsMissing(qa({ mode: 'auto', ...names }, 'DSM_APP_USERNAME=u\nDSM_APP_PASSWORD=p\n'), {}),
-    [],
-  );
+  assert.deepEqual(accountVarsMissing(qa({ mode: 'auto', ...names }, 'DSM_APP_USERNAME=u\nDSM_APP_PASSWORD=p\n'), {}), [
+    'DSM_APP_USERNAME',
+    'DSM_APP_PASSWORD',
+  ]);
 });
 
 test('feedback and report reject an unknown flag with one Blocked line', () => {
