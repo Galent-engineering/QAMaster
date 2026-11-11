@@ -34,6 +34,17 @@ Steps import `Given`, `When`, `Then` and `expect` from `src/fixtures`. Test data
 
 **The test account** is a pair of variables in the QA project's `.env`, named after the app (`<APP>_USER`, `<APP>_PASSWORD`, for example `TODO_USER`); the scripts read them with `process.env`, and `.env` is never committed. **Preconditions** (a record the case needs, a clean state) are set up through the app's API from a helper in `src/web/api/`, called from a step or a `Background`, not by clicking through the UI.
 
+**Undo what you create.** A step that creates data on the test account (a todo, an order, a user) registers its undo with the `cleanup` fixture right after the create, so the account is as it was after the run:
+
+```ts
+Given('I add a todo {string}', async ({ page, cleanup }, title: string) => {
+  const id = await createTodo(page, title);
+  cleanup.add(`todo "${title}"`, () => deleteTodo(id)); // delete through the app's API or UI; throw if it fails
+});
+```
+
+The undos run last-in first-out when the case ends, whatever its result. An undo that fails fails the case with "left data on the test account: <label>" and `cleanup.json` attached, so make each one delete exactly what its step created (the record's id, not "all todos"). Registering one for every create is your job; `qam check-scripts` flags a step that creates data in a folder whose `src/fixtures.ts` has no `cleanup` fixture (an older folder: add it from the plugin's `framework/playwright-bdd/src/fixtures.ts`; `qam app create` adds `src/cleanup.ts`).
+
 **A locator is used whole.** The locator file holds the role and the name (or the test id); the page object passes both from there, so a rename is one edit:
 
 ```ts
@@ -57,7 +68,7 @@ TestGen's `<Component>.feature` (in the run folder) already words its steps in t
 
 A step that leads to a screen keeps two checks: `the URL should contain "<route>"` and, after it, the step's own expected text (`And the /cart screen opens with the Coupon field`). The second is in its own words, so it needs a step definition (check what the screen shows; don't just repeat the URL check).
 
-**Signed in or out.** A scenario tagged `@signed-in` starts with the test account signed in, and one tagged `@signed-out` with no session. Keep the tag on the copied scenario. A `@signed-in` scenario signs in through its sign-in precondition (a `Given` whose definition uses the test account, shared by every scenario that needs it, in the feature's `Background` when they all do); if the case has no such precondition, ask rather than leave it signed out.
+**Signed in or out.** A scenario tagged `@signed-in` starts with the test account signed in, and one tagged `@signed-out` with no session. Keep the tag on the copied scenario and write no sign-in step for it: a framework hook (`steps/shared/session.steps.ts`) signs the test account in before a `@signed-in` web or mobile-web scenario, with the two variables of the QA project's `.env`. A `Given ... is signed in` in the scenario or in a `Background` signs in twice: leave it out, and `qam check-scripts` flags a Background that does it. A sign-in case itself (the form, a wrong password) is `@signed-out` and fills the form in its own steps.
 
 Copy a case's scenario into `features/<channel>/<module>.feature` **with its step text unchanged**, and write a step definition only for a step no generic one covers (a step in its own words, such as a precondition or a business check). Don't reword a step to a near-synonym: that creates a second definition for the same thing. Where a value is a credential, the step text names it ("the registered user's password") and the definition you write for that step reads `process.env`.
 

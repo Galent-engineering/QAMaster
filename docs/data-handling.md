@@ -54,7 +54,7 @@ Only with `QAMASTER_AI` on (the default), and only in a Claude Code session.
 | Data | How it's kept out |
 |---|---|
 | ADO tokens, context-source tokens | Kept in environment variables or git-ignored `.env`, `.env.mcp`. Never printed by `qam`. `qam setup` adds deny rules for `.env*` to `.claude/settings.json`, so Claude can't read them even when asked |
-| Application logins for the crawl | Typed in the terminal prompt of the crawl, or kept in git-ignored `.env.dsm`. Never asked for in chat |
+| Application logins for the crawl | Typed in the terminal prompt of the crawl, or kept in the QA project's git-ignored `.env` (the same two variables the gate scripts use). Never asked for in chat |
 | Anything from CI, the push hook or the MCP server on their own | They make no AI calls. Their output reaches Claude only if a person runs them in a session |
 
 ## With `QAMASTER_AI=off`

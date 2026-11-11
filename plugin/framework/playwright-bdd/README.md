@@ -24,3 +24,7 @@ Each channel has a folder and its own Playwright project, made only when the fol
 `npm install` once, then `npm test`. QAMaster's gate runs the scenarios a change touches; `qam check-scripts` checks the rules above.
 
 **App errors:** a case fails, even when every step passed, if the app or its API (`apiUrl`, or `API_BASE_URL`) answered 5xx, a request to them got no answer (anything but `net::ERR_ABORTED`), or the page threw an error. `gate.allowErrors` in `config/qamaster.json` names what to ignore. `src/app-errors.ts` is QAMaster's file: `qam app create` replaces it when it differs from the template, so keep your own code in other files.
+
+**Undo what a step creates:** a step that creates data on the test account registers its undo with the `cleanup` fixture (`cleanup.add('todo "Buy milk"', () => deleteTodo(id))`, `src/cleanup.ts`). The undos run when the case ends; one that fails fails the case with "left data on the test account: <label>" and `cleanup.json` attached.
+
+**Signed in:** a scenario tagged `@signed-in` is signed in before its first step by `steps/shared/session.steps.ts` (`src/web/session.ts`), using the test account's two variables from the QA project's `.env` (QAMaster's runner passes them). Write no sign-in step for it. To run by hand with `npm test`, set `QAMASTER_LOGIN_USER_VAR` and `QAMASTER_LOGIN_PASSWORD_VAR` to the names of the two variables, and the variables themselves.

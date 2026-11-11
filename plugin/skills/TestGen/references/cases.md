@@ -79,7 +79,8 @@ A list of cases:
   - `priority`: P1–P4;
   - `severity`: Critical, High, Medium, Low, from the domain's risk hotspots and the requirement, never guessed;
   - `channel`: Web, Mobile Web, Android, iOS, API, Desktop.
-- **`session`:** `signed-out` or `signed-in`, the state the case starts in. Required when the context pack shows `access` on screens (see [signin-forms.md](signin-forms.md)).
+- **`session`:** `signed-out` or `signed-in`, the state the case starts in. Required when the context pack shows `access` on screens (see [signin-forms.md](signin-forms.md)). A `signed-in` case needs no sign-in precondition: the script signs the test account in from the `session` tag, and `qam testgen render` drops a precondition that only says so.
+- **Data a case creates:** name the record in the steps and the expected result ("the list shows Buy milk"), so the script can undo exactly it. Write no cleanup step: the script undoes what it creates (a failed undo fails the case), and a case that needs a record before it starts lists it in `preconditions`.
 - **Report fields:** `feature` is exactly one word. `test_data` is `{}` when the case needs none.
 - **No credentials in the text.** A password, token or key value goes in `test_data` only. Titles, objectives, expected results and steps name it ("the registered user's password"), never quote it: they are published to the test case store as written. The validator reports a credential-like value there as a finding.
 - **Steps:**

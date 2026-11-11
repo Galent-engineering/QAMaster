@@ -44,7 +44,7 @@ Skills trigger on plain words: "write test cases for checkout", "which tests cov
 ## CLI
 
 ```bash
-qam setup [--check] [--no-install] [--browsers chromium|all|none] [--app NAME] [--url URL]
+qam setup [--check] [--no-install] [--browsers chromium|all|none] [--app NAME] [--url URL] [--move-account]
           [--source FOLDER|GIT-URL [--branch B] [--clone-to DIR | --use-clone DIR]] [--entry claude-code,…]
 qam integrations list [--all] | add <entry…> | remove <id> | verify
 qam pipeline start|status|next|mark|reset ...
@@ -82,6 +82,10 @@ qam req|tc list|show|create|update|retire ... [--apply]
 qam export --target kiro|codex|antigravity|cursor|gemini|copilot|agent-plugin|all
 qam mcp-serve [--project DIR]
 ```
+
+**What `qam setup` writes into the QA project (0.8.0, Q58).**
+- `.claude/settings.json` gets `deny` rules (Claude can't read `.env*` or `dsm/.auth/`) and `ask` rules for `qam review` and `qam approve`, called through `node …/main.mts` or the launchers: Claude Code asks the person to click Allow before either runs, so a chat "yes" can't record a review or an approval. Existing rules are kept. `qam doctor` warns when the ask rules are missing.
+- `config/dsm-config.json` names the test account `<APP>_USER` / `<APP>_PASSWORD` (`login.username_env` / `password_env`; `TodoApp` gives `TODOAPP_USER`) and has no `secrets_file`. The account's values live only in the QA project's `.env`, which the crawl, the check and the scripts all read. A project that kept them in `.env.dsm` is told which two lines to move (names only); `qam setup --move-account` copies them to `.env` and removes them from `.env.dsm`, after the person's yes, and prints no value.
 
 Global flags are `--repo <path>` and `--json`. Exit codes: `0` pass, `1` fail, `2` blocked, `3` awaiting approval. Without a TTY or `--yes`, `check` stops after the plan with exit code 3.
 
