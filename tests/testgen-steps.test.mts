@@ -203,3 +203,45 @@ test('the published steps and case hashes of an existing run are unchanged by th
     expected: 'The home page shows the Products link',
   });
 });
+
+// 0.8.0 item 11 (Q58): the @signed-in hook signs in, so the sign-in precondition the session already states is dropped
+test('a signed-in case drops the precondition that only states the sign-in, and keeps the others', () => {
+  const text = featureText('Todo', 'Todo', [
+    kase({
+      session: 'signed-in',
+      preconditions: ['The registered user is signed in.', 'The list has a todo "Buy milk"'],
+    }),
+  ]);
+  assert.match(text, /@signed-in/);
+  assert.doesNotMatch(text, /is signed in/);
+  assert.match(text, /Given The list has a todo "Buy milk"/);
+});
+
+test('a precondition is kept for a signed-out case, when it says more, or when it is a negation', () => {
+  const signedIn = 'The registered user is signed in';
+  assert.match(
+    featureText('Todo', 'Todo', [kase({ session: 'signed-out', preconditions: [signedIn] })]),
+    /is signed in/,
+  );
+  assert.match(featureText('Todo', 'Todo', [kase({ preconditions: [signedIn] })]), /is signed in/, 'no session stated');
+  const more = 'The user is signed in with two todos';
+  assert.match(
+    featureText('Todo', 'Todo', [kase({ session: 'signed-in', preconditions: [more] })]),
+    /signed in with two todos/,
+  );
+  for (const p of ['The user is not signed in', 'The user signed out', 'The user is logged out'])
+    assert.match(featureText('Todo', 'Todo', [kase({ session: 'signed-in', preconditions: [p] })]), new RegExp(p));
+  assert.doesNotMatch(
+    featureText('Todo', 'Todo', [
+      kase({ session: 'signed-in', preconditions: ['The user is logged in and authenticated'] }),
+    ]),
+    /logged in/,
+  );
+});
+
+test('the hook is not a generic phrasing: the template still defines six', () => {
+  assert.doesNotMatch(
+    fs.readFileSync(path.join(ROOT, 'plugin/framework/playwright-bdd/steps/shared/session.steps.ts'), 'utf8'),
+    /\b(?:Given|When|Then)\(/,
+  );
+});

@@ -33,9 +33,13 @@ export class PlaywrightBddRunner implements Runner {
   /** The gate's allowErrors (Q53): app errors the framework's fixture lets pass. Handed over as JSON in the environment. */
   private readonly allowErrors: string[];
 
-  constructor(npx = 'npx', allowErrors: string[] = []) {
+  /** The test account's variables for @signed-in scenarios (Q58): names and values from the QA .env, passed as they are. */
+  private readonly account: Record<string, string>;
+
+  constructor(npx = 'npx', allowErrors: string[] = [], account: Record<string, string> = {}) {
     this.npx = npx;
     this.allowErrors = allowErrors;
+    this.account = account;
   }
 
   private exec(root: string, args: string[], json?: string): string {
@@ -49,6 +53,7 @@ export class PlaywrightBddRunner implements Runner {
       maxBuffer: 256 * 1024 * 1024,
       env: {
         ...process.env,
+        ...this.account,
         QAMASTER_ALLOW_ERRORS: JSON.stringify(this.allowErrors),
         ...(json ? { PLAYWRIGHT_JSON_OUTPUT_NAME: json } : {}),
       },

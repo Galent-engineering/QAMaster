@@ -168,6 +168,58 @@ function apiFindings(root: string, add: (k: string, msg: string) => void) {
   }
 }
 
+const STEP_DEF_AT = /\b(?:Given|When|Then|Step)\(\s*(['"`])((?:\\.|(?!\1)[^\\])*)\1/g;
+/** A step's words that say it makes something: create, add, new, register, save, post, upload, import, invite... */
+const CREATES = /\b(?:creat|add|new\b|regist|sav(?:e|es|ed)\b|post|upload|import|insert|duplicat|clon|invit)\w*/i;
+/** An API step's body calling a service method that creates. */
+const CREATE_CALL = /\.(?:create|add|register|insert|post)\w*\(/;
+const HAS_CLEANUP = /\bcreateCleanup\b|^\s*cleanup\s*:/m;
+
+/**
+ * D20 (Q58): a step that creates data in a folder whose fixtures.ts has no cleanup fixture leaves that data on the test
+ * account. One finding per step; a folder that has the fixture is not checked further (what each step registers is the
+ * AutomationCode skill's rule).
+ */
+function cleanupFindings(root: string, add: (k: string, msg: string) => void) {
+  const fixtures = path.join(root, 'src', 'fixtures.ts');
+  if (!fs.existsSync(fixtures) || HAS_CLEANUP.test(read(root, 'src/fixtures.ts'))) return;
+  for (const f of files(root, 'steps', /\.ts$/)) {
+    const text = read(root, f);
+    const defs = [...text.matchAll(STEP_DEF_AT)];
+    defs.forEach((m, i) => {
+      const body = text.slice((m.index ?? 0) + m[0].length, defs[i + 1]?.index ?? text.length);
+      if (!CREATES.test(m[2]) && !(f.startsWith('steps/api/') && CREATE_CALL.test(body))) return;
+      add(
+        'cleanup',
+        `${f}:${text.slice(0, m.index).split('\n').length}: step "${m[2]}" creates data, and src/fixtures.ts has no cleanup fixture, so the data stays on the test account: add the cleanup fixture from the template's src/fixtures.ts (qam app create adds src/cleanup.ts), then register an undo right after the create with cleanup.add(label, undo)`,
+      );
+    });
+  }
+}
+
+/** A Background step that signs in by hand, in a feature with @signed-in scenarios the framework already signs in (Q58). */
+const SIGN_IN = /\b(?:sign(?:ed|s)?[- ]?in|log(?:ged|s)?[- ]?in|login|authenticat\w*)\b/i;
+function sessionFindings(root: string, add: (k: string, msg: string) => void) {
+  if (!fs.existsSync(path.join(root, 'steps', 'shared', 'session.steps.ts'))) return;
+  for (const f of files(root, 'features', /\.feature$/)) {
+    const lines = read(root, f).split('\n');
+    if (!lines.some((l) => /^\s*@.*@signed-in\b|^\s*@signed-in\b/.test(l))) continue;
+    let inBackground = false;
+    lines.forEach((raw, i) => {
+      const l = raw.trim();
+      if (/^Background:/.test(l)) inBackground = true;
+      else if (/^(Scenario|Scenario Outline|Scenario Template|Example|Feature|Rule):/.test(l) || l.startsWith('@'))
+        inBackground = false;
+      const step = /^(?:Given|When|Then|And|But|\*)\s+(.*)$/.exec(l);
+      if (inBackground && step && SIGN_IN.test(step[1]) && !/\b(?:not|no|never)\b/i.test(step[1]))
+        add(
+          'session',
+          `${f}:${i + 1}: the Background signs in ("${step[1]}"), and the @signed-in scenarios are already signed in by the framework (steps/shared/session.steps.ts): remove that step, or the sign-in runs twice`,
+        );
+    });
+  }
+}
+
 /** The static gates; `known` is every TC ID of the TestGen runs. */
 // a string literal that is exactly 'form': it opens after : , ( [ or a space (not inside a longer selector after =),
 // closes before , ) ] } ; // as const or the end of the line, and is not a role (role: 'form', getByRole('form', ...))
@@ -207,6 +259,8 @@ export function staticFindings(root: string, known: Set<string>): Record<string,
       });
 
   apiFindings(root, add);
+  cleanupFindings(root, add);
+  sessionFindings(root, add);
 
   const used = new Set<string>();
   for (const f of files(root, 'src/web/pages', /\.ts$/)) {

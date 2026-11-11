@@ -4,6 +4,7 @@
  * To add one (a spreadsheet store, Jira, another runner): implement the interface in base.mts, write a factory that
  * reads only its own QAMASTER_<NAME>_* settings from config.env, register it here, and test it with recorded responses.
  */
+import { accountEnvForScripts } from '../gate/automate.mts';
 import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import { makeAdoRequirements, makeAdoStore } from './ado.mts';
@@ -17,7 +18,8 @@ type Factory<T> = (config: Config) => T;
 export const STORES: Record<string, Factory<TestCaseStore>> = { ado: makeAdoStore, file: makeFileStore };
 export const REQUIREMENTS: Record<string, Factory<RequirementSource>> = { ado: makeAdoRequirements };
 export const RUNNERS: Record<string, Factory<Runner>> = {
-  'playwright-bdd': (c) => new PlaywrightBddRunner('npx', c.project.gate.allowErrors),
+  'playwright-bdd': (c) =>
+    new PlaywrightBddRunner('npx', c.project.gate.allowErrors, accountEnvForScripts(c.qaProject ?? c.root, c.env)),
   pytest: () => new PytestRunner(),
 };
 

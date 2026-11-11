@@ -264,6 +264,25 @@ export function moveAccount(project: string, env: Env): string[] {
   return names;
 }
 
+/**
+ * What the scripts' sign-in needs in their environment (Q58 item 11): the two variables login.username_env /
+ * password_env name, with their values from the QA .env (a value that isn't set is left out, so the framework hook says
+ * which one is missing), the names themselves in QAMASTER_LOGIN_USER_VAR / QAMASTER_LOGIN_PASSWORD_VAR, and
+ * login.url as QAMASTER_LOGIN_URL when it is set. Nothing when the project has no sign-in.
+ */
+export function accountEnvForScripts(project: string, env: Env): Record<string, string> {
+  const [user, password] = accountNames(project);
+  const url = loginOf(project)?.login?.url;
+  if (!user || !password) return {};
+  return {
+    QAMASTER_LOGIN_USER_VAR: user,
+    QAMASTER_LOGIN_PASSWORD_VAR: password,
+    ...(typeof url === 'string' && url ? { QAMASTER_LOGIN_URL: url } : {}),
+    ...(env[user] ? { [user]: env[user] as string } : {}),
+    ...(env[password] ? { [password]: env[password] as string } : {}),
+  };
+}
+
 /** The crawl's environment: the shell, then the QA project's .env, then (a project that still names one) its secrets_file. */
 export function crawlEnv(project: string, secretsFile?: string): Env {
   const env: Env = { ...process.env };

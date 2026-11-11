@@ -87,11 +87,37 @@ function stepPhrases(st: Step): [string, string[]] {
  *   tagged with its @TC id so traceability survives);
  * - Scenario: every other case. Tags: @TC-<id>, category, type, priority, session (@signed-in, @signed-out).
  */
+/** A precondition clause that only says the user is signed in (not "signed out", not "is not signed in"). */
+const SIGNED_IN = /\b(?:sign(?:ed|s)?[- ]?in|log(?:ged|s)?[- ]?in|login|authenticated)\b/i;
+/** Words that, around "signed in", still state only the sign-in. Any other word is a second condition. */
+const FILLER = new Set(
+  'the a an user users registered test existing valid account tester customer member is are am be been being has have already to into as in app application with credentials their own successfully and i'.split(
+    ' ',
+  ),
+);
+const NEGATED = /\b(?:not|never|without|no)\b|\b(?:sign|log)(?:ed|s)?[- ]?out\b/i;
+/**
+ * Q58 item 11: a `signed-in` case is signed in by the framework's @signed-in hook, so a precondition that only states
+ * it ("The registered user is signed in") is dropped from the scenario: no step definition would be written for it and
+ * the Background would sign in a second time. A precondition that says more ("signed in with two todos") stays.
+ */
+export function statesSignedIn(precondition: string): boolean {
+  if (NEGATED.test(precondition) || !SIGNED_IN.test(precondition)) return false;
+  const rest = precondition
+    .toLowerCase()
+    .replace(new RegExp(SIGNED_IN, 'g'), ' ')
+    .split(/[^a-z']+/)
+    .filter(Boolean);
+  return rest.every((w) => FILLER.has(w));
+}
+
 export function featureText(app: string, comp: string, tcs: TestCase[]): string {
   type L = { kind: 'given' | 'action' | 'expect'; text: string };
   const lines = [`@${tagOf(app) || 'app'} @feature:${comp.replace(/\s+/g, '_')}`, `Feature: ${comp}`, ''];
   const stepLines = (tc: TestCase): L[] => {
-    const out: L[] = (tc.preconditions ?? []).map((p) => ({ kind: 'given', text: s(p).replace(/\.$/, '') }));
+    const out: L[] = (tc.preconditions ?? [])
+      .filter((p) => !(tc.session === 'signed-in' && statesSignedIn(s(p))))
+      .map((p) => ({ kind: 'given', text: s(p).replace(/\.$/, '') }));
     for (const st of tc.steps ?? []) {
       const [a, e] = stepPhrases(st);
       out.push({ kind: 'action', text: a }, ...e.map((text): L => ({ kind: 'expect', text })));
