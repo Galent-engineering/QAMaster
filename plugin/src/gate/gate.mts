@@ -135,7 +135,7 @@ function expand(names: string[], catalog: Map<number, TestCase>): number[] {
 
 /**
  * Whether approving the plan as it stands would run 0 cases although the change matched something (0.8.0 item 1,
- * D3): every item was removed, or the only matches are manual cases picked by more than the smoke rule. A plan that
+ * D3): every item was removed, or the only matches are manual cases picked by more than the smoke rule (path, DSM, story, group, added or all). A plan that
  * matched nothing, or only manual smoke, is a pass with a warning, not a refusal.
  */
 export function wouldRunNothing(plan: Plan): boolean {

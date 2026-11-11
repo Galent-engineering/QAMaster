@@ -163,3 +163,15 @@ test('0.7.2 item 14 (Q57): qam automate stops with exit 2 and the names when the
   fs.writeFileSync(path.join(w.qa, '.env'), 'SHOP_USER_072=u\nSHOP_PASSWORD_072=p\n');
   assert.notEqual(w.qam('automate', first.id).status, 2);
 });
+
+test('0.8.0 item 4: qam automate --try does not pass or say nothing is waiting while drafts have no script', async () => {
+  const w = await world();
+  const first = planOf(w.qam('--json', 'plan', '--base', 'main'));
+  fs.rmSync(path.join(w.qa, 'Shop/features/web/cart.feature')); // the case is waiting to be drafted
+  const r = w.qam('automate', first.id, '--try');
+  assert.equal(r.status, 3, r.out + r.err);
+  assert.doesNotMatch(r.out, /no script is waiting/);
+  assert.match(r.out, /TC\d+/);
+  const j = JSON.parse(w.qam('--json', 'automate', first.id, '--try').out);
+  assert.deepEqual(j.unwritten, [w.id]);
+});

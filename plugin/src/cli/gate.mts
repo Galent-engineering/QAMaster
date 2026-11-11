@@ -500,7 +500,7 @@ function recorded(cfg: Config): Set<number> {
 
 /**
  * qam automate <plan-id> --try (0.8.0 item 4): runs each script to draft or update once and prints the results. Nothing is
- * recorded; the evidence goes to a temporary folder that is kept only when something failed. Exit 0 all passed, 1 not.
+ * recorded; the evidence goes to a temporary folder that is kept only when something failed. Exit 0 all passed, 1 one failed, 3 cases still have no script.
  */
 async function tryScripts(g: Gate, plan: Plan, work: Work[], json: boolean): Promise<number> {
   const evidence = fs.mkdtempSync(path.join(os.tmpdir(), 'qam-try-'));
@@ -512,16 +512,28 @@ async function tryScripts(g: Gate, plan: Plan, work: Work[], json: boolean): Pro
     playwrightBdd.link,
     evidence,
   );
-  const ok = results.every((r) => r.status === 'passed');
+  // a case to draft with no script yet has nothing to run: that is waiting work, not a passed trial
+  const unwritten = work.filter((w) => w.action === 'draft' && !w.files.length).map((w) => w.testCaseId);
+  const ok = results.every((r) => r.status === 'passed') && !unwritten.length;
   if (ok) fs.rmSync(evidence, { recursive: true, force: true });
   const titles = new Map([...plan.items, ...plan.notRun].map((i) => [i.testCase.id, i.testCase.title]));
   out(
     json,
-    { plan: plan.id, results, ...(ok ? {} : { evidence }) },
-    results.length
-      ? renderTrial(results, titles, evidence)
-      : `Nothing to try in plan ${plan.id}: no script is waiting to be drafted or updated.`,
+    { plan: plan.id, results, unwritten, ...(ok ? {} : { evidence }) },
+    [
+      results.length
+        ? renderTrial(results, titles, evidence)
+        : unwritten.length
+          ? ''
+          : `Nothing to try in plan ${plan.id}: no script is waiting to be drafted or updated.`,
+      unwritten.length
+        ? `${unwritten.length} case(s) still have no script to try: ${unwritten.map((id) => `TC${id}`).join(', ')}. Write them with the AutomationCode skill first, then run --try again.`
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n'),
   );
+  if (unwritten.length && results.every((r) => r.status === 'passed')) return AWAITING;
   return ok ? PASS : FAIL;
 }
 

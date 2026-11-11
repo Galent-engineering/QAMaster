@@ -87,12 +87,12 @@ export function loadRun(dir: string, o: { dsmGeneratedAt: string | null; owners:
   const record = readRunRecord(dir);
   if (!record?.reviewedBy) {
     throw new BlockedError(
-      `Can't publish ${name}: it hasn't been reviewed. Show the test cases to the person; only after their yes, run qam review ${name}.`,
+      `Can't publish ${name}: it hasn't been reviewed. Show the test cases to the person; only after their yes, run qam review ${name} --yes.`,
     );
   }
   if (record.run_hash !== runHash(dir)) {
     throw new BlockedError(
-      `Can't publish ${name}: the test cases changed since they were reviewed. Review them again: qam review ${name}.`,
+      `Can't publish ${name}: the test cases changed since they were reviewed. Show them to the person again and, after their yes, run qam review ${name} --yes.`,
     );
   }
   const manifest = readJson<{ scope?: { module?: string; sub_module?: string } }>(

@@ -58,7 +58,7 @@
       "title": "Review",
       "status": "pending",
       "evidence": "no run reviewed yet",
-      "how": "Show the person the test cases; only after their yes, run qam review <run>."
+      "how": "Show the person the test cases; only after their yes, run qam review <run> --yes."
     },
     {
       "stage": "publish",

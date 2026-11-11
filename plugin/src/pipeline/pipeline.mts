@@ -238,7 +238,7 @@ const STAGES: Stage[] = [
         detail: `${ok.length} reviewed run(s)${changed ? `; ${ok[ok.length - 1]} changed since its review` : ''}`,
       };
     },
-    how: () => 'Show the person the test cases; only after their yes, run qam review <run>.',
+    how: () => 'Show the person the test cases; only after their yes, run qam review <run> --yes.',
   },
   {
     id: 'publish',

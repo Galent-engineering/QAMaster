@@ -70,10 +70,13 @@ uv sync -q # the person's step: downloads the test dependencies (the image's Pyt
 expect 3 $Q plan
 P=$(newest_plan)
 
-step 'approve without a git identity'
+step 'approve with no terminal and no --yes: blocked'
 expect 2 $Q approve "$P"
+
+step 'approve without a git identity'
+expect 2 $Q approve "$P" --yes
 git config --global user.email dev@example.test && git config --global user.name Dev
-expect 0 $Q approve "$P"
+expect 0 $Q approve "$P" --yes
 
 step 'run without a browser: blocked with the install command (F2)'
 expect 2 $Q run "$P"
@@ -132,7 +135,7 @@ expect 2 $Q check-scripts
 (cd ~/qa/JuiceShopOnline && npm install --no-audit --no-fund --loglevel=error >/dev/null)
 expect 0 $Q check-scripts
 expect 3 $Q automate "$P" --done
-expect 0 $Q approve "$P"
+expect 0 $Q approve "$P" --yes
 expect 0 $Q run "$P"
 
 step 'Publish before the scripts are pushed: nothing written'
@@ -155,7 +158,7 @@ expect 3 $Q plan
 step 'App unreachable: blocked, names the URL (F2)'
 expect 3 $Q plan
 P=$(newest_plan)
-expect 0 $Q approve "$P"
+expect 0 $Q approve "$P" --yes
 expect 2 env WEB_BASE_URL=http://localhost:3000 $Q run "$P"
 
 step 'Gate the app repo with the push hook'
