@@ -73,8 +73,8 @@ test('item 11: the check summary names each flaky case on its own line; flaky st
   assert.ok(lines.some((l) => /^ {2}flaky: TC2 .*case 2.*still a pass/.test(l)));
 });
 
-test('item 12: the verdict says an API on another origin is not watched', () => {
+test("0.8.0 item 6: the verdict no longer carries 0.7.2's note that an API on another origin is not watched", () => {
   const p = plan([item(1, 'path')]);
   const text = renderVerdict(decide(p, [res(1, 'passed')]), p);
-  assert.match(text, /not watched.*origin other than baseURL|origin other than baseURL.*not watched/i);
+  assert.doesNotMatch(text, /not watched|origin other than baseURL/i);
 });

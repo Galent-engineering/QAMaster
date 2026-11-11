@@ -301,9 +301,6 @@ export function renderPlan(plan: Plan): string {
   return lines.join('\n');
 }
 
-const API_NOTE =
-  "Only the app's own origin (baseURL) is watched for 5xx and page errors (Q53). An API on an origin other than baseURL is not watched: a failing API call fails nothing by itself.";
-
 export function renderVerdict(v: Verdict, plan: Plan): string {
   const titles = new Map(plan.items.map((i) => [i.testCase.id, i.testCase.title]));
   const lines = [`Verdict: ${v.result.toUpperCase()} (${v.reasons.join(' ')})`];
@@ -328,7 +325,6 @@ export function renderVerdict(v: Verdict, plan: Plan): string {
       ),
     );
   lines.push(...v.warnings.map((w) => `  warning: ${w}`));
-  lines.push(`  note: ${API_NOTE}`);
   return lines.join('\n');
 }
 

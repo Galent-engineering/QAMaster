@@ -45,7 +45,7 @@ test('any failed, missing or skipped test fails', () => {
 test('flaky passes with a warning', () => {
   const v = decide(plan(), results({ 1: 'passed', 2: 'flaky' }));
   assert.equal(v.result, 'pass');
-  assert.deepEqual(v.warnings, ['TC2 is flaky: failed, then passed on retry.']);
+  assert.deepEqual(v.warnings, ['TC2 is flaky: failed, then passed on retry (gate.retries: 0 makes it a fail).']);
 });
 
 test('nothing selected is a pass with a coverage warning (gate.noMatch: pass-with-warning)', () => {

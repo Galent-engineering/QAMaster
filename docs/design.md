@@ -59,7 +59,8 @@ qam requirements import --file STORIES.xlsx|.csv|.json|.md [--sheet NAME] [--sco
 qam requirements list                         # the saved scopes; a TestGen manifest names one in requirements_scope
 qam testgen context|validate|render <run>
 qam review <run> [--yes]                      # records gate 1 with the ADO account + git email; commands call it only after the person's yes
-                                              # E3: on a terminal it shows the run and asks; --yes (or no terminal) records without asking
+                                              # E3: on a terminal it shows the run and asks; --yes records without asking.
+                                              # 0.8.0 (D10): with no terminal and no --yes it exits 2: nobody was asked
 qam publish <run> [--to file,ado] [--apply] [--retire] [--leave-out ID,…] [--skip-smoke ID,…]
 qam store [use ado|file]                      # R23: which store test cases go to; use writes QAMASTER_STORE in .env, the ledger keeps each store's IDs
 qam app create [--app NAME] [--web-url URL] [--api-url URL]   # <App>/ in the QA project from the playwright-bdd template;
@@ -68,10 +69,13 @@ qam check-scripts [--quick]
 qam plan    [--base REF] [--preset fast|standard|full] [--tag GROUP[=WHY]] [--all]
                                               # Q31 (0.7.0): preset, else gate.preset; --all is --preset full:
                                               # every case with a script, recorded ones included (Q49)
-qam automate <plan-id> [--done]               # Q39: scripts to draft/update/keep; --done records them, binds the plan
-qam approve <plan-id> [--add TC…|GROUP] [--remove TC…|GROUP] [--by NAME]
+qam automate <plan-id> [--done | --try]       # Q39: scripts to draft/update/keep; --done records them, binds the plan;
+                                              # 0.8.0: --try runs the new scripts once, records nothing (exit 0/1)
+qam approve <plan-id> [--add TC…|GROUP] [--remove TC…|GROUP] [--yes] [--allow-empty]
+                                              # 0.8.0: with no terminal it needs --yes (the person's yes, passed on);
+                                              # an approval that would run 0 cases is refused unless --allow-empty (D3)
 qam run     <plan-id>
-qam check   [--base REF] [--tag …] [--yes] [--all]   # plan, automate (Q39), approve, run
+qam check   [--base REF] [--tag …] [--yes] [--all] [--allow-empty]   # plan, automate (Q39), approve, run
 qam feedback [<sha>]
 qam report all|manual|<type>
 qam req|tc list|show|create|update|retire ... [--apply]
@@ -148,11 +152,13 @@ Scripts (Q39; uncommitted in the test root, approved with the plan)
 ```
 
 Layout rules:
-- Selected cases are ordered by reason: path match, then smoke, then groups.
+- Selected cases are ordered by reason: path match, then smoke, then the DSM, then stories (`story AB#<id>`, 0.8.0), then groups.
+- A **Stories in this change** section lists each `AB#<id>` the commits or branch name carry and the cases tagged `req:<id>` for it; a story with none is a coverage gap.
+- When approval would run 0 cases, the plan prints a warning that approval will be refused.
 - Groups Claude picked start checked, with a one-line reason tied to the diff.
 - Manual and BROKEN cases are never dropped silently. BROKEN fails the check.
 - Gaps don't change the verdict. They're shown so the person can start a design run.
-- The `Selection:` line (0.7.0) names the preset, the selectors that ran and the model that picked groups. `fast` is path and smoke (the DSM adds nothing), `standard` (the default) all of them, `full` every case with a script whatever changed (the same as `--all`). The model is named only under `standard` with AI on.
+- The `Selection:` line (0.7.0) names the preset, the selectors that ran and the model that picked groups. `fast` is path and smoke (the DSM adds nothing), `standard` (the default) all of them, stories included, `full` every case with a script whatever changed (the same as `--all`). The model is named only under `standard` with AI on.
 - With `QAMASTER_AI=off`, the plan has no Claude-picked groups, and its header line ends with "Group picking off for this repo".
 
 ## Verdict rules
@@ -160,13 +166,16 @@ Layout rules:
 | Situation | Verdict |
 |---|---|
 | All approved tests passed | `pass` |
-| Any approved test failed after one retry | `fail` |
+| Any approved test failed after one retry | `fail`; the reason names the failure's kind (assertion failed, step couldn't act on the page, script error) before the first error line (0.8.0) |
+| A test failed, then passed on the retry (flaky) | `pass`, with a warning. `gate.retries: 0` turns the retry off, so the same case fails: the strict setting (0.8.0, Q13 unchanged) |
 | A script drafted by this check, never passed before, failed | `fail`, labelled "new script failed: check the script or the app" (Q39) |
 | A runner's tools are missing and the person didn't approve the download, or a link names a runner QAMaster doesn't have | `blocked`, with what to install or change (Q38) |
 | An approved test didn't run or was skipped | `fail` |
 | A selected case is BROKEN | `fail` |
-| A UI case passed, but the app answered 5xx from its own origin or threw a page error that `gate.allowErrors` doesn't name | `fail`, with the request, status and body (or the error) in `app-errors.json` (Q53) |
+| A UI case passed, but the app or its API (`apiUrl`) answered 5xx, a request got no answer, or the page threw an error that `gate.allowErrors` doesn't name | `fail`, with the request, status and body (or the error) in `app-errors.json` (Q53) |
 | No test case matched the change | `pass`, with a coverage-gap warning |
+| Approval would run 0 cases although the change matched cases that can't run (manual cases picked by path, the DSM, a group, a story or `--all`, or every item removed) | `qam approve` and `qam check --yes` are refused (`blocked`, exit 2), and the plan says so. `--allow-empty` approves it anyway; the plan records `allowEmpty` and the verdict warns (0.8.0, D3, amends Q13). A plan that matched nothing, or only manual smoke cases, is still a `pass` with a warning |
+| The change names a story (`AB#<id>`) no case is tagged `req:<id>` for | the verdict is unchanged; the plan lists the story as a coverage gap (0.8.0) |
 | Missing settings, credentials, ADO unreachable, no plan | `blocked` |
 | The QA project (`QAMASTER_TEST_ROOT`) has uncommitted changes the plan didn't make | `blocked` |
 | HEAD, the QA project's commit or the drafted scripts changed since approval | plan void; approve again |
@@ -208,9 +217,9 @@ QAMASTER_ADO_PROJECT=Shop
 }
 ```
 
-`gate.sharedShare` (Q37) and `runners` (Q38) are built in [0.3.0](plans/0.3.0.md). A runner without a `runners` entry uses `QAMASTER_TEST_ROOT`.
+`gate.retries` (default 1) is how many times a failed case runs again: failed, then passed is *flaky*, a pass with a warning. Set it to `0` for no retry, so a flaky case is a failure. `gate.sharedShare` (Q37) and `runners` (Q38) are built in [0.3.0](plans/0.3.0.md). A runner without a `runners` entry uses `QAMASTER_TEST_ROOT`.
 
-`gate.allowErrors` (Q53, 0.6.0) lists strings matched against an app error's URL or message; a match is ignored. Empty by default: every 5xx from the app's origin and every uncaught page error fails the case. An empty string is refused, since it would allow everything.
+`gate.allowErrors` (Q53, 0.6.0) lists strings matched against an app error's URL or message; a match is ignored. Empty by default: every 5xx from the app's or the API's origin, every request that got no answer, and every uncaught page error fails the case. An empty string is refused, since it would allow everything.
 
 `gate.preset` (Q31, 0.7.0) is `fast`, `standard` (default) or `full`; `qam plan --preset` overrides it. `gate.groupsModel` names the Claude Code model `/qamaster:check` gives the subagent that picks groups: `sonnet`, `opus`, `haiku`, `fable` or `inherit`; unset (`null`), the session's own. The CLI only records it; CI, the push hook and `QAMASTER_AI=off` never pick groups. The plan's `Selection:` line names the model only when one can pick groups: not in CI (`CI` set, or Azure Pipelines' `TF_BUILD=True`) and not with AI off (0.7.1).
 

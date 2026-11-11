@@ -87,9 +87,10 @@ type PublishChange = { kind: 'create'|'update'|'unchanged'|'retire'|'conflict';
                        localId: string; trackerId?: number; fields: string[]; reason: string };
 
 // Gate side (from CM)
-type Change = { base: string; head: string; branch: string; files: ChangedFile[] };
+type Change = { base: string; head: string; branch: string; files: ChangedFile[];
+                stories?: string[] };   // 0.8.0: AB#<id> ids from the commit messages since the merge base and the branch name
 type TestCase = { id: number; title: string; url: string; tags: string[]; automatedTest: string | null };
-type Reason = { kind: 'path'|'smoke'|'group'|'added'|'dsm'|'all'; detail: string };
+type Reason = { kind: 'path'|'smoke'|'group'|'added'|'dsm'|'all'|'story'; detail: string };
 type PlanItem = { testCase: TestCase; reasons: Reason[]; selected: boolean };
 type NotRun = { testCase: TestCase; why: string; broken: boolean };
 type Gap = { screen: string; files: string[]; why: string };           // new: DSM impact with no case
@@ -97,6 +98,8 @@ type Plan = { id: string; createdAt: string; change: Change;
               testsHead?: string;                // QA project commit when QAMASTER_TEST_ROOT is set (Q22)
               items: PlanItem[]; notRun: NotRun[];
               gaps: Gap[]; catalogSize: number; otherGroups: Record<string, string[]>;
+              stories?: { id: string; cases: number[] }[];   // 0.8.0: each AB# story and the cases tagged req:<id> (none: a gap)
+              allowEmpty?: boolean;                          // 0.8.0: approved with --allow-empty and no case selected
               approvedBy?: string; approvedAt?: string;
               selection?: { preset: 'fast'|'standard'|'full'; selectors: string[]; model: string | null } };  // Q31, 0.7.0
 type TestResult = { testCaseId: number; status: 'passed'|'failed'|'flaky'|'skipped'|'not_run';
@@ -248,7 +251,9 @@ collect   RepoReader.diff(mergeBase(base, HEAD), HEAD) → Change
           if QAMASTER_TEST_ROOT: its git commit → testsHead; uncommitted changes there → BlockedError
           (v1.1 in CI: check out the QA branch named like the app branch, else main, first)
 catalog   TestCaseStore.inPlan() → every test case in the plan with tags and automation link
-select    candidates(change, catalog, groups) → {case → reasons}: path, smoke, group
+select    candidates(change, catalog, groups) → {case → reasons}: path, smoke, dsm, story, group
+          story (0.8.0): the cases tagged req:<id> for each AB#<id> in change.stories; not under --preset fast;
+          a story with no case is listed in plan.stories with cases: [] and changes no verdict
           a changed file whose glob covers > gate.sharedShare of the plan is shared: path selects only
           its smoke and DSM-impacted cases (Q37)
           dsm.impact(change.files) → screens; screens with no selected case → gaps
@@ -256,9 +261,14 @@ select    candidates(change, catalog, groups) → {case → reasons}: path, smok
           a missing runner tool or an unknown link prefix → BlockedError, after offering the install (Q38)
 automate  (Q39) per selected case: no script → Framework drafts; stale (case hash or code under its path: tags
           changed) → updates; else keeps. check-scripts must pass. Plan records scriptsHash of the drafted diff
-approve   approve(plan, by, add, remove) → Plan with approvedBy/At; refuses if HEAD, testsHead or scriptsHash moved
+approve   approve(plan, by, add, remove, {allowEmpty}) → Plan with approvedBy/At; refuses if HEAD, testsHead or scriptsHash moved,
+          or (0.8.0) if no item would run although the change matched cases that can't (wouldRunNothing); qam approve and
+          qam review need --yes with no terminal (tty.isatty(0))
 run       group by link prefix → each Runner.run(selection) in runners.<name>.root (Q38) → TestResult[],
-          retry failed cases once → decide() → Verdict ("new script failed" labelled, Q39)
+          retry failed cases once → decide() → Verdict ("new script failed" labelled, Q39; each failure's kind named, 0.8.0:
+          failureKind() reads the error text: assertion failed / step couldn't act on the page / script error / none)
+trial     (0.8.0) qam automate <plan> --try: gate/trial.mts runs each draft or update script once through its runner into a
+          temporary evidence folder (kept only on a failure); writes no plan, drafts or verdict, so "proven" is unchanged (Q39)
 feedback  gaps + BROKEN + stale cases → .qamaster/feedback/<sha>.json, defect drafts for failures
 ```
 

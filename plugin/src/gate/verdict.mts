@@ -63,7 +63,8 @@ export function decide(plan: Plan, results: TestResult[], o: { newScripts?: Set<
       );
     else if (first) reasons.push(`TC${r.testCaseId} failed: ${kind ? `${kind}: ` : ''}${first}`);
     else if (problem) reasons.push(`TC${r.testCaseId} ${problem}.`);
-    else if (r.status === 'flaky') warnings.push(`TC${r.testCaseId} is flaky: failed, then passed on retry.`);
+    else if (r.status === 'flaky')
+      warnings.push(`TC${r.testCaseId} is flaky: failed, then passed on retry (gate.retries: 0 makes it a fail).`);
   }
   const pass = !reasons.length;
   if (pass) {
