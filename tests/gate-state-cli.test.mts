@@ -102,7 +102,7 @@ test('a plan and a verdict left in the clone by an older version are still read,
   fs.cpSync(path.join(w.qa, '.qamaster', 'gate', 'shop'), path.join(w.clone, '.qamaster'), { recursive: true });
   fs.rmSync(path.join(w.qa, '.qamaster', 'gate'), { recursive: true });
   const plan = fs.readdirSync(path.join(w.clone, '.qamaster', 'plans')).find((f) => f.endsWith('.json')) ?? '';
-  const approve = qam(w.home, w.clone, 'approve', plan.replace('.json', ''));
+  const approve = qam(w.home, w.clone, 'approve', plan.replace('.json', ''), '--yes');
   assert.equal(approve.status, 0, approve.out + approve.err);
   // the new plan was written to the QA project, the old one untouched
   assert.ok(fs.existsSync(path.join(w.qa, '.qamaster', 'gate', 'shop', 'plans', plan)));

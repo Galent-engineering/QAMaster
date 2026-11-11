@@ -87,7 +87,7 @@ test('plan, approve, run: the cart change selects its case and smoke, runs them 
   const id = /plan (\w+) for/.exec(plan.out)?.[1] ?? '';
 
   assert.match(qam(dir, 'run', id).err, /isn't approved/);
-  const approved = qam(dir, 'approve', id);
+  const approved = qam(dir, 'approve', id, '--yes');
   assert.equal(approved.status, 0, approved.err);
   assert.match(approved.out, /Approved by ada@example\.test/);
 
@@ -116,7 +116,7 @@ test('a new commit voids the plan before it runs', async (t) => {
   if (!dir) return t.skip('uv cannot lock pytest offline here');
   const id = /plan (\w+) for/.exec(qam(dir, 'plan').out)?.[1] ?? '';
   git(dir, 'commit', '-q', '--allow-empty', '-m', 'more');
-  const r = qam(dir, 'approve', id);
+  const r = qam(dir, 'approve', id, '--yes');
   assert.equal(r.status, 2);
   assert.match(r.err, /HEAD moved/);
 });
@@ -168,4 +168,25 @@ test('0.3.1 F7: after plan, approve and run, git status in the app repo shows no
   assert.match(exclude, /# QAMaster: this clone's own gate files \(Q42\)\n\.qamaster\/plans\/\n/);
   qam(dir, 'check', '--yes');
   assert.equal(fs.readFileSync(path.join(dir, '.git/info/exclude'), 'utf8'), exclude, 'added once');
+});
+
+// 0.8.0 items 1-2 (D3, D10): no terminal means no ask, so approve needs --yes; --allow-empty belongs to approve and check
+test('0.8.0 item 2: qam approve with no terminal and no --yes blocks and approves nothing', async (t) => {
+  const dir = await shop();
+  if (!dir) return t.skip('uv cannot lock pytest offline here');
+  const id = /plan (\w+) for/.exec(qam(dir, 'plan').out)?.[1] ?? '';
+  const r = qam(dir, 'approve', id);
+  assert.equal(r.status, 2, r.out + r.err);
+  assert.match(r.err, /needs a terminal to ask on/);
+  assert.match(r.err, /--yes/);
+  assert.match(qam(dir, 'run', id).err, /isn't approved/);
+  assert.equal(qam(dir, 'approve', id, '--yes').status, 0);
+});
+
+test('0.8.0 item 1: --allow-empty is for approve and check only', async (t) => {
+  const dir = await shop();
+  if (!dir) return t.skip('uv cannot lock pytest offline here');
+  const r = qam(dir, 'plan', '--allow-empty');
+  assert.equal(r.status, 2, r.out + r.err);
+  assert.match(r.err, /Unknown option '--allow-empty'/);
 });

@@ -12,6 +12,7 @@ import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import tty from 'node:tty';
 import { parseArgs } from 'node:util';
 import { playwrightBdd } from '../adapters/framework-bdd.mts';
 import { defaultBase, GitRepoReader } from '../adapters/git.mts';
@@ -30,7 +31,7 @@ import {
   worklist,
 } from '../gate/automate.mts';
 import { dsmCases, repoDirs, runCases } from '../gate/dsm.mts';
-import { approve, type Gate, runPlan } from '../gate/gate.mts';
+import { approve, type Gate, runPlan, wouldRunNothing } from '../gate/gate.mts';
 import { choosePreset, inCI, planWith, renderSelection } from '../gate/presets.mts';
 import { linkRunner, noTouchWarning } from '../gate/select.mts';
 import { stateDirs } from '../gate/state.mts';
@@ -239,6 +240,11 @@ export function renderPlan(plan: Plan): string {
   ];
   const untouched = noTouchWarning(plan.items, c.files.length);
   if (untouched) lines.push('', `  warning: ${untouched}`);
+  if (!plan.approvedBy && wouldRunNothing(plan))
+    lines.push(
+      '',
+      '  warning: no selected case can run, so approval will be refused (add a case, or approve with --allow-empty to run none).',
+    );
   if (plan.notRun.length)
     lines.push(
       '',
@@ -327,6 +333,7 @@ function parse(argv: string[], command: string) {
         yes: { type: 'boolean' },
         all: { type: 'boolean' },
         done: { type: 'boolean' },
+        'allow-empty': { type: 'boolean' },
       },
     });
   } catch (e) {
@@ -385,10 +392,28 @@ export function appHint(cfg: Config, plan: Plan): string {
     : '';
 }
 
-export async function gate(cfg: Config, command: string, argv: string[], json: boolean): Promise<number> {
+/**
+ * Whether there is a terminal to ask on. tty.isatty, not process.stdin.isTTY, as in review and setup: touching
+ * process.stdin on a terminal makes fd 0 non-blocking.
+ */
+const REAL_IO: { tty: boolean } = { tty: tty.isatty(0) };
+
+export async function gate(
+  cfg: Config,
+  command: string,
+  argv: string[],
+  json: boolean,
+  io: { tty: boolean } = REAL_IO,
+): Promise<number> {
   const { values: v, positionals } = parse(argv, command);
   if (v.all && command !== 'plan' && command !== 'check')
     throw new BlockedError(`qam ${command}: Unknown option '--all'. Only qam plan and qam check take it.`);
+  if (v['allow-empty'] && command !== 'approve' && command !== 'check')
+    throw new BlockedError(`qam ${command}: Unknown option '--allow-empty'. Only qam approve and qam check take it.`);
+  if (command === 'approve' && !io.tty && !v.yes)
+    throw new BlockedError(
+      `qam approve needs a terminal to ask on, and there is none. Ask the person whether to approve plan ${positionals[0] ?? '<plan-id>'}, then run it again with --yes only after their yes.`,
+    );
   const g = gateFor(cfg);
   if (command === 'plan' || command === 'check') {
     const preset = choosePreset(v.preset, cfg.project.gate.preset, !!v.all);
@@ -404,7 +429,7 @@ export async function gate(cfg: Config, command: string, argv: string[], json: b
     );
     savePlan(cfg, plan);
     if (command === 'check' && v.yes) {
-      const approved = await approve(g, plan, whoAmI(cfg), [], []);
+      const approved = await approve(g, plan, whoAmI(cfg), [], [], { allowEmpty: !!v['allow-empty'] });
       savePlan(cfg, approved);
       if (!json) console.log(`${renderPlan(approved)}\n`);
       return finish(cfg, g, approved, json);
@@ -419,7 +444,9 @@ export async function gate(cfg: Config, command: string, argv: string[], json: b
   const plan = loadPlan(cfg, positionals[0]);
   if (command === 'automate') return automateCommand(cfg, plan, !!v.done, json);
   if (command === 'approve') {
-    const approved = await approve(g, plan, whoAmI(cfg), list(v.add), list(v.remove));
+    const approved = await approve(g, plan, whoAmI(cfg), list(v.add), list(v.remove), {
+      allowEmpty: !!v['allow-empty'],
+    });
     savePlan(cfg, approved);
     out(json, approved, `${renderPlan(approved)}\n\nRun it with qam run ${approved.id}.`);
     return PASS;

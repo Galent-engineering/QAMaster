@@ -11,6 +11,7 @@ import { test } from 'node:test';
 import { review } from '../plugin/src/cli/testgen.mts';
 import type { Dsm } from '../plugin/src/dsm/build.mts';
 import { loadConfig } from '../plugin/src/shared/config.mts';
+import { BlockedError } from '../plugin/src/shared/errors.mts';
 import { domainRefs } from '../plugin/src/testgen/domain-refs.mts';
 import { Facts } from '../plugin/src/testgen/facts.mts';
 import { render } from '../plugin/src/testgen/render.mts';
@@ -257,7 +258,7 @@ test('qam testgen validates, renders and records what it checked; qam review rec
   );
 
   git(dir, 'config', 'user.email', 'reviewer@example.test');
-  assert.equal(qam(dir, 'review', 'cart').status, 0);
+  assert.equal(qam(dir, 'review', 'cart', '--yes').status, 0);
   assert.equal(read(path.join(run, 'run.json')).reviewedBy, 'reviewer@example.test');
   const stages = JSON.parse(qam(dir, '--json', 'pipeline', 'status').out).stages;
   const status = (id: string) => stages.find((s: { stage: string }) => s.stage === id).status;
@@ -294,7 +295,7 @@ test('fix 7: an edit or a DSM rebuild after validation makes it stale, and revie
   edit(run, (cases) => {
     cases[0].title = 'Cart screen shows the Coupon field';
   });
-  const r = qam(dir, 'review', 'cart');
+  const r = qam(dir, 'review', 'cart', '--yes');
   assert.equal(r.status, 2);
   assert.match(r.err, /changed since it was validated/);
   let stage = JSON.parse(qam(dir, '--json', 'pipeline', 'status').out).stages.find(
@@ -303,7 +304,7 @@ test('fix 7: an edit or a DSM rebuild after validation makes it stale, and revie
   assert.equal(stage.status, 'stale');
 
   assert.equal(qam(dir, 'testgen', 'validate', 'cart').status, 0);
-  assert.equal(qam(dir, 'review', 'cart').status, 0);
+  assert.equal(qam(dir, 'review', 'cart', '--yes').status, 0);
   const dsmFile = path.join(dir, 'dsm/dsm.json');
   fs.writeFileSync(dsmFile, JSON.stringify({ ...read(dsmFile), generated_at: '2026-10-30T00:00:00+00:00' }));
   stage = JSON.parse(qam(dir, '--json', 'pipeline', 'status').out).stages.find(
@@ -456,7 +457,7 @@ test('item 13: on a terminal review shows the run, asks, and records only after 
   assert.equal(read(path.join(run, 'run.json')).reviewedBy, 'reviewer@example.test');
 });
 
-test('item 13: --yes records without asking, and so does a script with no terminal', () => {
+test('item 13: --yes records without asking; with no terminal and no --yes it blocks (0.8.0 item 2)', () => {
   const { dir, run } = project();
   assert.equal(qam(dir, 'testgen', 'validate', 'cart').status, 0);
   git(dir, 'config', 'user.email', 'reviewer@example.test');
@@ -464,7 +465,14 @@ test('item 13: --yes records without asking, and so does a script with no termin
   assert.equal(reviewWith(dir, ['cart', '--yes'], { tty: true, ask: never }).code, 0);
   assert.equal(read(path.join(run, 'run.json')).reviewedBy, 'reviewer@example.test');
   assert.equal(reviewWith(dir, ['--yes', 'cart'], { tty: true, ask: never }).code, 0, '--yes may come first');
-  assert.equal(reviewWith(dir, ['cart'], { tty: false, ask: never }).code, 0);
+  assert.equal(reviewWith(dir, ['--yes', 'cart'], { tty: false, ask: never }).code, 0, '--yes needs no terminal');
+  fs.rmSync(path.join(run, 'run.json'), { force: true });
+  assert.throws(
+    () => reviewWith(dir, ['cart'], { tty: false, ask: never }),
+    (e: unknown) =>
+      e instanceof BlockedError && /needs a terminal to ask on/.test(e.message) && /--yes/.test(e.message),
+  );
+  assert.ok(!fs.existsSync(path.join(run, 'run.json')), 'nothing recorded');
 });
 
 test('item 13: with --json on a terminal, stdout holds only the JSON', () => {

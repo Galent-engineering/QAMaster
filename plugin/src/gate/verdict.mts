@@ -23,7 +23,9 @@ const PROBLEM: Partial<Record<TestResult['status'], string>> = {
 export function decide(plan: Plan, results: TestResult[], o: { newScripts?: Set<number> } = {}): Verdict {
   const reasons: string[] = [];
   const warnings: string[] = [];
-  if (!plan.items.some((i) => i.selected)) warnings.push('No automated test case matches this change.');
+  if (plan.allowEmpty)
+    warnings.push('Approved with --allow-empty: no test case ran, so this pass says nothing about the change.');
+  else if (!plan.items.some((i) => i.selected)) warnings.push('No automated test case matches this change.');
   const untouched = noTouchWarning(plan.items, plan.change.files.length);
   if (untouched) warnings.push(untouched);
   for (const n of plan.notRun) if (n.broken) reasons.push(`TC${n.testCase.id}: ${n.why}.`);

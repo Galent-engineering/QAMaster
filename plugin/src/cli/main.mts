@@ -44,15 +44,17 @@ export const COMMANDS: Record<string, string> = {
   requirements:
     'Requirements TestGen may cite: fetch (--sprint NAME | --current-sprint | --from D --to D) | import --file F | list',
   testgen: 'Test generation: context | validate <run> | render <run>',
-  review: 'Record the review of a run: asks for a yes on a terminal, --yes for a script',
+  review:
+    'Record the review of a run: asks for a yes on a terminal; with no terminal it needs --yes, after the person said yes',
   publish: 'Show what a reviewed run would publish to the test case store; --apply writes it',
   app: 'Create the automation folder: create --app NAME --web-url URL [--api-url URL]',
   'check-scripts': 'Quality gate for automation scripts',
   plan: 'Propose test cases for the change (--preset fast|standard|full, --all); runs nothing',
   automate: 'List the scripts a plan needs drafted or updated; --done records them and binds the plan (Q39)',
-  approve: 'Approve a plan, optionally adding or removing test cases',
+  approve:
+    'Approve a plan, optionally adding or removing test cases (--allow-empty to run none); with no terminal it needs --yes',
   run: 'Run an approved plan and record the verdict',
-  check: 'plan, approve (interactive or --yes), run',
+  check: 'plan, then with --yes approve and run (--allow-empty approves a plan that runs none)',
   feedback: 'Coverage gaps, stale cases and defect drafts for a verdict',
   report: 'Build reports: all | manual | <type>',
   req: 'Requirements in the tracker: list | show | create | update | retire',

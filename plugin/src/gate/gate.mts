@@ -129,7 +129,24 @@ function expand(names: string[], catalog: Map<number, TestCase>): number[] {
   return [...new Set(out)];
 }
 
-export async function approve(g: Gate, plan: Plan, by: string, add: string[], remove: string[]): Promise<Plan> {
+/**
+ * Whether approving the plan as it stands would run 0 cases although the change matched something (0.8.0 item 1,
+ * D3): every item was removed, or the only matches are manual cases picked by more than the smoke rule. A plan that
+ * matched nothing, or only manual smoke, is a pass with a warning, not a refusal.
+ */
+export function wouldRunNothing(plan: Plan): boolean {
+  if (plan.items.some((i) => i.selected)) return false;
+  return plan.items.length > 0 || plan.notRun.some((n) => n.reasons?.some((r) => r.kind !== 'smoke'));
+}
+
+export async function approve(
+  g: Gate,
+  plan: Plan,
+  by: string,
+  add: string[],
+  remove: string[],
+  o: { allowEmpty?: boolean } = {},
+): Promise<Plan> {
   await requireSame(g, plan);
   const inPlan = new Set(plan.items.map((i) => i.testCase.id));
   const catalog = add.length || remove.length ? await g.store.inPlan() : new Map<number, TestCase>();
@@ -156,6 +173,13 @@ export async function approve(g: Gate, plan: Plan, by: string, add: string[], re
   for (const i of plan.items) {
     if (removing.includes(i.testCase.id)) i.selected = false;
     else if (adding.includes(i.testCase.id)) i.selected = true;
+  }
+  if (wouldRunNothing(plan)) {
+    if (!o.allowEmpty)
+      throw new BlockedError(
+        `Approving plan ${plan.id} would run 0 test cases, so a pass would say nothing about this change. Add a case (--add TC<id> or a group), or approve with --allow-empty if you mean to run none.`,
+      );
+    plan.allowEmpty = true;
   }
   plan.approvedBy = by;
   plan.approvedAt = new Date().toISOString();

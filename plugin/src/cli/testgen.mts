@@ -206,8 +206,8 @@ const REAL_IO: ReviewIo = { tty: tty.isatty(0), ask: readLine };
 
 /**
  * Records the person's review of a validated run (Q12). On a terminal it shows the run and asks for a yes first (a
- * blank answer is a no: exit 3, nothing recorded); `--yes`, or a script with no terminal, records without asking,
- * because the caller has already had the person's yes. The reviewer is the git user here; the ADO identity is added
+ * blank answer is a no: exit 3, nothing recorded); `--yes` records without asking, because the caller has already
+ * had the person's yes. With no terminal and no `--yes` it blocks (0.8.0 item 2, D10): nobody was asked. The reviewer is the git user here; the ADO identity is added
  * with the ADO adapter (step 4).
  */
 export function review(cfg: Config, argv: string[], json: boolean, io: ReviewIo = REAL_IO): number {
@@ -228,6 +228,10 @@ export function review(cfg: Config, argv: string[], json: boolean, io: ReviewIo 
   if (!email)
     throw new BlockedError('No git user to record as the reviewer. Run git config user.email <you@example.com>.');
   const name = path.basename(dir);
+  if (!io.tty && !parsed.values.yes)
+    throw new BlockedError(
+      `qam review needs a terminal to ask on, and there is none. Ask the person whether to approve run ${name} as reviewed, then run it again with --yes only after their yes.`,
+    );
   if (io.tty && !parsed.values.yes) {
     const v = readJson<Validation>(path.join(dir, 'validation.json'));
     const shown = path.relative(p.dir, path.join(dir, 'testcases.md'));

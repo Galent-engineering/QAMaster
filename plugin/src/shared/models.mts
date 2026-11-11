@@ -123,6 +123,7 @@ export type Plan = {
   approvedBy?: string;
   approvedAt?: string;
   selection?: Selection; // 0.7.0 item 14: the preset, selectors and groups model this plan used
+  allowEmpty?: boolean; // 0.8.0 item 1: approved with no case selected, on the person's --allow-empty
 };
 
 export type TestStatus = 'passed' | 'failed' | 'flaky' | 'skipped' | 'not_run';
