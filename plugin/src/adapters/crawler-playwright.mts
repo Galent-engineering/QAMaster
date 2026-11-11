@@ -33,10 +33,12 @@ import {
   QUIET_MS,
   RETRY_503_MS,
   Routes,
+  SKIPPED_BY_CHOICE,
+  SKIPPED_PUBLIC,
   slug,
 } from '../dsm/crawl-rules.mts';
 import { BlockedError } from '../shared/errors.mts';
-import type { CrawlOptions, UiEdge, UiElement, UiForm, UiModel, UiPage } from '../shared/models.mts';
+import type { CrawlOptions, CrawlPass, UiEdge, UiElement, UiForm, UiModel, UiPage } from '../shared/models.mts';
 import type { Crawler } from './base.mts';
 
 export type CrawlerSettings = {
@@ -571,6 +573,7 @@ export class PlaywrightCrawler implements Crawler {
       let passA: PassOut | null = null;
       let passB: PassOut | null = null;
       let info: LoginInfo = { mode, required: false };
+      let signedInSkipped: string = mode === 'none' ? SKIPPED_BY_CHOICE : SKIPPED_PUBLIC;
       if (signedOutPass) {
         // signed out first: writes are blocked from the start, and no form is ever submitted (Q15)
         phase = 'crawling';
@@ -620,6 +623,9 @@ export class PlaywrightCrawler implements Crawler {
             ensured = await ensure(via.url);
           }
         }
+        if (!ensured.info.required && !login.url && loginRef.route && !canSignIn) {
+          signedInSkipped = `no test account (set ${login.username_env || 'DSM_APP_USERNAME'} / ${login.password_env || 'DSM_APP_PASSWORD'} in the QA .env)`;
+        }
         info = ensured.info;
         loginRef.route = info.login_route ?? loginRef.route;
         if (!signedOutPass || info.required) {
@@ -643,7 +649,14 @@ export class PlaywrightCrawler implements Crawler {
           );
         }
       }
+      const passes: CrawlPass[] = [
+        passA
+          ? { name: 'signed-out', pages: passA.pages.length }
+          : { name: 'signed-out', skipped: 'login.signed_out_pass is false' },
+        passB ? { name: 'signed-in', pages: passB.pages.length } : { name: 'signed-in', skipped: signedInSkipped },
+      ];
       return this.finish(opts, routes, info, passA, passB, {
+        passes,
         apiCalls,
         apiSets,
         blocked,
@@ -666,6 +679,7 @@ export class PlaywrightCrawler implements Crawler {
     passA: PassOut | null,
     passB: PassOut | null,
     c: {
+      passes: CrawlPass[];
       apiCalls: Map<string, ApiCall>;
       apiSets: Map<string, { pages: Set<string>; keys: Set<string> }>;
       blocked: { method: string; url: string }[];
@@ -712,6 +726,7 @@ export class PlaywrightCrawler implements Crawler {
       recrawled_routes: crawledRoutes,
       login,
       browser_restarts: (passA?.restarts ?? 0) + (passB?.restarts ?? 0),
+      passes: c.passes,
       truncated: pending.length > 0,
       pending_routes: pending,
       blocked_requests: c.blocked.sort((a, b) => byText(`${a.method} ${a.url}`, `${b.method} ${b.url}`)).slice(0, 200),

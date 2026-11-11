@@ -658,6 +658,7 @@ export function build(
     crawl: {
       ...Object.fromEntries(['generated_at', 'mode', 'truncated', 'pending_routes'].map((k) => [k, ui?.[k] ?? null])),
       ...(ui?.browser_restarts ? { browser_restarts: ui.browser_restarts } : {}),
+      ...(ui?.passes ? { passes: ui.passes } : {}), // 0.8.0 item 20, in run order
     },
     stats: {
       pages: n,

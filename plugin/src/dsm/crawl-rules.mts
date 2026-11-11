@@ -9,7 +9,7 @@
  *   2. the write guard was switched off to sign in again, and stayed off when that sign-in failed;
  *   3. the write guard only covered the app's own host, so an API on another host or port was never guarded.
  */
-import type { Access, UiEdge, UiElement, UiModel, UiPage } from '../shared/models.mts';
+import type { Access, CrawlPass, UiEdge, UiElement, UiModel, UiPage } from '../shared/models.mts';
 
 /** The `application` section of config/dsm-config.json, as the crawl reads it. */
 export type CrawlApp = {
@@ -381,4 +381,17 @@ export function routeGlob(glob: string): RegExp {
 export function matchRoutes(globs: string[], known: string[]): string[] {
   const res = globs.map(routeGlob);
   return known.filter((r) => res.some((re) => re.test(r)));
+}
+
+/** Why the signed-in pass did not run, when it is nothing to warn about: the person chose it, or the app has no sign-in. */
+export const SKIPPED_BY_CHOICE = 'login mode is none';
+export const SKIPPED_PUBLIC = 'no sign-in was needed';
+
+/** 0.8.0 item 20: the one warning line for a signed-in pass that was skipped for want of an account or a way to sign in. */
+export function passWarnings(passes: CrawlPass[] | undefined): string[] {
+  const skipped = (passes ?? []).find((p) => p.name === 'signed-in' && 'skipped' in p) as
+    | { skipped: string }
+    | undefined;
+  if (!skipped || skipped.skipped === SKIPPED_BY_CHOICE || skipped.skipped === SKIPPED_PUBLIC) return [];
+  return [`the signed-in pass was skipped: ${skipped.skipped}; the screens behind the sign-in are not in this DSM`];
 }

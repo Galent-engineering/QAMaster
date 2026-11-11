@@ -326,6 +326,9 @@ export type UiEdge = {
   [key: string]: unknown;
 };
 
+/** One pass of the crawl (0.8.0 item 20): the pages it crawled, or why it did not run. */
+export type CrawlPass = { name: string; pages: number } | { name: string; skipped: string };
+
 export type UiModel = {
   generated_at: string;
   login?: Record<string, unknown>;
@@ -335,6 +338,7 @@ export type UiModel = {
   truncated: boolean;
   browser_restarts?: number; // times the browser closed mid-crawl and was started again
   pending_routes?: string[];
+  passes?: CrawlPass[]; // 0.8.0: in run order
   timing?: CrawlTiming; // 0.7.0: what the crawl cost, for `qam dsm run --estimate`
   pages: UiPage[];
   edges: UiEdge[];

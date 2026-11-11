@@ -14,7 +14,7 @@ import { changesSince, type RepoChange, readRepo } from '../adapters/git.mts';
 import { BlockedError } from '../shared/errors.mts';
 import type { CodeModel, UiModel } from '../shared/models.mts';
 import { build, compareDsm, type Dsm, type DsmCompare, type DsmConfig, matchKey } from './build.mts';
-import { type CrawlApp, DEFAULT_CONCURRENCY, idHints, matchRoutes } from './crawl-rules.mts';
+import { type CrawlApp, DEFAULT_CONCURRENCY, idHints, matchRoutes, passWarnings } from './crawl-rules.mts';
 import { render } from './render.mts';
 import { MAX_FILE_BYTES, type ScanConfig, scan, wanted } from './scan.mts';
 
@@ -419,7 +419,7 @@ async function updateLocked(
       });
       writeJson(file('ui-model.json'), ui);
       why += ` (${ui.pages.length} pages, ${ui.edges.length} navigations)`;
-      warnings.push(...idHints(ui.pages.map((p) => p.route)));
+      warnings.push(...idHints(ui.pages.map((p) => p.route)), ...passWarnings(ui.passes));
       if (ui.truncated)
         warnings.push('the crawl stopped at application.max_pages; raise it to cover the remaining routes');
       if (ui.blocked_requests?.length) {
