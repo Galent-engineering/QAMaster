@@ -1302,6 +1302,11 @@ export async function noProjectError(config: Config): Promise<NoProjectError | n
   return new AdoClient(organization, '', () => authHeader(config.env)).noProject();
 }
 
+/** An organization with no project: the CLI swaps this message for the one that lists the projects (0.7.2). */
+export class AdoProjectUnset extends BlockedError {
+  override name = 'AdoProjectUnset';
+}
+
 /**
  * The organization and project: QAMaster's own settings, else az's defaults (R24), taken as a pair. One QAMaster setting
  * with az's other would mix two places, such as az's project inside QAMaster's organization.
@@ -1316,7 +1321,7 @@ function adoTarget(config: Config): { organization?: string; project?: string } 
 export function adoSettings(config: Config): AdoSettings {
   const { organization, project } = adoTarget(config);
   if (!organization || !project)
-    throw new BlockedError(
+    throw new (organization && config.env.QAMASTER_ADO_ORG ? AdoProjectUnset : BlockedError)(
       `Don't know which Azure DevOps project to use. Add these lines to ${config.root}/.env:\n  QAMASTER_ADO_ORG=<organization> (its name, as in dev.azure.com/<name>)\n  QAMASTER_ADO_PROJECT=<project>`,
     );
   return {

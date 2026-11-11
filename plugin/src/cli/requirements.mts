@@ -18,6 +18,7 @@ import { list, problems, type Saved, save, slug, storiesFromFile } from '../requ
 import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import type { Requirement, RequirementQuery } from '../shared/models.mts';
+import { readRunRecord } from '../testgen/run.mts';
 
 const USAGE =
   'Use qam requirements fetch (--sprint NAME | --current-sprint | --from YYYY-MM-DD --to YYYY-MM-DD) [--module AREA] [--scope NAME] | import --file <stories.xlsx|.csv|.json|.md> [--sheet NAME] [--scope NAME] | list.';
@@ -33,6 +34,34 @@ type V = {
   file?: string;
   sheet?: string;
 };
+
+/**
+ * 0.7.2 item 16: the reviewed TestGen runs for this scope whose manifest was generated before the fetch at `savedAt`.
+ * Their cases were written from the stories as they were then. Names only.
+ */
+export function reviewedRunsBefore(project: string, scope: string, savedAt: string): string[] {
+  const dir = path.join(project, 'testgen', 'output');
+  if (!fs.existsSync(dir)) return [];
+  const at = Date.parse(savedAt);
+  return fs
+    .readdirSync(dir)
+    .sort()
+    .filter((run) => {
+      let manifest: { generated_at?: unknown; requirements_scope?: unknown } = {};
+      try {
+        manifest = JSON.parse(fs.readFileSync(path.join(dir, run, 'manifest.json'), 'utf8'));
+      } catch {
+        return false; // a run without a readable manifest is reported by its own commands
+      }
+      const generated = Date.parse(String(manifest.generated_at ?? ''));
+      return (
+        manifest.requirements_scope === scope &&
+        !!readRunRecord(path.join(dir, run))?.reviewedBy &&
+        Number.isFinite(generated) &&
+        generated < at
+      );
+    });
+}
 
 function report(project: string, s: Saved, dir: string, json: boolean, extra: string[]) {
   const noAc = s.requirements.filter((r) => !r.acceptance_criteria.length).map((r) => r.id);
@@ -145,12 +174,21 @@ export async function requirements(
     ...(notice ? { notice } : {}),
     requirements: found,
   };
+  const stale = reviewedRunsBefore(project, scope, now);
   report(
     project,
     s,
     save(project, s),
     json,
-    [bugs?.why, notice].filter((n): n is string => !!n),
+    [
+      bugs?.why,
+      notice,
+      ...(stale.length
+        ? [
+            `Reviewed TestGen run(s) generated before this fetch: ${stale.join(', ')}. Their cases were written from the stories as they were then; check them against these, or generate new cases.`,
+          ]
+        : []),
+    ].filter((n): n is string => !!n),
   );
   return 0;
 }

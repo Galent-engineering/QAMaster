@@ -68,7 +68,17 @@ function runs(c: Ctx, file: string, ok: (data: Record<string, unknown>) => boole
 // the automation folder is <project>/<App>, as qam app create makes it (0.4.2 W12: the raw name is the app's clone)
 const appFolder = (c: Ctx) => (c.app ? path.join(c.project, pascal(c.app)) : null);
 
-export const STAGES: Stage[] = [
+export /** Whether a TestGen run was published (published.json). */
+const published = (c: Ctx) => runs(c, 'published.json', () => true).length > 0;
+/** Feature files in the automation folder that carry a @TC- tag. */
+function tracedScripts(c: Ctx): number {
+  const dir = appFolder(c);
+  return (dir ? files(path.join(dir, 'features'), /\.feature$/) : []).filter((f) =>
+    /@TC-/.test(fs.readFileSync(f, 'utf8')),
+  ).length;
+}
+
+const STAGES: Stage[] = [
   {
     id: 'setup',
     title: 'Setup',
@@ -323,12 +333,15 @@ export const STAGES: Stage[] = [
         return { done: false, detail: `no test case has run yet${zero}` };
       }
       const passed = latest.results.filter((r) => r.status === 'passed' || r.status === 'flaky').length;
-      return {
-        done: true,
-        detail: `latest: ${latest.result}, ${passed} of ${latest.results.length} passed (${latest.head.slice(0, 8)})`,
-      };
+      const line = `${passed} of ${latest.results.length} passed (${latest.head.slice(0, 8)})`;
+      // 0.7.2: done only when the latest verdict passed
+      if (latest.result !== 'pass') return { done: false, detail: `attention: last run FAIL (${line})` };
+      return { done: true, detail: `latest: ${latest.result}, ${line}` };
     },
-    how: () => 'Run qam check --all.',
+    how: (c) =>
+      published(c) && !tracedScripts(c)
+        ? 'Published test cases have no automation yet: automate (or the gate will run 0 cases) with qam automate, then run qam check --all.'
+        : 'Run qam check --all.',
   },
   {
     id: 'reports',
@@ -473,10 +486,12 @@ export function reset(project: string, stage?: string) {
   saveState(project, state);
 }
 
-export function table(st: PipelineStatus): string {
+export function table(st: PipelineStatus, plugin?: { version: string; root: string }): string {
   const w = Math.max(...st.stages.map((r) => r.title.length));
   return (
-    `QAMaster pipeline: ${st.complete ? 'complete' : `next: ${st.next}`}\nProject: ${st.project}${st.app ? `   App: ${st.app}` : ''}\n\n` +
+    `QAMaster pipeline: ${st.complete ? 'complete' : `next: ${st.next}`}\nProject: ${st.project}${st.app ? `   App: ${st.app}` : ''}\n` +
+    (plugin ? `Plugin: ${plugin.version} (${plugin.root})\n` : '') +
+    '\n' +
     st.stages
       .map(
         (r, i) =>

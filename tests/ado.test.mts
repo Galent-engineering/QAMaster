@@ -517,6 +517,35 @@ test('cm: update merges tags and replaces the parent (now guarded by the rev)', 
   ]);
 });
 
+test('path tags (0.7.1 follow-up, Q56): a republish that no longer derives a path: tag removes it from the recorded case and keeps the rest', async () => {
+  // testcase_path_tags.json is a recorded work item (rev 4): two path: tags, smoke, a requirement tag and a hand-added tag
+  const m = new Mock();
+  m.on('GET', `${BASE}/wit/workitems/31`, fixture('testcase_path_tags.json'));
+  m.on('GET', `${ORG}/testplan/suites`, { value: [], count: 0 }, { params: { testCaseId: '31' } });
+  m.on('PATCH', `${BASE}/wit/workitems/31`, { id: 31 });
+  const s = store(m);
+  const item = await s.show(31);
+  assert.deepEqual(item.tags, ['checkout', 'smoke', 'path:site/checkout.js', 'path:site/cart.js', 'req:414']);
+  await s.update(item, { removeTags: ['path:site/cart.js'] });
+  assert.deepEqual(sent(m.to('PATCH', `${BASE}/wit/workitems/31`).at(-1)), [
+    { op: 'test', path: '/rev', value: 4 },
+    { op: 'add', path: '/fields/System.Tags', value: 'checkout; smoke; path:site/checkout.js; req:414' },
+  ]);
+});
+
+test('path tags: removing a path: tag never removes smoke, a group tag or a tag the team added by hand', async () => {
+  const m = new Mock();
+  m.on('GET', `${BASE}/wit/workitems/31`, fixture('testcase_path_tags.json'));
+  m.on('GET', `${ORG}/testplan/suites`, { value: [], count: 0 }, { params: { testCaseId: '31' } });
+  m.on('PATCH', `${BASE}/wit/workitems/31`, { id: 31 });
+  const s = store(m);
+  await s.update(await s.show(31), { removeTags: ['path:site/checkout.js', 'path:site/cart.js'] });
+  const tags = sent(m.to('PATCH', `${BASE}/wit/workitems/31`).at(-1)).find(
+    (o: { path: string }) => o.path === '/fields/System.Tags',
+  ).value;
+  assert.equal(tags, 'checkout; smoke; req:414');
+});
+
 test('cm: retiring a requirement only moves it to the Recycle Bin', async () => {
   const m = new Mock();
   m.on('GET', `${BASE}/wit/workitems/3`, requirement(3));

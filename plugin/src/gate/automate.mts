@@ -12,6 +12,9 @@
 import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
+import { ENV_FILE } from '../shared/config.mts';
+import { type Env, loadEnv } from '../shared/env.mts';
+import { BlockedError } from '../shared/errors.mts';
 import type { LedgerEntry, NotRun, Plan } from '../shared/models.mts';
 
 export type Drafts = {
@@ -193,4 +196,39 @@ export function rebind(
     ],
     scriptsHash: folderHash(o.appDir),
   };
+}
+
+/**
+ * Q57: the account the crawl and the gate scripts sign in with is login.username_env and login.password_env in
+ * config/dsm-config.json, and both must be set in the QA project's .env. Returns the names that are not set (names
+ * only: no value is read into the result). A config with no login block has nothing to check.
+ */
+export function accountVarsMissing(project: string, env: Env): string[] {
+  let app:
+    | { secrets_file?: unknown; login?: { mode?: unknown; username_env?: unknown; password_env?: unknown } }
+    | undefined;
+  try {
+    app = JSON.parse(fs.readFileSync(path.join(project, 'config', 'dsm-config.json'), 'utf8'))?.application;
+  } catch {
+    return []; // an unreadable config is reported by the command that reads it
+  }
+  const login = app?.login;
+  if (!login || typeof login !== 'object' || login.mode === 'none') return [];
+  // a project set up before Q57 keeps the account in the secrets file the crawl reads (.env.dsm): that still counts
+  const merged: Env = { ...env };
+  loadEnv(
+    path.join(project, typeof app?.secrets_file === 'string' && app.secrets_file ? app.secrets_file : '.env.dsm'),
+    merged,
+  );
+  const names = [login.username_env, login.password_env].filter((n): n is string => typeof n === 'string' && n !== '');
+  return names.filter((n) => !merged[n]);
+}
+
+/** Stops with one message that names the missing account variables (exit 2). */
+export function requireAccountVars(project: string, env: Env): void {
+  const missing = accountVarsMissing(project, env);
+  if (missing.length)
+    throw new BlockedError(
+      `The test account isn't set: ${missing.join(' and ')} ${missing.length > 1 ? 'are' : 'is'} not in the QA project's ${ENV_FILE} (Q57). Add ${missing.length > 1 ? 'them' : 'it'} there, with the values for the account the app signs in with, then run again. The values stay in ${ENV_FILE}; nothing prints them.`,
+    );
 }

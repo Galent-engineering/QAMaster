@@ -1,15 +1,16 @@
-# Handoff: where the work stands (2026-11-10)
+# Handoff: where the work stands (2026-11-11)
 
-Read this first in a new session, then [0.7.1.md](0.7.1.md) (r3), [0.7.0.md](0.7.0.md) (r2) and [0.6.0.md](0.6.0.md) (r5). It's the state, the rules the session learned, and the next steps.
+Read this first in a new session, then [0.7.2.md](0.7.2.md) (r2), [0.7.1.md](0.7.1.md) (r3), [0.7.0.md](0.7.0.md) (r2) and [0.6.0.md](0.6.0.md) (r5). It's the state, the rules the session learned, and the next steps.
 
 ## Where things are
 - `main` (pushed): **0.5.0** released, Q49 decided, the 0.6.0 plan.
 - `release/0.6.0` (pushed): 0.6.0, items 1–14. Not merged to `main`, not tagged.
 - `release/0.7.0` (pushed): 0.7.0 on top of 0.6.0, items 1–17. Not merged, not tagged.
 - `release/0.7.1` (local, not pushed): **released as 0.7.1** with the user's yes, before the live runs. Items 1–13 on top of 0.7.0 ([plan r3](0.7.1.md)): Q56, crawl and scan fixes, the `.feature` session tag and route text, `check-scripts` and `Selection:` fixes, 0.6.0's small gaps. 754 tests, typecheck and lint clean. Not merged to `main`, not tagged. Zips: run `scripts/package.sh` on the release commit; they land in `dist/` (not committed).
+- `release/0.7.2` (local, not pushed): **built 2026-11-11, not released**, on top of 0.7.1: items 1–19 from the TodoApp walkthrough ([record](../demos/2026-11-10-0.7.1-todoapp.md), D1–D21) and the observer's F1–F23. 787 tests, typecheck, lint and plugin validation clean; each fix reviewed by a second agent. Plugin version is 0.7.2, release docs done, zips not built. Releasing it, merging and pushing wait for the user. The walkthrough's behaviour findings are **not** in it: [the plan's decision table](0.7.2.md#decisions-not-built-here-q46) lists each with a recommendation (refuse an empty plan, shared path tags, watch the API origin, story-aware selection, flaky `--strict`, "review" word, evidence per run, `{len:N}`, test-account cleanup), most for 0.8.0.
 - **0.6.1 was never built:** 0.7.0 contains 0.6.0, so 0.6.0's fixes shipped in 0.7.1 and its live-run fixes go to 0.7.2 with 0.7.0's. This changes Q54's road only in the release names.
 - Merging `release/0.7.1` to `main` (it contains 0.6.0 and 0.7.0) and pushing it wait for the user.
-- `docs/demos/demo_guideme/` is untracked and belongs to someone else: leave it.
+- The demo kit `docs/demos/demo_guideme/` is committed (74a6ce9). The demo folder `~/Desktop/Workspace/qamaster-demo-20261110-1715` and its ADO project `fastapi-react-v0.7.1` are left for the user to keep or remove.
 
 ## The road (Q54, accepted 2026-11-10; release names as of 0.7.1)
 0.6.0 gate and store → 0.7.0 coverage (sign-in apps, faster DSM, presets, API and Mobile Web scripts) → 0.7.1 fixes (released; 0.6.1 folded in) → **0.7.2 fixes from the live runs and the walkthrough** → 1.0.0 proof, no new feature → 1.1.0 native Android and iOS → 1.2.0 product v1.1 (git hook, IDEs, PR checks). Detail: [backlog.md](backlog.md#the-road-to-100-replanned-2026-11-10-q54).

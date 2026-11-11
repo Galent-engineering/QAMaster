@@ -102,6 +102,18 @@ export function candidates(i: SelectInput): Map<number, Reason[]> {
   return reasons;
 }
 
+/**
+ * A warning when cases are selected, files changed, and no selected case got in by path or DSM: the plan
+ * runs, but nothing in it covers the changed code (0.7.2 item 9). Says it; never refuses (decision D3).
+ */
+export function noTouchWarning(items: PlanItem[], files: number): string | null {
+  const selected = items.filter((i) => i.selected);
+  if (!files || !selected.length) return null;
+  if (selected.some((i) => i.reasons.some((r) => r.kind === 'path' || r.kind === 'dsm' || r.kind === 'all')))
+    return null;
+  return 'No selected test case covers or visits the changed code (none was picked by path or by the DSM): a pass says little about this change.';
+}
+
 /** The test IDs a link stands for: itself, or its parametrized variants. */
 export const resolve = (link: string, collected: string[]) =>
   collected.filter((n) => n === link || n.startsWith(`${link}[`));

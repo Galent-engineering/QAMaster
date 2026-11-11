@@ -106,7 +106,7 @@ test('check --yes plans, approves and runs; a failing test fails it with the err
   git(dir, 'commit', '-qam', 'break the cart test');
   const r = qam(dir, 'check', '--yes');
   assert.equal(r.status, 1, r.err);
-  assert.match(r.out, /Verdict: FAIL \(TC\d+ failed\.\)/);
+  assert.match(r.out, /Verdict: FAIL \(TC\d+ failed: E .*cart total is wrong/);
   assert.match(r.out, /cart total is wrong/);
   assert.equal(qam(dir, 'check').status, 3, 'without --yes check stops at the plan');
 });

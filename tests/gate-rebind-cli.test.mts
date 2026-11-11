@@ -149,3 +149,17 @@ test('Q49 via the CLI: plan, automate --done, then a later plan and plan --all r
   assert.deepEqual(links(edited), []);
   assert.match(edited.notRun[0]?.why ?? '', /script edited since recorded \(features\/web\/cart\.feature\)/);
 });
+
+test('0.7.2 item 14 (Q57): qam automate stops with exit 2 and the names when the account variables are not set', async () => {
+  const w = await world();
+  const first = planOf(w.qam('--json', 'plan', '--base', 'main'));
+  const cfgFile = path.join(w.qa, 'config', 'dsm-config.json');
+  const dsm = JSON.parse(fs.readFileSync(cfgFile, 'utf8'));
+  dsm.application = { login: { username_env: 'SHOP_USER_072', password_env: 'SHOP_PASSWORD_072' } };
+  fs.writeFileSync(cfgFile, JSON.stringify(dsm));
+  const r = w.qam('automate', first.id);
+  assert.equal(r.status, 2, r.err + r.out);
+  assert.match(r.err, /SHOP_USER_072 and SHOP_PASSWORD_072/);
+  fs.writeFileSync(path.join(w.qa, '.env'), 'SHOP_USER_072=u\nSHOP_PASSWORD_072=p\n');
+  assert.notEqual(w.qam('automate', first.id).status, 2);
+});

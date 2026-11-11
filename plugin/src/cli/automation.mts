@@ -10,6 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { playwrightBdd } from '../adapters/framework-bdd.mts';
+import { requireAccountVars } from '../gate/automate.mts';
 import { runCases } from '../gate/dsm.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
 import { pascal } from '../knowledge/build.mts';
@@ -52,6 +53,7 @@ export function app(cfg: Config, argv: string[], json: boolean): number {
     throw new BlockedError(
       "Give the API's base URL as an http(s) URL: qam app create --api-url http://localhost:8000.",
     );
+  requireAccountVars(cfg.qaProject ?? cfg.root, cfg.env);
   const dir = path.join(cfg.qaProject ?? cfg.root, pascal(name));
   const { created, added } = playwrightBdd.create(dir, name, url, { apiUrl });
   const rel = path.relative(cfg.qaProject ?? cfg.root, dir) || '.';

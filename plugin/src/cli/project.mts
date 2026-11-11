@@ -364,8 +364,9 @@ export function pipeline(cfg: Config, argv: string[], json: boolean): number {
       );
     return 0;
   }
-  if (json) console.log(JSON.stringify(st));
-  else process.stdout.write(table(st));
+  const plugin = { version: pluginVersion(), root: PLUGIN_ROOT };
+  if (json) console.log(JSON.stringify({ ...st, plugin }));
+  else process.stdout.write(table(st, plugin));
   return 0;
 }
 
@@ -455,7 +456,15 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
   try {
     recorded = JSON.parse(fs.readFileSync(path.join(dir, QAMASTER_DIR, 'plugin.json'), 'utf8')).plugin_root;
   } catch {} // no launcher written yet: nothing to compare
-  if (typeof recorded === 'string') {
+  if (typeof recorded === 'string' && !fs.existsSync(recorded)) {
+    // 0.7.2: the plugin was moved, updated or removed, so the launcher runs nothing
+    checks.push({
+      check: 'launcher',
+      ok: true,
+      detail: `${QAMASTER_DIR}/plugin.json points to ${recorded}, which no longer exists. Run qam setup again from the installed plugin.`,
+      state: 'unknown',
+    });
+  } else if (typeof recorded === 'string') {
     const real = (p: string) => {
       try {
         return fs.realpathSync(p);
@@ -583,7 +592,8 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
     !cfg.env.QAMASTER_STORE &&
     cfg.store === 'file'
   )
-    checks.push({
+    checks.unshift({
+      // first: the mismatch changes where every test case goes (0.7.2)
       check: 'store setting',
       ok: true,
       detail:
@@ -687,8 +697,12 @@ export async function doctor(cfg: Config, argv: string[], jsonFlag: boolean): Pr
     const label = (c: (typeof checks)[number]) => (c.state === 'unknown' ? 'WARN  ' : c.ok ? 'ok    ' : 'FIX   ');
     // a detail of several lines (the plan choices, the write answer) keeps them under the detail column
     const indent = ' '.repeat(2 + 6 + 1 + w + 2);
+    const warns = checks.filter((c) => c.ok && c.state === 'unknown').length;
+    const headline = ok
+      ? `all good${warns ? `, ${warns} warning${warns === 1 ? '' : 's'}` : ''}`
+      : `needs attention${warns ? `, ${warns} warning${warns === 1 ? '' : 's'}` : ''}`;
     console.log(
-      `QAMaster doctor: ${ok ? 'all good' : 'needs attention'}\n${checks.map((c) => `  ${label(c)} ${c.check.padEnd(w)}  ${c.detail.replace(/\n/g, `\n${indent}`)}`).join('\n')}`,
+      `QAMaster doctor: ${headline}\n${checks.map((c) => `  ${label(c)} ${c.check.padEnd(w)}  ${c.detail.replace(/\n/g, `\n${indent}`)}`).join('\n')}`,
     );
   }
   return ok ? 0 : 2;

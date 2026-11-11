@@ -3,8 +3,10 @@
  * qam feedback [<sha>]                  proposals for a verdict into reports/data/feedback-<sha>.json (Q19)
  * Exit 0 when something was written, 2 when no input exists (the message says which).
  */
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
+import { parseArgs } from 'node:util';
 import { propose } from '../feedback/feedback.mts';
 import { buildReports } from '../reports/build.mts';
 import { loadInputs, reportsDir } from '../reports/inputs.mts';
@@ -13,7 +15,7 @@ import type { Config } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 
 export function report(cfg: Config, args: string[], json: boolean): number {
-  const which = args[0];
+  const which = parseArgs({ args, options: { json: { type: 'boolean' } }, allowPositionals: true }).positionals[0];
   if (!which)
     throw new BlockedError(
       `Name the report: qam report all | manual | ${REPORT_TYPES.map((t) => t.name).join(' | ')}.`,
@@ -30,7 +32,7 @@ export function report(cfg: Config, args: string[], json: boolean): number {
 
 export function feedback(cfg: Config, args: string[], json: boolean): number {
   const inputs = loadInputs(cfg);
-  const sha = args.find((a) => !a.startsWith('-'));
+  const sha = parseArgs({ args, options: { json: { type: 'boolean' } }, allowPositionals: true }).positionals[0];
   const verdict = sha ? inputs.verdicts.find((v) => v.head.startsWith(sha)) : inputs.verdicts[0];
   if (!verdict)
     throw new BlockedError(
@@ -43,6 +45,10 @@ export function feedback(cfg: Config, args: string[], json: boolean): number {
     plan: inputs.plans.get(verdict.planId) ?? null,
     runs: inputs.runs,
     ledger: inputs.ledger,
+    headNow:
+      cfg.qaProject && path.resolve(cfg.qaProject) === path.resolve(cfg.root)
+        ? undefined // run from the QA project: HEAD is not the app's commit
+        : spawnSync('git', ['rev-parse', 'HEAD'], { cwd: cfg.root, encoding: 'utf8' }).stdout?.trim() || undefined,
     screens: inputs.dsm ? inputs.dsm.page.nodes.map((n) => n.id) : null,
   });
   const dir = reportsDir(inputs.project, 'data');

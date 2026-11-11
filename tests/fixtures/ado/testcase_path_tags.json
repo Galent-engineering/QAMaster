@@ -1,0 +1,17 @@
+{
+  "id": 31,
+  "rev": 4,
+  "fields": {
+    "System.WorkItemType": "Test Case",
+    "System.Title": "Checkout shows the order total",
+    "System.State": "Design",
+    "System.Tags": "checkout; smoke; path:site/checkout.js; path:site/cart.js; req:414",
+    "System.AssignedTo": {"displayName": "Ada Lovelace", "uniqueName": "ada@example.com"},
+    "Microsoft.VSTS.Common.Priority": 2,
+    "Microsoft.VSTS.TCM.AutomatedTestName": "tests/test_checkout.py::test_total",
+    "Microsoft.VSTS.TCM.Steps": "<steps id=\"0\" last=\"2\"><step id=\"2\" type=\"ActionStep\"><parameterizedString isformatted=\"true\">Open the checkout</parameterizedString><parameterizedString isformatted=\"true\">The order total is shown</parameterizedString><description/></step></steps>"
+  },
+  "relations": [
+    {"rel": "System.LinkTypes.Hierarchy-Reverse", "url": "https://dev.azure.com/org/_apis/wit/workItems/2"}
+  ]
+}

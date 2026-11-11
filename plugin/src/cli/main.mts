@@ -9,6 +9,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import { AdoProjectUnset, noProjectError } from '../adapters/ado.mts';
 import { loadConfig } from '../shared/config.mts';
 import { BlockedError } from '../shared/errors.mts';
 import { ado } from './ado.mts';
@@ -136,9 +137,38 @@ async function dispatch(opts: Options, command: string | undefined, args: string
     console.log(opts.json ? JSON.stringify({ version: pluginVersion() }) : `qam ${pluginVersion()}`);
     return PASS;
   }
-  if (Object.hasOwn(HANDLERS, command)) return HANDLERS[command](opts, args);
+  if (Object.hasOwn(HANDLERS, command)) {
+    // 0.7.2: every subcommand answers --help (setup prints its own usage), and a bad flag is one Blocked line, not a Node stack
+    const dashes = args.indexOf('--');
+    if (
+      command !== 'setup' &&
+      args.slice(0, dashes < 0 ? undefined : dashes).some((a) => a === '--help' || a === '-h')
+    ) {
+      if (opts.json) console.log(JSON.stringify({ command, description: COMMANDS[command] }));
+      else
+        console.log(`qam ${command}: ${COMMANDS[command]}\n\nusage: qam [--repo PATH] [--json] ${command} [args...]`);
+      return PASS;
+    }
+    try {
+      return await HANDLERS[command](opts, args);
+    } catch (e) {
+      const code = (e as { code?: unknown }).code;
+      if (typeof code !== 'string' || !code.startsWith('ERR_PARSE_ARGS')) throw e;
+      const reason = (e as Error).message.split(/\. To specify/)[0];
+      throw new BlockedError(`qam ${command}: ${reason}. Run qam ${command} --help.`);
+    }
+  }
   if (command in COMMANDS) throw new BlockedError(`qam ${command} isn't built yet.`);
   throw new BlockedError(`Unknown command "${command}". Run qam help for the list.`);
+}
+
+/** The organization's project names for an error that has none; the plain message stands when they can't be listed. */
+async function withProjects(e: BlockedError, repo: string): Promise<BlockedError> {
+  try {
+    return (await noProjectError(loadConfig(repo))) ?? e;
+  } catch {
+    return e;
+  }
 }
 
 export async function main(argv: string[]): Promise<number> {
@@ -147,8 +177,10 @@ export async function main(argv: string[]): Promise<number> {
     const [parsed, command, args] = parseGlobals(argv);
     opts = parsed;
     return await dispatch(opts, command, args);
-  } catch (e) {
-    if (!(e instanceof BlockedError)) throw e;
+  } catch (caught) {
+    if (!(caught instanceof BlockedError)) throw caught;
+    let e: BlockedError = caught;
+    if (e instanceof AdoProjectUnset) e = await withProjects(e, opts.repo);
     if (opts.json) console.log(JSON.stringify({ result: 'blocked', reasons: [e.message] }));
     else console.error(`Blocked: ${e.message}`);
     return BLOCKED;

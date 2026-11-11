@@ -81,11 +81,13 @@ test('A8: WARN when the launcher points at a plugin other than the one running, 
   assert.equal(same.ok, true);
   assert.equal(same.state, undefined);
   const p = JSON.parse(fs.readFileSync(ptr, 'utf8'));
-  fs.writeFileSync(ptr, JSON.stringify({ ...p, plugin_root: '/elsewhere/QAMaster/plugin' }));
+  const elsewhere = path.join(dir, 'elsewhere/QAMaster/plugin');
+  fs.mkdirSync(elsewhere, { recursive: true });
+  fs.writeFileSync(ptr, JSON.stringify({ ...p, plugin_root: elsewhere }));
   const other = await check(cfg, 'launcher');
   assert.equal(other.ok, true);
   assert.equal(other.state, 'unknown');
-  assert.match(other.detail, /\/elsewhere\/QAMaster\/plugin/);
+  assert.match(other.detail, /elsewhere\/QAMaster\/plugin/);
   assert.match(other.detail, /run qam setup again from the installed plugin/);
   assert.match(await run(cfg), /WARN +launcher/);
   fs.rmSync(ptr);

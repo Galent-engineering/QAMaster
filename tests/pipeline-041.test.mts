@@ -120,6 +120,6 @@ test('first gate run: the newest ran verdict is reported, a fail included', () =
   verdict(dir, 'a', v('pass', ['passed']), 100);
   verdict(dir, 'b', v('fail', [...Array(5).fill('passed'), ...Array(15).fill('failed')]), 0);
   const s = stage(dir, dir, 'first-gate');
-  assert.equal(s.status, 'done');
-  assert.match(s.evidence, /latest: fail, 5 of 20 passed/);
+  assert.notEqual(s.status, 'done'); // 0.7.2: a failed latest verdict is not done
+  assert.match(s.evidence, /attention: last run FAIL \(5 of 20 passed/);
 });

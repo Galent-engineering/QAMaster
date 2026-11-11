@@ -19,11 +19,20 @@ import { buildStore, RUNNERS } from '../adapters/registry.mts';
 import type { RepoConfig } from '../dsm/scan.mts';
 import { findAppTests } from '../gate/apptests.mts';
 import type { Work } from '../gate/automate.mts';
-import { bind, type Drafts, folderHash, prove, rebind, recordedUnchanged, worklist } from '../gate/automate.mts';
+import {
+  bind,
+  type Drafts,
+  folderHash,
+  prove,
+  rebind,
+  recordedUnchanged,
+  requireAccountVars,
+  worklist,
+} from '../gate/automate.mts';
 import { dsmCases, repoDirs, runCases } from '../gate/dsm.mts';
 import { approve, type Gate, runPlan } from '../gate/gate.mts';
 import { choosePreset, inCI, planWith, renderSelection } from '../gate/presets.mts';
-import { linkRunner } from '../gate/select.mts';
+import { linkRunner, noTouchWarning } from '../gate/select.mts';
 import { stateDirs } from '../gate/state.mts';
 import { QAMASTER_DIR } from '../integrations/integrations.mts';
 import { readLedger } from '../publish/ledger.mts';
@@ -228,6 +237,8 @@ export function renderPlan(plan: Plan): string {
         )
       : ['  none']),
   ];
+  const untouched = noTouchWarning(plan.items, c.files.length);
+  if (untouched) lines.push('', `  warning: ${untouched}`);
   if (plan.notRun.length)
     lines.push(
       '',
@@ -271,6 +282,9 @@ export function renderPlan(plan: Plan): string {
   return lines.join('\n');
 }
 
+const API_NOTE =
+  "Only the app's own origin (baseURL) is watched for 5xx and page errors (Q53). An API on an origin other than baseURL is not watched: a failing API call fails nothing by itself.";
+
 export function renderVerdict(v: Verdict, plan: Plan): string {
   const titles = new Map(plan.items.map((i) => [i.testCase.id, i.testCase.title]));
   const lines = [`Verdict: ${v.result.toUpperCase()} (${v.reasons.join(' ')})`];
@@ -287,7 +301,15 @@ export function renderVerdict(v: Verdict, plan: Plan): string {
     }
     lines.push(...r.evidence.map((f) => `      evidence: ${f}`));
   }
+  for (const r of v.results.filter((x) => x.status === 'flaky'))
+    lines.push(
+      `  flaky: TC${r.testCaseId} ${titles.get(r.testCaseId) ?? ''}: failed, then passed on retry (still a pass)`.replace(
+        /\s+:/,
+        ':',
+      ),
+    );
   lines.push(...v.warnings.map((w) => `  warning: ${w}`));
+  lines.push(`  note: ${API_NOTE}`);
   return lines.join('\n');
 }
 
@@ -316,12 +338,16 @@ const list = (xs: string[] | undefined) =>
     .flatMap((x) => x.split(','))
     .map((x) => x.trim())
     .filter(Boolean);
-const tags = (xs: string[] | undefined) =>
+/** One --tag per group: `group=reason`. Commas stay in the reason (--add and --remove still split on them). */
+export const tags = (xs: string[] | undefined) =>
   Object.fromEntries(
-    list(xs).map((t) => {
-      const [tag, ...rest] = t.split('=');
-      return [tag.trim(), rest.join('=').trim()];
-    }),
+    (xs ?? [])
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .map((t) => {
+        const [tag, ...rest] = t.split('=');
+        return [tag.trim(), rest.join('=').trim()];
+      }),
   );
 
 function out(json: boolean, data: unknown, text: string) {
@@ -433,6 +459,7 @@ function automateCommand(cfg: Config, plan: Plan, done: boolean, json: boolean):
     throw new BlockedError(
       'No automation folder yet. Run qam app create, then npm install in it, then run this again.',
     );
+  requireAccountVars(project, cfg.env);
   const ledger = readLedger(project)?.entries ?? [];
   const drafts = readDrafts(cfg) ?? { cases: {}, files: {} };
   const scripts = playwrightBdd.scripts(dir);

@@ -20,6 +20,7 @@ There's one plan per plugin release. Each plan is the working source of truth fo
 | 0.7.0 | [0.7.0.md](0.7.0.md): what QAMaster covers: apps with a sign-in, a faster DSM, selection presets (Q31), API and Mobile Web scripts | Built 2026-11-10, r2 |
 | 0.6.1 | None: folded. 0.7.0 contains 0.6.0, so 0.6.0's fixes are in 0.7.1 and its live-run fixes go to 0.7.2 | Not built (no 0.6.1 release) |
 | 0.7.1 | [0.7.1.md](0.7.1.md): fixes after 0.6.0 and 0.7.0: Q56's `path:` tags, crawl and scan gaps, the `.feature` session and route text, 0.6.0's small gaps | Released 2026-11-10, r3 |
+| 0.7.2 | [0.7.2.md](0.7.2.md): fixes from the 0.7.1 walkthrough and the observer feedback: status shows its version, `done` and `next` tell the truth, `--tag` and `--help` parse, the gate names flaky and first error lines, the account check (Q57); behaviour changes moved to decisions | Built 2026-11-11 on `release/0.7.2`, r2 |
 | — | [handoff.md](handoff.md): where the work stands and what a new session should do first | Kept current |
 | — | [backlog.md](backlog.md): every open fix and to-do, with its source and target release, up to 1.0.0 and after | Kept current |
 

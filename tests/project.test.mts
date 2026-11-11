@@ -411,6 +411,8 @@ test('0.3.2 T3-T5: qam app create and qam check-scripts turn their stages done; 
   assert.equal(stage('requirements').optional, true);
   assert.notEqual(json(qa, 'pipeline', 'status').next, 'requirements', '"next" skips an optional stage');
 
+  // Q57: the test account's variables (names from dsm-config login) must be in the QA .env
+  fs.appendFileSync(path.join(qa, '.env'), '\nDSM_APP_USERNAME=u\nDSM_APP_PASSWORD=p\n');
   assert.equal(qam(qa, 'app', 'create').status, 0);
   assert.equal(stage('app-folder').status, 'done', 'app.json is the marker qam app create writes (T3)');
   assert.match(stage('app-folder').evidence, /Shop\//);

@@ -685,3 +685,26 @@ export function compareDsm(older: Dsm, newer: Dsm): DsmCompare {
     elements_removed: sortStrings([...a].filter((k) => !b.has(k))),
   };
 }
+
+/**
+ * 0.7.2 item 15: a list screen the crawl reached with no rows. The code has a detail screen under it (/todo/:id), but
+ * the crawl has no edge from the list into that prefix: the rows are how the crawl reaches the detail, so its detail
+ * screens were never reached. A list the crawl never visited is not reported here.
+ */
+export function emptyListHints(ui: UiModel | null, routes: string[]): string[] {
+  if (!ui) return [];
+  // a page that redirected or failed to load was not crawled: it has no rows to report on
+  const crawled = new Set(ui.pages.filter((p) => !p.redirect_to && !p.error).map((p) => p.route));
+  const reached = new Set(ui.pages.map((p) => p.route));
+  const details = new Map<string, string[]>();
+  for (const r of routes) {
+    const m = /^(.+)\/:[^/]+$/.exec(r);
+    if (m && crawled.has(m[1]) && !reached.has(r)) details.set(m[1], [...(details.get(m[1]) ?? []), r]);
+  }
+  return sortStrings([...details.keys()])
+    .filter((list) => !ui.edges.some((e) => e.from === list && e.to.startsWith(`${list}/`)))
+    .map(
+      (list) =>
+        `no rows on ${list}, so its detail screens (${(details.get(list) ?? []).join(', ')}) are unreachable: seed the crawl's account with data, or check the rows are links`,
+    );
+}

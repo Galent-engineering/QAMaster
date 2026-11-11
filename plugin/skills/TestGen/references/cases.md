@@ -129,3 +129,8 @@ A whole module in one `testcases.json` runs out of output and context. Per compo
 1. `qam testgen context --component <Name>`, then write only that component's cases.
 2. Add them to `testcases.json`, run `qam testgen validate <run>`, and fix the findings before the next component.
 3. Keep the earlier components' cases as they are; the final validate covers the whole run.
+
+## Long values and the test account
+
+- **Long values.** There is no `{len:N}` placeholder (D15): a case holds the full literal string. To cover a boundary such as 55 or 201 characters, generate the string with a one-line script and paste its output into `test_data`, for example `python3 -c "print('a'*55)"`. The validator counts the literal, so check the length it printed.
+- **The test account.** Its data is shared by every gate run (Q57). Runs add rows (a case that creates a todo leaves it, and a retry creates another), and QAMaster has no cleanup step (D20). Before a gate run that depends on the list's content, reset the account to its seed data: re-seed the app's database, or delete the rows the runs added. A list that answers differently with more rows can fail a case for no code reason.

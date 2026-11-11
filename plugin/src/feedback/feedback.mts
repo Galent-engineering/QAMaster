@@ -61,6 +61,8 @@ export type FeedbackInput = {
   ledger: Map<string, number>; // local ID -> store ID
   /** The DSM's screens (node ids), or null when there is no DSM to compare with. */
   screens: string[] | null;
+  /** The app repo's HEAD now, when known: a verdict for another commit is said, not hidden. */
+  headNow?: string;
   now?: Date;
 };
 
@@ -68,6 +70,16 @@ const titleOf = (plan: Plan | null, id: number): string =>
   [...(plan?.items ?? []).map((i) => i.testCase), ...(plan?.notRun ?? []).map((n) => n.testCase)].find(
     (t) => t.id === id,
   )?.title ?? `TC${id}`;
+
+/** An error that asks for a setting (`Set TODO_USER in .env`), not a fault in the app. */
+const SETTING = /\bSet\s+([A-Z][A-Z0-9_]+)\b[^\n]*(?<![\w.])\.env\b/;
+const missingSetting = (e: string | undefined): string | null => {
+  // one error string can hold several failed scenarios, each a title line then its message, split by a blank line:
+  // it is a missing setting only when every one of them is
+  const parts = (e ?? '').split(/\n\s*\n/).filter((p) => p.trim());
+  const names = parts.map((p) => SETTING.exec(p)?.[1]);
+  return parts.length && names.every(Boolean) ? (names[0] ?? null) : null;
+};
 
 export function defectDrafts(i: Pick<FeedbackInput, 'verdict' | 'plan' | 'runs' | 'ledger'>): DefectDraft[] {
   const byStore = new Map<number, RunCase>();
@@ -77,7 +89,7 @@ export function defectDrafts(i: Pick<FeedbackInput, 'verdict' | 'plan' | 'runs' 
       if (store !== undefined) byStore.set(store, c);
     }
   return i.verdict.results
-    .filter((r) => r.status === 'failed')
+    .filter((r) => r.status === 'failed' && !missingSetting(r.error))
     .map((r) => {
       const src = byStore.get(r.testCaseId);
       const steps = (src?.steps ?? []).map(
@@ -101,6 +113,19 @@ export function propose(i: FeedbackInput): Feedback {
   const { verdict, plan } = i;
   const notes: string[] = [];
   if (!plan) notes.push(`Plan ${verdict.planId} isn't on this machine, so gaps and BROKEN links are unknown.`);
+
+  if (i.headNow) notes.push(`Verdict for commit ${verdict.head.slice(0, 8)}; HEAD is ${i.headNow.slice(0, 8)}.`);
+  if (i.headNow && !i.headNow.startsWith(verdict.head.slice(0, 8)) && !verdict.head.startsWith(i.headNow.slice(0, 8)))
+    notes.push(
+      `Warning: this verdict is for ${verdict.head.slice(0, 8)}, not HEAD (${i.headNow.slice(0, 8)}). Run qam check for a verdict on HEAD.`,
+    );
+  for (const r of verdict.results) {
+    const name = r.status === 'failed' ? missingSetting(r.error) : null;
+    if (name)
+      notes.push(
+        `TC${r.testCaseId} failed because a setting is missing (${name}, see .env): no defect drafted. Set it and run the check again.`,
+      );
+  }
 
   const known = i.screens ? new Set(i.screens.map(matchKey)) : null;
   if (!known) notes.push('No DSM yet (qam dsm run), so stale cases could not be checked.');

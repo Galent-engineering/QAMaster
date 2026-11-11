@@ -244,7 +244,7 @@ Every open item, with its source, is in [plans/backlog.md](plans/backlog.md).
 | Release | Kind | What | Plan |
 |---|---|---|---|
 | 0.6.1 | Fixes | Folded: not built separately. 0.6.0's fixes shipped in 0.7.1; its live-run fixes go to 0.7.2 | [0.7.1 r3](plans/0.7.1.md) |
-| 0.7.2 | Fixes | What the live runs find (0.6.0's and 0.7.0's: fastapi-react-app signed out and signed in, a generated folder through `bddgen` and Playwright), a walkthrough on a new app, and the Restful Booker rehearsal | |
+| 0.7.2 | Fixes | Built 2026-11-11 on `release/0.7.2` ([plan r2](plans/0.7.2.md); 787 tests, typecheck, lint and plugin validation clean; not run on a live app): the 0.7.1 walkthrough and the observer feedback, 19 items (status version and root, `done` and `next`, `doctor` warnings, `--help` everywhere, the ADO project list, `--tag` commas, check hints, flaky and first-error lines in the verdict, feedback vs HEAD, the Q57 account check, DSM empty lists, requirements vs predating runs). Behaviour changes are decisions, not in this patch | [0.7.2 r2](plans/0.7.2.md) |
 | **1.0.0** | **Major** | Product v1 proven: a clean-room Docker run, a walkthrough on a second unknown app, the failure path and the store's life cycle seen live. No new feature | [backlog](plans/backlog.md#100-the-major-release) |
 | 1.1.0 | Features | Native Android and iOS scripts through Appium (Q54) | [backlog](plans/backlog.md#after-100) |
 | 1.2.0 | Features | Product v1.1: the git pre-push hook, each IDE and agent set up by ticking it (Q43), PR checks, ADO Test Run | [backlog](plans/backlog.md#after-100) |
