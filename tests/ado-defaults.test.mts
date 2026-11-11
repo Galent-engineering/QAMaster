@@ -80,3 +80,46 @@ test('R24: the az defaults are taken as a pair, never to fill one QAMaster setti
     /QAMASTER_ADO_ORG/,
   );
 });
+
+test('0.8.0 item 16 (W8): AZURE_DEVOPS_ORG_URL is the organization when nothing before it names one', () => {
+  const dir = tmpDir('qam-app-');
+  const empty = tmpDir('qam-az-empty-');
+  const url = 'https://dev.azure.com/galent';
+  // the URL form is cut to the organization name, as the az defaults are
+  const s = adoSettings(
+    loadConfig(dir, { AZURE_CONFIG_DIR: empty, AZURE_DEVOPS_ORG_URL: url, QAMASTER_ADO_PROJECT: 'Shop' }),
+  );
+  assert.deepEqual([s.organization, s.project], ['galent', 'Shop']);
+  // the bare name works too
+  assert.equal(
+    adoSettings(loadConfig(dir, { AZURE_CONFIG_DIR: empty, AZURE_DEVOPS_ORG_URL: 'galent', QAMASTER_ADO_PROJECT: 'Shop' }))
+      .organization,
+    'galent',
+  );
+  // without a project it still blocks, naming the project line
+  assert.throws(
+    () => adoSettings(loadConfig(dir, { AZURE_CONFIG_DIR: empty, AZURE_DEVOPS_ORG_URL: url })),
+    /QAMASTER_ADO_PROJECT/,
+  );
+});
+
+test('0.8.0 item 16: the QAMaster pair and the az defaults both win over AZURE_DEVOPS_ORG_URL', () => {
+  const dir = tmpDir('qam-app-');
+  const url = 'https://dev.azure.com/fromurl';
+  const own = adoSettings(
+    loadConfig(dir, {
+      AZURE_CONFIG_DIR: tmpDir('qam-az-empty-'),
+      AZURE_DEVOPS_ORG_URL: url,
+      QAMASTER_ADO_ORG: 'myorg',
+      QAMASTER_ADO_PROJECT: 'myproj',
+    }),
+  );
+  assert.deepEqual([own.organization, own.project], ['myorg', 'myproj']);
+  const az = adoSettings(
+    loadConfig(dir, {
+      AZURE_CONFIG_DIR: azConfig('organization = azorg\nproject = azproj'),
+      AZURE_DEVOPS_ORG_URL: url,
+    }),
+  );
+  assert.deepEqual([az.organization, az.project], ['azorg', 'azproj']);
+});

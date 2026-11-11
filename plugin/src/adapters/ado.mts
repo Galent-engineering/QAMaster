@@ -1309,12 +1309,16 @@ export class AdoProjectUnset extends BlockedError {
 
 /**
  * The organization and project: QAMaster's own settings, else az's defaults (R24), taken as a pair. One QAMaster setting
- * with az's other would mix two places, such as az's project inside QAMaster's organization.
+ * with az's other would mix two places, such as az's project inside QAMaster's organization. An organization still
+ * unnamed after both comes from AZURE_DEVOPS_ORG_URL (0.8.0, W8), the variable other Azure DevOps tools read.
  */
 function adoTarget(config: Config): { organization?: string; project?: string } {
   const { QAMASTER_ADO_ORG: org, QAMASTER_ADO_PROJECT: project } = config.env;
   const pick = org || project ? { organization: org, project } : azDefaults(config.env);
-  return { organization: orgName(pick.organization), project: pick.project || undefined };
+  return {
+    organization: orgName(pick.organization) ?? orgName(config.env.AZURE_DEVOPS_ORG_URL),
+    project: pick.project || undefined,
+  };
 }
 
 /** The settings for QAMASTER_STORE=ado and QAMASTER_REQUIREMENTS=ado. */
