@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import { test as base, createBdd } from 'playwright-bdd';
 import { parseAllow, watchApp } from './app-errors';
+import { type Cleanup, createCleanup } from './cleanup';
 
 /**
  * Fixtures every step definition can ask for. Add one per shared helper; page objects are created in the steps that
@@ -12,8 +13,23 @@ import { parseAllow, watchApp } from './app-errors';
  * message. The app's origins are baseURL and the API's (API_BASE_URL, else apiUrl in app.json); a request to them that
  * got no answer counts too, except net::ERR_ABORTED. app-errors.ts is QAMaster's file: `qam app create` replaces it
  * when it differs from the template, so keep your own helpers in other files.
+ *
+ * cleanup (Q58) is how a step undoes the data it creates: `cleanup.add('todo "Buy milk"', () => deleteTodo(id))`
+ * right after the create. The undos run when the case ends; one that fails fails the case with "left data on the test
+ * account: <label>" and cleanup.json attached. See src/cleanup.ts.
  */
-export const test = base.extend<{ appErrors: void }>({
+export const test = base.extend<{ appErrors: void; cleanup: Cleanup }>({
+  cleanup: async ({}, use, testInfo) => {
+    const cleanup = createCleanup();
+    await use(cleanup);
+    const results = await cleanup.run();
+    const failure = cleanup.describe(results);
+    if (!failure) return;
+    const file = testInfo.outputPath('cleanup.json');
+    fs.writeFileSync(file, `${JSON.stringify(results, null, 2)}\n`);
+    await testInfo.attach('cleanup', { path: file, contentType: 'application/json' });
+    throw new Error(failure);
+  },
   appErrors: [
     async ({ page, baseURL }, use, testInfo) => {
       const origins = baseURL ? [new URL(baseURL).origin] : [];
