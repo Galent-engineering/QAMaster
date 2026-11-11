@@ -553,6 +553,15 @@ test("0.8.0 item 14: --take-store with --apply keeps the store's edit, records i
   assert.doesNotMatch(again.out, /Conflict|Edited in the store only/);
 });
 
+test('0.8.0 item 14: a taken case is not also counted as unchanged, in the preview or the apply summary', () => {
+  const p = conflicted();
+  const preview = p.qam('publish', RUN, '--take-store', 'TC-CART-001');
+  assert.match(preview.out, /Take the store's version \(1\)/);
+  assert.doesNotMatch(preview.out, /Unchanged \(/);
+  const applied = p.qam('publish', RUN, '--take-store', 'TC-CART-001', '--apply');
+  assert.match(applied.out, /unchanged 0;/);
+});
+
 test('0.8.0 item 14: --take-store names the case the store has not changed, and an ID the run does not have', () => {
   const p = project();
   p.writeRun([kase('TC-CART-001')]);

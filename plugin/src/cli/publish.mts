@@ -418,7 +418,8 @@ async function prepare(o: Shared, r: Reached): Promise<Prepared> {
     `Retire (${retires.length}), only with --retire`,
     retires.map((c) => `${tc(c.trackerId ?? 0)} ← ${c.localId}  ${c.reason}`),
   );
-  if (unchanged.length) lines.push('', `Unchanged (${unchanged.length})`);
+  const kept = unchanged.length - takes.length;
+  if (kept) lines.push('', `Unchanged (${kept})`);
   // the stories the cases cite, each a req: tag the gate selects by (0.8.0, D17)
   const stories = storyMap(derived);
   section(
@@ -504,6 +505,7 @@ async function finish(o: Shared, r: Reached, read: Read): Promise<Outcome> {
     ['create', 'update', 'conflict', 'retire', 'unchanged'] as const
   ).map(by);
   const takes = unchanged.filter((c) => c.take);
+  const kept = unchanged.length - takes.length;
   const pending = creates.length + updates.length + takes.length + (v.retire ? retires.length : 0);
   const notLinked = derived.filter((d) => d.notLinked).map((d) => d.id);
   const { max } = cfg.project.smoke;
@@ -565,7 +567,7 @@ async function finish(o: Shared, r: Reached, read: Read): Promise<Outcome> {
     // a smoke suggestion unticked now isn't offered again (E2); the ledger entry exists once the case is written
     if (skipSmoke.size) save([], [...skipSmoke]);
     // recorded even when cases were held back, so the pipeline can say so (E7)
-    const published = { publishedAt: now, store: where, ...applied, unchanged: unchanged.length, heldBack };
+    const published = { publishedAt: now, store: where, ...applied, unchanged: kept, heldBack };
     fs.writeFileSync(path.join(run.dir, 'published.json'), `${JSON.stringify(published, null, 1)}\n`);
     // the store was reached: the pipeline's store stage reads this entry (A16), as doctor writes it
     const doctorFile = path.join(dir, '.qamaster', 'doctor.json');
@@ -590,7 +592,7 @@ async function finish(o: Shared, r: Reached, read: Read): Promise<Outcome> {
       )}\n`,
     );
     lines.push(
-      `Created ${applied.created}, updated ${applied.updated}, retired ${applied.retired}, unchanged ${unchanged.length}; ${heldBack} held back by a conflict; smoke in the plan: ${smokeInStore + smokeWritten} of max ${max}.`,
+      `Created ${applied.created}, updated ${applied.updated}, retired ${applied.retired}, unchanged ${kept}; ${heldBack} held back by a conflict; smoke in the plan: ${smokeInStore + smokeWritten} of max ${max}.`,
     );
     fs.rmSync(previewFile, { force: true });
   }
