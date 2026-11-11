@@ -214,3 +214,32 @@ test('src/pages/ is Next pages when package.json depends on next or next.config 
   assert.deepEqual(pagesRoutes({ 'next.config.mjs': 'export default {}' }), ['/Home nextjs']);
   assert.deepEqual(pagesRoutes({ 'web/package.json': dep, 'web/pages/About.tsx': 'export default 1' }).length, 1);
 });
+
+// 0.8.0 item 18 (D8, F11, R16): the backend's API routes are not screens when the scan decides which files are shared.
+
+test('0.8.0 item 18: a file both frontend screens import is shared, however many API routes the backend has', () => {
+  const api = ['todos', 'users', 'auth', 'tags', 'lists', 'stats']
+    .map((n) => `@app.get("/api/${n}")\ndef ${n}():\n    return []`)
+    .join('\n');
+  const src = new Map<string, string>([
+    [
+      'frontend/src/App.tsx',
+      `import { Routes } from 'react-router-dom';
+import APage from './a';
+import BPage from './b';
+<Routes><Route path="/a" element={<APage />} /><Route path="/b" element={<BPage />} /></Routes>`,
+    ],
+    ['frontend/src/a.tsx', "import auth from './auth';\nexport default function APage() {}"],
+    ['frontend/src/b.tsx', "import auth from './auth';\nexport default function BPage() {}"],
+    ['frontend/src/auth.ts', 'export default {};'],
+    ['backend/main.py', `from fastapi import FastAPI\napp = FastAPI()\n${api}\n`],
+  ]);
+  const repo: RepoConfig = { name: 'r', path: 'x', branch: 'main', include: [], exclude: [] };
+  const code = scan({ repositories: [repo] }, () => ({ ref: null, commit: null, files: src }));
+  assert.ok(
+    (code.routes ?? []).filter((r) => r.kind === 'api').length >= 6,
+    'the backend routes are found as API routes',
+  );
+  assert.equal(code.files?.['r:frontend/src/auth.ts']?.confidence, 'shared', 'two of two screens');
+  assert.deepEqual(code.files?.['r:frontend/src/auth.ts']?.owners, []);
+});

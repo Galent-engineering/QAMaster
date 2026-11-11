@@ -895,9 +895,24 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
   const isSeed = (rel: string) => ['direct', 'module'].includes(confidence.get(rel) ?? '');
   const reached = new Map<string, Set<string>>(); // file -> the screens whose components reach it
   const screens = new Set<string>();
+  // 0.8.0 item 18: a server route with an HTTP verb and no page at its route is an API route, not a screen: it stays an
+  // owner but does not count toward "most screens use this file". (The unlinked test of Q48 needs the edges, built later.)
+  const apiRoutes = new Set(
+    routes
+      .filter(
+        (r) =>
+          r.kind === 'api' ||
+          (r.kind === 'action' &&
+            r.method &&
+            !routes.some((o) => o.route === r.route && o.kind !== 'action' && o.kind !== 'api') &&
+            !routes.some((o) => o.route === r.route && o.kind === 'action' && !o.method)),
+      )
+      .map((r) => r.route),
+  );
+  const screenCount = (rs: Set<string>) => [...rs].filter((x) => !apiRoutes.has(x)).length;
   for (const [seed, rs] of owners) {
     if (!rs.size || !isSeed(seed)) continue;
-    for (const x of rs) screens.add(x);
+    for (const x of rs) if (!apiRoutes.has(x)) screens.add(x);
     const seen = new Set([seed]);
     const queue = [seed];
     while (queue.length) {
@@ -917,7 +932,7 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
     for (const w of r.wrappers ?? []) {
       const start = importedFile(r.file, w, files) ?? classFile.get(w);
       if (!start) continue;
-      screens.add(r.route);
+      if (!apiRoutes.has(r.route)) screens.add(r.route);
       const seen = new Set([start]);
       const queue = [start];
       while (queue.length) {
@@ -932,7 +947,8 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
     }
   }
   for (const [dep, rs] of reached) {
-    if (rs.size >= MOST_MIN_SCREENS && rs.size * 2 > screens.size) continue; // most screens use it: shared
+    const n = screenCount(rs);
+    if (n >= MOST_MIN_SCREENS && n * 2 > screens.size) continue; // most screens use it: shared
     for (const x of rs) own(dep).add(x);
     confidence.set(dep, 'imported');
   }
