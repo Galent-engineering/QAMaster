@@ -361,8 +361,11 @@ function out(json: boolean, data: unknown, text: string) {
   console.log(json ? JSON.stringify(data, null, 1) : text);
 }
 
+/** One folder per run, named like its verdict file: a second run of HEAD keeps the first's evidence (0.8.0 item 3, D21). */
+export const evidenceName = (plan: Plan) => `${plan.change.head}-${plan.id}`;
+
 async function finish(cfg: Config, g: Gate, plan: Plan, json: boolean): Promise<number> {
-  const evidence = path.join(stateDir(cfg, 'evidence'), plan.change.head);
+  const evidence = path.join(stateDir(cfg, 'evidence'), evidenceName(plan));
   const verdict = await runPlan(g, plan, evidence);
   const drafts = readDrafts(cfg);
   if (drafts) {

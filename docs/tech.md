@@ -315,7 +315,7 @@ The gate needs only the read scopes. Publishing and `work-items` need read and w
 | QA project | `.qamaster/pipeline.json`, `.qamaster/ledger.json`, `.qamaster/bin/` | Pipeline, publish, setup |
 | QA project | `reports/data/`, `reports/output/` | Reports |
 | App repo | `.env` (git-ignored) | The user |
-| QA project | `.qamaster/gate/<source name>/plans/<id>.json`, `verdicts/<sha>-<plan>.json` (one per run; the newest decides), `evidence/<sha>/`, `feedback/<sha>.json`, `drafts.json`, for an app clone the QA project recorded (Q52, 0.6.0) | Gate (`gate/state.mts`) |
+| QA project | `.qamaster/gate/<source name>/plans/<id>.json`, `verdicts/<sha>-<plan>.json` (one per run; the newest decides), `evidence/<sha>-<plan>/` (one folder per run, like the verdict file; nothing is cleaned up automatically), `feedback/<sha>.json`, `drafts.json`, for an app clone the QA project recorded (Q52, 0.6.0) | Gate (`gate/state.mts`) |
 | App repo | The same files under its own `.qamaster/`, when no QA project recorded it. Before 0.6.0 a recorded clone kept them here too: 0.6.0 still reads them, never writes or deletes them, and doctor names the folder | Gate. Writes its own `.gitignore` |
 
 When the QA project and the app repo are the same folder, everything lives in one `.qamaster/`. `gate/state.mts` (`stateDirs`) returns where a run writes and where it reads; the CLI, reports, pipeline status and the push hook all call it. From a clone, the QA project is found through `QAMASTER_TEST_ROOT` in the clone's `.env` (then upwards), else the per-user index `~/.qamaster/installs.json`.

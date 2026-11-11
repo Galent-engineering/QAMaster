@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import type { Runner } from '../plugin/src/adapters/base.mts';
-import { renderPlan, renderVerdict } from '../plugin/src/cli/gate.mts';
+import { evidenceName, renderPlan, renderVerdict } from '../plugin/src/cli/gate.mts';
 import { approve, type Gate, makePlan } from '../plugin/src/gate/gate.mts';
 import { decide } from '../plugin/src/gate/verdict.mts';
 import { BlockedError } from '../plugin/src/shared/errors.mts';
@@ -71,4 +71,12 @@ test('item 1: renderPlan says when approval will be refused', async () => {
   assert.match(renderPlan(await empty([notRun('path')])), /approval will be refused/i);
   assert.doesNotMatch(renderPlan(await empty([notRun('smoke')])), /approval will be refused/i);
   assert.doesNotMatch(renderPlan(await makePlan(gate(), 'main', {})), /approval will be refused/i);
+});
+
+test('item 3: each run keeps its evidence in a folder named like its verdict file', async () => {
+  const g = gate();
+  const a = await makePlan(g, 'main', {});
+  const b = await makePlan(g, 'main', {});
+  assert.equal(evidenceName(a), `${a.change.head}-${a.id}`);
+  assert.notEqual(evidenceName(a), evidenceName(b), 'two plans on one HEAD do not share a folder');
 });
