@@ -14,8 +14,9 @@
  * here are ASCII, so identifiers with non-ASCII letters aren't matched.
  */
 import { BlockedError } from '../shared/errors.mts';
-import type { CodeModel } from '../shared/models.mts';
+import type { CodeLimit, CodeModel } from '../shared/models.mts';
 import { sortBy } from './build.mts';
+import { scanFormLimits } from './form-limits.mts';
 
 export type RepoConfig = {
   name: string;
@@ -626,7 +627,13 @@ export function importedFile(from: string, name: string, files: Map<string, stri
   return null;
 }
 
-type FileInfo = { owners: string[]; confidence: string; nav?: NavRef[]; elements?: Record<string, string[] | number> };
+type FileInfo = {
+  owners: string[];
+  confidence: string;
+  nav?: NavRef[];
+  elements?: Record<string, string[] | number>;
+  limits?: CodeLimit[];
+};
 type CodeEdge = NonNullable<CodeModel['edges']>[number];
 
 /**
@@ -964,6 +971,8 @@ export function scanRepo(repo: RepoConfig, snapshot: RepoSnapshot, rules: Rule[]
     const info: FileInfo = { owners: sortStrings(owners.get(rel) ?? []), confidence: confidence.get(rel) ?? 'shared' };
     if (refs.length) info.nav = refs;
     if (Object.keys(elements).length) info.elements = elements;
+    const limits = IMPORT_EXTS.has(extOf(rel).toLowerCase()) ? scanFormLimits(text) : [];
+    if (limits.length) info.limits = limits;
     fileInfo[`${name}:${rel}`] = info;
     for (const ref of refs) {
       for (const owner of info.owners.length ? info.owners : ['(shared)']) {

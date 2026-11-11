@@ -13,7 +13,7 @@
  * navigation: cycles.
  */
 import { isDeepStrictEqual } from 'node:util';
-import type { Access, CodeModel, UiModel, UiPage } from '../shared/models.mts';
+import type { Access, CodeLimit, CodeModel, UiModel, UiPage } from '../shared/models.mts';
 
 export type DsmConfig = {
   project?: string;
@@ -24,6 +24,8 @@ export type DsmConfig = {
 };
 
 export type Via = Record<string, unknown>;
+
+export type CodeLimitRef = Omit<CodeLimit, 'line'> & { file: string; line: number };
 
 export type PageNode = {
   id: string; // matchKey of the route
@@ -56,9 +58,12 @@ export type PageNode = {
       min?: number | string;
       max?: number | string;
       pattern?: string;
+      code_limit_at?: string; // 0.8.0: "<repo>:<file>:<line>" when a limit above came from form code (the DOM had none)
     }[];
     submits: unknown[];
   }[];
+  // 0.8.0: limits form code declares for a field the crawl did not record (a dialog it never opened); the DOM wins elsewhere
+  code_limits?: CodeLimitRef[];
   dialogs: (string | null)[];
   tables: unknown[];
   headings?: string[];
@@ -286,6 +291,47 @@ function limitsOf(fd: {
   return out;
 }
 
+const squash = (s: string | null | undefined) => (s ?? '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+
+/**
+ * 0.8.0 item 19: the limits form code declares, for each screen the file serves. A field the crawl recorded takes
+ * each limit its DOM left out (the DOM value wins; its `required: false` only means the page does not mark it, so code
+ * may set it) and says where in code it came from; a field the crawl did not record, such as one in a dialog it never
+ * opened, is kept in the screen's `code_limits`.
+ */
+function mergeCodeLimits(nodes: PageNode[], code: CodeModel | null) {
+  for (const nd of nodes) {
+    const seen = new Set<string>();
+    for (const fkey of nd.files) {
+      for (const l of code?.files?.[fkey]?.limits ?? []) {
+        const id = `${fkey}:${l.field}:${l.line}`;
+        if (seen.has(id)) continue;
+        seen.add(id);
+        const field = nd.forms
+          .flatMap((f) => f.fields)
+          .find((fd) => [fd.name, fd.label].some((n) => n && squash(n) === squash(l.field)));
+        const { field: _f, source, line, ...limits } = l;
+        const at = `${fkey}:${line}`;
+        if (!field) {
+          nd.code_limits = [...(nd.code_limits ?? []), { field: l.field, source, file: fkey, line, ...limits }];
+          continue;
+        }
+        let used = false;
+        if (limits.required && !field.required) {
+          field.required = true;
+          used = true;
+        }
+        for (const k of ['min_length', 'max_length', 'min', 'max', 'pattern'] as const) {
+          if (limits[k] === undefined || field[k] != null) continue;
+          (field as Record<string, unknown>)[k] = limits[k];
+          used = true;
+        }
+        if (used && !field.code_limit_at) field.code_limit_at = at;
+      }
+    }
+  }
+}
+
 const last = (key: string) => key.split(':').pop() as string;
 
 export type BuildOptions = {
@@ -404,6 +450,8 @@ export function build(
       }
     }
   }
+
+  mergeCodeLimits(nodes, code);
 
   // ---- page-level cells. Insertion order matters: it drives the component numbering.
   type Cell = { i: number; j: number; t: Record<string, number>; v: Via[] };

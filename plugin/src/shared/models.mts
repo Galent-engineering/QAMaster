@@ -342,12 +342,28 @@ export type UiModel = {
   [key: string]: unknown;
 };
 
+/** A field limit read from form code (0.8.0 item 19): react-hook-form, yup, zod or Angular Validators. */
+export type CodeLimit = {
+  field: string; // the name the code gives the field
+  source: string; // react-hook-form, yup, zod or angular
+  line: number;
+  required?: boolean;
+  min_length?: number;
+  max_length?: number;
+  min?: number;
+  max?: number;
+  pattern?: string;
+};
+
 /** The repo scan's output (code-model.json). Files are keyed "<repo>:<path>"; `owners` are the routes they serve. */
 export type CodeModel = {
   generated_at?: string;
   repos?: { name: string; [key: string]: unknown }[];
   routes?: { route: string; repo: string; file: string; line: number; [key: string]: unknown }[];
-  files?: Record<string, { owners?: string[]; elements?: Record<string, unknown>; [key: string]: unknown }>;
+  files?: Record<
+    string,
+    { owners?: string[]; elements?: Record<string, unknown>; limits?: CodeLimit[]; [key: string]: unknown }
+  >;
   // `from` is a route, or "(shared)" for layout code used on every screen.
   edges?: {
     from: string;

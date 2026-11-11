@@ -127,6 +127,11 @@ export class Facts {
             this.limited.set(n.id, [...(this.limited.get(n.id) ?? []), String(fd.label ?? fd.name)]);
         }
       }
+      // 0.8.0 item 19: a field form code limits that the crawl did not record is still a field to bound
+      for (const c of n.code_limits ?? []) {
+        names.add(norm(c.field));
+        this.limited.set(n.id, [...(this.limited.get(n.id) ?? []), c.field]);
+      }
       for (const t of (n.tables ?? []) as { columns?: string[] }[]) for (const c of t.columns ?? []) names.add(norm(c));
       for (const c of n.code_elements?.controls ?? []) names.add(norm(c));
       names.delete('');
@@ -313,9 +318,11 @@ export class Facts {
               type: fd.type ?? null,
               required: fd.required ?? null,
               ...declared(fd),
+              ...(fd.code_limit_at ? { code_limit_at: fd.code_limit_at } : {}),
             })),
             buttons: f.submits ?? [],
           })),
+          ...(n.code_limits?.length ? { code_limits: n.code_limits } : {}),
           elements: sorted(
             new Set((this.model.elements.get(n.id) ?? []).filter((e) => e.label).map((e) => `${e.kind}: ${e.label}`)),
           ),

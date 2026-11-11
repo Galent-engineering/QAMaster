@@ -398,7 +398,8 @@ function renderSub(
             fd.pattern ? `pattern ${fd.pattern}` : '',
           ];
           const about = [fd.type, fd.required ? 'required' : '', ...limits].filter(Boolean).join(', ');
-          return `${q(fd.label || fd.name || '?')}${about ? ` (${about})` : ''}`;
+          const from = fd.code_limit_at ? ` [limits from code: ${fd.code_limit_at}]` : '';
+          return `${q(fd.label || fd.name || '?')}${about ? ` (${about})` : ''}${from}`;
         })
         .join('; ');
       const buttons = truthy(f.submits)
@@ -423,6 +424,19 @@ function renderSub(
     }
     for (const t of (n.tables ?? []) as { columns?: string[] }[]) {
       if (truthy(t.columns)) facts.push(`- Grid columns: ${(t.columns as string[]).slice(0, 20).map(q).join(' | ')}`);
+    }
+    for (const c of n.code_limits ?? []) {
+      const limits = [
+        c.required ? 'required' : '',
+        c.min_length != null ? `min ${c.min_length} chars` : '',
+        c.max_length != null ? `max ${c.max_length} chars` : '',
+        c.min != null ? `min ${c.min}` : '',
+        c.max != null ? `max ${c.max}` : '',
+        c.pattern ? `pattern ${c.pattern}` : '',
+      ].filter(Boolean);
+      facts.push(
+        `- Limit in code for ${q(c.field)} (${c.source}, the crawl did not record the field): ${limits.join(', ')} (\`${c.file}:${c.line}\`)`,
+      );
     }
     const ce = n.code_elements ?? {};
     if (truthy(ce.controls))
